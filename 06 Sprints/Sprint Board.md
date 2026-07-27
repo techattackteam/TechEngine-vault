@@ -11,22 +11,17 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 25 – Aug 28)
 
-- [ ] **S2-T13** — Vault repo cutover ([[ADR-012 — Vault repository split]]) · P1 · 🟠 Moderate
-	  — **blocks T14/T15**. `.gitignore` + root `.ignore` land in the **same** commit, history
-	  preserved, fresh clone documented. Weighted Moderate on purpose: urgent, but it must not
-	  eat a 🟢 Deep slot reserved for T4/T7/T8.
+- [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
 - [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator (headless) · P1 · 🟢 Deep
 - [ ] **S2-T8** — Determinism + clamp tests (injected time source) · P1 · 🟢 Deep
 - [ ] **S2-T9** — End-to-end wire-up = sprint demo · P2 · 🟠 Moderate
-- [ ] **S2-T14** — Retarget vault-writing commands at the nested repo · P2 · 🟡 Light — *after T13*
-- [ ] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light — *after T13*
 - [ ] **S2-T11** — Skill `te-module` scaffolder · P3 · 🟡 Light
 
 
 ## 🔨 In Progress
 
-- [ ] **S2-T4** — Assert: four tiers + single handler · P1 · 🟢 Deep
-- [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
+- [ ] **S2-T14** — Retarget vault-writing commands at the nested repo · P2 · 🟡 Light — **unblocked**
+- [ ] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light — **unblocked**
 - [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **runs in parallel**, not
 	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as
 	  you review** — they land here live. CLAUDE.md's section **shrunk to a pointer + the 3
@@ -40,6 +35,21 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
+- [x] **S2-T13** — Vault repo cutover ([[ADR-012 — Vault repository split]]) · P1 · 🟠 Moderate —
+	  **Jul 27** → PR #14, and **this card's own move is the first commit that needed no PR**.
+	  `docs/` is now `TechEngine-vault`, cloned in place — path unchanged, 17 commits of history
+	  preserved via `git subtree split`. `.gitignore` + root `.ignore` landed in the same commit
+	  and were **verified both directions**: `git check-ignore` reports `docs/` ignored while a
+	  root ripgrep still returns vault hits. **T14/T15 unblocked.** Vault README's "versioned
+	  alongside the engine, in lockstep" claim was true until this task and is now corrected.
+- [x] **S2-T4** — Assert: four tiers + single handler · P1 · 🟢 Deep — **Jul 27** → PR #13.
+	  Four tiers + one hookable handler (ADR-011 §5), `SourceName.hpp` for call-site identity,
+	  `thread_local` recursion guard on the assert→log path (§7), `base` keeps the no-break
+	  default handler so the DAG stays leaf-clean. `TE_ASSERT_DEV` is **PUBLIC** on purpose —
+	  PRIVATE and consumers silently fall back to the header default while the lib compiled the
+	  opposite; `AssertTests.cpp` is what catches that split. RelWithDebInfo presets added and
+	  run **by hand**, not as a CI leg — the config→knob half can't be proved from inside a
+	  Debug binary ([[Assert — Design]]). Cost four compile-fix commits, mostly the Linux leg.
 - [x] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep — **Jul 25** → PR #9.
 	  Handles + explicit registration (ADR-011 §2), filtering at max(process, module, channel),
 	  sink **array** not slot, console + rotating file behind one spdlog logger, one flatten shared
@@ -60,16 +70,14 @@ kanban-plugin: board
 	  under review: `fmt`-in-header was unbuildable → **`std::format`**, spdlog private, no new
 	  dep. Frame stamp **pushed by `app`**, not pulled. Partial supersession of ADR-006 §6's
 	  assert-tier clause tracked in [[ADR Index]].
-- [ ] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset · P3 · 🟡 Light
+- [x] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset · P3 · 🟡 Light
 	  — **Jul 26** → PR #11 24 files, **+409/−237, zero code**. Backlog is now a
 	  staging area — entries cut at planning, not swept later (350→289 lines); `/task-start` +
 	  `/task-wrap` bracket every task off a freshly fetched `origin/master`, which is the fix for
 	  the squash-merge branch reuse that conflicted PRs #8–#10; CLAUDE.md conventions reduced to a
 	  pointer + the 3 AI-default corrections, and its stale test-target names fixed
 	  (`TechEngineBaseTests` / `sdk-smoke` / `TechEngine::sdk`).
-	  **Done-condition not yet met** — it *is* the PR lifecycle (opened → 8 checks green →
-	  squash-merged), so it closes on merge, not here. Card was retitled: the original
-	  `feat/improving-vault` branch no longer exists.
+	  Card was retitled: the original `feat/improving-vault` branch no longer exists.
 
 
 

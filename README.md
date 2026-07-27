@@ -3,8 +3,23 @@
 This folder is an **Obsidian vault** and the "brain" of TechEngine. Open it by
 pointing Obsidian at `C:\dev\TechEngine\docs`.
 
-It is versioned in git alongside the engine so that design decisions evolve in
-lockstep with the code that implements them.
+## This is its own repository
+
+`TechEngine-vault`, cloned in place inside the engine checkout — not a submodule
+([[ADR-012 — Vault repository split]]). The engine repo ignores this path; a root
+`.ignore` there keeps ripgrep able to see it anyway.
+
+```bash
+git clone git@github.com:techattackteam/TechEngine-vault.git docs
+```
+
+Commit straight to `master` — no branch, no PR, no CI (ADR-012 §2). That is this repo
+only; the engine is still PR-only under ADR-009 §2.
+
+**The two repos move independently, so this vault can describe code that has moved on.**
+The [[Dashboard]]'s **Reconciled against** stamp records how far behind it was last
+actually checked (ADR-012 §6). Read it before trusting a design note as current — and if
+a tool can't find something in here, suspect the ignore rules before concluding it's gone.
 
 ## Core philosophy
 
