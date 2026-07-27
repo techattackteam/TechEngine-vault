@@ -29,15 +29,6 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light —
-	  **Jul 27** → PR #NN. Closes the ADR-012 chain. Stamp seeded at **`2b4bc38e`
-	  (2026-07-25)** — the last drift check that *actually* ran, **not** today's HEAD:
-	  this session reconciled CLAUDE.md and the Operating Guide but never checked the
-	  design notes against the code, and seeding it current would have been exactly the
-	  formality §6 forbids. So it ships **already reading "behind"** — PRs #8–#15 land
-	  after it, `base` is the exposed area — which is the mechanism working, not a defect.
-	  Rule 2 gained the compare step; both ceremonies advance the stamp **only if the
-	  drift check ran**. First real advance due at the **Aug 1–2** review.
 
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
@@ -73,6 +64,15 @@ kanban-plugin: board
 	  sink **array** not slot, console + rotating file behind one spdlog logger, one flatten shared
 	  with the stderr fallback. **Sink path is test-reachable** — the criterion T2's
 	  green-but-unreached bug earned. Ring sink → T5.
+- [x] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light —
+	  **Jul 27** → PR #16. Closes the ADR-012 chain. Stamp seeded at **`2b4bc38e`
+	  (2026-07-25)** — the last drift check that *actually* ran, **not** today's HEAD:
+	  this session reconciled CLAUDE.md and the Operating Guide but never checked the
+	  design notes against the code, and seeding it current would have been exactly the
+	  formality §6 forbids. So it ships **already reading "behind"** — PRs #8–#15 land
+	  after it, `base` is the exposed area — which is the mechanism working, not a defect.
+	  Rule 2 gained the compare step; both ceremonies advance the stamp **only if the
+	  drift check ran**. First real advance due at the **Aug 1–2** review.
 - [x] **S2-T2** — Logger core · P1 · 🟢 Deep — **Jul 25** → PR #8 (`6f054b6b`) merged green.
 	  `std::format` seam + spdlog private (ADR-011 §1), per-config compile-time gate (§4), 9 Catch2
 	  cases, `.clang-format` = CLion scheme. **`std::format` survived the Linux leg** — ADR-011's
