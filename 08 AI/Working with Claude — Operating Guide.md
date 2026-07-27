@@ -72,8 +72,6 @@ repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
 
 | Command                        | Use it for                                                |
 | ------------------------------ | --------------------------------------------------------- |
-| `/task-start [S2-T4]`          | Cut a fresh branch from `origin/master` + open the card    |
-| `/task-wrap [notes]`           | Close the task — annotate the card, park strays, then *you* open the PR |
 | `/weekly-review [notes]`       | Weekend review → writes the journal + updates dashboard    |
 | `/sprint-plan [focus]`         | 4-week sprint planning → retro + next sprint, sized to capacity |
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
@@ -93,10 +91,9 @@ flowchart TD
   SYS["Assess a built system"] --> AR["/arch-review<br/>analysis only"]
   AR -. may surface .-> DEC
   FB --> TASK["A sprint task"]
-  TASK --> TS["/task-start<br/>branch off origin/master"]
-  TS --> LOOP["Core loop<br/>design → you implement → verify"]
+  TASK --> LOOP["Core loop<br/>design → you implement → verify"]
   LOOP --> CR["/code-review<br/>before every commit"]
-  CR --> TW["/task-wrap<br/>annotate card → you open the PR"]
+  CR --> PR["You open the PR<br/>card annotated by hand"]
   SUN(["Weekend — non-boundary"]) --> WR["/weekly-review"]
   LSUN(["Every 4th weekend — sprint boundary"]) --> SP["/sprint-plan<br/>demo + retro + plan<br/>(absorbs the weekly review)"]
   SP --> FB
@@ -108,10 +105,13 @@ flowchart TD
 - **Work commands fire on a trigger, not the clock:** a load-bearing decision → `/adr`;
   decomposing a feature → `/feature-breakdown`; assessing existing code → `/arch-review`;
   before any commit → `/code-review`.
-- **Every task is bracketed** by `/task-start` … `/task-wrap`. The pair exists to keep the
-  branch discipline out of your head: start always cuts from a freshly fetched
-  `origin/master`, wrap always leaves the card carrying its own outcome. Neither pushes —
-  **you open the PR**, and a merged branch is dead (squash + linear history), never reused.
+- **Task bracketing is manual** since the vault split (S2-T14 retired `/task-start` and
+  `/task-wrap` — most of what they enforced was vault-in-repo friction). Branch discipline
+  lives in CLAUDE.md rule 9: cut from a **freshly fetched `origin/master`**, name it
+  `<card ID>/<slug>`. **You open the PR**, and a merged branch is dead (squash + linear
+  history), never reused. The card still wants its outcome written on it when the work
+  lands — that annotation is the retro's raw material, and it is now a vault commit that
+  needs no PR.
 - **Agents support these, they don't replace them:** `/adr` can lean on
   `adr-consistency-checker`; research / prior-art during design → `engine-researcher` /
   `v1-reference-miner`.

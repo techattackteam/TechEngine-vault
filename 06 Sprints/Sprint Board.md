@@ -20,15 +20,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S2-T14** — Retire `/task-start` + `/task-wrap` · P2 · 🟡 Light — **unblocked**. Rescoped
-	  Jul 27 from "retarget at the nested repo": they are the **only** two commands that run
-	  git, so removing them leaves nothing to retarget (`/sprint-plan`, `/weekly-review`,
-	  `/vault-clean` only write files). Most of what they enforced was vault-in-repo friction
-	  T13 deleted. **Two rules must survive into CLAUDE.md rule 9 before the files go** — cut
-	  from `origin/master` (the fix for the squash-merge reuse that conflicted #8–#10) and
-	  branch = `<card ID>/<slug>` (post-split, the **only** commit→card link, which
-	  [[ADR-012 — Vault repository split]] §Consequences leans on). Also clean the Operating
-	  Guide's command table + flowchart.
 - [ ] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light — **unblocked**
 - [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **runs in parallel**, not
 	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as
@@ -39,6 +30,17 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S2-T14** — Retire `/task-start` + `/task-wrap` · P2 · 🟡 Light — **Jul 27** → PR #NN.
+	  Rescoped from "retarget at the nested repo" once checked: they were the **only** two
+	  commands that ran git, so nothing was left to retarget (`/sprint-plan`,
+	  `/weekly-review`, `/vault-clean` only write files; everything else in `.claude/` is
+	  read-only `log`/`grep`/`show`/`ls-tree`). Most of what they enforced was vault-in-repo
+	  friction T13 deleted, and their git calls had started failing **silently** against
+	  ignored paths. Rule 9 absorbed the two rules that earned their keep — cut from a freshly
+	  fetched `origin/master` (the #8–#10 conflict fix) and `<card ID>/<slug>`, now the only
+	  commit→card link. Operating Guide's table, flowchart and bracketing bullet updated.
+	  ADR-012 §Consequences still says "must retarget" — Accepted, so left unedited; this card
+	  is the record that it was resolved by removal.
 
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
