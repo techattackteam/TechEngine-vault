@@ -1,0 +1,5 @@
+# Markdown vault, edited by Obsidian on Windows and read on Linux CI-less.
+# Normalize to LF in the repo AND in the working tree, so line endings never
+# depend on a machine's core.autocrlf. Without this the index and worktree
+# disagree and `git status` never reads clean.
+* text=auto eol=lf
