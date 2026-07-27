@@ -20,7 +20,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light — **unblocked**
 - [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **runs in parallel**, not
 	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as
 	  you review** — they land here live. CLAUDE.md's section **shrunk to a pointer + the 3
@@ -30,7 +29,20 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S2-T14** — Retire `/task-start` + `/task-wrap` · P2 · 🟡 Light — **Jul 27** → PR #NN.
+- [ ] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light —
+	  **Jul 27** → PR #NN. Closes the ADR-012 chain. Stamp seeded at **`2b4bc38e`
+	  (2026-07-25)** — the last drift check that *actually* ran, **not** today's HEAD:
+	  this session reconciled CLAUDE.md and the Operating Guide but never checked the
+	  design notes against the code, and seeding it current would have been exactly the
+	  formality §6 forbids. So it ships **already reading "behind"** — PRs #8–#15 land
+	  after it, `base` is the exposed area — which is the mechanism working, not a defect.
+	  Rule 2 gained the compare step; both ceremonies advance the stamp **only if the
+	  drift check ran**. First real advance due at the **Aug 1–2** review.
+
+
+## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
+
+- [x] **S2-T14** — Retire `/task-start` + `/task-wrap` · P2 · 🟡 Light — **Jul 27** → PR #15.
 	  Rescoped from "retarget at the nested repo" once checked: they were the **only** two
 	  commands that ran git, so nothing was left to retarget (`/sprint-plan`,
 	  `/weekly-review`, `/vault-clean` only write files; everything else in `.claude/` is
@@ -41,10 +53,6 @@ kanban-plugin: board
 	  commit→card link. Operating Guide's table, flowchart and bracketing bullet updated.
 	  ADR-012 §Consequences still says "must retarget" — Accepted, so left unedited; this card
 	  is the record that it was resolved by removal.
-
-
-## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
-
 - [x] **S2-T13** — Vault repo cutover ([[ADR-012 — Vault repository split]]) · P1 · 🟠 Moderate —
 	  **Jul 27** → PR #14, and **this card's own move is the first commit that needed no PR**.
 	  `docs/` is now `TechEngine-vault`, cloned in place — path unchanged, 17 commits of history

@@ -9,10 +9,26 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 02 — Base Foundation]] *(Jul 25 – Aug 28)* |
 | **Sprint goal** | **`base` you can trust:** Logger, Assert and Clock — unit-tested and proven by a real consumer, the first sliver of the app loop. Horizontal base, **not** the vertical slice. |
-| **Current focus** | 🟢 **S2-T4 — Assert: four tiers + single handler.** T1–T3 + T6 are in (ADR-011 Accepted; Logger, channels/sinks, Clock all merged), so Story C is the open front. |
+| **Current focus** | 🟢 **S2-T5 — Assert → Logger integration + flush-on-fail**, then T7/T8 (the headless loop). T1–T4 + T6 are in — `base` has Logger, Assert and Clock — and the ADR-012 vault split (T12–T15) is done bar T15's merge. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
 | **Next milestone** | `base` foundation done (Aug 28) → **C2 vertical slice** in Sprint 03 (Aug 29 – Sep 25) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
+| **Reconciled against** | engine `2b4bc38e` (2026-07-25) |
+
+**Reading that stamp** ([[ADR-012 — Vault repository split]] §6): the vault is its own repo,
+so its HEAD and the engine's move independently and a design note can describe code that has
+moved on. The stamp is the last engine commit a drift check **actually ran against** — advanced
+by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
+
+```bash
+git log --oneline 2b4bc38e..origin/master
+```
+
+**Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
+so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
+you *which* note drifted, only that nobody has looked. Currently the engine **is** ahead — PRs
+#8–#15 all landed after this stamp, so `base` (Logger, Assert, Clock) is the exposed area. First
+advance is due at the **Aug 1–2** weekly review.
 
 ## 🗓️ Rhythm
 
@@ -89,7 +105,8 @@ Recently locked — full set in [[ADR Index]]:
 - [x] Fresh start vs continue → **fresh (v2)**, [[ADR-004 — Fresh start (v2) with v1 as reference]]
 - [x] v2 stack · architecture · networking · build/testing → ADRs 005–008 Accepted ([[ADR Index]])
 - [x] Branching + merge rules → [[ADR-009 — Branching strategy & merge rules]] Accepted; `master` ruleset live
-- [ ] **Diagnostics (Logger + Assert) → ADR-011, due S2-T1** — gates all Sprint 02 code
+- [x] Diagnostics (Logger + Assert) → [[ADR-011 — Diagnostics (Logger & Assert)]] **Accepted** (S2-T1)
+- [x] Vault as its own repo → [[ADR-012 — Vault repository split]] Accepted; cutover done (S2-T13)
 - [ ] User authoring model → [[ADR-010 — User authoring model (Systems & Scripts)]] stays **Proposed**, gated on the task-graph ADR
 - [ ] Renderer · job-system · serialization · netcode transport · scripting SDK → deferred, write when coding starts ([[Backlog]])
 
