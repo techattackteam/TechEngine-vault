@@ -17,21 +17,21 @@ Fixes v1: **F20** (no call-site info), **F10** (no log/assert strategy), **F16**
 Every row below is frozen in [[ADR-011 — Diagnostics (Logger & Assert)]] — **§ref, no copied
 rationale.** Go to the ADR for *why*.
 
-| Decision | Where |
-|---|---|
-| Seam: **`std::format` in the header, spdlog private in one `.cpp`**; no third-party in `base`'s public surface | ADR-011 §1 |
-| `spdlog::spdlog` is `LIBS_PRIVATE` on `te_base`; `glm` stays PUBLIC | ADR-011 §1 |
-| Compile-time-checked format strings (`std::format_string`) + **positional args** `{0} {1}`, never mixed with bare `{}` | ADR-011 §1 |
-| Allocation-free happy path — `vformat_to` into a stack buffer, truncate + marker on overflow | ADR-011 §1 |
-| Channels: **module-owned handles**, registered explicitly from the composition root; module tag is itself a handle (**no enum in `base`**) | ADR-011 §2 |
-| Unknown channel → default channel; pre-init → **stderr** | ADR-011 §2 |
-| `LogRecord` reaches sinks structured; console + rotating file + in-memory ring | ADR-011 §3 |
-| File sink is **synchronous**; async is a later change behind the façade | ADR-011 §3 |
-| Editor ring-buffer sink **excluded** — no consumer yet | ADR-011 §3 |
-| Compile-time level gate per config (Trace off in RelWithDebInfo; Trace+Debug off in Release) | ADR-011 §4 |
-| Frame stamp is **pushed by `app`**; `base` holds no `Clock` reference | ADR-011 §9 |
-| Diagnostics state is process-global by design, and is **not** a service locator | ADR-011 §8 |
-| SDK exposure **deferred** to the scripting ADR | ADR-011 §10 |
+| Decision                                                                                                                                   | Where       |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| Seam: **`std::format` in the header, spdlog private in one `.cpp`**; no third-party in `base`'s public surface                             | ADR-011 §1  |
+| `spdlog::spdlog` is `LIBS_PRIVATE` on `te_base`; `glm` stays PUBLIC                                                                        | ADR-011 §1  |
+| Compile-time-checked format strings (`std::format_string`) + **positional args** `{0} {1}`, never mixed with bare `{}`                     | ADR-011 §1  |
+| Allocation-free happy path — `vformat_to` into a stack buffer, truncate + marker on overflow                                               | ADR-011 §1  |
+| Channels: **module-owned handles**, registered explicitly from the composition root; module tag is itself a handle (**no enum in `base`**) | ADR-011 §2  |
+| Unknown channel → default channel; pre-init → **stderr**                                                                                   | ADR-011 §2  |
+| `LogRecord` reaches sinks structured; console + rotating file + in-memory ring                                                             | ADR-011 §3  |
+| File sink is **synchronous**; async is a later change behind the façade                                                                    | ADR-011 §3  |
+| Editor ring-buffer sink **excluded** — no consumer yet                                                                                     | ADR-011 §3  |
+| Compile-time level gate per config (Trace off in RelWithDebInfo; Trace+Debug off in Release)                                               | ADR-011 §4  |
+| Frame stamp is **pushed by `app`**; `base` holds no `Clock` reference                                                                      | ADR-011 §9  |
+| Diagnostics state is process-global by design, and is **not** a service locator                                                            | ADR-011 §8  |
+| SDK exposure **deferred** to the scripting ADR                                                                                             | ADR-011 §10 |
 
 Still owned here (not ADR material): macros capture `std::source_location::current()` → file/func/line
 free (F20) · every macro `do{…}while(0)` (F10 if/else break) · per-level macros
