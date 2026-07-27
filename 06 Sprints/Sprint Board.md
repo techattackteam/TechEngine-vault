@@ -20,7 +20,15 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S2-T14** — Retarget vault-writing commands at the nested repo · P2 · 🟡 Light — **unblocked**
+- [ ] **S2-T14** — Retire `/task-start` + `/task-wrap` · P2 · 🟡 Light — **unblocked**. Rescoped
+	  Jul 27 from "retarget at the nested repo": they are the **only** two commands that run
+	  git, so removing them leaves nothing to retarget (`/sprint-plan`, `/weekly-review`,
+	  `/vault-clean` only write files). Most of what they enforced was vault-in-repo friction
+	  T13 deleted. **Two rules must survive into CLAUDE.md rule 9 before the files go** — cut
+	  from `origin/master` (the fix for the squash-merge reuse that conflicted #8–#10) and
+	  branch = `<card ID>/<slug>` (post-split, the **only** commit→card link, which
+	  [[ADR-012 — Vault repository split]] §Consequences leans on). Also clean the Operating
+	  Guide's command table + flowchart.
 - [ ] **S2-T15** — Reconciliation stamp on [[Dashboard]] (ADR-012 §6) · P2 · 🟡 Light — **unblocked**
 - [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **runs in parallel**, not
 	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as

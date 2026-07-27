@@ -164,11 +164,23 @@ T13 blocks T14 and T15.
       `git check-ignore` reports `docs/` ignored *and* a repo-root ripgrep search returns
       vault hits; `CLAUDE.md` + root README document the two-repo clone so a fresh machine
       works. **Atomic:** do not leave `docs/` both tracked and separately-repo'd.
-- [ ] **S2-T14** — Retarget the vault-writing commands · **P2** · 🟡 Light —
-      done: every `.claude/commands/*` that commits vault files targets the nested repo
-      (`git -C docs …`) — `/task-start`, `/task-wrap`, `/sprint-plan`, `/weekly-review`,
-      `/vault-clean`; no command attempts a `docs/` commit from the engine repo; a
-      `/task-start` board move no longer appears in an engine PR.
+- [ ] **S2-T14** — Retire `/task-start` + `/task-wrap` · **P2** · 🟡 Light —
+      done: both files deleted from `.claude/commands/`; **no command anywhere runs git**
+      against `docs/` — checked, not assumed. No command is left needing a `git -C docs`
+      retarget, because these two were the only ones that ran git at all.
+      **Preconditions — the files do not go until these land:** CLAUDE.md rule 9 carries
+      (a) cut from `origin/master`, never local `master` and never a merged branch, and
+      (b) branch = `<card ID>/<slug>`. Both earned their place from observed failures —
+      (a) is the fix for the squash-merge reuse that conflicted #8–#10; (b) is, post-split,
+      the only surviving commit→card link ([[ADR-012 — Vault repository split]]
+      §Consequences). Delete the commands and lose these and T14 is a net regression.
+      Also: [[Working with Claude — Operating Guide]] loses both table rows, both flowchart
+      nodes, and the "every task is bracketed" bullet.
+      **Rescoped 2026-07-27** from "retarget the vault-writing commands" — T13 removed the
+      friction they existed to manage, and `/sprint-plan` · `/weekly-review` · `/vault-clean`
+      turned out to only write files, never commit. ADR-012 §Consequences still reads
+      "must retarget"; it is Accepted and stays unedited — this card is the record that the
+      consequence was resolved by removal instead.
 - [ ] **S2-T15** — Reconciliation stamp · **P2** · 🟡 Light —
       done: [[Dashboard]] carries `**Reconciled against:** engine <sha> (YYYY-MM-DD)`;
       `/weekly-review` and `/sprint-plan` advance it **only after** the drift check has
