@@ -9,7 +9,7 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 02 — Base Foundation]] *(Jul 25 – Aug 28)* |
 | **Sprint goal** | **`base` you can trust:** Logger, Assert and Clock — unit-tested and proven by a real consumer, the first sliver of the app loop. Horizontal base, **not** the vertical slice. |
-| **Current focus** | 🟢 **S2-T5 — Assert → Logger integration + flush-on-fail**, then T7/T8 (the headless loop). T1–T4 + T6 are in — `base` has Logger, Assert and Clock — and the ADR-012 vault split (T12–T15) is done bar T15's merge. |
+| **Current focus** | 🟢 **S2-T8 — Determinism + clamp tests** (in progress on `S2-T8/Determinism-clamp`). T1–T7 + T9–T15 all landed, descoped, or cut — only T8 remains. `base` has Logger, Assert, Clock; headless accumulator merged (PR #18); vault split done. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
 | **Next milestone** | `base` foundation done (Aug 28) → **C2 vertical slice** in Sprint 03 (Aug 29 – Sep 25) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |

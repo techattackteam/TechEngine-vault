@@ -11,17 +11,18 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 25 – Aug 28)
 
-- [ ] **S2-T9** — End-to-end wire-up = sprint demo · P2 · 🟠 Moderate
-- [ ] **S2-T11** — Skill `te-module` scaffolder · P3 · 🟡 Light
+
+
+## 🔧 Vault & process (sprint-independent)
+
+- [ ] **V1** — Roadmap rewrite · 🟡 Light — strip v1-era Q4/Q1 renderer features, make future quarters honest (planned at sprint boundaries), fix Sprint 03 direction to continued foundation
+- [ ] **V2** — Backlog compression · 🟡 Light — each entry → one bullet + trigger, cut entries that already have an ADR/design doc, drop accumulated design thinking (it belongs in those docs)
+- [ ] **V3** — Planning flow update · 🟡 Light — update CLAUDE.md/vault process docs: sprint planning draws from ADRs + design docs, not raw backlog; backlog is a parking lot for ideas, not a planning source
+- [ ] **V4** — Q3 note + Dashboard update · 🟡 Light — align Sprint 03 row and Dashboard's "Next milestone" with the new direction
 
 
 ## 🔨 In Progress
 
-- [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **runs in parallel**, not
-	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as
-	  you review** — they land here live. CLAUDE.md's section **shrunk to a pointer + the 3
-	  AI-default corrections (Jul 26)**. Remaining: ratify the *Open* rows — 3 are ⚠️ provisional
-	  and need your call, not Claude's reading.
 
 
 ## 👀 Review / Demo
@@ -31,6 +32,16 @@ kanban-plugin: board
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
 - [ ] **S2-T8** — Determinism + clamp tests (injected time source) · P1 · 🟢 Deep
+- [x] **S2-T11** — Skill `te-module` scaffolder · P3 · 🟡 Light — **cut Jul 30**, not relevant
+	  enough to warrant a standalone task; module scaffolding happens alongside dev work.
+- [x] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **Jul 30**. File opened
+	  Jul 25 (B4 migrated in; B4 → pointer + history). CLAUDE.md shrunk to a pointer + 3
+	  AI-default corrections. Three ⚠️ provisional rows **ratified**: `PascalCase` enum values,
+	  `TechEngine::detail`, `g_camelCase`. Remaining *Open* rows decide when they first bite —
+	  conventions evolve alongside dev work, not as dedicated tasks.
+- [x] **S2-T9** — End-to-end wire-up = sprint demo · P2 · 🟠 Moderate — **done Jul 30**,
+	  descoped. The sprint is horizontal utilities, not a vertical wire-up — the throwaway
+	  `main.cpp` test runs *are* the demo; a separate wiring task had nothing to wire.
 - [x] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate — **Jul 30** → PR #17.
 - [x] **S2-T14** — Retire `/task-start` + `/task-wrap` · P2 · 🟡 Light — **Jul 27** → PR #15.
 	  Rescoped from "retarget at the nested repo" once checked: they were the **only** two
@@ -82,8 +93,8 @@ kanban-plugin: board
 	  so the cross-thread hop is downstream. **No seam** — injected time source goes in the *loop*
 	  at T7/T8. 6 Catch2 cases, lower-bounds-only (no upper bound = no runner-load flake).
 	  **Also carried:** T3's stderr-fallback flatten fix + T10's `[[nodiscard]]` ban.
-- [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator (headless) · P1 · 🟢 Deep —
-	  **Jul 30**, code done + run by hand, **not yet on a branch**. `FrameContext` lands in
+- [x] **S2-T7** — `FrameContext` + fixed-timestep accumulator (headless) · P1 · 🟢 Deep —
+	  **Jul 30** → PR #18. `FrameContext` lands in
 	  **`core`** (ADR-006 §4; ADR-007 §6's `update(Scene&, const FrameContext&)` forces it) minus
 	  the `const EngineContext&` member — no services exist to reference yet. `FrameLoop` in
 	  `app`: clamp → accumulate → **`while`** drain → publish, `double` accumulator, `float` on
@@ -98,9 +109,7 @@ kanban-plugin: board
 	  **Measured:** naive `sleep_for` pacing is unusable on Windows — the 15.6 ms timer tick
 	  rounds sub-tick sleeps **up**, so 120 frames sleeping 16.67 ms ran **221** ticks and
 	  8.33 ms ran **111**, not 120/60. Now a spin-to-deadline stand-in, `TODO(S2-T9)`.
-	  **Caught in flight:** both commits landed on **local `master`** (rule 9). `S2-T7/FrameContext`
-	  is cut from `origin/master`; they still need cherry-picking across and local `master`
-	  resetting. **No tests yet** (T8), no demo (T9).
+	  **No tests yet** (T8), no demo (T9).
 - [x] **S2-T1** — Diagnostics ADR (Logger + Assert) · P1 · 🟢 Deep — **Jul 25** →
 	  [[ADR-011 — Diagnostics (Logger & Assert)]] Accepted; **T2–T6 unblocked**. Seam changed
 	  under review: `fmt`-in-header was unbuildable → **`std::format`**, spdlog private, no new

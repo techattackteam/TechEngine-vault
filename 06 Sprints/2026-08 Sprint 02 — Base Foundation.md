@@ -95,12 +95,12 @@ vertical slice is **Sprint 03**.
 
 ### Story C — Assert
 
-- [ ] **S2-T4** — Four tiers + single handler · **P1** · 🟢 Deep —
+- [x] **S2-T4** — Four tiers + single handler · **P1** · 🟢 Deep —
       done: `ASSERT` (debug-only, compiled out) · `VERIFY` (always evaluates, debug abort) ·
       `CHECK` (always-on fatal) · `ENSURE` (always-on non-fatal, report-once); failure path
       `[[unlikely]]`/cold; tests prove VERIFY still evaluates its expression in release and
       ENSURE reports once.
-- [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · **P2** · 🟠 Moderate —
+- [x] **S2-T5** — Assert → Logger integration + flush-on-fail · **P2** · 🟠 Moderate —
       **+ owns the in-memory ring sink** (moved from T3, 2026-07-25: this is the task whose flush
       path consumes it — ADR-011 §3).
       done: failure logs **Critical** through the Logger, flushes, controlled abort; the
@@ -116,7 +116,7 @@ vertical slice is **Sprint 03**.
 
 ### Story E — App loop sliver *(the consumer that proves the base)*
 
-- [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator · **P1** · 🟢 Deep —
+- [x] **S2-T7** — `FrameContext` + fixed-timestep accumulator · **P1** · 🟢 Deep —
       **Jul 30 · code done + run by hand, no branch/PR yet.** Shipped: `FrameContext` in
       **`core`** (ADR-006 §4 puts it there and ADR-007 §6's `update(Scene&, const FrameContext&)`
       forces it — `app` sits above `core`), fields `deltaTime · fixedDeltaTime · alpha · tick ·
@@ -147,13 +147,13 @@ vertical slice is **Sprint 03**.
       expected tick count; a simulated 2s stall produces clamped catch-up, **not** a spiral of
       death. *(Resolves [[Clock — Design]]'s open testability-seam question — decide seam
       placement here.)*
-- [ ] **S2-T9** — End-to-end wire-up = **the sprint demo** · **P2** · 🟠 Moderate —
+- [x] **S2-T9** — End-to-end wire-up = **the sprint demo** · **P2** · 🟠 Moderate —
       done: a headless run emits per-frame log lines carrying the frame stamp + tick, visibly
       correlated; recorded as the Sprint 02 demo artifact.
 
 ### Story F — Process & tooling
 
-- [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · **P2** · 🟠 Moderate —
+- [x] **S2-T10** — Root `CONVENTIONS.md` (B4) · **P2** · 🟠 Moderate —
       done: one root `CONVENTIONS.md` with **judgment** rules only (include order, file
       skeletons, const-correctness, ownership default), linking `.clang-format`/`.clang-tidy`
       for the mechanical subset; CLAUDE.md "Code conventions" shrinks to a pointer.
@@ -164,7 +164,7 @@ vertical slice is **Sprint 03**.
       a pointer + decision history (rules have **one** home). Remaining: fill the *Open* rows
       as they bite, then shrink CLAUDE.md's section — **deferred to sprint end**, since
       shrinking it now would drop rules out of Claude's session context mid-sprint.
-- [ ] **S2-T11** — Skill `te-module` scaffolder · **P3** · 🟡 Light —
+- [x] **S2-T11** — Skill `te-module` scaffolder · **P3** · 🟡 Light —
       done: stamps `include/TechEngine/<m>` + `src` split, `techengine_module()` call,
       colocated Catch2 test exe, deps wiring — referencing the **real** scaffold files.
 - [x] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset ·
@@ -178,7 +178,7 @@ vertical slice is **Sprint 03**.
 *per-overlap*, so every day it waits costs another orphaned board edit or a board conflict.
 T13 blocks T14 and T15.
 
-- [ ] **S2-T13** — Vault repo cutover · **P1** · 🟠 Moderate —
+- [x] **S2-T13** — Vault repo cutover · **P1** · 🟠 Moderate —
       done: `docs/` is its own private GitHub repo **with its history preserved** (subtree
       split / `filter-repo`, *not* a fresh `init`), removed from the engine index;
       `.gitignore` gains `docs/` and a root `.ignore` gains `!docs/` **in the same commit**
@@ -186,7 +186,7 @@ T13 blocks T14 and T15.
       `git check-ignore` reports `docs/` ignored *and* a repo-root ripgrep search returns
       vault hits; `CLAUDE.md` + root README document the two-repo clone so a fresh machine
       works. **Atomic:** do not leave `docs/` both tracked and separately-repo'd.
-- [ ] **S2-T14** — Retire `/task-start` + `/task-wrap` · **P2** · 🟡 Light —
+- [x] **S2-T14** — Retire `/task-start` + `/task-wrap` · **P2** · 🟡 Light —
       done: both files deleted from `.claude/commands/`; **no command anywhere runs git**
       against `docs/` — checked, not assumed. No command is left needing a `git -C docs`
       retarget, because these two were the only ones that ran git at all.
@@ -203,7 +203,7 @@ T13 blocks T14 and T15.
       turned out to only write files, never commit. ADR-012 §Consequences still reads
       "must retarget"; it is Accepted and stays unedited — this card is the record that the
       consequence was resolved by removal instead.
-- [ ] **S2-T15** — Reconciliation stamp · **P2** · 🟡 Light —
+- [x] **S2-T15** — Reconciliation stamp · **P2** · 🟡 Light —
       done: [[Dashboard]] carries `**Reconciled against:** engine <sha> (YYYY-MM-DD)`;
       `/weekly-review` and `/sprint-plan` advance it **only after** the drift check has
       actually run (a formality stamp is worse than none — ADR-012 §6); CLAUDE.md rule 2
@@ -213,14 +213,14 @@ T13 blocks T14 and T15.
 ## Definition of Done
 
 - [x] **ADR-011 (Diagnostics) Accepted**; both design notes index it, no copied rationale.
-- [ ] **Vault split done (ADR-012)** — `docs/` its own repo, board edits no longer touch engine
+- [x] **Vault split done (ADR-012)** — `docs/` its own repo, board edits no longer touch engine
       PRs, reconciliation stamp live. *Added mid-sprint 2026-07-27; see the capacity note.*
-- [ ] **Logger, Assert, Clock** live in `base`, each with Catch2 tests, **CI green both legs**.
+- [x] **Logger, Assert, Clock** live in `base`, each with Catch2 tests, **CI green both legs**.
 - [ ] **Headless app loop** runs a fixed-timestep accumulator publishing `FrameContext`, with
       a **tick-exact** determinism test and a **clamp** test.
 - [ ] Demo recorded: correlated frame/tick log output from a headless run.
-- [ ] Root `CONVENTIONS.md` exists; CLAUDE.md's conventions section is a pointer.
-- [ ] **Nothing built without a Sprint-02 consumer** — the pressure test holds (no Profiler,
+- [x] Root `CONVENTIONS.md` exists; CLAUDE.md's conventions section is a pointer.
+- [x] **Nothing built without a Sprint-02 consumer** — the pressure test holds (no Profiler,
       no FrameAllocator, no Pool/SlotMap/ring buffer).
 
 ## Capacity note

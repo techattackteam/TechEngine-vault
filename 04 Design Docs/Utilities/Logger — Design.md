@@ -110,7 +110,7 @@ out-of-range handle resolves to `default` rather than indexing the table.
   symbolication are not in scope*: ADR-008 §3 gives `runtime` Debug+Release only and pre-authorizes
   RelWithDebInfo for that later.
 - **editor-console** — parked until an editor exists (ADR-011 §3); would be a lock-free ring → ImGui
-  Log panel (twin of the [[Backlog|Profiler]] panel).
+  Log panel (twin of the [[Profiler — Design|Profiler]] panel).
 
 ### Format (rendered — file/console)
 `[14:32:07.412][f 1043][client/render][renderer.cpp:88:renderScene()][INFO] swapchain 1920x1080`
