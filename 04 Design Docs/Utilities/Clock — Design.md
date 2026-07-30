@@ -28,6 +28,7 @@ design is what the Clock *refuses* to own.
 | Monotonic for **durations**; wall-clock **only** for stamps | this note (local call; no ADR owes it) |
 | The frame stamp is **pushed by `app`** into diagnostics — `base` holds no `Clock` reference | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
 | `timeScale` / pause / slow-mo is **loop policy**, not a Clock knob | [[Game Loop — Frame Flow]] |
+| **No testability seam** — the loop takes its delta as a parameter, so nothing fakes the Clock | S2-T7 (2026-07-30), below |
 
 ## Design
 
@@ -62,14 +63,18 @@ Decided in [[ADR-011 — Diagnostics (Logger & Assert)]] §9.
 The loop is the only writer: it computes `dt` from `now()` and bumps `frame()` once per
 frame. Everything else takes `const Clock&`.
 
-## Open questions (→ resolve during S2-T7 / S2-T9)
+### Testability seam — RESOLVED, there isn't one (S2-T7, 2026-07-30)
 
-- **Testability seam.** The loop's determinism test (S2-T9) needs to drive a *fake* time
-  sequence — a real `steady_clock` can't produce an exact tick count on demand.
-  Two shapes: (a) keep `Clock` concrete and let the **loop** take its `dt` from an injected
-  source, or (b) put a seam inside `Clock`. **Leaning (a)** — it keeps `base`'s simplest
-  utility free of virtuals and puts the seam where the test actually needs it. Decide when
-  writing the loop, not before.
+The open question was (a) inject the loop's delta vs (b) put a seam inside `Clock`. **(a), taken
+one step further:** `FrameLoop::advance(frameDeltaTime)` is a pure function of its parameter and
+holds **no `Clock` reference at all**. Sampling `now()`, bumping `advanceFrame()` and pushing the
+diagnostic stamp all live in `app`'s driver (`engine/app/src/App.cpp`).
+
+So the determinism/clamp tests (S2-T8) call `advance()` with a synthetic delta sequence: no fake
+clock, no virtual, and `Clock` stays the concrete no-seam utility this note wanted.
+
+## Open questions
+
 - **Profiler-grade resolution.** Whether `steady_clock` is precise enough, or a raw
   platform timer is needed — **measure first** (CLAUDE.md perf rule), and there is no
   profiler yet to measure with. Revisit when the Profiler lands (Sprint 03+).
@@ -78,4 +83,5 @@ frame. Everything else takes `const Clock&`.
 
 - [[Game Loop — Frame Flow]] — where sim time lives, and why not here
 - [[Logger — Design]] — the `[f N]` stamp consumer
-- Code: *(none yet — lands as S2-T7)*
+- Code: `engine/base/include/TechEngine/base/Clock.hpp` · `engine/base/src/Clock.cpp` ·
+  its only writer, `engine/app/src/App.cpp`

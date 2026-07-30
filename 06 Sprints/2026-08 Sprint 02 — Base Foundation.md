@@ -117,9 +117,31 @@ vertical slice is **Sprint 03**.
 ### Story E — App loop sliver *(the consumer that proves the base)*
 
 - [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator · **P1** · 🟢 Deep —
-      done: `app` runs **headless**; accumulator per ADR-007 §5 with `dt` clamp; integer
-      `tick`, `alpha = acc / kFixedDt`; `FrameContext { dt, fixedDt, tick, alpha, frameIndex,
-      role }` published per iteration; runs N ticks and exits cleanly.
+      **Jul 30 · code done + run by hand, no branch/PR yet.** Shipped: `FrameContext` in
+      **`core`** (ADR-006 §4 puts it there and ADR-007 §6's `update(Scene&, const FrameContext&)`
+      forces it — `app` sits above `core`), fields `deltaTime · fixedDeltaTime · alpha · tick ·
+      frameIndex · role`, **no `const EngineContext&` member** (`TODO(S3)` — no services exist to
+      point at, a deliberate deviation from §4's struct). `FrameLoop` in `app`: clamp →
+      accumulate → `while` drain → publish, `double` accumulator, `float` published;
+      `accumulator()` exposed for T8's clamp assertions.
+      **The seam question is answered by deleting the seam** — `FrameLoop` never sees the
+      `Clock`. Sampling, `advanceFrame()` and the ADR-011 §9 stamp push live in `App::run`, so
+      `advance()` is pure and T8 needs **no injected time source and no virtual**. That closes
+      [[Clock — Design]]'s open question (its option (a), taken one step further).
+      **New calls:** `Role { Client, ListenServer, DedicatedServer }` — nothing in the vault
+      defined it; names from ADR-006 §1's exe table · `MAX_FRAME_DELTA_TIME = 0.25` (≤15
+      catch-up ticks at 60 Hz) · `CONVENTIONS.md` gains **spelled-out names** (S2-T10's file;
+      `dt`/`fixedDt` were the trigger — read the ADRs' spelling as `deltaTime`/`fixedDeltaTime`).
+      Rode along: `.clang-format` ColumnLimit 380→280 + `BinPack*: false`, reflowing
+      `Assert.cpp`/`Log.cpp`.
+      **Measured, and it matters for T9:** naive `sleep_for` pacing does not work on Windows —
+      the 15.6 ms timer tick rounds any shorter sleep **up**. 120 frames sleeping 16.67 ms ran
+      **221** ticks (≈31.2 ms/frame), 8.33 ms ran **111** (≈15.6 ms/frame). The tick count was
+      tracking real elapsed time correctly the whole way — the *pacer* was wrong, not the
+      accumulator. Replaced with a spin to an absolute deadline, `TODO(S2-T9)`.
+      **Outstanding:** the two commits landed on **local `master`** (rule 9) — `S2-T7/FrameContext`
+      is cut from `origin/master` and they still need cherry-picking across, with local `master`
+      reset after; no unit tests (T8); no recorded demo (T9).
 - [ ] **S2-T8** — Determinism + clamp tests · **P1** · 🟢 Deep —
       done: with an **injected/fake time source**, a fixed `dt` sequence produces an *exact*
       expected tick count; a simulated 2s stall produces clamped catch-up, **not** a spiral of

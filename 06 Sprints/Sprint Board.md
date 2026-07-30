@@ -11,8 +11,6 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 25 – Aug 28)
 
-- [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
-- [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator (headless) · P1 · 🟢 Deep
 - [ ] **S2-T8** — Determinism + clamp tests (injected time source) · P1 · 🟢 Deep
 - [ ] **S2-T9** — End-to-end wire-up = sprint demo · P2 · 🟠 Moderate
 - [ ] **S2-T11** — Skill `te-module` scaffolder · P3 · 🟡 Light
@@ -29,10 +27,30 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator (headless) · P1 · 🟢 Deep —
+	  **Jul 30**, code done + run by hand, **not yet on a branch**. `FrameContext` lands in
+	  **`core`** (ADR-006 §4; ADR-007 §6's `update(Scene&, const FrameContext&)` forces it) minus
+	  the `const EngineContext&` member — no services exist to reference yet. `FrameLoop` in
+	  `app`: clamp → accumulate → **`while`** drain → publish, `double` accumulator, `float` on
+	  the context. **`FrameLoop` never sees the `Clock`** — sampling + the ADR-011 §9 stamp push
+	  live in `App::run`, so [[Clock — Design]]'s seam question is answered by the seam not
+	  existing (T8 feeds `advance()` a synthetic sequence; no fake clock, no virtual).
+	  New calls: `Role { Client, ListenServer, DedicatedServer }` (no prior artifact — names off
+	  ADR-006 §1's exe table) · `MAX_FRAME_DELTA_TIME = 0.25` (≤15 catch-up ticks) ·
+	  `CONVENTIONS.md` → **spelled-out names** (`dt` was the trigger; read the ADRs' `dt` as
+	  `deltaTime`). Rode along: `.clang-format` ColumnLimit 380→280 + no arg bin-packing,
+	  reflowing `Assert.cpp`/`Log.cpp`.
+	  **Measured:** naive `sleep_for` pacing is unusable on Windows — the 15.6 ms timer tick
+	  rounds sub-tick sleeps **up**, so 120 frames sleeping 16.67 ms ran **221** ticks and
+	  8.33 ms ran **111**, not 120/60. Now a spin-to-deadline stand-in, `TODO(S2-T9)`.
+	  **Caught in flight:** both commits landed on **local `master`** (rule 9). `S2-T7/FrameContext`
+	  is cut from `origin/master`; they still need cherry-picking across and local `master`
+	  resetting. **No tests yet** (T8), no demo (T9).
 
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
+- [x] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate — **Jul 30** → PR #17.
 - [x] **S2-T14** — Retire `/task-start` + `/task-wrap` · P2 · 🟡 Light — **Jul 27** → PR #15.
 	  Rescoped from "retarget at the nested repo" once checked: they were the **only** two
 	  commands that ran git, so nothing was left to retarget (`/sprint-plan`,

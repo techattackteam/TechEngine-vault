@@ -42,6 +42,12 @@ Here the loop lives in `app` and the editor hosts it from outside.
 | Editor hosts `app` from **outside** the frame loop | ADR-006 §1 (F14) |
 | **`FrameContext` owns sim time; `Clock` is the time source** — see below | ADR-006 §4, ADR-007 §5/§6 (this note, 2026-07-24) |
 | The loop **pushes** the diagnostic frame number into diagnostics once per frame — the Logger never reads the `Clock` | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
+| `FrameContext` lives in **`core`**, `FrameLoop` in **`app`** — ADR-007 §6's `update(Scene&, const FrameContext&)` means `core` must see the type | S2-T7 (2026-07-30) |
+| `Role { Client, ListenServer, DedicatedServer }` | S2-T7 — names off ADR-006 §1's exe table; no prior artifact defined it |
+| Accumulator is `double` seconds; `FrameContext` publishes `float` | S2-T7 |
+| `MAX_FRAME_DELTA_TIME = 0.25 s` — the ADR-007 §5 clamp, ≤15 catch-up ticks per frame | S2-T7 |
+| **The loop holds no `Clock`** — `advance(frameDeltaTime)` is pure; `app`'s driver samples time, bumps the frame and pushes the stamp | S2-T7 → [[Clock — Design]] |
+| Code spells the fields `deltaTime` / `fixedDeltaTime` — this note's `dt` / `fixedDt` is the illustrative form | `CONVENTIONS.md` → *Names are spelled out* |
 
 ## Design
 
@@ -142,7 +148,14 @@ it feeds the accumulator, so systems read an already-scaled `dt`. Add `unscaledD
 - **Interpolation phase** — client-side (ADR-007 §3) but not pinned to `Update` vs `PostUpdate`.
 - **Terminal-slot mechanism** — ADR-010 §4 needs "after everything"; `.after<A>()` is
   pairwise → task-graph ADR (tracked in [[Task Graph — Execution Flow]]).
-- **Frame pacing / vsync / present mode** — untouched by any ADR.
+- **Frame pacing / vsync / present mode** — untouched by any ADR. **First evidence (S2-T7,
+  2026-07-30): `sleep_for` alone cannot pace a 60 Hz frame on Windows.** The default timer
+  resolution is 15.6 ms and a shorter sleep rounds **up** to it, so a 120-frame headless run
+  sleeping 16.67 ms took ~31.2 ms/frame (**221** ticks) and sleeping 8.33 ms took ~15.6 ms/frame
+  (**111** ticks). The accumulator was right throughout — it counts elapsed time, not requested
+  sleeps. Today's stand-in is a spin to an absolute deadline (`TODO(S2-T9)`); a real pacer means
+  sleep-to-deadline-minus-margin then spin, or raising the timer resolution behind a `platform`
+  seam. Neither is decided.
 
 ## References
 
@@ -151,4 +164,7 @@ it feeds the accumulator, so systems read an already-scaled `dt`. Add `unscaledD
   as final-phase System)
 - [[Task Graph — Execution Flow]] — what runs *inside* a phase
 - [[v1 Code Audit]] — F14 (editor inside the frame loop)
-- Code: *(none yet — `app` is a skeleton)*
+- Code: `engine/core/include/TechEngine/core/FrameContext.hpp` ·
+  `engine/app/include/TechEngine/app/FrameLoop.hpp` + `src/FrameLoop.cpp` (the accumulator) ·
+  `engine/app/src/App.cpp` (the headless driver). Phases, task graph and ECS are **not** there —
+  S2-T7 built the accumulator sliver only.

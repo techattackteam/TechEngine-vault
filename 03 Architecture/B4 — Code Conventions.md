@@ -49,7 +49,14 @@ opinions about*) fired on S2-T2.
 - **2026-07-25 — formatting authority corrected.** This note previously claimed the CLion
   scheme was authoritative and a `.clang-format` "would be ignored" — written before the
   scaffold landed. The CI format gate has been live since 2026-07-20; `.clang-format` is the
-  source of truth. (`ColumnLimit: 100`, not the 380 an earlier draft claimed.)
+  source of truth. (`ColumnLimit: 100`, not the 380 an earlier draft claimed — the file has since
+  carried 380, then 280; read the checked-in `.clang-format`, never this line.)
+- **2026-07-30 — names are spelled out.** `deltaTime`, not `dt`; the loop's `dt`/`fixedDt` were
+  the trigger (S2-T7). Rule + its carve-outs (acronyms, domain notation, terms of art) live in
+  `CONVENTIONS.md` → *Names are spelled out*; the ADRs' `dt`/`kFixedDt` spelling is read through
+  it, not edited. `base` predates the rule and still carries `loc`/`fmtStr` — retrofit is a
+  [[Backlog]] entry with a next-time-you-touch-it trigger, not a rename pass. Same day,
+  `.clang-format` went `ColumnLimit: 380 → 280` with argument bin-packing off. Driver: Miguel.
 
 ## Open — local ergonomics (not a code rule)
 

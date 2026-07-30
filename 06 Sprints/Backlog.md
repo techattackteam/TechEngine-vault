@@ -213,11 +213,14 @@ Loop + composition root (ADR-006 §1): game loop (simulate | present), engine li
 
 ### systems
 
-#### Loop timestep policy — design note drafted
+#### Loop timestep policy — accumulator built (S2-T7), phases still open
 Timestep, phase cadence and the accumulator are **decided** in ADR-007 §5/§6 (fixed 60 Hz sim,
 `alpha`-interpolated present, dt clamp) — assembled view + open questions →
 **[[Game Loop — Frame Flow]]** (draft). Time ownership **decided** there (2026-07-24):
-`FrameContext` holds sim time, `Clock` is the source + diagnostic frame counter. Still open:
+`FrameContext` holds sim time, `Clock` is the source + diagnostic frame counter.
+**Built 2026-07-30 (S2-T7):** `FrameContext` (`core`) + `FrameLoop` accumulator (`app`), headless.
+Still open: the five **phases** and the barrier (needs ECS — Sprint 03); **frame pacing**, now
+with evidence that `sleep_for` can't do it on Windows (see the note's open questions);
 `FrameAllocator` reset granularity; where net send/receive sit. **Trigger:** the C2 loop /
 first sim slice.
 
@@ -278,6 +281,11 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
 ## etc — cross-cutting (non-module)
 
 ### Infra / process
+- **Retrofit `base` to the spelled-out-names rule** — `CONVENTIONS.md` → *Names are spelled out*
+  landed 2026-07-30 (S2-T7) **after** T2–T5 shipped, so `base` still carries `loc` and `fmtStr`
+  in `Assert.hpp`/`Log.hpp`'s `detail::` signatures + both `.cpp`s (`sourceLocation` / `formatString`).
+  Public-header churn on merged code for a naming rule — **not urgent**. **Trigger:** next task
+  that touches those signatures for another reason; do it in the same PR, not as a rename pass.
 - **Ratify the `CONVENTIONS.md` *Open* rows** — the file is live (S2-T10) and CLAUDE.md is
   already reduced to a pointer (2026-07-26). What's left is judgment calls, not writing: three
   rows are **⚠️ provisional** (enum-value casing, `TechEngine::detail`, the `g_` prefix) and
