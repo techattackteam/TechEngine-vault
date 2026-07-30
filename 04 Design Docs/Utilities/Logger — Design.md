@@ -25,7 +25,8 @@ rationale.** Go to the ADR for *why*.
 | Allocation-free happy path — `vformat_to` into a stack buffer, truncate + marker on overflow                                               | ADR-011 §1  |
 | Channels: **module-owned handles**, registered explicitly from the composition root; module tag is itself a handle (**no enum in `base`**) | ADR-011 §2  |
 | Unknown channel → default channel; pre-init → **stderr**                                                                                   | ADR-011 §2  |
-| `LogRecord` reaches sinks structured; console + rotating file + in-memory ring                                                             | ADR-011 §3  |
+| `LogRecord` reaches sinks structured; console + session file + in-memory ring                                                              | ADR-011 §3  |
+| Log file is **one file, truncated on open** — no rotation, no stale runs                                                                   | ADR-011 §3  |
 | File sink is **synchronous**; async is a later change behind the façade                                                                    | ADR-011 §3  |
 | Editor ring-buffer sink **excluded** — no consumer yet                                                                                     | ADR-011 §3  |
 | Compile-time level gate per config (Trace off in RelWithDebInfo; Trace+Debug off in Release)                                               | ADR-011 §4  |
@@ -55,7 +56,7 @@ flowchart LR
   A["TE_LOGGER_INFO call"] -->|compile-time level gate| B["logImpl in header — std::format_string"]
   B -->|make_format_args: type-erase| C["logDispatch in log.cpp — spdlog"]
   C -->|runtime channel-level filter| D{sinks}
-  D --> F["rotating file (sync)"]
+  D --> F["session file (sync, truncate on open)"]
   D --> H["console"]
   D --> R["in-memory ring — last N records"]
   R -. flush on crash .-> G["platform crash handler"]
@@ -98,9 +99,11 @@ File/console sinks flatten a record to a line; the editor keeps the struct. The 
 out-of-range handle resolves to `default` rather than indexing the table.
 
 ### Sinks (ADR-011 §3)
-- **console** + **rotating file** — `logs/techengine.log`, **5 MB × 3**, **synchronous**. One spdlog
-  logger over both (pattern `%^%v%$` — our line already carries time + level), so a record is
-  flattened **once**. An unopenable log file degrades to console-only, never a failed boot (S2-T3).
+- **console** + **session file** — `logs/techengine.log`, **truncated on open**, **synchronous**.
+  One spdlog logger over both (pattern `%^%v%$` — our line already carries time + level), so a
+  record is flattened **once**. An unopenable log file degrades to console-only, never a failed
+  boot (S2-T3). **No rotation** (S2-T5): one run per file, previous run discarded — so no size
+  cap either, and the ring below is what's bounded.
 - **in-memory ring** of last N *records* → flushed by the crash path. **Lands with S2-T5**, not T3 —
   the assert flush-on-fail path is its only consumer ([[Planning Workflow — Artifact Gate]]).
 - **flush-on-crash hook** — the crash handler lives in `platform`, **not** a sink. *Minidumps +

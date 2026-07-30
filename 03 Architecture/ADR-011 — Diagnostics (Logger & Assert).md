@@ -14,6 +14,10 @@
   by firing inside a handler, which contradicts its "log + continue" definition. Found while
   implementing S2-T4: the guard's test could not raise a nested failure without killing the
   runner.
+- **Amended 2026-07-30:** §3's file sink is a **single file truncated on open**, was
+  **rotating** (5 MB × 3). Found in S2-T5: rotation keeps N stale runs on disk for no
+  consumer and makes "which file is *this* run?" ambiguous. Nothing else changed — the sink
+  is still synchronous, still degrades to console-only if unopenable.
 - **Supersedes:** **ADR-006 §6's assert-tier clause only** — the `TE_VERIFY`
   semantics in "`TE_CHECK/TE_VERIFY` always-on for shipped invariants" (ADR-006
   `:254-255`). ADR-006 §6's **logging bullet**, its **`TE_ASSERT`** semantics, the
@@ -121,9 +125,13 @@ on fields instead of re-parsing:
 
 `LogRecord { time, frame, level, channel (+ module tag), file, function, line, message }`
 
-- **Sinks this sprint:** console · rotating file · an **in-memory ring of the last N
+- **Sinks this sprint:** console · session file · an **in-memory ring of the last N
   records** for crash flush. File/console flatten a record to a line; the ring keeps the
   struct.
+- **One log file, truncated on open** — `logs/techengine.log` is *this run* and nothing
+  else. Rotation rejected (amended 2026-07-30): stale runs on disk with no consumer, and no
+  way to tell the current file from the last three. Trade: **no size cap** — a runaway
+  per-frame log grows unbounded. The **ring** is the bounded crash trail, not the file.
 - **Rendered line format** ([[Logger — Design]]):
   `[14:32:07.412][f 1043][client · render][renderer.cpp:88 renderScene][INFO] …`
 - **The file sink is synchronous.** Async is a later change *behind the façade* — which

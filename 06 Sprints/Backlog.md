@@ -305,6 +305,16 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
   - **Trigger:** after S2-T3 lands the real sink set (the first place this pays for itself), or
     sooner if another green-but-unreached bug appears. Related: S2-T3's test-reachability
     done-criterion is the *local* fix; this is the systemic one.
+- **`initLogging()`'s file sink is untested by ctest — found in S2-T5.** The sink appended
+  across runs instead of starting fresh — three log-format eras mixed in one file, caught by
+  hand, not by the suite. Same root cause as the coverage-gap entry above: S2-T3 deliberately
+  never calls `initLogging()` from ctest (so the suite writes no log files), which means nothing
+  exercises the real file-sink construction at all. Resolved by dropping rotation for a
+  truncate-on-open `basic_file_sink_mt` (ADR-011 §3, amended 2026-07-30) — still unverified by a
+  test. **Fix shape:** extract the sink construction into a small internal seam (e.g.
+  `detail::makeFileSink(path)` in a private `base/src` header) so a test can point it at a temp
+  path instead of the real log file. **Trigger:** next time `initLogging()`'s internals change,
+  or pick up as its own light task.
 - **Mark third-party include dirs `SYSTEM` (`/external:I`) — build hygiene, found in S2-T2.**
   ADR-008 §5 keeps `/WX` off third-party *targets*, but their **headers compiled into our TUs
   still get our flags**: instantiating spdlog's bundled-fmt format checker from `Log.cpp` broke
