@@ -4,7 +4,7 @@
 > **ADR = the irreversible decision; this doc = the _how_.** Link, don't duplicate.
 
 **Module:** `<base|platform|core|client|app|…>` · **Kind:** utility | system · **Status:** draft | building | done
-**ADRs:** [[…]] · **Backlog:** [[Backlog]] → `<module>` → `<utilities|systems>`
+**ADRs:** [[…]] · **Backlog:** [[Backlog]] → `<module>`
 
 ## Purpose
 One paragraph — what it is, why it exists, which v1 findings it fixes (F-refs).

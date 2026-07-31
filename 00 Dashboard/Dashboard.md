@@ -9,7 +9,7 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 02 — Base Foundation]] *(Jul 25 – Aug 28)* |
 | **Sprint goal** | **`base` you can trust:** Logger, Assert and Clock — unit-tested and proven by a real consumer, the first sliver of the app loop. Horizontal base, **not** the vertical slice. |
-| **Current focus** | 🟢 **S2-T8 — Determinism + clamp tests** (in progress on `S2-T8/Determinism-clamp`). T1–T7 + T9–T15 all landed, descoped, or cut — only T8 remains. `base` has Logger, Assert, Clock; headless accumulator merged (PR #18); vault split done. |
+| **Current focus** | ⚪ **Board is empty — all 15 Sprint-02 cards closed** (T8 landed Jul 30, PR #19). `base` has Logger, Assert, Clock + tests; headless `FrameLoop` accumulator with tick-exact + clamp tests; `CONVENTIONS.md` live; vault split done. Sprint runs to **Aug 28** and the goal is met — the capacity note's rule applies: **bank the slack, don't refill it.** Next work is the **Aug 1–2** review's call. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
 | **Next milestone** | `base` foundation done (Aug 28) → **C2 vertical slice** in Sprint 03 (Aug 29 – Sep 25) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
@@ -27,8 +27,8 @@ git log --oneline 2b4bc38e..origin/master
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
 you *which* note drifted, only that nobody has looked. Currently the engine **is** ahead — PRs
-#8–#15 all landed after this stamp, so `base` (Logger, Assert, Clock) is the exposed area. First
-advance is due at the **Aug 1–2** weekly review.
+#8–#19 all landed after this stamp, so `base` (Logger, Assert, Clock) and the `app` loop sliver
+are the exposed area. First advance is due at the **Aug 1–2** weekly review.
 
 ## 🗓️ Rhythm
 
@@ -94,7 +94,7 @@ _Tasks → [[Sprint Board]]._
 
 - 📌 [[Roadmap]] · [[2026-Q3]]
 - 🏃 [[Sprint Board]] · [[Backlog]]
-- 🏛️ [[ADR Index]] · [[v1 Code Audit]] · [[Lessons from v1 (reference prototype)]]
+- 🏛️ [[ADR Index]] · [[Known Issues]] · [[v1 Code Audit]] · [[Lessons from v1 (reference prototype)]]
 - 🧠 [[Technical Lead Charter]] · [[Working with Claude — Operating Guide]]
 - 📓 Journal: [[07 Journal]]
 

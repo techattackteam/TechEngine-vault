@@ -164,4 +164,4 @@ Live, and owned by the ADR's exit triggers rather than this note:
 - [[Assert — Design]] — shares the seam + the fail→log path
 - [[Clock — Design]] — the `[f N]` stamp's source (pushed by `app`, ADR-011 §9)
 - [[v1 Code Audit]] — F20, F10, F16, F4
-- [[Backlog]] → base → utilities (Profiler is the sibling — shares the editor-panel + frame-# pattern)
+- [[Profiler — Design]] — the sibling utility; shares the editor-panel + frame-# pattern

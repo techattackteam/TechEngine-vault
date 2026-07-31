@@ -149,4 +149,3 @@ Live, and owned by the ADR's exit triggers:
 - [[ADR-006 — v2 core architecture & module layout]] §6 (tier clause superseded), [[ADR-005 — v2 tech stack & toolchain]]
 - [[Logger — Design]] — shares the `std::format` seam + fail→log path; **combined Diagnostics ADR**
 - [[v1 Code Audit]] — F10
-- [[Backlog]] → base → utilities

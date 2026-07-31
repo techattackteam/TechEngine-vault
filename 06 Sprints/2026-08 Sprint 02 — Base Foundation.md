@@ -8,7 +8,7 @@
   Sprint 03**, not the tail of this one.
 - **Epic:** v2 base foundation
 - **Decisions behind it:** [[ADR-006 — v2 core architecture & module layout]] §4 §6 ·
-  [[ADR-007 — v2 networking & ECS replication foundation]] §5 · [[Backlog]] Sprint 02 lock (Jul 23)
+  [[ADR-007 — v2 networking & ECS replication foundation]] §5
 
 ## 🎯 Sprint goal
 
@@ -73,8 +73,10 @@ vertical slice is **Sprint 03**.
       **ADR-011's `std::format` exit trigger did not fire** — the Linux/Clang legs merged green, so
       the standalone-`fmt` fallback stays parked.
       Carried into T3: default-sink path untested · `LogRecord` has no `time` field (§3) · rendered
-      line is still `[f-N][file:line:func()]`, not §3's. Found in flight → [[Backlog]]: `SYSTEM`
+      line is still `[f-N][file:line:func()]`, not §3's. Found in flight and parked: `SYSTEM`
       third-party includes · coverage in CI · gate fails open · diagnostics init belongs in `app`.
+      **All four were cut from [[Backlog]] on 2026-07-31** — they are defects, not ideas, and the
+      vault has no home for defects yet. Unfixed as of that date; this line is the only record.
 - [x] **S2-T3** — Channels + `LogRecord` + console/file sinks · **P1** · 🟢 Deep —
       **✅ Jul 25** → PR #9. Shipped: module/channel **handles** in fixed tables, registered
       explicitly from the composition root (ADR-011 §2); filtering at
@@ -117,39 +119,24 @@ vertical slice is **Sprint 03**.
 ### Story E — App loop sliver *(the consumer that proves the base)*
 
 - [x] **S2-T7** — `FrameContext` + fixed-timestep accumulator · **P1** · 🟢 Deep —
-      **Jul 30 · code done + run by hand, no branch/PR yet.** Shipped: `FrameContext` in
-      **`core`** (ADR-006 §4 puts it there and ADR-007 §6's `update(Scene&, const FrameContext&)`
-      forces it — `app` sits above `core`), fields `deltaTime · fixedDeltaTime · alpha · tick ·
-      frameIndex · role`, **no `const EngineContext&` member** (`TODO(S3)` — no services exist to
-      point at, a deliberate deviation from §4's struct). `FrameLoop` in `app`: clamp →
-      accumulate → `while` drain → publish, `double` accumulator, `float` published;
-      `accumulator()` exposed for T8's clamp assertions.
-      **The seam question is answered by deleting the seam** — `FrameLoop` never sees the
-      `Clock`. Sampling, `advanceFrame()` and the ADR-011 §9 stamp push live in `App::run`, so
-      `advance()` is pure and T8 needs **no injected time source and no virtual**. That closes
-      [[Clock — Design]]'s open question (its option (a), taken one step further).
-      **New calls:** `Role { Client, ListenServer, DedicatedServer }` — nothing in the vault
-      defined it; names from ADR-006 §1's exe table · `MAX_FRAME_DELTA_TIME = 0.25` (≤15
-      catch-up ticks at 60 Hz) · `CONVENTIONS.md` gains **spelled-out names** (S2-T10's file;
-      `dt`/`fixedDt` were the trigger — read the ADRs' spelling as `deltaTime`/`fixedDeltaTime`).
-      Rode along: `.clang-format` ColumnLimit 380→280 + `BinPack*: false`, reflowing
-      `Assert.cpp`/`Log.cpp`.
-      **Measured, and it matters for T9:** naive `sleep_for` pacing does not work on Windows —
-      the 15.6 ms timer tick rounds any shorter sleep **up**. 120 frames sleeping 16.67 ms ran
-      **221** ticks (≈31.2 ms/frame), 8.33 ms ran **111** (≈15.6 ms/frame). The tick count was
-      tracking real elapsed time correctly the whole way — the *pacer* was wrong, not the
-      accumulator. Replaced with a spin to an absolute deadline, `TODO(S2-T9)`.
-      **Outstanding:** the two commits landed on **local `master`** (rule 9) — `S2-T7/FrameContext`
-      is cut from `origin/master` and they still need cherry-picking across, with local `master`
-      reset after; no unit tests (T8); no recorded demo (T9).
-- [ ] **S2-T8** — Determinism + clamp tests · **P1** · 🟢 Deep —
-      done: with an **injected/fake time source**, a fixed `dt` sequence produces an *exact*
-      expected tick count; a simulated 2s stall produces clamped catch-up, **not** a spiral of
-      death. *(Resolves [[Clock — Design]]'s open testability-seam question — decide seam
-      placement here.)*
+      **✅ Jul 30** → PR #18 (`b5a9e4dc`). `FrameContext` in `core`, `FrameLoop` in `app`,
+      headless. Outcome + what it cost → [[Sprint Board]] card; the calls it made
+      (`Role`, `MAX_FRAME_DELTA_TIME`, loop-holds-no-`Clock`, the Windows `sleep_for`
+      evidence) are *Decided* rows in [[Game Loop — Frame Flow]] — read them there, not here.
+- [x] **S2-T8** — Determinism + clamp tests · **P1** · 🟢 Deep — **✅ Jul 30** → PR #19.
+      done: a fixed delta sequence produces an *exact* expected tick count; a simulated stall
+      produces clamped catch-up, **not** a spiral of death.
+      **The card's "injected/fake time source" premise did not survive T7** — `advance()` is
+      pure, so the tests feed it a synthetic sequence directly; no fake clock, no seam. That
+      closes [[Clock — Design]]'s testability-seam question by removal.
 - [x] **S2-T9** — End-to-end wire-up = **the sprint demo** · **P2** · 🟠 Moderate —
-      done: a headless run emits per-frame log lines carrying the frame stamp + tick, visibly
-      correlated; recorded as the Sprint 02 demo artifact.
+      **descoped Jul 30, not built.** Written as "wire the base into a headless run and record
+      it"; by the time T7/T8 landed there was nothing left to wire — this sprint is horizontal
+      utilities, and `App::run` already emits the correlated frame/tick lines the demo was
+      meant to show. The throwaway `main.cpp` runs **are** the demo; no artifact recorded.
+      Live leftover: `App::run`'s pacer is still the spin-to-deadline stand-in with a
+      `TODO(S2-T9)` that now points at a dead card — real pacing is an open question on
+      [[Game Loop — Frame Flow]].
 
 ### Story F — Process & tooling
 
@@ -165,8 +152,10 @@ vertical slice is **Sprint 03**.
       as they bite, then shrink CLAUDE.md's section — **deferred to sprint end**, since
       shrinking it now would drop rules out of Claude's session context mid-sprint.
 - [x] **S2-T11** — Skill `te-module` scaffolder · **P3** · 🟡 Light —
-      done: stamps `include/TechEngine/<m>` + `src` split, `techengine_module()` call,
-      colocated Catch2 test exe, deps wiring — referencing the **real** scaffold files.
+      **cut Jul 30, not built.** Written as "stamp out a module skeleton"; module scaffolding
+      turned out to happen alongside dev work (`app` got its tests target by hand in the same
+      PR as its code), so a standalone skill had no moment to fire. This is the trade the
+      mid-sprint scope-change note below pre-authorised — T11 was named as the thing to drop.
 - [x] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset ·
       **P3** · 🟡 Light — done: PR opened, 8 required checks green, squash-merged. First real
       exercise of the protection rules. *(Written as "land `feat/improving-vault`"; that
@@ -216,9 +205,11 @@ T13 blocks T14 and T15.
 - [x] **Vault split done (ADR-012)** — `docs/` its own repo, board edits no longer touch engine
       PRs, reconciliation stamp live. *Added mid-sprint 2026-07-27; see the capacity note.*
 - [x] **Logger, Assert, Clock** live in `base`, each with Catch2 tests, **CI green both legs**.
-- [ ] **Headless app loop** runs a fixed-timestep accumulator publishing `FrameContext`, with
-      a **tick-exact** determinism test and a **clamp** test.
-- [ ] Demo recorded: correlated frame/tick log output from a headless run.
+- [x] **Headless app loop** runs a fixed-timestep accumulator publishing `FrameContext`, with
+      a **tick-exact** determinism test and a **clamp** test. *(S2-T7 + S2-T8, PRs #18/#19.)*
+- [x] Demo: correlated frame/tick log output from a headless run — **shown, not recorded.**
+      S2-T9 was descoped, so there is no stored artifact; `App::run`'s output is the demo.
+      *(If a recorded artifact is wanted for the Aug 29–30 review, that is a new card.)*
 - [x] Root `CONVENTIONS.md` exists; CLAUDE.md's conventions section is a pointer.
 - [x] **Nothing built without a Sprint-02 consumer** — the pressure test holds (no Profiler,
       no FrameAllocator, no Pool/SlotMap/ring buffer).

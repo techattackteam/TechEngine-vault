@@ -31,13 +31,13 @@ instead of across a month; the regular monthly rhythm begins at Sprint 02.
   weekly/sprint cadence — see [[Dashboard]], [[Technical Lead Charter]].
 - **Git flow (C1):** `v1-reference` tagged, `v2` is the working mainline. *(Miguel)*
 
-## 🔨 Active — Story C: first buildable slice
+## ✅ Story C — first buildable slice
 
-Build scaffold → first CI-green skeleton runs **this week** (day plan below). Remaining:
-**C2** — define the first v2 vertical slice (drafted at the Jul 26 ceremony, lands in
-Sprint 02).
+Build scaffold → first CI-green skeleton, landed **Jul 24** (day plan below). **C2** — the
+first v2 vertical slice — was defined at the Jul 25 ceremony and **re-sequenced to Sprint 03**;
+Sprint 02 lays the base foundation first.
 
-## 🗓️ Week of Jul 20–26 → Sprint 02 ceremony
+## 🗓️ Week of Jul 20–26 → Sprint 02 ceremony *(as planned at the time)*
 
 Deep days start the **build scaffold** ([[ADR-008 — v2 build & testing baseline]]
 checklist); the month's last weekend (Jul 25–26) is the first true ceremony.

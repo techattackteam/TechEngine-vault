@@ -21,7 +21,7 @@ optimization**, so "correctness → clarity → performance" has an instrument i
 hunch. Fixes v1 **F19** (per-frame allocation + string work in the timing path) by making
 zones RAII scopes over `string_view` names with **no `shared_ptr` registry**, ~free when
 compiled out. Also **gates the Job-system ADR** — landing a work-stealing pool without a
-profiler is optimizing blind ([[Backlog]] → `core` → Job-system / task-graph).
+profiler is optimizing blind ([[Backlog]] → `core`).
 
 ## Direction *(decided, not yet frozen — owed to the Profiler ADR)*
 
@@ -32,7 +32,7 @@ profiler is optimizing blind ([[Backlog]] → `core` → Job-system / task-graph
 | Editor draws a **native, simple, dockable panel** over `Worker`'s data | Keeps the editor's look/dock model; we only need frame times + zone tree in-app |
 | "Deep dive" = dump a **`.tracy` snapshot** + launch the **Tracy desktop app** | The full analysis UI is native and already written; reimplementing flame graphs is not our project. Not a browser tool |
 | **GPU zones** = GL 4.5 timestamp queries, one pair per **render-graph pass** | The graph already has pass boundaries with declared deps, so the seam is free (absorbs the old `client → per-pass GPU timing + overlay` backlog item) |
-| **Memory tracking routes through it** | Tracy has first-class memory events/plots, so the panel doubles as the memory dashboard — no second surface ([[Backlog]] → `base` → Memory tracking) |
+| **Memory tracking routes through it** | Tracy has first-class memory events/plots, so the panel doubles as the memory dashboard — no second surface ([[Backlog]] → `base`) |
 
 Dropped: an in-house profiler backend (a project, not a task) · Tracy's bundled ImGui UI
 (context clash above).

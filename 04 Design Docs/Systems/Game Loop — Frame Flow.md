@@ -11,7 +11,7 @@
 [[ADR-007 — v2 networking & ECS replication foundation]] §5 §6 ·
 [[ADR-011 — Diagnostics (Logger & Assert)]] §9 (frame-stamp push) ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] §3 §4 *(Proposed)*
-**Backlog:** [[Backlog]] → `app` → `systems` → Loop timestep policy
+**Backlog:** [[Backlog]] → `app` (loop phases + frame pacing)
 
 ## Purpose
 

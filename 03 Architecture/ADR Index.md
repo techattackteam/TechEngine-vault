@@ -3,6 +3,11 @@
 Architecture Decision Records. Every load-bearing decision gets one. Use
 [[ADR Template]] to start a new record. Numbered sequentially, never reused.
 
+> **An ADR is a dated decision + its rationale, frozen.** The *current shape* of a system
+> lives in its **design note** (`04 Design Docs/`) — that's the one that gets updated, and
+> it's the entry point at planning and mid-implementation. Come here for the **why**, or
+> when a system has no note yet ([[Planning Workflow — Artifact Gate]] → *Where plans come from*).
+
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
 | 012 | [[ADR-012 — Vault repository split]]                | Accepted | 2026-07 |

@@ -22,7 +22,7 @@ design is what the Clock *refuses* to own.
 | Fact | Where |
 |---|---|
 | Read-only time facade in `EngineContext` as `const Clock&` — loop writes, systems read | ADR-006 §4 |
-| Lives in **`base`**, no `platform` seam — `steady_clock` is std and QPC-backed | [[Backlog]] (add a raw platform timer only if the Profiler measures a need) |
+| Lives in **`base`**, no `platform` seam — `steady_clock` is std and QPC-backed | this note → *Open questions* (a raw platform timer only if the Profiler measures a need) |
 | Owns: monotonic `now()`, wall-clock stamp, `totalTime`, **diagnostic** frame counter | [[Game Loop — Frame Flow]] (2026-07-24) |
 | Does **not** own `dt` / `fixedDt` / `tick` / `alpha` / `role` — those live on `FrameContext` | [[Game Loop — Frame Flow]] (2026-07-24), ADR-007 §5 |
 | Monotonic for **durations**; wall-clock **only** for stamps | this note (local call; no ADR owes it) |

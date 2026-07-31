@@ -10,7 +10,7 @@
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
-**Backlog:** [[Backlog]] → `core` → `systems` → Job-system / task-graph
+**Backlog:** [[Backlog]] → `core` (job-system / task-graph)
 
 ## Purpose
 

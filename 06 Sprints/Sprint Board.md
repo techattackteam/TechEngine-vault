@@ -11,19 +11,14 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 25 – Aug 28)
 
-
-
-## 🔧 Vault & process (sprint-independent)
-
-- [ ] **V1** — Roadmap rewrite · 🟡 Light — strip v1-era Q4/Q1 renderer features, make future quarters honest (planned at sprint boundaries), fix Sprint 03 direction to continued foundation
-- [ ] **V2** — Backlog compression · 🟡 Light — each entry → one bullet + trigger, cut entries that already have an ADR/design doc, drop accumulated design thinking (it belongs in those docs)
-- [ ] **V3** — Planning flow update · 🟡 Light — update CLAUDE.md/vault process docs: sprint planning draws from ADRs + design docs, not raw backlog; backlog is a parking lot for ideas, not a planning source
-- [ ] **V4** — Q3 note + Dashboard update · 🟡 Light — align Sprint 03 row and Dashboard's "Next milestone" with the new direction
+- [ ] **S2-B1** — Diagnostics init never runs in `runtime` · P2 · 🟡 Light — `apps/runtime/src/main.cpp` never calls `initLogging()`, so the runtime exe logs through the pre-init **stderr fallback**: no file sink, no channels, no format. `apps/editor` calls it, but from the exe — composition belongs in `App::run()` ([[ADR-006 — v2 core architecture & module layout]] §4's single wiring point). One root cause, two faces. Fix: move init into `run()`, drop both exes' scratch (incl. runtime's `std::cout << "Hello World"`)
+- [ ] **S2-P2** — Roadmap rewrite · P3 · 🟡 Light — strip v1-era Q4/Q1 renderer features, make future quarters honest (planned at sprint boundaries), fix Sprint 03 direction to continued foundation *(was V1)*
+- [ ] **S2-P3** — Q3 note + Dashboard update · P3 · 🟡 Light — align Sprint 03 row and Dashboard's "Next milestone" with the new direction *(was V4)*
 
 
 ## 🔨 In Progress
 
-- [ ] **V0** — Apply Opus 5 prompting patterns · 🟡 Light — review the [Opus 5 prompting guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5) and update CLAUDE.md + vault-writing rules to counter verbosity, scope creep, and over-verification. **Gates V1–V4** — the patterns inform how the vault rewrite is done
+- [ ] **S2-P1** — Planning flow update · P2 · 🟡 Light — plans come from design notes, not ADRs or the raw backlog; design-note coverage check; Dev/Design/Process task kinds *(was V3)*
 
 
 ## 👀 Review / Demo
@@ -32,7 +27,21 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
-- [ ] **S2-T8** — Determinism + clamp tests (injected time source) · P1 · 🟢 Deep
+- [x] **V2** — Backlog compression · 🟡 Light — **Jul 31**. 382 → 103 lines, flat bullets +
+	  `Trigger:`, module headings only (the `utilities`/`systems` split went — it bought
+	  nothing once entries were one line). Cut as covered: Profiler · job-system's "owes three
+	  things" · loop timestep · ownership policy · ratify-Open-rows — all live in a design note,
+	  ADR-010, or `CONVENTIONS.md`. **Cut with no trace, by decision:** Math / Allocators /
+	  Containers / SDK-boundary-MIDDLE (rationale existed nowhere else — re-derive it in the
+	  ADR) and the six `Infra/process` **defects** (coverage-in-CI, `TE_LOG_ACTIVE_LEVEL` fails
+	  open, `initLogging` file sink untested, `SYSTEM` includes, diagnostics-init-in-exe,
+	  docs-only CI burn — the last survives as an idea). **The vault has no home for defects**;
+	  four of them survive only as a line on S2-T2's card. That gap is V3's to answer or not.
+- [x] **V0** — Apply Opus 5 prompting patterns · 🟡 Light — review the [Opus 5 prompting guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5) and update CLAUDE.md + vault-writing rules to counter verbosity, scope creep, and over-verification. **Gated the rest** — the patterns informed how the vault rewrite was done *(V0/V2 keep their old IDs; renaming closed cards buys nothing. Live ones renumbered `S2-P*` when the sprint-independent column was removed — kind now lives in the ID, [[Planning Workflow — Artifact Gate]] → Task attributes.)*
+- [x] **S2-T8** — Determinism + clamp tests · P1 · 🟢 Deep — **Jul 30** → PR #19
+	  (`486fff6b`). `engine/app/tests/FrameLoopTests.cpp`, 12 cases. **No injected time
+	  source** — the card was written expecting one, and T7 deleted the need by making
+	  `advance()` pure. *(card title trimmed to match; outcome notes still yours to add)*
 - [x] **S2-T11** — Skill `te-module` scaffolder · P3 · 🟡 Light — **cut Jul 30**, not relevant
 	  enough to warrant a standalone task; module scaffolding happens alongside dev work.
 - [x] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **Jul 30**. File opened
@@ -109,8 +118,9 @@ kanban-plugin: board
 	  reflowing `Assert.cpp`/`Log.cpp`.
 	  **Measured:** naive `sleep_for` pacing is unusable on Windows — the 15.6 ms timer tick
 	  rounds sub-tick sleeps **up**, so 120 frames sleeping 16.67 ms ran **221** ticks and
-	  8.33 ms ran **111**, not 120/60. Now a spin-to-deadline stand-in, `TODO(S2-T9)`.
-	  **No tests yet** (T8), no demo (T9).
+	  8.33 ms ran **111**, not 120/60. Now a spin-to-deadline stand-in, `TODO(S2-T9)` —
+	  which outlived its card (T9 descoped), so real pacing is now an open question on
+	  [[Game Loop — Frame Flow]]. Tests followed in T8 (PR #19).
 - [x] **S2-T1** — Diagnostics ADR (Logger + Assert) · P1 · 🟢 Deep — **Jul 25** →
 	  [[ADR-011 — Diagnostics (Logger & Assert)]] Accepted; **T2–T6 unblocked**. Seam changed
 	  under review: `fmt`-in-header was unbuildable → **`std::format`**, spdlog private, no new

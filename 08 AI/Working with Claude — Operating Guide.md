@@ -158,7 +158,8 @@ Claude route to it. All are **read-only or research** — they report, they don'
 - No optimization without a measurement. Land profiling hooks before big perf work.
 - Deterministic core systems (ECS, resources, serialization, math) get **unit
   tests**; rendering gets **demo + before/after captures**. Catch2 v3 + CTest, one test
-  exe per module — `TechEngineBaseTests` and `te_sdk_smoke` run on every CI leg.
+  exe per module — `TechEngineBaseTests`, `TechEngineAppTests` and `TechEngineSDKSmoke`
+  (ctest name `sdk-smoke`) run on every CI leg.
 
 ---
 

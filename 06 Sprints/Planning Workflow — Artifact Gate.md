@@ -1,9 +1,8 @@
 # 🚦 Planning Workflow — Artifact Gate
 
-How a backlog item earns paperwork **and how its tasks get sized**. Read at
-**grooming** and **sprint planning**. Owns the "does this need an ADR / design note?"
-decision, *when* that artifact gets made, and the **priority + weight** every task
-carries. Deliberate choices, not reflexes. Wired into `/feature-breakdown` + `/sprint-plan`.
+**Where a sprint's work comes from**, how an item earns paperwork, and how its tasks get
+sized + typed. Read at **grooming** and **sprint planning**. Deliberate choices, not
+reflexes. Wired into `/feature-breakdown` + `/sprint-plan`.
 
 **Dual purpose — human *and* Claude read these.** The artifact isn't just planning
 paperwork; it's the **spec Claude consults before advising mid-implementation** so it
@@ -11,6 +10,46 @@ anchors to the intended end-state instead of improvising (CLAUDE.md rule 2). Tha
 real cost/benefit of the gate: an artifact chosen here = grounded answers later; an
 artifact skipped where one was warranted = Claude guessing the goal on the spot. Pick
 deliberately with *both* readers in mind.
+
+## Where plans come from
+
+**Design notes, not ADRs, and not the [[Backlog]].** The note is the entry point at planning;
+an ADR is read only when a decision's *rationale* carries the argument (CLAUDE.md rule 2).
+
+Not a style preference — an **Accepted ADR can hold a clause that has since been partially
+superseded** ([[ADR Index]] tracks two). The ADR body is frozen and never edited; the design
+note's *Decided* rows are the reconciled view. Plan straight off the ADR and you can size a
+card against a dead clause.
+
+Two sources, in priority order:
+
+| # | Source | Produces |
+|---|---|---|
+| 1 | **Decided ∧ unbuilt ∧ has a consumer now** — the delta between a note's *Decided* rows and the code | ordinary **Dev** tasks, sized normally |
+| 2 | **An open question that blocks (1)** this sprint | a **Design** task (ADR or note); the story under it stays *unsized* — § below |
+
+`Accepted` already means "build to it" ([[ADR Index]] → Statuses), so (1) is just reading
+that delta. **The consumer clause is load-bearing:** decided-unbuilt is not automatically
+wanted — ADR-011 §3's editor ring sink is decided *and* deliberately unbuilt because nothing
+consumes it. Same pressure test Sprint 02's DoD used.
+
+An open question with nothing waiting on it earns **no card** — that's reflex-minting an ADR
+nobody is building against.
+
+**[[Backlog]] is read last, and only to ask "has a trigger fired?"** It is a parking lot, not
+a menu: it holds wants, never decisions, so it can't be planned from.
+
+### Coverage check — an ADR with no design note
+
+At planning, for each **system** in play: does it have a design note? No → **that gap is a
+finding, said out loud**, and drafting the note is a Design task *in this sprint*, ordered
+before the dev work it grounds. Planning a load-bearing system with no hub is the gate
+failing, not a detail to work around.
+
+**Systems only.** Process/meta ADRs (004 fresh start, 009 branching, 012 vault split) have no
+system to design and never trigger this. Today it fires on ADR-007 — ECS and replication have
+no note; [[Game Loop — Frame Flow]] and [[Task Graph — Execution Flow]] cover only the loop
+and the scheduler.
 
 ## The trap this prevents
 
@@ -99,7 +138,48 @@ artifact-less on an item that warranted one (CLAUDE.md rule 2).
 It's a **DoD checkbox** — capture the retro, touch the affected system doc in place.
 No separate task, no pipeline stage. Update in place, prune stale (vault hygiene).
 
-## Task attributes — priority + weight
+## Task attributes — kind, priority, weight
+
+### Kind — carried in the card ID, not a tag
+
+Four kinds, because they behave differently when capacity tightens:
+
+| Kind | ID | Blocks | At planning |
+|---|---|---|---|
+| **Dev** | `S3-T4` | — | sized normally |
+| **Design** — an ADR or design note | `S3-D1` | the story under it | ordered **first**; that story stays *unsized* |
+| **Bug** — something misbehaves **now** | `S3-B1` | — | **taken this sprint**; *displaces*, never adds |
+| **Process** — vault, tooling, CI | `S3-P2` | nothing | **first thing cut** when capacity tightens |
+
+Design and Process both look like "🟡 Light docs work" and are opposites: a Design task is on
+the critical path, a Process task is the one you sacrifice (S2-T11 was cut for exactly this;
+an ECS design note never could be).
+
+**Bug is the one kind that arrives unplanned and must still be taken** — the exact inverse of
+Process. That makes it the capacity risk: a sprint that absorbed three bug cards didn't
+under-deliver its goal, it silently paid for unplanned work. So a bug card **displaces**
+something and the displaced card is **named** (lowest-priority Process first). Adding it on
+top is the refill reflex the Sprint 01 retro identified as the live burnout risk.
+
+### Bug vs Known Issue
+
+| | **Bug** | **Known Issue** |
+|---|---|---|
+| Test | misbehaves **now** | latent **and** would fail **silently** |
+| Lives | a card — it *is* work | [[Known Issues]], `D<n>` |
+| Timing | this sprint | no schedule; ride-along or blocks planned work |
+
+One-directional: a Known Issue **promotes** to a bug card the day its condition fires, and is
+deleted from the list. Nothing travels the other way — a bug is never "recorded instead of
+fixed". A latent defect that would fail *loudly* belongs in neither: fix it or forget it.
+
+The ID is also the branch name (CLAUDE.md rule 9, `<card ID>/<slug>`), so for **Dev** the kind
+lands in git history free. Design/Process are vault commits and take no branch.
+
+**The board carries no kind column.** Kinds live in the ID; a column would be a second home
+for the same fact, and it hides that a Design card is sprint-bound critical-path work.
+
+### Priority + weight
 
 Every task carries **both**, so the pick matches the day (not just the sprint).
 
@@ -119,13 +199,15 @@ highest **priority** among what fits. Tag format on every task line: `· P1 · �
 
 ## Lean model this collapses to
 
-1. **Backlog entry** — always, cheap.
-2. **One decision artifact** — ADR *or* design note, rarely both (gate above). Often none.
-   Light → drafted in planning; heavy → a sprint task, and the breakdown stops there.
+1. **Source the work** — a design note's *Decided* rows vs the code (§ *Where plans come
+   from*). [[Backlog]] last, for fired triggers only.
+2. **One decision artifact**, where one is owed — ADR *or* design note, rarely both (gate
+   above). Often none. Light → drafted in planning; heavy → a **Design** task, and the
+   breakdown stops there.
 3. **Implementation** — always, Miguel writes it.
 4. **Docs** — DoD line, not a stage.
 
-Every task in 2–3 carries **priority + weight** (`· P1 · 🟢 Deep`).
+Every task in 2–3 carries a **kind** (in its ID) plus **priority + weight** (`· P1 · 🟢 Deep`).
 
 ## Running a planning session
 
@@ -134,17 +216,21 @@ The other commands are **triggered out of it**, not run in sequence after it.
 
 ```mermaid
 flowchart TD
-    A["/sprint-plan · boundary weekend"] --> B["Gather: roadmap · quarter · sprint · backlog · ADRs"]
-    B --> C{"Sprint ending?"}
+    A["/sprint-plan · boundary weekend"] --> B["Gather: roadmap · quarter · sprint ·<br/>design notes' Decided rows vs the code"]
+    B --> B2["Backlog last — fired triggers only"]
+    B2 --> C{"Sprint ending?"}
     C -->|yes| D["Retro first"]
     C -->|no| E["Propose ONE headline goal"]
     D --> E
-    E --> F["Co-create Epic → Story → Task"]
+    E --> E2{"System in play<br/>has a design note?"}
+    E2 -->|no| E3["Coverage gap — say it ·<br/>Design task THIS sprint"]
+    E2 -->|yes| F["Co-create Epic → Story → Task"]
+    E3 --> F
     F --> G{"Artifact gate, per item"}
     G -->|light note| H["Draft it now, in session"]
-    G -->|"heavy: ADR / spike"| I["Schedule as a task ·<br/>story below it stays UNSIZED"]
-    G -->|neither| J["Straight to impl task"]
-    H --> K["Tag every task: priority + weight"]
+    G -->|"heavy: ADR / spike"| I["Design task ·<br/>story below it stays UNSIZED"]
+    G -->|neither| J["Straight to Dev task"]
+    H --> K["Every task: kind in the ID ·<br/>priority + weight"]
     I --> K
     J --> K
     K --> L["Write sprint note · board · roadmap · dashboard"]
