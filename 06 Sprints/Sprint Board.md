@@ -23,6 +23,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **V0** — Apply Opus 5 prompting patterns · 🟡 Light — review the [Opus 5 prompting guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5) and update CLAUDE.md + vault-writing rules to counter verbosity, scope creep, and over-verification. **Gates V1–V4** — the patterns inform how the vault rewrite is done
 
 
 ## 👀 Review / Demo
