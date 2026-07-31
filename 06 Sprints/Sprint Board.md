@@ -11,14 +11,12 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 25 – Aug 28)
 
-- [ ] **S2-B1** — Diagnostics init never runs in `runtime` · P2 · 🟡 Light — `apps/runtime/src/main.cpp` never calls `initLogging()`, so the runtime exe logs through the pre-init **stderr fallback**: no file sink, no channels, no format. `apps/editor` calls it, but from the exe — composition belongs in `App::run()` ([[ADR-006 — v2 core architecture & module layout]] §4's single wiring point). One root cause, two faces. Fix: move init into `run()`, drop both exes' scratch (incl. runtime's `std::cout << "Hello World"`)
 - [ ] **S2-P2** — Roadmap rewrite · P3 · 🟡 Light — strip v1-era Q4/Q1 renderer features, make future quarters honest (planned at sprint boundaries), fix Sprint 03 direction to continued foundation *(was V1)*
 - [ ] **S2-P3** — Q3 note + Dashboard update · P3 · 🟡 Light — align Sprint 03 row and Dashboard's "Next milestone" with the new direction *(was V4)*
 
 
 ## 🔨 In Progress
 
-- [ ] **S2-P1** — Planning flow update · P2 · 🟡 Light — plans come from design notes, not ADRs or the raw backlog; design-note coverage check; Dev/Design/Process task kinds *(was V3)*
 
 
 ## 👀 Review / Demo
@@ -27,6 +25,31 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
+- [x] **S2-P1** — Planning flow update · P2 · 🟡 Light — **Jul 31** *(was V3)*. **Plans now come
+	  from design notes**, not ADRs and not the [[Backlog]]: sourced from the *Decided*-rows-vs-code
+	  delta (Dev cards) and from open questions **only when they block** it (Design cards). The
+	  argument that settled it wasn't preference — an Accepted ADR can hold a partially-superseded
+	  clause ([[ADR Index]] tracks two), so the note's *Decided* rows are the reconciled view and the
+	  ADR body isn't. ADR fallback **kept** for systems with no note, and that gap is now a
+	  named finding: the **design-note coverage check** (systems only — process/meta ADRs never
+	  fire it). Today it fires on ADR-007: ECS and replication have no note.
+	  **Four task kinds, carried in the card ID** — `T` Dev · `D` Design · `B` Bug · `P` Process.
+	  Replaces the `🔧 Vault & process` column, which was doing the kind's job on the wrong axis.
+	  Design is critical-path, Process is the first thing cut, and the split is what makes "this
+	  sprint was a third Process" checkable instead of assumed.
+	  **Defect home answered** → [[Known Issues]], `D<n>`, seeded with D1. Bar: latent **and**
+	  fails silently. A defect that misbehaves *now* is a **Bug card**, not an entry —
+	  which reclassified the diagnostics-init one into **S2-B1**.
+	  Touched: [[Planning Workflow — Artifact Gate]] (new *Where plans come from*, kinds,
+	  Bug-vs-Known-Issue) · [[ADR Index]] gloss · [[Backlog]] (tombstones dropped) ·
+	  `/sprint-plan`, `/vault-clean`, `/feature-breakdown` · `CONVENTIONS.md` + `CLAUDE.md`
+	  (`TODO(D<n>)` — card IDs go stale, `TODO(S2-T9)` already does; defect IDs don't).
+	  **Two holes found while wiring it:** `/sprint-plan` step 8 emptied In Progress and rebuilt
+	  To Do from the new sprint note only, so an **unfixed `B` card evaporated at every boundary**
+	  — now every unfinished card is re-planned or dropped out loud, and a `B` is never droppable
+	  (re-plan, or demote to `D<n>`). And `/feature-breakdown` still listed three kinds.
+	  **Not done:** these three `S2-P*` cards are unplanned Process work on a sprint whose goal was
+	  already met, and there is still no mid-sprint scope-change note recording that.
 - [x] **V2** — Backlog compression · 🟡 Light — **Jul 31**. 382 → 103 lines, flat bullets +
 	  `Trigger:`, module headings only (the `utilities`/`systems` split went — it bought
 	  nothing once entries were one line). Cut as covered: Profiler · job-system's "owes three

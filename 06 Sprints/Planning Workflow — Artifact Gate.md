@@ -148,18 +148,27 @@ Four kinds, because they behave differently when capacity tightens:
 |---|---|---|---|
 | **Dev** | `S3-T4` | — | sized normally |
 | **Design** — an ADR or design note | `S3-D1` | the story under it | ordered **first**; that story stays *unsized* |
-| **Bug** — something misbehaves **now** | `S3-B1` | — | **taken this sprint**; *displaces*, never adds |
+| **Bug** — something misbehaves **now** | `S3-B1` | — | **taken this sprint** — planned in at the boundary, or *displaces* if it arrives mid-sprint |
 | **Process** — vault, tooling, CI | `S3-P2` | nothing | **first thing cut** when capacity tightens |
 
 Design and Process both look like "🟡 Light docs work" and are opposites: a Design task is on
 the critical path, a Process task is the one you sacrifice (S2-T11 was cut for exactly this;
 an ECS design note never could be).
 
-**Bug is the one kind that arrives unplanned and must still be taken** — the exact inverse of
-Process. That makes it the capacity risk: a sprint that absorbed three bug cards didn't
-under-deliver its goal, it silently paid for unplanned work. So a bug card **displaces**
-something and the displaced card is **named** (lowest-priority Process first). Adding it on
-top is the refill reflex the Sprint 01 retro identified as the live burnout risk.
+**Bug is the one kind that must be taken whether or not it was planned** — the exact inverse
+of Process. Two entry paths:
+
+- **Known at planning** — an ordinary card, sized in with everything else. Displaces nothing;
+  the sprint is being sized fresh around it. Sources: an unfixed `B` card carried from the
+  closing sprint, the retro's stale-artifact check, a [[Known Issues]] promotion.
+- **Arriving mid-sprint** — still taken, but it **displaces**, and the displaced card is
+  **named** (lowest-priority Process first). Adding it on top is the refill reflex the
+  Sprint 01 retro identified as the live burnout risk.
+
+Either way it's the capacity risk worth counting: a sprint that absorbed three bug cards
+didn't under-deliver its goal, it silently paid for unplanned work. **An unfixed `B` card
+never evaporates at a sprint boundary** — it is re-planned, or demoted to a `D<n>` if it
+turns out to be latent after all.
 
 ### Bug vs Known Issue
 
