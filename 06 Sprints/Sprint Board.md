@@ -11,8 +11,6 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 25 – Aug 28)
 
-- [ ] **S2-P2** — Roadmap rewrite · P3 · 🟡 Light — strip v1-era Q4/Q1 renderer features, make future quarters honest (planned at sprint boundaries), fix Sprint 03 direction to continued foundation *(was V1)*
-- [ ] **S2-P3** — Q3 note + Dashboard update · P3 · 🟡 Light — align Sprint 03 row and Dashboard's "Next milestone" with the new direction *(was V4)*
 
 
 ## 🔨 In Progress
@@ -25,6 +23,8 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
+- [ ] **S2-P3** — Q3 note + Dashboard update · P3 · 🟡 Light — align Sprint 03 row and Dashboard's "Next milestone" with the new direction *(was V4)*
+- [ ] **S2-P2** — Roadmap rewrite · P3 · 🟡 Light — strip v1-era Q4/Q1 renderer features, make future quarters honest (planned at sprint boundaries), fix Sprint 03 direction to continued foundation *(was V1)*
 - [x] **S2-P1** — Planning flow update · P2 · 🟡 Light — **Jul 31** *(was V3)*. **Plans now come
 	  from design notes**, not ADRs and not the [[Backlog]]: sourced from the *Decided*-rows-vs-code
 	  delta (Dev cards) and from open questions **only when they block** it (Design cards). The

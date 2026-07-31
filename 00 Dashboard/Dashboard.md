@@ -9,9 +9,9 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 02 — Base Foundation]] *(Jul 25 – Aug 28)* |
 | **Sprint goal** | **`base` you can trust:** Logger, Assert and Clock — unit-tested and proven by a real consumer, the first sliver of the app loop. Horizontal base, **not** the vertical slice. |
-| **Current focus** | ⚪ **Board is empty — all 15 Sprint-02 cards closed** (T8 landed Jul 30, PR #19). `base` has Logger, Assert, Clock + tests; headless `FrameLoop` accumulator with tick-exact + clamp tests; `CONVENTIONS.md` live; vault split done. Sprint runs to **Aug 28** and the goal is met — the capacity note's rule applies: **bank the slack, don't refill it.** Next work is the **Aug 1–2** review's call. |
+| **Current focus** | ⚪ **Board is empty — all Sprint-02 cards closed** (S2-P2/P3 Jul 31; T8 landed Jul 30, PR #19). `base` has Logger, Assert, Clock + tests; headless `FrameLoop` accumulator with tick-exact + clamp tests; `CONVENTIONS.md` live; vault split done. **[[Roadmap]] rewritten Jul 31** — C2 reversed, build order is now the chain + lanes ladder. Sprint runs to **Aug 28** and the goal is met — the capacity note's rule applies: **bank the slack, don't refill it.** Next work is the **Aug 1–2** review's call. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
-| **Next milestone** | `base` foundation done (Aug 28) → **C2 vertical slice** in Sprint 03 (Aug 29 – Sep 25) |
+| **Next milestone** | `base` done (Aug 28) → Sprint 03 (Aug 29 – Sep 25) opens **M1 · enablers** on the [[Roadmap]] ladder |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `2b4bc38e` (2026-07-25) |
 
@@ -78,7 +78,7 @@ already carries 2 deep days.
 ## 🧭 Plan
 
 Phase 1–3 compressed into Jul 19–26 (audit → plan → ground), each gating the next.
-Build order from here: **base → slice → renderer**.
+Build order from here: the [[Roadmap]] ladder — **chain M0–M6, then lanes**.
 
 | # | Phase | What | State |
 |---|-------|------|-------|
@@ -86,7 +86,7 @@ Build order from here: **base → slice → renderer**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005–008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop — [[2026-08 Sprint 02 — Base Foundation]] | 🔨 active (Aug) |
-| 5 | **First vertical slice (C2)** | End-to-end slice on that base; the renderer ADR is born here | ⚪ Sprint 03 (Sep) |
+| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | ⚪ Sprint 03 opens M1 |
 
 _Tasks → [[Sprint Board]]._
 
@@ -107,8 +107,8 @@ Recently locked — full set in [[ADR Index]]:
 - [x] Branching + merge rules → [[ADR-009 — Branching strategy & merge rules]] Accepted; `master` ruleset live
 - [x] Diagnostics (Logger + Assert) → [[ADR-011 — Diagnostics (Logger & Assert)]] **Accepted** (S2-T1)
 - [x] Vault as its own repo → [[ADR-012 — Vault repository split]] Accepted; cutover done (S2-T13)
-- [ ] User authoring model → [[ADR-010 — User authoring model (Systems & Scripts)]] stays **Proposed**, gated on the task-graph ADR
-- [ ] Renderer · job-system · serialization · netcode transport · scripting SDK → deferred, write when coding starts ([[Backlog]])
+- [x] User authoring model → [[ADR-010 — User authoring model (Systems & Scripts)]] stays **Proposed**, gated on the task-graph ADR
+- [ ] Threading · task-graph · serialization · renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 
 ## Health check (update weekly · 2026-07-25)
 

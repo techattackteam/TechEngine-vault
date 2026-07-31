@@ -10,7 +10,8 @@
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
-**Backlog:** [[Backlog]] → `core` (job-system / task-graph)
+**Roadmap:** [[Roadmap]] — **M2** threading ADR (topology · GL context owner · pool shape) →
+**M5** task-graph ADR (the System interface, this doc) → **M10** work-stealing implementation
 
 ## Purpose
 
@@ -84,15 +85,29 @@ flowchart TD
 Scripts run after every system in the phase; their spawns queue into the **same** command
 buffer — no separate path.
 
-## Open questions (→ ADR)
+## Open questions
+
+Grouped by the ADR that owns them; [[Roadmap]] rung in brackets.
+
+**→ threading ADR [M2]** — settled *before* the window lane, not with this doc
+
+- **Thread topology + GL context ownership** — who owns the context and how work reaches it,
+  and therefore which thread the executor runs on.
+- **Pool shape** — the interface the executor is written against, shipped serial (one worker).
+
+**→ task-graph ADR [M5]**
 
 - **Terminal slot** — ADR-010 §4 needs it; `.after<A>()` is pairwise and can't express
-  "after everything". Mechanism undecided → task-graph ADR.
-- **Executor threading** — level-by-level today; work-stealing pool + Jolt's internal
-  pool integration deferred (fixes F15) → task-graph ADR.
+  "after everything". Mechanism undecided.
 - **Level granularity** — whole-system nodes only, or intra-system chunking for wide
   parallel iteration?
 - **Schedule mutation at runtime** — rebuild cost + when a rebuild is legal (mid-frame?).
+
+**→ deferred to implementation [M10]**
+
+- **Work-stealing executor + Jolt pool integration** (fixes F15) — levels walk serially until
+  measurement says otherwise; the level structure feeds a pool **unchanged**, so this changes
+  no interface.
 
 ## References
 
