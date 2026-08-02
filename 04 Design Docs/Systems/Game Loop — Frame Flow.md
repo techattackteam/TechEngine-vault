@@ -48,6 +48,7 @@ Here the loop lives in `app` and the editor hosts it from outside.
 | `MAX_FRAME_DELTA_TIME = 0.25 s` — the ADR-007 §5 clamp, ≤15 catch-up ticks per frame | S2-T7 |
 | **The loop holds no `Clock`** — `advance(frameDeltaTime)` is pure; `app`'s driver samples time, bumps the frame and pushes the stamp | S2-T7 → [[Clock — Design]] |
 | Code spells the fields `deltaTime` / `fixedDeltaTime` — this note's `dt` / `fixedDt` is the illustrative form | `CONVENTIONS.md` → *Names are spelled out* |
+| Events: staged writes flip at phase barriers — every fixed sub-step ends at one; no continuous dispatch | [[ADR-014 — Events (buffered streams) & StringId]] §3 |
 
 ## Design
 
@@ -104,8 +105,9 @@ The loop owns the accumulator, publishes into `FrameContext`, bumps the Clock's 
 counter once per frame, and **pushes that number into diagnostics** so the Logger/Profiler
 macros can stamp it.
 
-**Why sim time is not on the Clock:** a process can run **more than one sim** — the editor
-hosts a client *and* a server (v1's F1 trigger), and tests run several headless sims. A
+**Why sim time is not on the Clock:** a process can run **more than one sim** — tests run
+several headless sims (the v1 editor's client+server hosting was the mistake behind F1/F2
+and is **not** a v2 scenario — Miguel, 2026-08-02). A
 process-wide Clock can hold only one `tick`/`alpha`, and `role` is meaningless as a global.
 `FrameContext` is per-call, so each sim carries its own. ADR-007 §6's signature already
 delivers it to every system, so a Clock read would be a **second path to the same fact**.
@@ -143,8 +145,6 @@ it feeds the accumulator, so systems read an already-scaled `dt`. Add `unscaledD
 - **Where net receive/send sit** — the loop **will** need these slots; `net` is a reserved
   seam (ADR-006 §2) and transport is deferred (ADR-007). Receive-before-`Input` /
   send-after-`FixedUpdate` is the obvious shape, undecided → netcode ADR.
-- **Event dispatch point** — event-system redesign deferred (ADR-006, F28); drain at phase
-  barriers or continuously?
 - **Interpolation phase** — client-side (ADR-007 §3) but not pinned to `Update` vs `PostUpdate`.
 - **Terminal-slot mechanism** — ADR-010 §4 needs "after everything"; `.after<A>()` is
   pairwise → task-graph ADR (tracked in [[Task Graph — Execution Flow]]).

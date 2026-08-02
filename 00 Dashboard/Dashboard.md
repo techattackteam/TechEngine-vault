@@ -9,7 +9,7 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 03 — M1 Enablers]] *(Aug 1 – Aug 28)* |
 | **Sprint goal** | **M1's two gates decided, and the vocabulary every later module is written against, built.** Profiler + Events ADRs land; math ships; `IFileSystem` gets its note. **Decide first, then build.** |
-| **Current focus** | ✅ **S3-D1 done Aug 2** — [[ADR-013 — Profiler (Tracy-backed instrumentation)]] Accepted, **M2's threading ADR unblocked**, Story D cut into **S3-T3…T6** (head: S3-T3, the riskiest card in the story). 🔨 Next 🟢 Deep is **S3-D2 (Events + `StringId` ADR)**, which gates Story E. Non-deep days: math (S3-T1/T2), **S3-B1**, the two Process cards. **M0 ✅** — Sprint 02 closed Aug 2, four weeks early. |
+| **Current focus** | ✅ **S3-D1 + S3-D2 both done Aug 2** — [[ADR-013 — Profiler (Tracy-backed instrumentation)]] and [[ADR-014 — Events (buffered streams) & StringId]] Accepted → **both M1 gates closed**, M2's threading ADR unblocked. Story D cut into **S3-T3…T6**, Story E into **S3-T7…T10**; only Story F waits (on S3-D3). 🔨 Next 🟢 Deep: **S3-T3** (riskiest card, spike first hour) or **S3-T9** once T7/T8 land. Non-deep days: **S3-T7/T8** (Story E's lights), math (S3-T1/T2), **S3-B1**, Process cards. ⚠️ 🟠 over-plan (5 vs 4 Fridays) pre-named for the Aug 15–16 review. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
 | **Next milestone** | **M1 closes Aug 28** on the [[Roadmap]]'s own bar (gates Accepted + unlock demonstrable) → Sprint 04 opens **M2 ‖ M3**. RNG · crash handler · memory tracking carry |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
@@ -74,15 +74,19 @@ transition, Sprint 03 is the first clean cycle.
 
 **Weekly rhythm** — energy is *planned*, not aspirational; protect the light/off days.
 
-| Day | Mode        | Typical work                                             |
-| --- | ----------- | -------------------------------------------------------- |
-| Mon | 🟢 Deep     | Implementation (core loop)                               |
-| Tue | 🟡 Light    | Docs, reading, small fixes, ADR drafting                 |
-| Wed | ⚪ Relaxed   | Recovery — optional light planning, else rest            |
-| Thu | 🟢 Deep     | Implementation                                           |
-| Fri | 🟠 Moderate | Lighter implementation — finish/refactor, prep next week |
-| Sat | 🔴 Off*     | Karting — no engine work                                 |
-| Sun | 🟢 Deep*    | Implementation + weekly review                           |
+| Day | Mode        | Typical work                                             | Capacity      |
+| --- | ----------- | -------------------------------------------------------- | ------------- |
+| Mon | 🟢 Deep     | Implementation (core loop)                               | ~1 🟢         |
+| Tue | 🟡 Light    | Docs, reading, small fixes, ADR drafting                 | 1 🟡          |
+| Wed | ⚪ Relaxed   | Recovery — optional light planning, else rest            | 0             |
+| Thu | 🟢 Deep     | Implementation                                           | ~1 🟢         |
+| Fri | 🟠 Moderate | Lighter implementation — finish/refactor, prep next week | 1 🟠          |
+| Sat | 🔴 Off*     | Karting — no engine work                                 | 0             |
+| Sun | 🟢 Deep*    | Implementation + weekly review                           | **2–3 🟢**    |
+
+**Weekday deep ≠ weekend deep.** Mon/Thu are *after the day job* — one evening block, one
+🟢 task. The weekend deep day is a **full day**: size it for **2–3 🟢**, not one. Sizing a
+sprint by counting "deep days" without this split under-fills it by ~1 task/week.
 
 *Weekend days are a **pair**, not fixed: default Sat off / Sun deep, but swap them or use
 both when there's no karting. Guardrail: keep **≥1 rest day most weekends** — Mon–Fri

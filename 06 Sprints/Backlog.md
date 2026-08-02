@@ -20,7 +20,9 @@ kept — they show where future work lands.
 
 ## base
 
-- **Allocators** — a Pool primitive. **Trigger:** its first consumer (Events, M1).
+- **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events declined it
+  ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no node
+  churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting ADR).
 
 ## platform
 

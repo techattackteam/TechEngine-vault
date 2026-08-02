@@ -11,9 +11,6 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
 
-- [ ] **S3-D2** — Events + `StringId` ADR (`/adr`, F28) · P1 · 🟢 Deep — unsound unsubscribe +
-	  per-event alloc; **names the event-id type**, which pins `StringId`. Closes
-	  [[Game Loop — Frame Flow]]'s *Event dispatch point*. **Cuts Story E.**
 - [ ] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — carried
 	  from `S2-B1`, which was created Jul 31 and **never reached this board**. Not droppable.
 - [ ] **S3-T1** — `Math.hpp` alias set ([[Math — Design]]) · P1 · 🟠 Moderate — no
@@ -35,9 +32,19 @@ kanban-plugin: board
 	  lives in `app`'s TU, never a `base` static-lib TU. Needs S3-T4.
 - [ ] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — < 5% bar into
 	  [[B3 — Build & Testing Notes]]; says out loud that the ON path is not unit-tested.
-- [ ] ⏳ *Pointer, not a card* — **Stories E / F stay unsized.** Their ~6–8 cards get cut by
-	  S3-D2 / S3-D3's own done-conditions. **Story D was cut Aug 2** (S3-T3…T6, off ADR-013).
-	  Weight budget in the sprint note.
+- [ ] **S3-T7** — `base/StringId.hpp` + tests ([[StringId — Design]]) · P1 · 🟡 Light —
+	  constexpr FNV-1a/64 value type; **no macro, no UDL, no table**. Story E's head.
+- [ ] **S3-T8** — event registry in `core` · P1 · 🟡 Light — tag-at-call registration from
+	  the composition root; keeps tag strings → collision `TE_CHECK` + tooling lookup.
+	  Needs S3-T7.
+- [ ] **S3-T9** — `EventStream` core + tests ([[Events — Design]]) · P1 · 🟢 Deep —
+	  ring/flip/retire/cursors; **retire-rule tests first**; zero steady-state alloc.
+	  Needs S3-T8.
+- [ ] **S3-T10** — loop wiring + headless demo · P1 · 🟢 Deep — flip per fixed sub-step,
+	  retire at frame start; first event across a deterministic barrier. Needs S3-T9.
+- [ ] ⏳ *Pointer, not a card* — **Story F stays unsized.** Its ~2–3 cards get cut by
+	  S3-D3's done-condition. **D cut Aug 2** (S3-T3…T6, ADR-013) · **E cut Aug 2**
+	  (S3-T7…T10, ADR-014). Weight budget + the 🟠 squeeze in the sprint note.
 
 
 ## 🔨 In Progress
@@ -50,6 +57,11 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-D2** — Events + `StringId` ADR (`/adr`) · P1 · 🟢 Deep — **Aug 2.**
+	  [[ADR-014 — Events (buffered streams) & StringId]] Accepted (buffered streams ·
+	  barrier flip · `StringId` FNV-1a/64 · no Pool); two partial supersessions rowed;
+	  [[Events — Design]] + [[StringId — Design]] active; Story E cut into S3-T7…T10.
+	  **Both M1 gates closed.**
 - [x] **S3-D1** — Profiler ADR (`/adr`) · P1 · 🟢 Deep — **Aug 2.**
 	  [[ADR-013 — Profiler (Tracy-backed instrumentation)]] Accepted; [[Profiler — Design]]
 	  rewritten as the living *how*; Story D cut into S3-T3…T6.

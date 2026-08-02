@@ -62,14 +62,15 @@ plannable at the Aug 29–30 boundary.
       already flags that section as stale, so leaving it is shipping a note that argues against
       its own sprint. Also settles whether **memory tracking** rides the profiler.
       **Cuts Story D's cards. Gates M2's threading ADR.**
-- [ ] **S3-D2** — Events + `StringId` ADR via `/adr` · **P1** · 🟢 Deep — done: ADR
-      **Accepted**, answering **F28** (unsubscribe compares `std::function`s, which are not
-      equality-comparable → observers can't be removed; every event is a per-frame
-      `shared_ptr` alloc) and **naming the event-id type**, which is what pins `StringId`'s
-      shape; [[Game Loop — Frame Flow]]'s ***Event dispatch point*** open question closed
-      (drain at phase barriers vs continuously); states whether a **Pool** primitive is needed
-      ([[Backlog]] → `base`, whose trigger is literally "Events, M1") and whether a separate
-      design note is owed or the ADR is the hub. **Cuts Story E's cards.**
+- [x] **S3-D2** — Events + `StringId` ADR via `/adr` · **P1** · 🟢 Deep — **done 2026-08-02**
+      ([[ADR-014 — Events (buffered streams) & StringId]]) — done: ADR **Accepted** — buffered
+      per-type streams, **no subscriptions/callbacks** (F28 made inexpressible, not fixed);
+      visibility flips at phase barriers (closes [[Game Loop — Frame Flow]]'s *event dispatch
+      point* into its *Decided*); `EventTypeId` over **`StringId`** (FNV-1a/64, frozen,
+      macro-free); **no Pool** — [[Backlog]] trigger re-armed toward script storage; two
+      partial supersessions rowed in [[ADR Index]] (ADR-006 §4's `EventBus&` field ·
+      ADR-007 §6's "service" phrase); [[Events — Design]] + [[StringId — Design]] created
+      **active**, mechanism pinned pre-cut. **Story E cut into S3-T7…T10.**
 - [ ] **S3-D3** — `IFileSystem` design note · **P2** · 🟠 Moderate — done: note in
       `04 Design Docs/Systems/`, *Decided* rows **§ref'd to ADR-006 §4/§5 with no copied
       rationale**; decides the **mount / virtual-path scheme**, **sync-only vs an async seam**,
@@ -156,15 +157,62 @@ plannable at the Aug 29–30 boundary.
 > **ahead**. But D takes **both** moderate slots and Story F will want them too.
 > **Re-check the 🟠 column after S3-D2**, when two of three stories are sized. Not a problem
 > yet; a signal that the reserve was guessed before any of the three ADRs existed.
+>
+> **Re-checked 2026-08-02 (S3-D2 done):** Story E cut at **0 🟠 · 2 🟢 · 2 🟡** — the 🟠
+> column stays **5 planned vs 4 Fridays** (D3 · T1 · B1 · T4 · T5), unresolved and now
+> **Story F's problem**: the D/E/F reserve has **0 🟠 and 0 🟡 left** for F as-is (🟡 has
+> Wed-opt-in headroom; 🟠 does not). Deep is fine — D+E draw 3 of ~7. Honest options at
+> S3-D3's sizing: one 🟠 rides a Wed opt-in, or one slips to Sprint 04. **Pre-named for the
+> Aug 15–16 review.**
 
-### Story E — Events + `StringId` · ~4–5 tasks · **size after S3-D2**
+### Story E — Events + `StringId` *(sized 2026-08-02, off [[ADR-014 — Events (buffered streams) & StringId]])*
+
+> Ordering: **T7 → T8 → T9 → T10**, a strict chain, independent of Stories D/F. Gate said
+> **neither** on all four — ADR-014 is Accepted and [[Events — Design]] / [[StringId — Design]]
+> carry the pinned mechanism. **M5 hand-off, named not carded:** streams move onto `Scene`,
+> cursors onto schedule entries, event access into `SystemAccess` when those exist
+> (task-graph ADR) — at M1 the streams container is owned by the headless driver and cursors
+> are free-standing objects. **E draws 0 🟠 · 2 🟢 · 2 🟡** — see the budget note.
+
+- [ ] **S3-T7** — `base/StringId.hpp` + tests · **P1** · 🟡 Light — done:
+      `struct StringId { u64 value; }` with a `constexpr explicit` ctor from `string_view`
+      (FNV-1a/64, case-sensitive — ADR-014 §1); defaulted `==`/`<=>`; `std::hash` = identity;
+      `StringId{}` = 0 invalid sentinel; **no macro, no UDL, no table** ([[StringId — Design]]
+      § *Design*); `std::formatter` prints hex, placement per the Math split; Catch2 pins the
+      known vectors (`""` → `0xcbf29ce484222325`, `"a"` → `0xaf63dc4c8601ec8c`),
+      `static_assert`s constexpr evaluation, case-sensitivity, sentinel.
+- [ ] **S3-T8** — event registry in `core` · **P1** · 🟡 Light — done:
+      `registerEvent<T>("Tag.Name")`-shaped call, invoked from the composition root **only**
+      (no file-scope statics — ADR-014 §6), recording {`EventTypeId`, dense stream index,
+      size/align, reserved wire flag} and rejecting non-trivially-copyable payloads at compile
+      time (ADR-014 §2); registry **keeps the tag string** → always-on collision `TE_CHECK`
+      (incl. a tag hashing to 0) + tooling-only id→tag lookup ([[StringId — Design]] § *Reverse
+      lookup*); Catch2: collision fires, lookup resolves. Needs S3-T7.
+- [ ] **S3-T9** — `EventStream` core mechanics + tests · **P1** · 🟢 Deep — done: ring with
+      absolute `u64` sequences and three positions (retire head · visible end · staging tail);
+      `publish<T>` stages by value; `flip(frame, tick)` records marks; `retire(frame, tick)`
+      drops batches only after a frame boundary **and** a fixed tick have both passed
+      (ADR-014 §3 → [[Events — Design]] § *Retire*); cursor reads clamp to the head,
+      exactly-once while retained; **steady-state publish/read allocates nothing** (counting
+      `operator new` in the test exe); Catch2 scripts barrier sequences — ×N catch-up frames,
+      back-to-back 0-tick frames (events must survive to the next tick), lagging cursor,
+      ring wraparound. **Write the retire-rule cases first — the story's spike, in place.**
+      Needs S3-T8.
+- [ ] **S3-T10** — loop wiring + headless demo · **P1** · 🟢 Deep — done: `FrameLoop::advance`
+      flips at the end of every fixed sub-step and once at the frame tail, retires at frame
+      start ([[Events — Design]] § *Flip* / *Retire*); `TE_PROFILER_SCOPE` literal-name zones
+      on flip + retire (expand to nothing until Story D lands — **no ordering dep on D**); the
+      headless driver (`engine/app/src/App.cpp`) publishes in a fixed step and a frame-tail
+      read consumes it **exactly once** at the next barrier — the first event across a
+      deterministic barrier; the streams container stays driver-owned, named as the M5 `Scene`
+      hand-off. Needs S3-T9.
 ### Story F — File access · ~2–3 tasks · **size after S3-D3**
 
-> **E and F** stay heavy-gated → deliberately **unsized** ([[Planning Workflow — Artifact
+> **F** stays heavy-gated → deliberately **unsized** ([[Planning Workflow — Artifact
 > Gate]] § *Don't size past an open decision*). Cards get cut when their ADR/note is
-> Accepted, per that Design card's own done-condition — **D was cut 2026-08-02**, off
-> ADR-013. Do not fill the other two in to make the note look complete — S2-T2 is what that
-> produces. Their shared weight budget is in the capacity note.
+> Accepted, per that Design card's own done-condition — **D was cut 2026-08-02** (ADR-013),
+> **E was cut 2026-08-02** (ADR-014). Do not fill F in to make the note look complete —
+> S2-T2 is what that produces. Its remaining weight budget is in the capacity note.
 
 #### How D / E / F get planned
 
@@ -204,7 +252,8 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
 
 ## Definition of Done
 
-- [ ] **Both M1 gates Accepted** — the Profiler and Events ADRs are in [[ADR Index]], so
+- [x] **Both M1 gates Accepted** — **done Aug 2**: [[ADR-013 — Profiler (Tracy-backed instrumentation)]]
+      + [[ADR-014 — Events (buffered streams) & StringId]] in [[ADR Index]], so
       **M2's threading ADR is unblocked** at the Aug 29–30 boundary.
 - [ ] Every system touched has a **design note as its hub**, *Decided* rows §ref'ing the ADR
       with **no copied rationale** — Profiler, Events, `IFileSystem`, math.
