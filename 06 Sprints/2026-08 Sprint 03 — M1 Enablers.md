@@ -88,11 +88,14 @@ plannable at the Aug 29–30 boundary.
 
 ### Story B — math *(sized: [[Math — Design]] drafted this session)*
 
-- [ ] **S3-T1** — `Math.hpp` alias set · **P1** · 🟠 Moderate — done:
-      `engine/base/include/TechEngine/base/Math.hpp` carries the [[Math — Design]] alias set in
-      namespace `TechEngine`; `glm::glm` confirmed **PUBLIC** on `te_base` (ADR-011 §1);
-      **no `GLM_FORCE_*` handedness/depth defines** — that call is deferred to the renderer ADR
-      and the note is its record; `TechEngineSDKSmoke` still compiles.
+- [x] **S3-T1** — `Math.hpp` alias set · **P1** · 🟠 Moderate — **done 2026-08-02**
+      (engine `05cf3718`, PR #21) — done: `engine/base/include/TechEngine/base/Math.hpp` carries
+      the [[Math — Design]] alias set in namespace `TechEngine`; `glm::glm` was **already**
+      PUBLIC on `te_base` (`LIBS`, not `LIBS_PRIVATE` — ADR-011 §1), so the condition held with
+      **no CMake change**; **no `GLM_FORCE_*`** — the renderer-ADR deferral is recorded in the
+      note *only*, since the header carries no marker; `MathTests.cpp` added beyond the card —
+      `static_assert`s, no `TEST_CASE`, because **nothing includes `Math.hpp` yet** and an
+      uncompiled header would sit green in CI until S3-T2.
 - [ ] **S3-T2** — `Math/Format.hpp` + tests · **P2** · 🟡 Light — done: `std::formatter`
       specializations for `Vec2/3/4`, `Mat4`, `Quat` in a **separate header** from the types
       (ADR-006 §6 — formatters live with math; the split keeps `<format>` opt-in); Catch2 cases
@@ -296,7 +299,9 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
       with **no copied rationale** — **done Aug 2**: [[Profiler — Design]] · [[Events — Design]]
       + [[StringId — Design]] · [[File Access — Design]] · [[Math — Design]]. M1's design-note
       gap is closed for the four items this sprint takes; RNG + crash handler still carry.
-- [ ] `Math.hpp` + `Math/Format.hpp` in `base` with Catch2 tests, **CI green both legs**.
+- [ ] `Math.hpp` + `Math/Format.hpp` in `base` with Catch2 tests, **CI green both legs** —
+      **half: `Math.hpp` merged Aug 2** (`05cf3718`, green both legs); `Math/Format.hpp` owed by
+      S3-T2, and it brings the first real `TEST_CASE`s.
 - [x] Stories D/E/F's cards were **written after** their artifact, never before —
       **held Aug 2**, all three cut the same day their artifact landed.
 - [ ] **S3-B1 closed** — one composition root owns diagnostics init.

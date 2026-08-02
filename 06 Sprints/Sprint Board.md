@@ -11,8 +11,6 @@ kanban-plugin: board
 
 ## 📋 B — math · [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
 
-- [ ] **S3-T1** — `Math.hpp` alias set ([[Math — Design]]) · P1 · 🟠 Moderate — no
-	  `GLM_FORCE_*` handedness/depth defines; that call is the renderer ADR's.
 - [ ] **S3-T2** — `Math/Format.hpp` + tests · P2 · 🟡 Light — separate header from the types,
 	  so `<format>` stays opt-in.
 
@@ -80,6 +78,11 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T1** — `Math.hpp` alias set ([[Math — Design]]) · P1 · 🟠 Moderate — **Aug 2**,
+	  engine `05cf3718` (PR #21). Alias set in `TechEngine`; `glm::glm` was already PUBLIC on
+	  `te_base`, **no CMake change needed**; no `GLM_FORCE_*` — the deferral lives in the note
+	  only. `MathTests.cpp` = `static_assert`s, so CI compiles the header before S3-T2 does.
+	  [[Math — Design]] → **active**.
 - [x] **S3-D3** — file-access design note (F30) · P2 · 🟠 Moderate — **Aug 2.**
 	  [[File Access — Design]] · **`IFileSystem` → `IFileAccess`** (v1's was a `System` —
 	  F16), recorded as a dated vocabulary amendment on ADR-006's header. `platform` ·

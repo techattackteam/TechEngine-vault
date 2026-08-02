@@ -1,14 +1,15 @@
 # Math — Design
 
-> Living design doc. **Status: draft** — drafted in the 2026-08-02 planning session (light
+> Living design doc. **Status: active** — drafted in the 2026-08-02 planning session (light
 > artifact per [[Planning Workflow — Artifact Gate]]: the library was chosen in ADR-005 and
-> the placement in ADR-006; what's left is naming and surface).
+> the placement in ADR-006; what's left is naming and surface). **Types built the same day**
+> (S3-T1, engine `05cf3718`); formatters still owed by S3-T2.
 > **ADR = the decision; this doc = the _how_.** No ADR is owed — math is a `base` leaf and
 > every call below is reversible while `base` is its only consumer. The **one** irreversible
 > question (handedness + depth range) is deliberately **not answered here** — see *Open questions*.
 
 **Module:** `base` · **Kind:** utility (helper you *call* — free functions/types, no lifecycle) ·
-**Status:** draft
+**Status:** active
 **ADRs:** [[ADR-005 — v2 tech stack & toolchain]] (glm) ·
 [[ADR-006 — v2 core architecture & module layout]] §1 §5 §6 ·
 [[ADR-011 — Diagnostics (Logger & Assert)]] §1 (`glm::glm` stays PUBLIC on `te_base`)
@@ -62,6 +63,11 @@ Types + formatters only, this sprint. **No helper library**: no `lerp`, no `deco
 easing, no `AABB`. glm already ships the ones that exist, and the rest have no consumer — the
 same pressure test Sprint 02 ran (nothing built without a consumer *now*).
 
+**The types have no behaviour, so they get no `TEST_CASE`.** `MathTests.cpp` is `static_assert`s
+pinning each alias to its glm type plus `Vec3::value_type == float` — a test of *this note's
+decisions*, not of glm. Its real job is that **something compiles the header**: nothing includes
+`Math.hpp` yet, so without that TU a broken header would sit in a green CI until S3-T2.
+
 ### Formatters in their own header
 
 `std::formatter<TechEngine::Vec3>` etc. live in **`Math/Format.hpp`**, not `Math.hpp`.
@@ -90,7 +96,9 @@ The pressure test still applies to the *surface*: types and formatters, no helpe
   **renderer** decision written against by every projection matrix and depth read; deciding it
   at M1 with no renderer would be exactly the "designs it against an imaginary consumer"
   mistake the [[Roadmap]] chain exists to avoid. **Named here so it is not a surprise at R1** —
-  and because the `GLM_FORCE_*` defines belong in this header when it is answered.
+  and because the `GLM_FORCE_*` defines belong in this header when it is answered. **Nothing in
+  `Math.hpp` marks the absence — this note is the only record**, so an R1 reader who never opens
+  it will read the defaults as a choice.
 - **SDK exposure → the scripting ADR**, same deferral as [[ADR-011 — Diagnostics (Logger &
   Assert)]] §10. Math is the **most likely first type to cross** into `te_sdk` (user Systems
   read transforms, ADR-010 §3), so it will be the acid test for whether `TechEngine::sdk` can
@@ -106,4 +114,6 @@ The pressure test still applies to the *surface*: types and formatters, no helpe
   §6 (formatters live with math)
 - [[Logger — Design]] — the `<format>`-in-a-wide-header cost this note splits around
 - `CONVENTIONS.md` → *Names are spelled out* — the rule `Vec3` is an explicit exception to
-- Code: *(none yet — S3-T1/S3-T2)*
+- Code: `engine/base/include/TechEngine/base/Math.hpp` (the alias set) ·
+  `engine/base/tests/MathTests.cpp` (`static_assert`s only — no `TEST_CASE`; see *Surface*) ·
+  *`Math/Format.hpp` still owed — S3-T2*
