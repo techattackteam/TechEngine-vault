@@ -9,18 +9,22 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## 📋 To Do — [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
+## 📋 B — math · [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
 
-- [ ] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — carried
-	  from `S2-B1`, which was created Jul 31 and **never reached this board**. Not droppable.
 - [ ] **S3-T1** — `Math.hpp` alias set ([[Math — Design]]) · P1 · 🟠 Moderate — no
 	  `GLM_FORCE_*` handedness/depth defines; that call is the renderer ADR's.
 - [ ] **S3-T2** — `Math/Format.hpp` + tests · P2 · 🟡 Light — separate header from the types,
 	  so `<format>` stays opt-in.
-- [ ] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — ADR-011 amended in place twice vs
-	  [[ADR Index]]'s immutability rule. One of the two is wrong.
-- [ ] **S3-P2** — Skill `te-review` · P3 · 🟡 Light — **first to cut.** Dry-run must find
-	  something real or the rubric gets trimmed.
+
+
+## 📋 C — S2 loose ends
+
+- [ ] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — carried
+	  from `S2-B1`, which was created Jul 31 and **never reached this board**. Not droppable.
+
+
+## 📋 D — profiler hooks *(T3 → T4 → {T5, T6})*
+
 - [ ] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · P1 · 🟢 Deep — Story D's
 	  head. **Riskiest card of the story:** `/W4 /WX` hits Tracy's header inside our own TU and
 	  the `SYSTEM` fix needs CMake 3.25 (we require 3.21). Spike is its first hour.
@@ -30,6 +34,10 @@ kanban-plugin: board
 	  lives in `app`'s TU, never a `base` static-lib TU. Needs S3-T4.
 - [ ] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — < 5% bar into
 	  [[B3 — Build & Testing Notes]]; says out loud that the ON path is not unit-tested.
+
+
+## 📋 E — events + `StringId` *(T7 → T8 → T9 → T10)*
+
 - [ ] **S3-T7** — `base/StringId.hpp` + tests ([[StringId — Design]]) · P1 · 🟡 Light —
 	  constexpr FNV-1a/64 value type; **no macro, no UDL, no table**. Story E's head.
 - [ ] **S3-T8** — event registry in `core` · P1 · 🟡 Light — tag-at-call registration from
@@ -40,6 +48,10 @@ kanban-plugin: board
 	  Needs S3-T8.
 - [ ] **S3-T10** — loop wiring + headless demo · P1 · 🟢 Deep — flip per fixed sub-step,
 	  retire at frame start; first event across a deterministic barrier. Needs S3-T9.
+
+
+## 📋 F — file access *(T11 → T12 → T13)*
+
 - [ ] **S3-T11** — `MountTable` + path resolution + tests ([[File Access — Design]]) · P1 ·
 	  🟡 Light — `alias://` + priority; `mount()` lives **here only**, not on an interface.
 	  Case-sensitivity test is the one that differs across CI legs. Story F's head.
@@ -50,7 +62,16 @@ kanban-plugin: board
 	  `runtime` reads through a virtual path — F30's regression test. Needs S3-T12.
 
 
+## 📋 G — process *(first to cut)*
+
+- [ ] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — ADR-011 amended in place twice vs
+	  [[ADR Index]]'s immutability rule. One of the two is wrong.
+- [ ] **S3-P2** — Skill `te-review` · P3 · 🟡 Light — **first to cut.** Dry-run must find
+	  something real or the rubric gets trimmed.
+
+
 ## 🔨 In Progress
+
 
 
 ## 👀 Review / Demo
@@ -80,6 +101,6 @@ kanban-plugin: board
 
 %% kanban:settings
 ```
-{"kanban-plugin":"board","list-collapse":[null]}
+{"kanban-plugin":"board","list-collapse":[null,null,null,null,null,null,null,null,null,null]}
 ```
 %%
