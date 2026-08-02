@@ -9,7 +9,7 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 03 — M1 Enablers]] *(Aug 1 – Aug 28)* |
 | **Sprint goal** | **M1's two gates decided, and the vocabulary every later module is written against, built.** Profiler + Events ADRs land; math ships; `IFileSystem` gets its note. **Decide first, then build.** |
-| **Current focus** | 🔨 **S3-D1 (Profiler ADR) and S3-D2 (Events + `StringId` ADR)** — both 🟢 Deep, both gate an unsized story, and D1 also gates **M2's threading ADR**. While an ADR is unwritten, the free cards are math (S3-T1/T2), **S3-B1** and the two Process cards. **M0 ✅** — Sprint 02 closed Aug 2, four weeks early. |
+| **Current focus** | ✅ **S3-D1 done Aug 2** — [[ADR-013 — Profiler (Tracy-backed instrumentation)]] Accepted, **M2's threading ADR unblocked**, Story D cut into **S3-T3…T6** (head: S3-T3, the riskiest card in the story). 🔨 Next 🟢 Deep is **S3-D2 (Events + `StringId` ADR)**, which gates Story E. Non-deep days: math (S3-T1/T2), **S3-B1**, the two Process cards. **M0 ✅** — Sprint 02 closed Aug 2, four weeks early. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
 | **Next milestone** | **M1 closes Aug 28** on the [[Roadmap]]'s own bar (gates Accepted + unlock demonstrable) → Sprint 04 opens **M2 ‖ M3**. RNG · crash handler · memory tracking carry |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |

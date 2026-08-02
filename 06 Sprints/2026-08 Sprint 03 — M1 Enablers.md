@@ -53,7 +53,8 @@ plannable at the Aug 29–30 boundary.
 
 ### Story A — M1's gates *(Design — ordered first; Stories D/E/F wait on these)*
 
-- [ ] **S3-D1** — Profiler ADR via `/adr` · **P1** · 🟢 Deep — done: ADR **Accepted** in
+- [x] **S3-D1** — Profiler ADR via `/adr` · **P1** · 🟢 Deep — **done 2026-08-02**
+      ([[ADR-013 — Profiler (Tracy-backed instrumentation)]]) — done: ADR **Accepted** in
       [[ADR Index]], freezing the thin-`base`-façade → Tracy direction; [[Profiler — Design]]'s
       **five open questions closed** (in-proc vs separate process · Tracy version pin · socket
       off in shipping builds · clock resolution · overhead budget); its interim *Direction*
@@ -99,14 +100,71 @@ plannable at the Aug 29–30 boundary.
       S2-T3's residual — `initLogging`/`spdlogSink` uncovered by ctest — is either **closed or
       explicitly re-parked with the reason**, not left silent.
 
-### Story D — Profiler hooks · ~3–4 tasks · **size after S3-D1**
+### Story D — Profiler hooks *(sized 2026-08-02, off [[ADR-013 — Profiler (Tracy-backed instrumentation)]])*
+
+> Ordering: **T3 → T4 → {T5, T6}**. Gate said **neither** on all four — the ADR is Accepted
+> and [[Profiler — Design]] is the hub. Dep allocator hooks (Jolt · miniaudio · GLFW) have
+> **no consumer yet** and went to [[Backlog]], not a card.
+
+- [ ] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · **P1** · 🟢 Deep —
+      done: `cmake/deps.cmake` declares Tracy `GIT_TAG v0.13.1` **guarded by `if(TE_PROFILE)`**
+      (mirrors Catch2, `:88`) so a default build fetches nothing and CI's `_deps`/ccache keys
+      are untouched; `option(TE_PROFILE … OFF)` beside `TE_BUILD_TESTS`
+      (`CMakeLists.txt:14`); when ON, `engine/base/CMakeLists.txt` adds `Tracy::TracyClient`
+      **PUBLIC** + `TE_PROFILE_ENABLED` via follow-up `target_link_libraries` /
+      `target_compile_definitions` — `techengine_module()`'s `LIBS` cannot be conditional,
+      same shape as the existing `TE_LOG_ACTIVE_LEVEL` block; Tracy's include dir consumed as
+      **SYSTEM**; `TRACY_ON_DEMAND` + `TRACY_ONLY_LOCALHOST` + `TRACY_NO_BROADCAST` ON
+      (ADR-013 §4); `windows-profile` + `linux-profile` presets **configure and build on both
+      legs**; ADR-013's open OS-header question answered in [[Profiler — Design]] either way.
+      **Spike is the first hour, not a card** — see the risk note below.
+- [ ] **S3-T4** — `base/Profile.hpp` + frame mark · **P1** · 🟠 Moderate — done:
+      `TE_PROFILER_SCOPE/FUNCTION/FRAME` per [[Profiler — Design]] § *Surface*; with the
+      option off the header includes **no third-party header** and every macro expands to
+      nothing; `TE_PROFILER_FRAME()` in `engine/app/src/App.cpp:20-42`, a scope in
+      `FrameLoop::advance` (`FrameLoop.cpp:9`); **this is the sprint's demo** — a
+      `windows-profile` run connects to the pinned Tracy desktop build and shows 120 frames
+      with `advance` nested; a `TE_PROFILE=OFF` release binary contains **no Tracy symbol**;
+      names are string literals, **no transient zone anywhere** (ADR-013 §6).
+- [ ] **S3-T5** — memory tracking: global `operator new`/`delete` replacement · **P2** ·
+      🟠 Moderate — done: `TE_PROFILER_ALLOC/FREE` in `Profile.hpp`; the replacement lives in
+      **`app`'s composition-root TU**, never a `base` static-lib TU (ADR-013 §7 — a
+      linker-stripped replacement is a silently partial profile); a profiled headless run
+      shows a non-empty memory plot with the Logger's allocations visible **and the session
+      does not drop** (the asymmetric-delete check); array + aligned + sized forms replaced,
+      or the omissions named; nothing compiled with the option off.
+- [ ] **S3-T6** — overhead number + coverage statement · **P2** · 🟡 Light — done:
+      `windows-release` built twice, `TE_PROFILE` ON vs OFF, headless loop timed, delta
+      recorded in [[B3 — Build & Testing Notes]] against ADR-013 §6's **< 5%** bar; a miss
+      gets its **cause named** (zone placement vs Tracy) before anything is changed; a Catch2
+      case proving the macros compile side-effect-free with `TE_PROFILE=OFF`; and **stated
+      out loud** in [[Profiler — Design]] — the ON path is demo-verified, *not* unit-tested,
+      and CI never builds it.
+
+> **Riskiest card is S3-T3, and it is not close.** Three unknowns stack: (a) `te_warnings`'
+> `/W4 /WX` applies to *our* compiland, so a warning inside Tracy's header — included by
+> `base/Profile.hpp` — is our error, which ADR-008 §5 does not cover because it guards the
+> other direction; (b) the fix is version-blocked — `FetchContent_Declare(... SYSTEM)` is
+> **CMake 3.25**, we require **3.21**, so it needs the manual re-export `miniaudio` already
+> uses (`cmake/deps.cmake:85`); (c) the open OS-header question. **De-risk in T3's first
+> hour:** configure `TE_PROFILE=ON`, `#include <tracy/Tracy.hpp>` into one existing `base`
+> `.cpp`, build Windows only. All three answered before the real plumbing is written — and if
+> it goes badly, **re-scope T3 rather than push through**.
+
+> **Budget check.** D draws **1 🟢 · 2 🟠 · 1 🟡** against D+E+F's reserved ~7 🟢 · 2 🟠 ·
+> 3 🟡. Deep days — the scarce, protected resource — come in at 1 against ~3, so this is
+> **ahead**. But D takes **both** moderate slots and Story F will want them too.
+> **Re-check the 🟠 column after S3-D2**, when two of three stories are sized. Not a problem
+> yet; a signal that the reserve was guessed before any of the three ADRs existed.
+
 ### Story E — Events + `StringId` · ~4–5 tasks · **size after S3-D2**
 ### Story F — File access · ~2–3 tasks · **size after S3-D3**
 
-> Heavy-gated → deliberately **unsized** ([[Planning Workflow — Artifact Gate]] § *Don't size
-> past an open decision*). Cards get cut when their ADR/note is Accepted, per that Design
-> card's own done-condition. Do not fill these in to make the note look complete — S2-T2 is
-> what that produces. Their shared weight budget is in the capacity note.
+> **E and F** stay heavy-gated → deliberately **unsized** ([[Planning Workflow — Artifact
+> Gate]] § *Don't size past an open decision*). Cards get cut when their ADR/note is
+> Accepted, per that Design card's own done-condition — **D was cut 2026-08-02**, off
+> ADR-013. Do not fill the other two in to make the note look complete — S2-T2 is what that
+> produces. Their shared weight budget is in the capacity note.
 
 #### How D / E / F get planned
 

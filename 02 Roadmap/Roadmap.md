@@ -162,9 +162,9 @@ Only the current and next sprint carry dates. Everything past that is the ladder
   consumer. Recorded because the row was dropped out of M1's contents inside a table reflow,
   where it read as formatting rather than a decision.
 - **Profiler hooks at M1, panel at T1.** A system born with zones is free; adding zones to
-  twenty systems later is a sweep. [[Profiler — Design]] § Trigger argues the opposite and is
-  **stale** — that section is a rewrite, and landing early pulls its *version pin* and *socket
-  off in shipping builds* questions forward with it.
+  twenty systems later is a sweep. **Settled 2026-08-02** in
+  [[ADR-013 — Profiler (Tracy-backed instrumentation)]]: hooks at M1 against the Tracy
+  desktop app; the in-editor panel is a T1 decision with three routes still open (§3).
 - **Reflection is not a gap.** [[ADR-005 — v2 tech stack & toolchain]] already decided C++20
   with **no reflection** and a hand-rolled trait seam, with a re-litigation trigger. The seam
   belongs to M6's serialization ADR.

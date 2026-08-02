@@ -60,6 +60,10 @@ kept — they show where future work lands.
 
 ## etc — cross-cutting
 
+- **Point each dep's allocator hook at the profiler** — Jolt (`JPH::Allocate`/`Free`/aligned
+  + `JPH_OVERRIDE_NEW_DELETE`), miniaudio (`ma_allocation_callbacks`), GLFW 3.4
+  (`glfwInitAllocator`) → [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §7.
+  **Trigger:** the first init of each dep.
 - **Retrofit `base` to the spelled-out-names rule** — `loc` / `fmtStr` predate it.
   **Trigger:** the next PR that touches those signatures for another reason.
 - **Path-filter docs-only PRs** — a vault-free docs change still burns the full matrix; needs
