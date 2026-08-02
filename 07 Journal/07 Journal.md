@@ -11,5 +11,6 @@ newest first.
 
 | Date | Entry |
 |---|---|
+| 2026-08-02 | [[2026-08-02 Sprint 02 Retrospective]] — Sprint 02 closed **4 weeks early**; first reconciliation-stamp advance; `S2-B1` found evaporated |
 | 2026-07-25 | [[2026-07-25 Sprint 01 Retrospective]] — Sprint 01 closed: demo, CI thrash post-mortem, "bank the day" rule |
 | 2026-07-25 | [[2026-07-25 Weekly Review]] — scaffold + CI green; 4 artifact-drift findings, all reconciled |

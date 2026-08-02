@@ -7,13 +7,13 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q3 (Jul–Sep) |
-| **Sprint** | [[2026-08 Sprint 02 — Base Foundation]] *(Jul 25 – Aug 28)* |
-| **Sprint goal** | **`base` you can trust:** Logger, Assert and Clock — unit-tested and proven by a real consumer, the first sliver of the app loop. Horizontal base, **not** the vertical slice. |
-| **Current focus** | ⚪ **Board is empty — all Sprint-02 cards closed** (S2-P2/P3 Jul 31; T8 landed Jul 30, PR #19). `base` has Logger, Assert, Clock + tests; headless `FrameLoop` accumulator with tick-exact + clamp tests; `CONVENTIONS.md` live; vault split done. **[[Roadmap]] rewritten Jul 31** — C2 reversed, build order is now the chain + lanes ladder. Sprint runs to **Aug 28** and the goal is met — the capacity note's rule applies: **bank the slack, don't refill it.** Next work is the **Aug 1–2** review's call. |
+| **Sprint** | [[2026-08 Sprint 03 — M1 Enablers]] *(Aug 1 – Aug 28)* |
+| **Sprint goal** | **M1's two gates decided, and the vocabulary every later module is written against, built.** Profiler + Events ADRs land; math ships; `IFileSystem` gets its note. **Decide first, then build.** |
+| **Current focus** | 🔨 **S3-D1 (Profiler ADR) and S3-D2 (Events + `StringId` ADR)** — both 🟢 Deep, both gate an unsized story, and D1 also gates **M2's threading ADR**. While an ADR is unwritten, the free cards are math (S3-T1/T2), **S3-B1** and the two Process cards. **M0 ✅** — Sprint 02 closed Aug 2, four weeks early. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
-| **Next milestone** | `base` done (Aug 28) → Sprint 03 (Aug 29 – Sep 25) opens **M1 · enablers** on the [[Roadmap]] ladder |
+| **Next milestone** | **M1 closes Aug 28** on the [[Roadmap]]'s own bar (gates Accepted + unlock demonstrable) → Sprint 04 opens **M2 ‖ M3**. RNG · crash handler · memory tracking carry |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
-| **Reconciled against** | engine `2b4bc38e` (2026-07-25) |
+| **Reconciled against** | engine `486fff6b` (2026-08-02) |
 
 **Reading that stamp** ([[ADR-012 — Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -21,14 +21,19 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline 2b4bc38e..origin/master
+git log --oneline 486fff6b..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
-you *which* note drifted, only that nobody has looked. Currently the engine **is** ahead — PRs
-#8–#19 all landed after this stamp, so `base` (Logger, Assert, Clock) and the `app` loop sliver
-are the exposed area. First advance is due at the **Aug 1–2** weekly review.
+you *which* note drifted, only that nobody has looked.
+
+**First real advance: 2026-08-02**, from `2b4bc38e`. The Sprint-02 retro spot-checked the
+exposed area — Logger, Assert, Clock and the `app` loop sliver — against PRs #8–#19: the
+rendered-format contract, the file-sink mode, the ring sink and every `path:line` the notes
+cite. **No hub drift found**; ADR-011's rotation amendment had propagated correctly into
+[[Logger — Design]]. Four findings were recorded instead, all carded or corrected — see the
+retro. Spot-check depth, not a line-by-line audit; that is what this stamp has always meant.
 
 ## 🗓️ Rhythm
 
@@ -42,9 +47,17 @@ tell where you are in a sprint.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **weekend of Aug 1–2 2026** — weekly review.
-*(Jul 25–26 weekend fully closed: [[2026-07-25 Weekly Review]] + [[2026-07-25 Sprint 01 Retrospective]]
-+ Sprint 02 planned. Next **sprint boundary**: weekend of **Aug 29–30**.)*
+→ **Next ceremony:** **weekend of Aug 8–9 2026** — weekly review.
+*(Aug 1–2 was a **sprint boundary**, not the planned weekly review: Sprint 02 met its goal
+Jul 30 with four weeks left, so it was **closed early** and `/sprint-plan` ran instead —
+[[2026-08-02 Sprint 02 Retrospective]] + [[2026-08 Sprint 03 — M1 Enablers]]. Sprint 03 takes
+Aug 1 – Aug 28, so the next **sprint boundary** is still **Aug 29–30**, with weekly reviews on
+**Aug 8–9**, **Aug 15–16** and **Aug 22–23**.)*
+
+**An early close moves the boundary, not the cadence.** A sprint that meets its goal with weeks
+to spare is re-planned at the next weekend, and the new sprint's 4-week range is set from that
+Saturday. Sprint 02 → 03 happened to land the boundary back on the published Aug 29–30 date; do
+not assume that always holds.
 
 **Ceremony anchor = the weekend, not a fixed day.** Run each on whichever weekend day you
 work; if you work both, pick one.
@@ -85,8 +98,8 @@ Build order from here: the [[Roadmap]] ladder — **chain M0–M6, then lanes**.
 | 1 | **Deep v1 audit** | Read (not skim) each subsystem → deepen [[v1 Code Audit]] | ✅ done (Jul 19) |
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005–008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
-| 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop — [[2026-08 Sprint 02 — Base Foundation]] | 🔨 active (Aug) |
-| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | ⚪ Sprint 03 opens M1 |
+| 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop — [[2026-08 Sprint 02 — Base Foundation]] | ✅ done (Jul 30) |
+| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | 🔨 **M1** — [[2026-08 Sprint 03 — M1 Enablers]] |
 
 _Tasks → [[Sprint Board]]._
 
@@ -101,24 +114,21 @@ _Tasks → [[Sprint Board]]._
 ## Active decisions
 
 Recently locked — full set in [[ADR Index]]:
-
-- [x] Fresh start vs continue → **fresh (v2)**, [[ADR-004 — Fresh start (v2) with v1 as reference]]
-- [x] v2 stack · architecture · networking · build/testing → ADRs 005–008 Accepted ([[ADR Index]])
-- [x] Branching + merge rules → [[ADR-009 — Branching strategy & merge rules]] Accepted; `master` ruleset live
-- [x] Diagnostics (Logger + Assert) → [[ADR-011 — Diagnostics (Logger & Assert)]] **Accepted** (S2-T1)
-- [x] Vault as its own repo → [[ADR-012 — Vault repository split]] Accepted; cutover done (S2-T13)
-- [x] User authoring model → [[ADR-010 — User authoring model (Systems & Scripts)]] stays **Proposed**, gated on the task-graph ADR
+- [ ] **Profiler** (S3-D1) + **Events/`StringId`** (S3-D2) → **being written this sprint**; both gate M1, and the Profiler one gates M2's threading ADR
 - [ ] Threading · task-graph · serialization · renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
+- [ ] **Can an Accepted ADR be amended in place?** ADR-011 has been, twice; [[ADR Index]] says no → **S3-P1**
 
-## Health check (update weekly · 2026-07-25)
+## Health check (update weekly · 2026-08-02)
 
-- **Build:** 🟢 — CI green both legs, `ctest` 3/3, `master` ruleset Active (8 required checks).
-  Caveats: clang-tidy proven on Linux only; CI-minute budget is now live.
-- **Momentum:** 🟢 strong — the whole week's plan landed Monday; Thu/Fri went to design
-  (ADR-010, [[Game Loop — Frame Flow]], vocabulary amendments) + process.
-- **Sustainability:** 🟡 — cadence held (Wed off, Tue light), but early finish was refilled
-  instead of banked and Friday ran a deep day's load on a moderate slot. Two sessions past
-  midnight. **Rule for Sprint 02: finish early → the day stays empty.**
-- **Artifact health:** 🟢 — all four drift findings **reconciled 2026-07-25** (`CLAUDE.md`
-  de-v1'd, `04 Design Docs` refs fixed, B4 aligned to the CI format gate, scaffold
-  checklist given one home). See [[2026-07-25 Weekly Review]] → *Artifact drift*.
+- **Build:** 🟢 — CI green both legs across 12 PRs, no revert, `master` ruleset Active
+  (8 required checks). Caveats unchanged: clang-tidy proven on Linux only; CI-minute budget live.
+- **Momentum:** 🟢 strong — a 5-week sprint closed in 6 days. That is the *reason* Sprint 03 is
+  sized up a third; it is not a reason to size it to the observed rate.
+- **Sustainability:** 🟡 — weekday cadence **held** (Tue + Wed closed zero cards), but **both
+  weekend days were worked** Jul 25–26 (guardrail wants ≥1 rest day) and **Thu Jul 30 closed
+  six cards**. The bank-the-slack rule was never tested — the sprint was *finished*, not run
+  dry. **Sprint 03 leaves 2 deep slots empty specifically to test it.**
+- **Artifact health:** 🟢 code, 🟠 coverage. The Jul 30 drift check found **no hub drift** —
+  the ADR-011 rotation amendment propagated correctly, and the notes' `path:line` claims hold
+  ([[2026-08-02 Sprint 02 Retrospective]]). But **M1 has seven items and one design note**;
+  Sprint 03 closes that for four of them and RNG + the crash handler carry artifact-less.

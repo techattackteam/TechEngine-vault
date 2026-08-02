@@ -1,12 +1,12 @@
 # Clock — Design
 
-> Living design doc. **Status: draft** — drafted in the 2026-07-25 planning session
-> (light artifact per [[Planning Workflow — Artifact Gate]]; the decisions were already
-> made, this is their hub).
+> Living design doc. **Status: accepted** (2026-08-02) — drafted in the 2026-07-25 planning
+> session (light artifact per [[Planning Workflow — Artifact Gate]]), shipped by S2-T6 and
+> closed out by S2-T7/T8. Build to it.
 > **ADR = the decision; this doc = the _how_.** No ADR is owed here — the Clock is local
 > to `base`, reversible, and its shape was settled in [[Game Loop — Frame Flow]].
 
-**Module:** `base` · **Kind:** utility (helper you *call*) · **Status:** draft
+**Module:** `base` · **Kind:** utility (helper you *call*) · **Status:** accepted — implemented (S2-T6)
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §4 §6 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §5
 **Consumers:** the app loop (writes) · [[Logger — Design]] / [[Profiler — Design]] (read the frame stamp)

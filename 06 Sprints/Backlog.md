@@ -71,8 +71,6 @@ kept — they show where future work lands.
 - **Recorded-demo workflow** — capture + store. **Trigger:** the first demo worth keeping.
 - **Command `/catch-up`** — session re-entry after a multi-day gap. **Trigger:** the first
   session that opens with "where was I".
-- **Skill `te-review`** — engine review rubric over the ADR structural invariants.
-  **Trigger:** wanted now — `CONVENTIONS.md` landed Jul 30.
 
 ## Ideas (unsorted)
 

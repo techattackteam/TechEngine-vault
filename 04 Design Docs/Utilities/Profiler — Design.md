@@ -12,7 +12,12 @@
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 *(taxonomy)* — **owes its own ADR**
 **Consumers:** memory tracking (emits into it) · renderer / render-graph passes (GPU zones) ·
 the ECS scheduler (RAII scopes wrap it, not bolted in)
-**Sprint:** **not scheduled** — trigger below
+**Sprint:** [[2026-08 Sprint 03 — M1 Enablers]] — **S3-D1** (the ADR)
+
+> ⚠️ **§ *Trigger* below is stale and is S3-D1's to rewrite.** It argues "not until the first
+> perf pass"; the [[Roadmap]] puts the Profiler at **M1** and gates **M2's threading ADR** on
+> it — a system born with zones is free, retrofitting twenty is a sweep. Do not plan or ground
+> an answer off that section until the ADR lands (2026-08-02).
 
 ## Purpose
 

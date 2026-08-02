@@ -1,11 +1,14 @@
 # 2026-08 · Sprint 02 — Base Foundation
 
 - **Quarter:** [[2026-Q3]]
-- **Dates:** **Jul 25 – Aug 28 2026** (5 weeks — **one-off transition**: the 4-week Sat→Fri
-  cadence was adopted 2026-07-26 mid-sprint, and this sprint was already sized at ~5 weeks.
-  Cutting it to 4 would have removed the deliberate slack, not idle time. Sprint 03 is the
-  first clean cycle). Review + plan on the **Aug 29–30** weekend — which is **day 1 of
-  Sprint 03**, not the tail of this one.
+- **Dates:** **Jul 25 – Jul 31 2026** (1 week). **Closed 4 weeks early on 2026-08-02** — the
+  goal was met Jul 30 and the board emptied Jul 31, so the remaining four weeks became
+  Sprint 03 rather than idle sprint. Planned as a 5-week one-off transition (the 4-week
+  Sat→Fri cadence was adopted mid-sprint on 2026-07-26); it was never sized for five weeks of
+  work, and that under-fill is exactly why it ran out.
+  Review + retro: **2026-08-02** → [[2026-08-02 Sprint 02 Retrospective]].
+  **Downstream dates are unaffected:** [[2026-08 Sprint 03 — M1 Enablers]] takes
+  **Aug 1 – Aug 28**, so the already-published **Aug 29–30** boundary still stands.
 - **Epic:** v2 base foundation
 - **Decisions behind it:** [[ADR-006 — v2 core architecture & module layout]] §4 §6 ·
   [[ADR-007 — v2 networking & ECS replication foundation]] §5
@@ -82,7 +85,7 @@ vertical slice is **Sprint 03**.
       explicitly from the composition root (ADR-011 §2); filtering at
       `max(process, module, channel)`; `LogRecord` gains `time` + module tag; a **sink array**
       (`addLogSink`/`removeLogSink`) replacing the single slot; one spdlog logger over console +
-      rotating file (`logs/techengine.log`, 5 MB × 3) that degrades to console-only if the file
+      a session file (`logs/techengine.log`) that degrades to console-only if the file
       won't open; the [[Logger — Design]] line, flattened **once** per record and shared by the
       pre-init stderr fallback. Call site picks its channel via a per-TU `TE_LOG_CHANNEL` +
       `_CH` escape.
@@ -92,8 +95,12 @@ vertical slice is **Sprint 03**.
       capture sink **adds** instead of replacing, so no path exists that only runs when the
       default sink is installed. 9 new cases, incl. the stderr fallback (fd save/restore) and a
       buffer canary. *(Ring sink → T5; editor sink still excluded.)*
+      **Corrected 2026-08-02:** this card originally read "rotating file, 5 MB × 3" — true when
+      written, superseded Jul 30 when ADR-011 §3 was amended to one file truncated on open
+      (`ef50f44`; `Log.cpp:232` is `basic_file_sink_mt(..., true)`).
       **Residual:** `initLogging`/`spdlogSink` stay uncovered by ctest — the suite never calls
-      `initLogging()` so it writes no log files; **T9's demo is what proves them.**
+      `initLogging()` so it writes no log files. **T9's demo was descoped, so nothing proves
+      them** → carried into [[2026-08 Sprint 03 — M1 Enablers]] as part of **S3-B1**.
 
 ### Story C — Assert
 
@@ -209,7 +216,8 @@ T13 blocks T14 and T15.
       a **tick-exact** determinism test and a **clamp** test. *(S2-T7 + S2-T8, PRs #18/#19.)*
 - [x] Demo: correlated frame/tick log output from a headless run — **shown, not recorded.**
       S2-T9 was descoped, so there is no stored artifact; `App::run`'s output is the demo.
-      *(If a recorded artifact is wanted for the Aug 29–30 review, that is a new card.)*
+      *(A recorded artifact was offered as a new card at the 2026-08-02 review and **not
+      pulled** — see § Sprint review.)*
 - [x] Root `CONVENTIONS.md` exists; CLAUDE.md's conventions section is a pointer.
 - [x] **Nothing built without a Sprint-02 consumer** — the pressure test holds (no Profiler,
       no FrameAllocator, no Pool/SlotMap/ring buffer).
@@ -246,9 +254,33 @@ is **P1 but Moderate**: prioritised without displacing the sprint goal.
 priority in the sprint, and it has no consumer waiting. Take that trade before letting
 anything touch the Deep slots.
 
-## Sprint review (fill Aug 29–30)
+## Sprint review — 2026-08-02
 
-- What shipped:
-- Demo / artifact:
+**What shipped** — 15 cards, 12 PRs, green on both legs, no revert. Folded in from the
+[[Sprint Board]]'s Done column before it was reset (the board holds live state, never history).
 
-→ Retrospective in [[07 Journal]].
+| Card | Shipped |
+|---|---|
+| **S2-T1** | [[ADR-011 — Diagnostics (Logger & Assert)]] **Accepted** — unblocked T2–T6. Two planning assumptions died under review: `fmt`-in-header **unbuildable** → `std::format`; frame stamp **pushed**, not pulled |
+| **S2-T2** | Logger core → PR #8 (`6f054b6b`). `std::format` seam, spdlog private, per-config compile-time gate, 9 Catch2 cases. ADR-011's fmt-fallback trigger **did not fire** on the Linux leg |
+| **S2-T3** | Channels + `LogRecord` + console/session-file sinks → PR #9. Handles + explicit registration, `max(process, module, channel)` filtering, sink **array**. Earned the test-reachability criterion |
+| **S2-T4** | Four assert tiers + one hookable handler → PR #13. `SourceName.hpp`, `thread_local` recursion guard, `TE_ASSERT_DEV` **PUBLIC** on purpose. RelWithDebInfo presets added, run by hand |
+| **S2-T5** | Assert → Logger + flush-on-fail → PR #17, **and the in-memory ring sink** (moved from T3). Debugger-break left a documented `platform` hook |
+| **S2-T6** | `Clock` → PR #10 (`2e16a067`). `now()`/`totalTime()`/`wallClock()`/`frame()`, plain `uint64_t`, **no seam**, 6 lower-bounds-only cases |
+| **S2-T7** | `FrameContext` (in `core`) + `FrameLoop` (in `app`) → PR #18. **Measured** that `sleep_for` cannot pace 60 Hz on Windows: 120 frames × 16.67 ms ran **221** ticks |
+| **S2-T8** | Determinism + clamp tests → PR #19 (`486fff6b`), 12 cases. **No fake clock** — `advance()` is pure, so T7 deleted the seam T8 was written to need |
+| **S2-T9** | **Descoped** — nothing left to wire; `App::run`'s output *is* the demo |
+| **S2-T10** | Root `CONVENTIONS.md` → CLAUDE.md shrunk to a pointer + 3 AI-default corrections; 3 provisional rows ratified |
+| **S2-T11** | **Cut** — module scaffolding happens alongside dev work, so `te-module` never had a moment to fire |
+| **S2-T12** | Landed the accumulated vault + AI config through the ruleset → PR #11, 24 files, zero code. First real exercise of the protection rules |
+| **S2-T13** | Vault repo cutover → PR #14. `docs/` is `TechEngine-vault`, **17 commits of history preserved** via subtree split; `.gitignore` + root `.ignore` verified both directions |
+| **S2-T14** | `/task-start` + `/task-wrap` retired → PR #15. Rescoped once checked: they were the **only** commands that ran git. Rule 9 absorbed the two rules that earned their keep |
+| **S2-T15** | Reconciliation stamp on [[Dashboard]] → PR #16. Shipped **already reading "behind"**, which is the mechanism working |
+| **V0 · V2 · S2-P1/P2/P3** | Opus-5 prompting patterns applied · [[Backlog]] compressed 382 → 103 lines · planning flow rebuilt (four task kinds, [[Known Issues]], defect-vs-bug bar) · [[Roadmap]] rewritten to the chain + lanes · Q3 + Dashboard realigned |
+
+**Demo / artifact:** none recorded. S2-T9 was descoped, so the demo was the throwaway
+`main.cpp` runs emitting correlated frame/tick lines — **shown, not stored.** The
+recorded-demo workflow ([[Backlog]] → *etc*) was **not** pulled into Sprint 03: M1 is headless
+utilities, and the first capture worth keeping is the profiler one Sprint 03's DoD names.
+
+→ Retrospective: [[2026-08-02 Sprint 02 Retrospective]].

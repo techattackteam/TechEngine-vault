@@ -29,15 +29,15 @@ flowchart TB
 
 ## The chain
 
-| # | Rung | Contents | Gate |
-|---|------|----------|------|
-| **M0** | `base` | Logger · Assert · Clock · headless fixed-timestep loop | [[ADR-011 — Diagnostics (Logger & Assert)]] 🟢 |
-| **M1** | enablers | math · `IFileSystem` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · cvars + dev console · crash handler | Profiler ADR · Events redesign |
-| **M2** | concurrency foundation | thread topology · **GL context ownership** · pool **interface** + a minimal pool | **threading ADR** — gated on M1's Profiler |
-| **M3** | project ‖ M2 | root + `project.toml` (toml++) · path/mount resolution · shader + asset dirs · **`projects/dev/` testbed** | none: toml, not the binary format |
-| **M4** | window | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle | M2's context-ownership call |
-| **M5** | Scene & scheduling | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping | **task-graph ADR** — the System interface ([[ADR-006 — v2 core architecture & module layout]] §5) |
-| **M6** | content | binary serialization + ADR-005's trait seam · Resources (CPU/UUID) · project↔scene binding | **serialization ADR** |
+| #      | Rung                   | Contents                                                                                                                                  | Gate                                                                                              |
+| ------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **M0** | `base`                 | Logger · Assert · Clock · headless fixed-timestep loop                                                                                    | [[ADR-011 — Diagnostics (Logger & Assert)]] 🟢                                                    |
+| **M1** | enablers               | math · `IFileSystem` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · crash handler | Profiler ADR · Events redesign                                                                    |
+| **M2** | concurrency foundation | thread topology · **GL context ownership** · pool **interface** + a minimal pool                                                          | **threading ADR** — gated on M1's Profiler                                                        |
+| **M3** | project ‖ M2           | root + `project.toml` (toml++) · path/mount resolution · shader + asset dirs · **`projects/dev/` testbed**                                | none: toml, not the binary format                                                                 |
+| **M4** | window                 | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                      | M2's context-ownership call                                                                       |
+| **M5** | Scene & scheduling     | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping    | **task-graph ADR** — the System interface ([[ADR-006 — v2 core architecture & module layout]] §5) |
+| **M6** | content                | binary serialization + ADR-005's trait seam · Resources (CPU/UUID) · project↔scene binding                                                | **serialization ADR**                                                                             |
 
 ## The lanes
 
@@ -119,8 +119,9 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 
 | Dates | Sprint | Rung |
 |-------|--------|------|
-| Jul 25 – Aug 28 | [[2026-08 Sprint 02 — Base Foundation]] | **M0** — goal met Jul 30 |
-| Aug 29 – Sep 25 | Sprint 03 — planned on the Aug 29–30 boundary | opens **M1**, likely reaches **M2/M3** |
+| Jul 25 – Jul 31 | [[2026-08 Sprint 02 — Base Foundation]] | **M0 ✅** — goal met Jul 30; sprint **closed 4 weeks early** |
+| Aug 1 – Aug 28 | [[2026-08 Sprint 03 — M1 Enablers]] | **M1** — both gates (Profiler ADR · Events redesign) + math + `IFileSystem`. RNG · crash handler · memory tracking **carry** |
+| Aug 29 – Sep 25 | Sprint 04 — planned on the Aug 29–30 boundary | **M2** (threading ADR, unblocked by M1's Profiler) ‖ **M3**, plus M1's carried items |
 
 ## Quarters
 
@@ -156,6 +157,10 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 - **Project at M3, ahead of the window.** The manifest is toml++ (already a `core` dep), *not*
   the binary asset format, so nothing about it waits on the serialization ADR. Early it buys a
   known home for shaders before the first GL work, and a standing testbed.
+- **cvars + dev console left M1 for the T1 editor lane — 2026-08-02.** T1 already carries
+  `console/cvars`, and cvars without a console panel to drive them is a config parser with no
+  consumer. Recorded because the row was dropped out of M1's contents inside a table reflow,
+  where it read as formatting rather than a decision.
 - **Profiler hooks at M1, panel at T1.** A system born with zones is free; adding zones to
   twenty systems later is a sweep. [[Profiler — Design]] § Trigger argues the opposite and is
   **stale** — that section is a rewrite, and landing early pulls its *version pin* and *socket
