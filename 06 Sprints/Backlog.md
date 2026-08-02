@@ -26,7 +26,9 @@ kept — they show where future work lands.
 
 ## platform
 
-- *(none)*
+- **File watching** — v1's `IFileWatcher`, for editor hot-reload; its callback-subscription
+  shape needs re-reading against [[ADR-014 — Events (buffered streams) & StringId]].
+  **Trigger:** hot-reload being wanted (M6+).
 
 ## core
 

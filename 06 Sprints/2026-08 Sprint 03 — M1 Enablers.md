@@ -11,7 +11,7 @@
 ## 🎯 Sprint goal
 
 > **M1's two gates decided, and the vocabulary every later module is written against, built.**
-> The Profiler and Events ADRs land; math ships; `IFileSystem` gets its note. **Decide first,
+> The Profiler and Events ADRs land; math ships; file access gets its note. **Decide first,
 > then build** — the sprint is deliberately artifact-heavy at the front.
 
 M0 is done. M1 is the rung whose contents are *written against* by everything above it, and
@@ -71,12 +71,20 @@ plannable at the Aug 29–30 boundary.
       partial supersessions rowed in [[ADR Index]] (ADR-006 §4's `EventBus&` field ·
       ADR-007 §6's "service" phrase); [[Events — Design]] + [[StringId — Design]] created
       **active**, mechanism pinned pre-cut. **Story E cut into S3-T7…T10.**
-- [ ] **S3-D3** — `IFileSystem` design note · **P2** · 🟠 Moderate — done: note in
-      `04 Design Docs/Systems/`, *Decided* rows **§ref'd to ADR-006 §4/§5 with no copied
-      rationale**; decides the **mount / virtual-path scheme**, **sync-only vs an async seam**,
-      the **error model**, and **which module implements it** (ADR-006 §5 says "platform/core"
-      — pick one and say why); mines v1 for **F30** (impl was editor-only, so a shipped runtime
-      could not load assets). **Cuts Story F's cards.**
+- [x] **S3-D3** — file-access design note · **P2** · 🟠 Moderate — **done 2026-08-02**
+      ([[File Access — Design]]) — done: note in `04 Design Docs/**Utilities**/` — the
+      card said `Systems/`, which was wrong for the same reason the *type* was: it is a
+      helper **service** (ADR-006 §5), and the README puts those in `Utilities/`.
+      **`IFileSystem` → `IFileAccess`** — v1's was `FileSystem : public System` (F16) and
+      "System" is a reserved word in this vocabulary; recorded as a dated vocabulary
+      amendment on ADR-006's header, the same mechanism §5 already used on 2026-07-24, with
+      **no body edit**. Decided: **`platform`** (not "platform/core" — §1's own contents
+      table lists *file I/O* there) · v1's `alias://` + priority mount scheme kept ·
+      `FileResult` status enum over v1's bare `bool` · **sync-only, no async seam** (M2's
+      ADR is unwritten) · surface **split** read / mutating, with the **write side left
+      unbuilt — no consumer at M1** · `mount()` moved off the interface onto a
+      composition-root `MountTable`, which is what makes the read path lock-free.
+      **Story F cut into S3-T11…T13.**
 
 ### Story B — math *(sized: [[Math — Design]] drafted this session)*
 
@@ -206,13 +214,42 @@ plannable at the Aug 29–30 boundary.
       read consumes it **exactly once** at the next barrier — the first event across a
       deterministic barrier; the streams container stays driver-owned, named as the M5 `Scene`
       hand-off. Needs S3-T9.
-### Story F — File access · ~2–3 tasks · **size after S3-D3**
+### Story F — File access *(sized 2026-08-02, off [[File Access — Design]])*
 
-> **F** stays heavy-gated → deliberately **unsized** ([[Planning Workflow — Artifact
-> Gate]] § *Don't size past an open decision*). Cards get cut when their ADR/note is
-> Accepted, per that Design card's own done-condition — **D was cut 2026-08-02** (ADR-013),
-> **E was cut 2026-08-02** (ADR-014). Do not fill F in to make the note look complete —
-> S2-T2 is what that produces. Its remaining weight budget is in the capacity note.
+> Ordering: **T11 → T12 → T13**, a strict chain, independent of Stories D/E. Gate said
+> **no ADR** — the note is the hub and ADR-006 §1/§4/§5 already carry the seam.
+> **The write side is not carded — it belongs to M3, one rung out.** `IFileWriteAccess`'s
+> consumer is M3's project creation (`project.toml` + asset dirs), which opens in Sprint 04
+> alongside M2, so it is on the [[Roadmap]] as an **M3 content**, not in [[Backlog]]. Held
+> back so its surface is shaped by M3's actual writes instead of guessed a sprint early.
+> **F draws 0 🟢 · 1 🟠 · 2 🟡** — the 🟠 squeeze the D/E budget notes pre-named resolves;
+> see below.
+
+- [ ] **S3-T11** — `MountTable` + virtual-path resolution + tests · **P1** · 🟡 Light —
+      done: `engine/platform/…/MountTable.hpp` holds {alias, physical root, `int` priority},
+      sorted highest-first; `mount`/`unmount` **only here**, never on an interface
+      ([[File Access — Design]] § *Design*); splits `alias://rel` and exposes the two
+      resolution policies — read (probe candidates in priority order, first **existing**
+      wins) vs write (highest-priority mount, **no** existence probe); Catch2 pins priority
+      order, unknown alias → `NoMount` vs known-alias-no-file → `NotFound`, and a
+      **wrong-case path returns `NotFound`** — the case rule is the one that behaves
+      differently on the two CI legs if it is ever folded.
+- [ ] **S3-T12** — `IFileAccess` + `FileAccess` + tests · **P1** · 🟠 Moderate — done:
+      interface and impl **both in `platform`** (ADR-006 §1 — this is F30's actual fix, so
+      `runtime` gets an implementation without linking the editor); `read`/`status`/`list`/
+      `resolve` per the note's *Surface*, every one returning `FileResult` with data via
+      out-param, **no exceptions and no logging on a miss** (v1 logged an error when a
+      caller probed for an optional file); reads into `std::vector<std::byte>` and
+      **nothing more** — serialization moved to M2 (Sprint 04), so its `Buffer` is one rung
+      out and a bridging abstraction here would be dead on arrival; **no lock** — say out
+      loud in the note if that stops being true. Needs S3-T11.
+- [ ] **S3-T13** — wiring + runtime proof · **P2** · 🟡 Light — done: composition root
+      owns `MountTable` + `FileAccess` **by value**, `EngineContext` carries
+      `IFileAccess& files` (ADR-006 §4, per its 2026-08-02 amendment); a mount is
+      established and a headless `runtime` **reads a file through the virtual path** —
+      that run is F30's regression test, since v1 could not do it at all;
+      `TechEngineSDKSmoke` still compiles (no `platform` type leaking into the SDK).
+      Needs S3-T12.
 
 #### How D / E / F get planned
 
@@ -255,10 +292,13 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
 - [x] **Both M1 gates Accepted** — **done Aug 2**: [[ADR-013 — Profiler (Tracy-backed instrumentation)]]
       + [[ADR-014 — Events (buffered streams) & StringId]] in [[ADR Index]], so
       **M2's threading ADR is unblocked** at the Aug 29–30 boundary.
-- [ ] Every system touched has a **design note as its hub**, *Decided* rows §ref'ing the ADR
-      with **no copied rationale** — Profiler, Events, `IFileSystem`, math.
+- [x] Every system touched has a **design note as its hub**, *Decided* rows §ref'ing the ADR
+      with **no copied rationale** — **done Aug 2**: [[Profiler — Design]] · [[Events — Design]]
+      + [[StringId — Design]] · [[File Access — Design]] · [[Math — Design]]. M1's design-note
+      gap is closed for the four items this sprint takes; RNG + crash handler still carry.
 - [ ] `Math.hpp` + `Math/Format.hpp` in `base` with Catch2 tests, **CI green both legs**.
-- [ ] Stories D/E/F's cards were **written after** their artifact, never before.
+- [x] Stories D/E/F's cards were **written after** their artifact, never before —
+      **held Aug 2**, all three cut the same day their artifact landed.
 - [ ] **S3-B1 closed** — one composition root owns diagnostics init.
 - [ ] **Nothing built without a consumer, with one recorded exception:** math is a *vocabulary*,
       argued in [[Math — Design]] § Trigger. If a second exception appears, the rule is the thing
@@ -284,6 +324,23 @@ Capacity from the [[Dashboard]] cadence: **12 🟢 Deep** (Mon + Thu + one weeke
 | 🟢 **Deep** | 2 — D1, D2 | ~7 | **2 — protected** |
 | 🟠 **Moderate** | 3 — D3, T1, B1 | ~2 | — |
 | 🟡 **Light** | 3 — T2, P1, P2 | ~3 | Wed stays optional |
+
+> **Fully sized 2026-08-02 — all three stories cut, and the reserve was wrong in an
+> instructive direction.** Actual: **3 🟢** (T3, T9, T10) · **6 🟠** (D3✓, T1, B1, T4, T5,
+> T12) · **8 🟡** (T2, P1, P2, T6, T7, T8, T11, T13) = 17 cards. Against capacity
+> **12 🟢 · 4 🟠 · 4–8 🟡**, that is **9 deep days spare** while both cheap columns sit at
+> or over their ceiling — the reserve guessed ~7 🟢 for D/E/F and they drew 3.
+>
+> **So the 🟠 squeeze the D and E notes pre-named for the Aug 15–16 review does not need a
+> cut.** It was read as "5 🟠 vs 4 Fridays" — but weight is *fits-the-day*, not
+> *is-the-day*: a 🟢 Deep day absorbs a 🟠 and more, and there are nine of them free. Both
+> earlier options (ride a Wed opt-in · slip to Sprint 04) stay unused. **Take the review
+> question off the agenda and record why** — the honest finding is not a capacity problem
+> but a **sizing-model one**: three ADRs' worth of work decomposed into far lighter cards
+> than the pre-ADR reserve assumed, which is exactly what *don't size past an open
+> decision* is supposed to produce. Worth a retro line.
+>
+> Two deep slots still stay protected, and the surplus is still **banked, not filled**.
 
 > **Two deep slots stay empty, and this is the sprint where that rule finally gets tested.**
 > Sprint 01's "finish early → the next deep day stays empty" has **never** been exercised —

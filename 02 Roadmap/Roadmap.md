@@ -19,7 +19,7 @@ Cadence — sprint length, week shape, ceremony anchor → [[Dashboard]] § Rhyt
 ```mermaid
 flowchart TB
   M0["M0 · base ✅"] --> M1["M1 · enablers"]
-  M1 --> M2["M2 · concurrency"] & M3["M3 · project"]
+  M1 --> M2["M2 · concurrency &amp; serialization"] & M3["M3 · project"]
   M2 & M3 --> M4["M4 · window"] & M5["M5 · scene &amp; scheduling"]
   M5 --> M6["M6 · content"] & P["⚡ P1 → P2"] & S["🎮 S1 physics"] & N["🌐 N1 → N5"]
   M4 --> R
@@ -32,12 +32,12 @@ flowchart TB
 | #      | Rung                   | Contents                                                                                                                                  | Gate                                                                                              |
 | ------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | **M0** | `base`                 | Logger · Assert · Clock · headless fixed-timestep loop                                                                                    | [[ADR-011 — Diagnostics (Logger & Assert)]] 🟢                                                    |
-| **M1** | enablers               | math · `IFileSystem` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · crash handler | Profiler ADR · Events redesign                                                                    |
-| **M2** | concurrency foundation | thread topology · **GL context ownership** · pool **interface** + a minimal pool                                                          | **threading ADR** — gated on M1's Profiler                                                        |
-| **M3** | project ‖ M2           | root + `project.toml` (toml++) · path/mount resolution · shader + asset dirs · **`projects/dev/` testbed**                                | none: toml, not the binary format                                                                 |
+| **M1** | enablers               | math · **file access** `IFileAccess` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · crash handler | Profiler ADR · Events redesign                                                                    |
+| **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a minimal pool · **binary serialization + ADR-005's trait seam**                                                          | **threading ADR** — gated on M1's Profiler · **serialization ADR**                                                        |
+| **M3** | project ‖ M2           | root + `project.toml` (toml++) · path/mount resolution · **`IFileWriteAccess`** — M1 ships the read half only · shader + asset dirs · **`projects/dev/` testbed**                                | none: toml, not the binary format                                                                 |
 | **M4** | window                 | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                      | M2's context-ownership call                                                                       |
 | **M5** | Scene & scheduling     | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping    | **task-graph ADR** — the System interface ([[ADR-006 — v2 core architecture & module layout]] §5) |
-| **M6** | content                | binary serialization + ADR-005's trait seam · Resources (CPU/UUID) · project↔scene binding                                                | **serialization ADR**                                                                             |
+| **M6** | content                | Resources (CPU/UUID) · project↔scene binding                                                | **none** — its seam closed at M2. ⚠️ the only gateless rung; revisit whether Resources owes one |
 
 ## The lanes
 
@@ -85,6 +85,10 @@ Three places where the split costs nothing only if a rule holds.
 
 ### M2 — what the concurrency ADR must settle
 
+> M2 carries a **second, independent** ADR since 2026-08-02 — serialization, which shares the
+> rung but not the subject. Why it sits here: § *Why this shape*. The two are unrelated and
+> can be written in either order.
+
 OpenGL is why this is early, not the job system. GLFW pins **window creation and
 `glfwPollEvents` to the main thread**, while a GL context is current on **exactly one thread at
 a time** — so if a render thread exists it owns the context and the main thread never issues a
@@ -120,8 +124,8 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 | Dates | Sprint | Rung |
 |-------|--------|------|
 | Jul 25 – Jul 31 | [[2026-08 Sprint 02 — Base Foundation]] | **M0 ✅** — goal met Jul 30; sprint **closed 4 weeks early** |
-| Aug 1 – Aug 28 | [[2026-08 Sprint 03 — M1 Enablers]] | **M1** — both gates (Profiler ADR · Events redesign) + math + `IFileSystem`. RNG · crash handler · memory tracking **carry** |
-| Aug 29 – Sep 25 | Sprint 04 — planned on the Aug 29–30 boundary | **M2** (threading ADR, unblocked by M1's Profiler) ‖ **M3**, plus M1's carried items |
+| Aug 1 – Aug 28 | [[2026-08 Sprint 03 — M1 Enablers]] | **M1** — both gates (Profiler ADR · Events redesign) + math + **file access**. RNG · crash handler · memory tracking **carry** |
+| Aug 29 – Sep 25 | Sprint 04 — planned on the Aug 29–30 boundary | **M2** — **two** ADRs now (threading, unblocked by M1's Profiler · **serialization**) ‖ **M3**, plus M1's carried items. ⚠️ **Scope call at the boundary**: Sprint 03 fit two ADRs *and* three stories, but M3 is a third lane — one of the three may have to wait |
 
 ## Quarters
 
@@ -135,9 +139,21 @@ Only the current and next sprint carry dates. Everything past that is the ladder
   into Sprint 03; that is **reversed here** — the engine is built module by module instead.
   [[Dashboard]] and [[2026-Q3]] still say C2 (→ S2-P3).
 - **The chain is ordered by irreversibility.** Every M-rung is a decision later code is written
-  *against*: threading (M2), paths (M3), the System interface (M5), the serialization seam
-  (M6). Each is cheap now and a sweep later. Past M6 that stops being true, which is why the
+  *against*: threading and the serialization seam (M2), paths (M3), the System interface
+  (M5). Each is cheap now and a sweep later. Past M6 that stops being true, which is why the
   tail is lanes and not more numbers.
+- **Serialization moved M6 → M2 — 2026-08-02.** It was at M6 by **association with
+  *content*, not by dependency**: the serializer needs `base` and a trait/registration seam,
+  not a `Scene`, a window or a resource cache. Nothing upstream of M6 was holding it there.
+  Meanwhile it fails the chain's own irreversibility test the hardest — ADR-005 reserved the
+  trait seam and already calls binary serialization *"on the critical path"*; ADR-007 §7
+  makes **serializable** one of the three facts every component registers. So at M6 the
+  ordering was inverted: **M5 declares every component type and M6 every resource against a
+  seam that does not exist yet**, then both get swept when it does — plus T2/T4 (bake +
+  export) and N3's snapshot encoder, which share the format. Moving it costs nothing now
+  and removes the largest remaining retrofit. **M6 keeps Resources + scene binding and is
+  left gateless** — the one rung without a gate, which is its own question for a planning
+  session.
 - **Concurrency decided at M2, run at P1, tuned at P2.** The GL context-ownership question
   cannot wait for the window. A pool with one worker never *runs* concurrently, so races and
   hidden global state stay invisible until workers are turned on — cheap to find across three
@@ -167,7 +183,7 @@ Only the current and next sprint carry dates. Everything past that is the ladder
   desktop app; the in-editor panel is a T1 decision with three routes still open (§3).
 - **Reflection is not a gap.** [[ADR-005 — v2 tech stack & toolchain]] already decided C++20
   with **no reflection** and a hand-rolled trait seam, with a re-litigation trigger. The seam
-  belongs to M6's serialization ADR.
+  belongs to M2's serialization ADR.
 - **Q4/Q1 renderer features kept, demoted.** Scattering, volumetrics and god rays were written
   as dated quarter goals before a v2 renderer ADR existed; they survive as **R3**, behind the
   render graph that has to carry them.

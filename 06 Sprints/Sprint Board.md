@@ -15,8 +15,6 @@ kanban-plugin: board
 	  from `S2-B1`, which was created Jul 31 and **never reached this board**. Not droppable.
 - [ ] **S3-T1** — `Math.hpp` alias set ([[Math — Design]]) · P1 · 🟠 Moderate — no
 	  `GLM_FORCE_*` handedness/depth defines; that call is the renderer ADR's.
-- [ ] **S3-D3** — `IFileSystem` design note (F30) · P2 · 🟠 Moderate — mount/virtual-path
-	  scheme · sync vs async · error model · which module implements it. **Cuts Story F.**
 - [ ] **S3-T2** — `Math/Format.hpp` + tests · P2 · 🟡 Light — separate header from the types,
 	  so `<format>` stays opt-in.
 - [ ] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — ADR-011 amended in place twice vs
@@ -42,13 +40,17 @@ kanban-plugin: board
 	  Needs S3-T8.
 - [ ] **S3-T10** — loop wiring + headless demo · P1 · 🟢 Deep — flip per fixed sub-step,
 	  retire at frame start; first event across a deterministic barrier. Needs S3-T9.
-- [ ] ⏳ *Pointer, not a card* — **Story F stays unsized.** Its ~2–3 cards get cut by
-	  S3-D3's done-condition. **D cut Aug 2** (S3-T3…T6, ADR-013) · **E cut Aug 2**
-	  (S3-T7…T10, ADR-014). Weight budget + the 🟠 squeeze in the sprint note.
+- [ ] **S3-T11** — `MountTable` + path resolution + tests ([[File Access — Design]]) · P1 ·
+	  🟡 Light — `alias://` + priority; `mount()` lives **here only**, not on an interface.
+	  Case-sensitivity test is the one that differs across CI legs. Story F's head.
+- [ ] **S3-T12** — `IFileAccess` + `FileAccess` + tests · P1 · 🟠 Moderate — interface **and**
+	  impl in `platform` — that placement *is* the F30 fix. `FileResult`, never a log on a
+	  miss. Needs S3-T11.
+- [ ] **S3-T13** — wiring + runtime proof · P2 · 🟡 Light — `EngineContext.files`; a headless
+	  `runtime` reads through a virtual path — F30's regression test. Needs S3-T12.
 
 
 ## 🔨 In Progress
-
 
 
 ## 👀 Review / Demo
@@ -57,6 +59,12 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-D3** — file-access design note (F30) · P2 · 🟠 Moderate — **Aug 2.**
+	  [[File Access — Design]] · **`IFileSystem` → `IFileAccess`** (v1's was a `System` —
+	  F16), recorded as a dated vocabulary amendment on ADR-006's header. `platform` ·
+	  `alias://` mounts kept · `FileResult` over `bool` · sync-only · read/write split with
+	  the **write side deferred to M3** (Sprint 04's first writer). Story F cut into S3-T11…T13 —
+	  **all three stories now sized.**
 - [x] **S3-D2** — Events + `StringId` ADR (`/adr`) · P1 · 🟢 Deep — **Aug 2.**
 	  [[ADR-014 — Events (buffered streams) & StringId]] Accepted (buffered streams ·
 	  barrier flip · `StringId` FNV-1a/64 · no Pool); two partial supersessions rowed;
@@ -66,7 +74,6 @@ kanban-plugin: board
 	  [[ADR-013 — Profiler (Tracy-backed instrumentation)]] Accepted; [[Profiler — Design]]
 	  rewritten as the living *how*; Story D cut into S3-T3…T6.
 	  **M2's threading ADR is unblocked.**
-
 
 
 

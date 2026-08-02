@@ -21,6 +21,13 @@
      profiler rows ("wraps the scheduler") wrap the **executor**.
   Driver: [[ADR-010 — User authoring model (Systems & Scripts)]] §7 fixed `Scene`, and the
   task-graph design note needs one unambiguous set of terms.
+- **Amended 2026-08-02 — vocabulary (positioning only; no decision reversed):**
+  **`IFileSystem` → `IFileAccess`.** Read §4's `EngineContext` field (`:186`) as
+  `IFileAccess& files` and §5's *FileSystem* row (`:235`) as *File access*. §5 makes
+  "System" a reserved word for scheduled units, so naming a helper service `…System` is
+  the F16 shape this ADR exists to kill. §5's "**platform**/core" for the impl resolves
+  to **`platform`** — §1's own contents table lists *file I/O* there. Seam, injection,
+  ownership and the F30 fix are unchanged. Record: [[File Access — Design]].
 
 ## Context
 

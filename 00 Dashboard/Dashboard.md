@@ -8,10 +8,10 @@
 |---|---|
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 03 — M1 Enablers]] *(Aug 1 – Aug 28)* |
-| **Sprint goal** | **M1's two gates decided, and the vocabulary every later module is written against, built.** Profiler + Events ADRs land; math ships; `IFileSystem` gets its note. **Decide first, then build.** |
-| **Current focus** | ✅ **S3-D1 + S3-D2 both done Aug 2** — [[ADR-013 — Profiler (Tracy-backed instrumentation)]] and [[ADR-014 — Events (buffered streams) & StringId]] Accepted → **both M1 gates closed**, M2's threading ADR unblocked. Story D cut into **S3-T3…T6**, Story E into **S3-T7…T10**; only Story F waits (on S3-D3). 🔨 Next 🟢 Deep: **S3-T3** (riskiest card, spike first hour) or **S3-T9** once T7/T8 land. Non-deep days: **S3-T7/T8** (Story E's lights), math (S3-T1/T2), **S3-B1**, Process cards. ⚠️ 🟠 over-plan (5 vs 4 Fridays) pre-named for the Aug 15–16 review. |
+| **Sprint goal** | **M1's two gates decided, and the vocabulary every later module is written against, built.** Profiler + Events ADRs land; math ships; file access gets its note. **Decide first, then build.** |
+| **Current focus** | ✅ **All three Design cards done Aug 2** — [[ADR-013 — Profiler (Tracy-backed instrumentation)]] + [[ADR-014 — Events (buffered streams) & StringId]] Accepted (**both M1 gates closed**, M2's threading ADR unblocked) and [[File Access — Design]] written. **Sprint 03 is fully sized: 17 cards, nothing left gated.** Stories D → **S3-T3…T6**, E → **S3-T7…T10**, F → **S3-T11…T13**. 🔨 Next 🟢 Deep: **S3-T3** (riskiest card, spike first hour) or **S3-T9** once T7/T8 land. Non-deep days: **S3-T7/T8/T11**, math (S3-T1/T2), **S3-B1**, Process cards. ✅ The 🟠 over-plan flagged for Aug 15–16 **resolved at sizing** — 9 deep days spare absorb it; no cut needed. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
-| **Next milestone** | **M1 closes Aug 28** on the [[Roadmap]]'s own bar (gates Accepted + unlock demonstrable) → Sprint 04 opens **M2 ‖ M3**. RNG · crash handler · memory tracking carry |
+| **Next milestone** | **M1 closes Aug 28** on the [[Roadmap]]'s own bar (gates Accepted + unlock demonstrable) → Sprint 04 opens **M2 ‖ M3** — M2 now carries **two** ADRs (threading · **serialization**, moved up from M6 on Aug 2). RNG · crash handler · memory tracking carry |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `486fff6b` (2026-08-02) |
 
@@ -103,7 +103,7 @@ Build order from here: the [[Roadmap]] ladder — **chain M0–M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005–008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop — [[2026-08 Sprint 02 — Base Foundation]] | ✅ done (Jul 30) |
-| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | 🔨 **M1** — [[2026-08 Sprint 03 — M1 Enablers]] |
+| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | 🔨 **M1** — [[2026-08 Sprint 03 — M1 Enablers]] |
 
 _Tasks → [[Sprint Board]]._
 
