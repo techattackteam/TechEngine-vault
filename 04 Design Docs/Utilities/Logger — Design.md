@@ -82,7 +82,7 @@ One channel per TU is the intended shape, so the plain macros stay channel-free 
 
 ```cpp
 #define TE_LOG_CHANNEL kRenderChannel
-#include <TechEngine/base/Log.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 
 TE_LOGGER_INFO("swapchain {0}x{1}", w, h);      // → render
 TE_LOGGER_WARN_CH(kNetChannel, "peer {0}", id); // → net, by exception

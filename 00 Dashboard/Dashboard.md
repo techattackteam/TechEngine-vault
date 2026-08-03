@@ -14,7 +14,7 @@ sprint's first code), **S3-B1**, Process cards. ✅ The 🟠 over-plan flagged f
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
 | **Next milestone** | **M1 closes Aug 28** on the [[Roadmap]]'s own bar (gates Accepted + unlock demonstrable) → Sprint 04 opens **M2 ‖ M3** — M2 now carries **two** ADRs (threading · **serialization**, moved up from M6 on Aug 2). RNG · crash handler · memory tracking carry |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
-| **Reconciled against** | engine `486fff6b` (2026-08-02) |
+| **Reconciled against** | engine `5afb6d28` (2026-08-03) |
 
 **Reading that stamp** ([[ADR-012 — Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has

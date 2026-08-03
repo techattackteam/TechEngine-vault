@@ -9,13 +9,7 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## 📋 B — math · [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
-
-- [ ] **S3-T2** — `Math/Format.hpp` + tests · P2 · 🟡 Light — separate header from the types,
-	  so `<format>` stays opt-in.
-
-
-## 📋 C — S2 loose ends
+## 📋 C — S2 loose ends · [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
 
 - [ ] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — carried
 	  from `S2-B1`, which was created Jul 31 and **never reached this board**. Not droppable.
@@ -23,9 +17,6 @@ kanban-plugin: board
 
 ## 📋 D — profiler hooks *(T3 → T4 → {T5, T6})*
 
-- [ ] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · P1 · 🟢 Deep — Story D's
-	  head. **Riskiest card of the story:** `/W4 /WX` hits Tracy's header inside our own TU and
-	  the `SYSTEM` fix needs CMake 3.25 (we require 3.21). Spike is its first hour.
 - [ ] **S3-T4** — `base/Profile.hpp` + frame mark · P1 · 🟠 Moderate — **the sprint's demo**:
 	  a profiled capture of the headless loop. Needs S3-T3.
 - [ ] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
@@ -70,6 +61,9 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · P1 · 🟢 Deep — Story D's
+	  head. **Riskiest card of the story:** `/W4 /WX` hits Tracy's header inside our own TU and
+	  the `SYSTEM` fix needs CMake 3.25 (we require 3.21). Spike is its first hour.
 
 
 ## 👀 Review / Demo
@@ -78,6 +72,14 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T2** — `math/Format.hpp` + tests ([[Math — Design]]) · P2 · 🟡 Light — **Aug 3**,
+	  engine `5afb6d28` (PR #23). **Story B complete.** Three partial specializations over glm's
+	  templates (`vec`/`mat`/`qua`), not one per alias — `IVec`/`UVec`/`Mat3` free; glm's
+	  spelling, spec forwarded to elements, quats **xyzw**. Two unplanned: a latent **Jolt
+	  `/MTd` vs our `/MDd` CRT mismatch** that `<format>` finally surfaced (fixed in
+	  `cmake/deps.cmake`), and a **`base` layout rule** — folder per utility named after its
+	  design note, `base/Format.hpp` → `diagnostics/FormatString.hpp` (`CONVENTIONS.md` →
+	  *Headers*).
 - [x] **S3-T1** — `Math.hpp` alias set ([[Math — Design]]) · P1 · 🟠 Moderate — **Aug 2**,
 	  engine `05cf3718` (PR #21). Alias set in `TechEngine`; `glm::glm` was already PUBLIC on
 	  `te_base`, **no CMake change needed**; no `GLM_FORCE_*` — the deferral lives in the note

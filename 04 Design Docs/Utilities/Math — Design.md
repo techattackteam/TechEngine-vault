@@ -78,6 +78,18 @@ TU includes; math would be the second such header, and math is included **far** 
 than logging. Splitting keeps that cost opt-in and costs one `#include` at the handful of call
 sites that log a vector.
 
+**Shape** (decided S3-T2, 2026-08-03):
+
+| Call | Choice |
+|---|---|
+| Granularity | **Partial specializations over glm's templates** — `glm::vec<L,T,Q>`, `glm::mat<C,R,T,Q>`, `glm::qua<T,Q>`. Three, not one per alias; `IVec`/`UVec`/`Mat3` fall out free. |
+| Rendered form | **glm's own spelling** — `vec3(1, 2.5, 3)`, `ivec3(…)`, `mat4((c0…), (c1…))`, `quat(…)`. The type name is in the output, so a log line says *what* it printed. |
+| Format spec | **Forwarded to the elements** — `{0:.2f}` on a `Vec3` gives `vec3(1.00, 2.50, 3.00)`. `parse` delegates to a held `std::formatter<T>`. |
+| Quaternion order | **xyzw** (storage order), *not* `glm::to_string`'s wxyz — the printed components line up with `q.x…q.w` at a breakpoint. The one place we diverge from glm. |
+
+The cost of the generic partial: it formats **any** glm vector, not only the aliased ones. Accepted
+— the aliases are the same types, so a narrower spelling would not have prevented it.
+
 ## Trigger
 
 **M1, ahead of its first consumer** — deliberate, and the exception to the consumer rule rather
@@ -114,6 +126,7 @@ The pressure test still applies to the *surface*: types and formatters, no helpe
   §6 (formatters live with math)
 - [[Logger — Design]] — the `<format>`-in-a-wide-header cost this note splits around
 - `CONVENTIONS.md` → *Names are spelled out* — the rule `Vec3` is an explicit exception to
-- Code: `engine/base/include/TechEngine/base/Math.hpp` (the alias set) ·
-  `engine/base/tests/MathTests.cpp` (`static_assert`s only — no `TEST_CASE`; see *Surface*) ·
-  *`Math/Format.hpp` still owed — S3-T2*
+- Code: `engine/base/include/TechEngine/base/math/Math.hpp` (the alias set) ·
+  `engine/base/tests/math/MathTests.cpp` (`static_assert`s only — no `TEST_CASE`; see *Surface*) ·
+  `engine/base/include/TechEngine/base/math/Format.hpp` ·
+  `engine/base/tests/math/MathFormatTests.cpp` (pins the rendered form — S3-T2)

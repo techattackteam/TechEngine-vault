@@ -52,7 +52,7 @@ itself stays a pure value type below everything, per layering.
 **Formatting.** `std::formatter<StringId>` prints the hex value; it cannot resolve tags
 (`base` can't reach `core` registries — layering). Tag resolution is the tooling layer's
 job. Header placement follows the Math split (formatters separate from the type);
-whether it rides the existing `base/Format.hpp` or its own header is an implementation
+whether it rides the existing `base/diagnostics/FormatString.hpp` or its own header is an implementation
 call.
 
 **Tests (write with the card).** Known FNV-1a/64 vectors (`""` →

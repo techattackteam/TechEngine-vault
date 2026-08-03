@@ -45,7 +45,7 @@ hold there.
 **Silent because it fails permissive.** Default to `OFF` and a missed link means *no logs at
 all* — noticed in a minute.
 
-`engine/base/include/TechEngine/base/Log.hpp:13` ·
+`engine/base/include/TechEngine/base/diagnostics/Log.hpp:13` ·
 `engine/base/CMakeLists.txt:17` (the PUBLIC define that didn't arrive)
 
 **Proposed fix** — match the CMake per-config default instead of assuming Trace:

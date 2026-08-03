@@ -86,5 +86,5 @@ clock, no virtual, and `Clock` stays the concrete no-seam utility this note want
 
 - [[Game Loop — Frame Flow]] — where sim time lives, and why not here
 - [[Logger — Design]] — the `[f N]` stamp consumer
-- Code: `engine/base/include/TechEngine/base/Clock.hpp` · `engine/base/src/Clock.cpp` ·
+- Code: `engine/base/include/TechEngine/base/time/Clock.hpp` · `engine/base/src/time/Clock.cpp` ·
   its only writer, `engine/app/src/App.cpp`

@@ -96,11 +96,23 @@ plannable at the Aug 29–30 boundary.
       note *only*, since the header carries no marker; `MathTests.cpp` added beyond the card —
       `static_assert`s, no `TEST_CASE`, because **nothing includes `Math.hpp` yet** and an
       uncompiled header would sit green in CI until S3-T2.
-- [ ] **S3-T2** — `Math/Format.hpp` + tests · **P2** · 🟡 Light — done: `std::formatter`
-      specializations for `Vec2/3/4`, `Mat4`, `Quat` in a **separate header** from the types
-      (ADR-006 §6 — formatters live with math; the split keeps `<format>` opt-in); Catch2 cases
-      pin the rendered form; a `TE_LOGGER_INFO("{0}", position)` call site compiles with only
-      that header added.
+- [x] **S3-T2** — `math/Format.hpp` + tests · **P2** · 🟡 Light — **done 2026-08-03**
+      (engine `5afb6d28`, PR #23). Shipped **three partial specializations over glm's own
+      templates** (`glm::vec` · `glm::mat` · `glm::qua`) rather than one per alias, so
+      `IVec`/`UVec`/`Mat3` came free; renders glm's spelling (`vec3(1, 2.5, 3)`) with the
+      format spec **forwarded to the elements** (`{0:.2f}` → `vec3(1.00, …)`); quaternions
+      print **xyzw**, the one divergence from `glm::to_string`. Separate header held
+      (ADR-006 §6). Two things the card didn't foresee:
+      **(1)** a latent **Jolt `/MTd` vs our `/MDd` CRT mismatch** surfaced the moment
+      `<format>` pulled a Jolt object into the link — pre-existing since Jolt was added,
+      invisible until something referenced it. Fixed in `cmake/deps.cmake` by forcing
+      `USE_STATIC_MSVC_RUNTIME_LIBRARY OFF`.
+      **(2)** two `Format.hpp` files in `base` triggered a **layout decision**: one folder per
+      utility, named after its design note (`diagnostics/` · `math/` · `time/`), `src/` and
+      `tests/` mirroring it, and `base/Format.hpp` renamed **`diagnostics/FormatString.hpp`**
+      to match its primary type. Rule recorded in `CONVENTIONS.md` → *Headers*.
+
+**Story B complete.**
 
 ### Story C — Sprint 02 loose ends
 
@@ -299,9 +311,9 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
       with **no copied rationale** — **done Aug 2**: [[Profiler — Design]] · [[Events — Design]]
       + [[StringId — Design]] · [[File Access — Design]] · [[Math — Design]]. M1's design-note
       gap is closed for the four items this sprint takes; RNG + crash handler still carry.
-- [ ] `Math.hpp` + `Math/Format.hpp` in `base` with Catch2 tests, **CI green both legs** —
-      **half: `Math.hpp` merged Aug 2** (`05cf3718`, green both legs); `Math/Format.hpp` owed by
-      S3-T2, and it brings the first real `TEST_CASE`s.
+- [x] `math/Math.hpp` + `math/Format.hpp` in `base` with Catch2 tests, **CI green both legs** —
+      **met.** `Math.hpp` Aug 2 (`05cf3718`), `Format.hpp` + the first real `TEST_CASE`s Aug 3
+      (`5afb6d28`). **Story B complete.**
 - [x] Stories D/E/F's cards were **written after** their artifact, never before —
       **held Aug 2**, all three cut the same day their artifact landed.
 - [ ] **S3-B1 closed** — one composition root owns diagnostics init.
