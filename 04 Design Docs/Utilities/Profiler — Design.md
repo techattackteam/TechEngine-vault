@@ -6,7 +6,8 @@
 > rationale lives in the ADR and is not repeated here.
 
 **Module:** `base` (CPU) · `client` (GPU) · **Kind:** utility (global macros) ·
-**Status:** accepted — build wiring landed (S3-T3); macros owed by S3-T4
+**Status:** accepted — build wiring (S3-T3) and CPU macros (S3-T4) landed; `ALLOC`/`FREE`
+owed by S3-T5, GPU zones by R1
 **ADRs:** [[ADR-013 — Profiler (Tracy-backed instrumentation)]] *(the decision)* ·
 [[ADR-006 — v2 core architecture & module layout]] §5 — **its `Profiler` row is superseded
 by ADR-013 §9**; the rest of §5 stands
@@ -66,9 +67,15 @@ flowchart LR
 | `TE_PROFILER_ALLOC(p, n)` / `TE_PROFILER_FREE(p)` | `base` | `TracyAlloc` / `TracyFree` |
 | `TE_PROFILER_GPU_CONTEXT()` / `_GPU_ZONE(name)` / `_GPU_COLLECT()` | `client` | `TracyGpuContext` / `TracyGpuZone` / `TracyGpuCollect` |
 
-Every macro expands to nothing without `TE_PROFILE_ENABLED`, and `base/Profile.hpp` then
-includes no third-party header. Zone names are **string literals** — the macro's whole cost
-model is the `static constexpr` source-location record it emits at the call site.
+Every macro expands to nothing without `TE_PROFILE_ENABLED`, and the header then includes no
+third-party header. Zone names are **string literals** — the macro's whole cost model is the
+`static constexpr` source-location record it emits at the call site.
+
+**The header is `engine/base/include/TechEngine/base/profiler/Profile.hpp`** (S3-T4), not
+ADR-013 §2's `base/Profile.hpp`. The folder is `CONVENTIONS.md` → *Headers*' one-folder-per-
+utility rule, decided in S3-T2 **the day after** the ADR was accepted; the ADR keeps its text,
+the same refinement precedent as `dt` → `deltaTime`. `TE_PROFILER_ALLOC`/`_FREE` are declared
+in the Surface table above but **not yet written** — S3-T5 owns them.
 
 ### Where the zones go
 
@@ -76,8 +83,9 @@ Instrumentation policy, not a frozen decision — Story D fills this in as each 
 
 | Site | Zone |
 |---|---|
-| `app`'s frame loop (`engine/app/src/App.cpp:20-42`) | `TE_PROFILER_FRAME()` once per iteration |
-| Each phase (`Input → FixedUpdate → Update → PostUpdate → Present`) | one scope per phase — [[Game Loop — Frame Flow]] |
+| `app`'s frame loop (`engine/app/src/App.cpp`) | **landed S3-T4** — `TE_PROFILER_FRAME()` as the loop body's **last** statement, after the pacer, so the mark closes a whole frame instead of splitting one |
+| `FrameLoop::advance` (`engine/app/src/FrameLoop.cpp`) | **landed S3-T4** — `TE_PROFILER_FUNCTION()`, plus `TE_PROFILER_SCOPE("FixedSteps")` around the accumulator loop, in **its own nested block** (the two macros declare a fixed-name object; see the header's `GOTCHA`) |
+| Each phase (`Input → FixedUpdate → Update → PostUpdate → Present`) | one scope per phase — [[Game Loop — Frame Flow]]; the phases do not exist yet |
 | Task-graph levels + each task | one scope per task, name from the task — [[Task Graph — Execution Flow]] |
 | Render-graph passes | a GPU zone pair per pass, R1+ |
 
@@ -138,5 +146,7 @@ exe. Both tools are downloads from the Tracy release — neither is built here.
 - [[Game Loop — Frame Flow]] · [[Task Graph — Execution Flow]] — the phases and levels the
   zones wrap
 - [[v1 Code Audit]] — F19 (per-frame alloc / string work in timing)
-- Code: `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:32` · `CMakeLists.txt:16` ·
-  `CMakePresets.json` — build wiring only; `Profile.hpp` is owed by S3-T4
+- Code: `engine/base/include/TechEngine/base/profiler/Profile.hpp` (the macros) ·
+  `engine/app/src/App.cpp` + `engine/app/src/FrameLoop.cpp` (the zones) ·
+  `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:32` · `CMakeLists.txt:16` ·
+  `CMakePresets.json` (build wiring)

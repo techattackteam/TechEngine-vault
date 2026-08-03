@@ -18,7 +18,7 @@ kanban-plugin: board
 ## 📋 D — profiler hooks *(T3 → T4 → {T5, T6})*
 
 - [ ] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
-	  lives in `app`'s TU, never a `base` static-lib TU. Needs S3-T4.
+	  lives in `app`'s TU, never a `base` static-lib TU. **Unblocked** — S3-T4 done.
 - [ ] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — < 5% bar into
 	  [[B3 — Build & Testing Notes]], recorded with what the loop was doing when it was
 	  taken; **ci.yml Tracy-spelling guard** (§2 + §6 made structural); says out loud that
@@ -65,12 +65,20 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S3-T4** — `base/Profile.hpp` + frame mark · P1 · 🟠 Moderate — **the sprint's demo**:
-	  a profiled capture of the headless loop. Needs S3-T3.
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T4** — `base/profiler/Profile.hpp` + frame mark · P1 · 🟠 Moderate — **Aug 3**,
+	  engine `87ed6dd0` (PR #25) + `dd866aa7` (PR #26). **The sprint's demo shipped** — a
+	  `windows-profile` capture shows `FrameLoop::advance` → `FixedSteps` nested under each
+	  frame mark, Tracy `0.13.1` on both sides. Header sits in **`base/profiler/`**, not
+	  ADR-013 §2's `base/Profile.hpp`: CONVENTIONS' folder-per-utility rule (S3-T2) landed a
+	  day after the ADR and wins, recorded in [[Profiler — Design]] with the ADR unedited.
+	  "No Tracy symbol when OFF" is discharged **by construction** — `TE_PROFILE=OFF` never
+	  runs the fetch, so there is no target to link — not by inspecting a binary.
+	  **Two PRs, because the first merged an exercise rather than the card** — retro line.
+	  **Story D's head done; T5 + T6 unblocked.**
 - [x] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · P1 · 🟢 Deep — **Aug 3**,
 	  engine `7610b931` (PR #24). **Story D's head; T4 unblocked.** Tracy `v0.13.1`
 	  option-guarded, `TE_PROFILE` OFF by default, `windows-profile` / `linux-profile` presets;

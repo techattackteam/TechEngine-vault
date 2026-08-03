@@ -148,14 +148,29 @@ plannable at the Aug 29–30 boundary.
       so the next run re-clones every dep, once), and the presets built on **one** leg —
       `linux-profile` is unverified and CI does not build it ([[B3 — Build & Testing Notes]]
       § *Profiling builds*).
-- [ ] **S3-T4** — `base/Profile.hpp` + frame mark · **P1** · 🟠 Moderate — done:
-      `TE_PROFILER_SCOPE/FUNCTION/FRAME` per [[Profiler — Design]] § *Surface*; with the
-      option off the header includes **no third-party header** and every macro expands to
-      nothing; `TE_PROFILER_FRAME()` in `engine/app/src/App.cpp:20-42`, a scope in
-      `FrameLoop::advance` (`FrameLoop.cpp:9`); **this is the sprint's demo** — a
-      `windows-profile` run connects to the pinned Tracy desktop build and shows 120 frames
-      with `advance` nested; a `TE_PROFILE=OFF` release binary contains **no Tracy symbol**;
-      names are string literals, **no transient zone anywhere** (ADR-013 §6).
+- [x] **S3-T4** — `base/profiler/Profile.hpp` + frame mark · **P1** · 🟠 Moderate —
+      **done 2026-08-03** (engine `87ed6dd0` PR #25, then `dd866aa7` PR #26) — done:
+      `TE_PROFILER_SCOPE/FUNCTION/FRAME` per [[Profiler — Design]] § *Surface*, OFF-path
+      expansion `((void)0)` and **no third-party include**; `TE_PROFILER_FRAME()` last in
+      `App.cpp`'s loop body (after the pacer, so the mark closes a whole frame),
+      `TE_PROFILER_FUNCTION()` opening `FrameLoop::advance`, `TE_PROFILER_SCOPE("FixedSteps")`
+      around the accumulator loop. **The sprint's demo is shipped**: a `windows-profile`
+      capture against the pinned Tracy `0.13.1` desktop build shows `advance` → `FixedSteps`
+      nested under each frame mark. Four things the card didn't foresee:
+      **(1) the header moved** to `base/profiler/` — CONVENTIONS' folder-per-utility rule
+      (S3-T2, Aug 3) postdates ADR-013 §2's `base/Profile.hpp` and wins; the same refinement
+      precedent as `dt` → `deltaTime`, recorded in [[Profiler — Design]] with **no ADR edit**.
+      **(2) "no Tracy symbol when OFF" is a build-graph fact**, not a binary hunt —
+      `TE_PROFILE=OFF` never runs the `FetchContent`, so `Tracy::TracyClient` does not exist
+      to link. Stated that way rather than implying a `dumpbin` run happened.
+      **(3) The zone macros collide in one scope** — both declare a fixed-name RAII object,
+      so `FixedSteps` needs its own nested block. It only breaks under the profile presets,
+      which **CI never compiles**, so it is a `GOTCHA` comment in the header.
+      **(4) Two PRs.** #25 merged an exercise — a throwaway `testFunction` with a
+      `sleep_for(30ms)`, a 1000-zone inner loop (ADR-013 §6's named anti-pattern), two zones
+      placed where they measured nothing, and a declaration leaked into `app`'s **public**
+      header. #26 replaced it with the carded call sites. **Retro line: "it works" and "it is
+      the card" are different reviews, and the exercise passed the first.**
 - [ ] **S3-T5** — memory tracking: global `operator new`/`delete` replacement · **P2** ·
       🟠 Moderate — done: `TE_PROFILER_ALLOC/FREE` in `Profile.hpp`; the replacement lives in
       **`app`'s composition-root TU**, never a `base` static-lib TU (ADR-013 §7 — a
@@ -352,9 +367,10 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
 - [ ] **Nothing built without a consumer, with one recorded exception:** math is a *vocabulary*,
       argued in [[Math — Design]] § Trigger. If a second exception appears, the rule is the thing
       to re-examine — not the exception.
-- [ ] Demo: a **profiler capture of the headless frame loop** — the first thing this engine can
-      *measure* rather than print. Contingent on S3-D1's topology; if the ADR lands a different
-      shape, the demo is whatever that shape produces, named at the review rather than skipped.
+- [x] Demo: a **profiler capture of the headless frame loop** — the first thing this engine can
+      *measure* rather than print. **Met Aug 3** (S3-T4): `advance` → `FixedSteps` nested under
+      each frame mark, `windows-profile` → Tracy `0.13.1` desktop over loopback. ADR-013 §3's
+      topology held, so no re-naming was needed.
 
 ## Capacity note
 
