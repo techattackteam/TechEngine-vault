@@ -166,10 +166,27 @@ plannable at the Aug 29–30 boundary.
 - [ ] **S3-T6** — overhead number + coverage statement · **P2** · 🟡 Light — done:
       `windows-release` built twice, `TE_PROFILE` ON vs OFF, headless loop timed, delta
       recorded in [[B3 — Build & Testing Notes]] against ADR-013 §6's **< 5%** bar; a miss
-      gets its **cause named** (zone placement vs Tracy) before anything is changed; a Catch2
-      case proving the macros compile side-effect-free with `TE_PROFILE=OFF`; and **stated
-      out loud** in [[Profiler — Design]] — the ON path is demo-verified, *not* unit-tested,
-      and CI never builds it.
+      gets its **cause named** (zone placement vs Tracy) before anything is changed.
+      **Check what the loop is doing before trusting the number** — S3-T4's first capture ran
+      **~54 ms/frame** (115 frames / 6.2 s) against a 16.6 ms pacer. That was a deliberate
+      `sleep_for(30ms)` in the throwaway `testFunction`, since deleted — **not** a real cost,
+      and not the per-frame `TE_LOGGER_INFO` it was first read as. The rule outlives its wrong
+      first diagnosis: a 5% delta taken on an inflated loop measures the inflation, so record
+      what the loop was doing alongside the number.
+      **The automated coverage is a grep, not a test** *(folded in 2026-08-03)* — one `check`
+      line in `.github/workflows/ci.yml:61` banning
+      `ZoneScoped|ZoneTransient|FrameMark|tracy/` outside
+      `engine/base/include/TechEngine/base/profiler/`, which makes ADR-013 §2 (every call site
+      spells **our** name, so swapping Tracy stays a one-header edit) and §6 (no transient
+      zones — F19's exact failure mode) structural instead of review-only. The Catch2
+      side-effect-free case stays, with its value stated honestly: `App.cpp` / `FrameLoop.cpp`
+      already compile the OFF path on all four legs, so it guards only against the macros
+      evaluating their argument.
+      **Stated out loud** in [[Profiler — Design]] — the ON path is demo-verified, *not*
+      unit-tested, and **CI never compiles `TE_PROFILE=ON` at all**. The antidote (one profile
+      leg on ADR-008 §9's nightly schedule) stays **deferred** per ADR-013 § *Consequences*,
+      with its trigger named on the card: a profile build found broken by someone trying to
+      use it, rather than by CI.
 
 > **Riskiest card is S3-T3, and it is not close.** Three unknowns stack: (a) `te_warnings`'
 > `/W4 /WX` applies to *our* compiland, so a warning inside Tracy's header — included by

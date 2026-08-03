@@ -77,6 +77,9 @@ kept — they show where future work lands.
 - **README at repo root** (public-facing). **Trigger:** T2 — the first build that runs outside
   the editor.
 - **Recorded-demo workflow** — capture + store. **Trigger:** the first demo worth keeping.
+- **Better way to add source/header files to CMake** — research the options (explicit lists,
+  `CONFIGURE_DEPENDS` glob, generator script); current per-file editing is painful and v1's
+  global glob was worse. **Trigger:** the next module that grows past a handful of files.
 - **Command `/catch-up`** — session re-entry after a multi-day gap. **Trigger:** the first
   session that opens with "where was I".
 

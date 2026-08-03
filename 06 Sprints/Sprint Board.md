@@ -17,12 +17,12 @@ kanban-plugin: board
 
 ## 📋 D — profiler hooks *(T3 → T4 → {T5, T6})*
 
-- [ ] **S3-T4** — `base/Profile.hpp` + frame mark · P1 · 🟠 Moderate — **the sprint's demo**:
-	  a profiled capture of the headless loop. Needs S3-T3.
 - [ ] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
 	  lives in `app`'s TU, never a `base` static-lib TU. Needs S3-T4.
 - [ ] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — < 5% bar into
-	  [[B3 — Build & Testing Notes]]; says out loud that the ON path is not unit-tested.
+	  [[B3 — Build & Testing Notes]], recorded with what the loop was doing when it was
+	  taken; **ci.yml Tracy-spelling guard** (§2 + §6 made structural); says out loud that
+	  the ON path is not unit-tested and CI never compiles it.
 
 
 ## 📋 E — events + `StringId` *(T7 → T8 → T9 → T10)*
@@ -65,6 +65,8 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S3-T4** — `base/Profile.hpp` + frame mark · P1 · 🟠 Moderate — **the sprint's demo**:
+	  a profiled capture of the headless loop. Needs S3-T3.
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
