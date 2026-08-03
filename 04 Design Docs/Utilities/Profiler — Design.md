@@ -6,7 +6,7 @@
 > rationale lives in the ADR and is not repeated here.
 
 **Module:** `base` (CPU) · `client` (GPU) · **Kind:** utility (global macros) ·
-**Status:** accepted — not yet implemented (Story D)
+**Status:** accepted — build wiring landed (S3-T3); macros owed by S3-T4
 **ADRs:** [[ADR-013 — Profiler (Tracy-backed instrumentation)]] *(the decision)* ·
 [[ADR-006 — v2 core architecture & module layout]] §5 — **its `Profiler` row is superseded
 by ADR-013 §9**; the rest of §5 stands
@@ -85,6 +85,22 @@ A system born with zones is free; adding them to twenty written systems is a swe
 ([[Roadmap]] § *Why this shape*) — which is why this lands at M1 and not at the first perf
 pass.
 
+### Build wiring
+
+Landed S3-T3. `TE_PROFILE=OFF` is the default and fetches nothing.
+
+| Piece | Where |
+|---|---|
+| `option(TE_PROFILE … OFF)` | `CMakeLists.txt:16` |
+| Tracy `v0.13.1`, fetch guarded by `if(TE_PROFILE)` | `cmake/deps.cmake:91` |
+| `Tracy::TracyClient` PUBLIC + `TE_PROFILE_ENABLED` on `TechEngineBase` | `engine/base/CMakeLists.txt:32` |
+| `windows-profile` · `linux-profile` (RelWithDebInfo) | `CMakePresets.json` |
+
+Two things the S3-T3 card expected and the build did not need: Tracy declares its own
+include dir `SYSTEM`, so there is **no manual re-export** (and no CMake-3.25 problem), and
+CMake emits `-external:W0` beside `-external:I` on MSVC, so `/W4 /WX` needs **no change** to
+`te_warnings`.
+
 ### Profiling workflow
 
 ```bash
@@ -101,9 +117,13 @@ exe. Both tools are downloads from the Tracy release — neither is built here.
 - **The T1 panel** — embed `TracyServer`/`Worker`, a native panel fed by our own frame-time
   ring, or nothing beyond the desktop app. ADR-013 §3 keeps all three open and names the
   cost of the first; decide with T1's information, not now.
-- **Transitive OS headers.** Five Tracy client headers were checked and pull no OS header
-  (ADR-013 § Context); the rest of the set was not. The first `TE_PROFILE=ON` build settles
-  it — a `min`/`max` breakage in an unrelated module is the tell.
+- **Transitive OS headers — answered on MSVC, still open on Clang.** S3-T3's first
+  `TE_PROFILE=ON` build (`windows-profile`, all 311 targets, Tracy included into a `base`
+  `.cpp`) fired **none** of the tells: no `min`/`max` breakage in any module, no warning, and
+  `ctest` 73/73. ADR-013 § Context's "five headers checked, not the whole set" is discharged
+  for Windows. `linux-profile` has **never been configured** and CI does not build it — the
+  Linux answer is owed by whoever runs it first, and ADR-013 § Consequences' "second config
+  that can rot silently" is live from now.
 - **Zone granularity per task.** One zone per task is the starting point; whether that is
   too fine once the executor runs thousands of small tasks is a measurement Story D takes,
   against §6's budget.
@@ -118,4 +138,5 @@ exe. Both tools are downloads from the Tracy release — neither is built here.
 - [[Game Loop — Frame Flow]] · [[Task Graph — Execution Flow]] — the phases and levels the
   zones wrap
 - [[v1 Code Audit]] — F19 (per-frame alloc / string work in timing)
-- Code: *(none yet — Story D)*
+- Code: `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:32` · `CMakeLists.txt:16` ·
+  `CMakePresets.json` — build wiring only; `Profile.hpp` is owed by S3-T4

@@ -61,9 +61,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · P1 · 🟢 Deep — Story D's
-	  head. **Riskiest card of the story:** `/W4 /WX` hits Tracy's header inside our own TU and
-	  the `SYSTEM` fix needs CMake 3.25 (we require 3.21). Spike is its first hour.
 
 
 ## 👀 Review / Demo
@@ -72,6 +69,15 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · P1 · 🟢 Deep — **Aug 3**,
+	  engine `7610b931` (PR #24). **Story D's head; T4 unblocked.** Tracy `v0.13.1`
+	  option-guarded, `TE_PROFILE` OFF by default, `windows-profile` / `linux-profile` presets;
+	  311/311 + ctest 73/73, default preset fetches no Tracy. **All three of the card's stacked
+	  risks were non-risks** — Tracy declares its own includes `SYSTEM` (no re-export, no
+	  CMake-3.25 blocker), CMake emits `-external:W0` so `/W4 /WX` needed no exemption, and no
+	  OS-header breakage in any target. Two of the three were answerable by **reading Tracy's
+	  build files, not its source** — retro line. **Linux leg unverified and CI never builds
+	  it** ([[B3 — Build & Testing Notes]] § *Profiling builds*).
 - [x] **S3-T2** — `math/Format.hpp` + tests ([[Math — Design]]) · P2 · 🟡 Light — **Aug 3**,
 	  engine `5afb6d28` (PR #23). **Story B complete.** Three partial specializations over glm's
 	  templates (`vec`/`mat`/`qua`), not one per alias — `IVec`/`UVec`/`Mat3` free; glm's

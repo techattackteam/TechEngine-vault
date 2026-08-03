@@ -65,6 +65,25 @@ the job runs, the matrix expands, and the real contexts (`win ASan`, `linux UBSa
 rulesets are unaffected. Clean fix if it ever matters: split sanitizers into their own
 `pull_request`-only workflow; costs ~40 lines of duplicated setup for a cosmetic win.
 
+## Profiling builds (Tracy) — the pin is two-sided
+
+**Tracy `v0.13.1`** (`cmake/deps.cmake:91`). Recorded here because it is the one dep whose
+version is **not** a local matter: Tracy compiles its wire `ProtocolVersion` into client *and*
+consumer, so the **Tracy desktop app / `tracy-capture` in use must be the same release**
+— a mismatched pair connects to nothing, silently. Bumping the tag means re-downloading the
+app ([[ADR-013 — Profiler (Tracy-backed instrumentation)]] §1). Neither tool is built here.
+
+Observed on the first `TE_PROFILE=ON` build (2026-08-03, S3-T3, MSVC only):
+
+- **Default builds are untouched** — the fetch is `if(TE_PROFILE)`-guarded, so `build/windows`
+  has no `tracy-src` at all.
+- **`/W4 /WX` needed no exemption.** CMake 3.28 emits `-external:W0` beside `-external:I` for
+  SYSTEM includes, and Tracy marks its own include dir SYSTEM. No `te_warnings` change.
+- **Editing `deps.cmake` invalidates CI's dep cache once** — `ci.yml`'s key is
+  `hashFiles('cmake/deps.cmake')`, so the next run re-clones every dep. One-time, per edit.
+- **`linux-profile` is unverified and CI never builds it.** The profiled config can rot
+  silently on the Clang leg; the named antidote is a nightly profile leg (ADR-008 §9).
+
 ## Scaffold checklist
 
 Moved — this note fed the ADR, and the ADR is where the checklist landed:

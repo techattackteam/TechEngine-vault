@@ -130,18 +130,24 @@ plannable at the Aug 29–30 boundary.
 > and [[Profiler — Design]] is the hub. Dep allocator hooks (Jolt · miniaudio · GLFW) have
 > **no consumer yet** and went to [[Backlog]], not a card.
 
-- [ ] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · **P1** · 🟢 Deep —
-      done: `cmake/deps.cmake` declares Tracy `GIT_TAG v0.13.1` **guarded by `if(TE_PROFILE)`**
-      (mirrors Catch2, `:88`) so a default build fetches nothing and CI's `_deps`/ccache keys
-      are untouched; `option(TE_PROFILE … OFF)` beside `TE_BUILD_TESTS`
-      (`CMakeLists.txt:14`); when ON, `engine/base/CMakeLists.txt` adds `Tracy::TracyClient`
-      **PUBLIC** + `TE_PROFILE_ENABLED` via follow-up `target_link_libraries` /
-      `target_compile_definitions` — `techengine_module()`'s `LIBS` cannot be conditional,
-      same shape as the existing `TE_LOG_ACTIVE_LEVEL` block; Tracy's include dir consumed as
-      **SYSTEM**; `TRACY_ON_DEMAND` + `TRACY_ONLY_LOCALHOST` + `TRACY_NO_BROADCAST` ON
-      (ADR-013 §4); `windows-profile` + `linux-profile` presets **configure and build on both
-      legs**; ADR-013's open OS-header question answered in [[Profiler — Design]] either way.
-      **Spike is the first hour, not a card** — see the risk note below.
+- [x] **S3-T3** — Tracy dep + `TE_PROFILE` option + profile presets · **P1** · 🟢 Deep —
+      **done 2026-08-03** (engine `7610b931`, PR #24) — done: option-guarded Tracy `v0.13.1`
+      (`cmake/deps.cmake:91`), `option(TE_PROFILE … OFF)` (`CMakeLists.txt:16`),
+      `Tracy::TracyClient` **PUBLIC** + `TE_PROFILE_ENABLED` via follow-up calls
+      (`engine/base/CMakeLists.txt:32`), `windows-profile` / `linux-profile` presets, all four
+      ADR-013 §4 Tracy options ON. `windows-profile` **311/311 + ctest 73/73**; the default
+      preset fetches no Tracy at all.
+      **The card's three stacked risks were all non-risks, and two were answerable by reading
+      Tracy's own `CMakeLists.txt` before compiling anything:** Tracy already declares its
+      include dir `SYSTEM`, so the manual re-export the card specced is absent and the
+      CMake-3.25 blocker never applies; CMake emits `-external:W0` beside `-external:I`, so
+      `/W4 /WX` needed **no `te_warnings` exemption**; and no OS-header breakage appeared in
+      any of the 311 targets, discharging ADR-013 § Context's "five headers checked" — **on
+      MSVC only** ([[Profiler — Design]] § *Open questions*).
+      Two card claims corrected: CI's `_deps` key **is** invalidated (it hashes `deps.cmake`,
+      so the next run re-clones every dep, once), and the presets built on **one** leg —
+      `linux-profile` is unverified and CI does not build it ([[B3 — Build & Testing Notes]]
+      § *Profiling builds*).
 - [ ] **S3-T4** — `base/Profile.hpp` + frame mark · **P1** · 🟠 Moderate — done:
       `TE_PROFILER_SCOPE/FUNCTION/FRAME` per [[Profiler — Design]] § *Surface*; with the
       option off the header includes **no third-party header** and every macro expands to
@@ -174,6 +180,15 @@ plannable at the Aug 29–30 boundary.
 > hour:** configure `TE_PROFILE=ON`, `#include <tracy/Tracy.hpp>` into one existing `base`
 > `.cpp`, build Windows only. All three answered before the real plumbing is written — and if
 > it goes badly, **re-scope T3 rather than push through**.
+>
+> **Resolved 2026-08-03 — all three were non-risks, and the sizing was wrong in a way worth a
+> retro line.** (a) and (b) were both answerable by **reading Tracy's own `CMakeLists.txt` at
+> the pinned tag** — it already declares its includes `SYSTEM`, and CMake supplies
+> `-external:W0` — so the spike confirmed rather than discovered. The card had specced a
+> workaround for a problem that did not exist, because the risk was assessed against ADR-013's
+> reading of Tracy's *client headers* and never against its *build files*. Cheap lesson:
+> **when a dep's risk is a build-integration risk, read its build, not its source.** No
+> re-scope, no deep day burned.
 
 > **Budget check.** D draws **1 🟢 · 2 🟠 · 1 🟡** against D+E+F's reserved ~7 🟢 · 2 🟠 ·
 > 3 🟡. Deep days — the scarce, protected resource — come in at 1 against ~3, so this is
