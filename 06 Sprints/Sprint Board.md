@@ -27,8 +27,6 @@ kanban-plugin: board
 
 ## 📋 E — events + `StringId` *(T7 → T8 → T9 → T10)*
 
-- [ ] **S3-T7** — `base/StringId.hpp` + tests ([[StringId — Design]]) · P1 · 🟡 Light —
-	  constexpr FNV-1a/64 value type; **no macro, no UDL, no table**. Story E's head.
 - [ ] **S3-T8** — event registry in `core` · P1 · 🟡 Light — tag-at-call registration from
 	  the composition root; keeps tag strings → collision `TE_CHECK` + tooling lookup.
 	  Needs S3-T7.
@@ -62,13 +60,22 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
-
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T7** — `base/stringid/StringId.hpp` + tests ([[StringId — Design]]) · P1 · 🟡 Light —
+	  **Aug 4**, engine `7e4564db` (PR #27). **Story E's head done; T8 unblocked.** constexpr
+	  FNV-1a/64; no macro, no UDL, no table. Three calls landed **against the note as first
+	  written**, all recorded there: header in **`base/stringid/`** (CONVENTIONS' folder rule
+	  beats ADR-014 §1's root path — same resolution as S3-T4, ADR unedited); the value is
+	  **private behind `value()`**, which turns `fromValue` from a convention into an invariant
+	  the compiler holds; the formatter takes **no spec** and rejects one with
+	  `std::format_error`, not an assert tier. Byte-hashing is `unsigned char` — the `"\x80"`
+	  case is the only test that catches a sign-extended XOR, and a wrong hash would have
+	  frozen on disk and wire.
 - [x] **S3-T4** — `base/profiler/Profile.hpp` + frame mark · P1 · 🟠 Moderate — **Aug 3**,
 	  engine `87ed6dd0` (PR #25) + `dd866aa7` (PR #26). **The sprint's demo shipped** — a
 	  `windows-profile` capture shows `FrameLoop::advance` → `FixedSteps` nested under each
