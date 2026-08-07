@@ -75,15 +75,15 @@ transition, Sprint 03 is the first clean cycle.
 
 **Weekly rhythm** — energy is *planned*, not aspirational; protect the light/off days.
 
-| Day | Mode        | Typical work                                             | Capacity      |
-| --- | ----------- | -------------------------------------------------------- | ------------- |
-| Mon | 🟢 Deep     | Implementation (core loop)                               | ~1 🟢         |
-| Tue | 🟡 Light    | Docs, reading, small fixes, ADR drafting                 | 1 🟡          |
-| Wed | ⚪ Relaxed   | Recovery — optional light planning, else rest            | 0             |
-| Thu | 🟢 Deep     | Implementation                                           | ~1 🟢         |
-| Fri | 🟠 Moderate | Lighter implementation — finish/refactor, prep next week | 1 🟠          |
-| Sat | 🔴 Off*     | Karting — no engine work                                 | 0             |
-| Sun | 🟢 Deep*    | Implementation + weekly review                           | **2–3 🟢**    |
+| Day | Mode        | Typical work                                             | Capacity   |
+| --- | ----------- | -------------------------------------------------------- | ---------- |
+| Mon | 🟢 Deep     | Implementation (core loop)                               | ~1 🟢      |
+| Tue | 🟡 Light    | Docs, reading, small fixes, ADR drafting                 | 1 🟡       |
+| Wed | ⚪ Relaxed   | Recovery — optional light planning, else rest            | 0          |
+| Thu | 🟢 Deep     | Implementation                                           | ~1 🟢      |
+| Fri | 🟠 Moderate | Lighter implementation — finish/refactor, prep next week | 1 🟠       |
+| Sat | 🔴 Off*     | Karting — no engine work                                 | 0          |
+| Sun | 🟢 Deep*    | Implementation + weekly review                           | **2–3 🟢** |
 
 **Weekday deep ≠ weekend deep.** Mon/Thu are *after the day job* — one evening block, one
 🟢 task. The weekend deep day is a **full day**: size it for **2–3 🟢**, not one. Sizing a

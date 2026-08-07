@@ -17,8 +17,6 @@ kanban-plugin: board
 
 ## 📋 D — profiler hooks *(T3 → T4 → {T5, T6})*
 
-- [ ] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
-	  lives in `app`'s TU, never a `base` static-lib TU. **Unblocked** — S3-T4 done.
 - [ ] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — < 5% bar into
 	  [[B3 — Build & Testing Notes]], recorded with what the loop was doing when it was
 	  taken; **ci.yml Tracy-spelling guard** (§2 + §6 made structural); says out loud that
@@ -27,12 +25,6 @@ kanban-plugin: board
 
 ## 📋 E — events + `StringId` *(T7 → T8 → T9 → T10)*
 
-- [ ] **S3-T8** — event registry in `core` · P1 · 🟡 Light — tag-at-call registration from
-	  the composition root; keeps tag strings → collision `TE_CHECK` + tooling lookup.
-	  Needs S3-T7.
-- [ ] **S3-T9** — `EventStream` core + tests ([[Events — Design]]) · P1 · 🟢 Deep —
-	  ring/flip/retire/cursors; **retire-rule tests first**; zero steady-state alloc.
-	  Needs S3-T8.
 - [ ] **S3-T10** — loop wiring + headless demo · P1 · 🟢 Deep — flip per fixed sub-step,
 	  retire at frame start; first event across a deterministic barrier. Needs S3-T9.
 
@@ -59,6 +51,9 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
+	  lives in `app`'s TU, never a `base` static-lib TU. **Unblocked** — S3-T4 done.
+
 
 ## 👀 Review / Demo
 
@@ -66,6 +61,19 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T8** — event registry in `core` · P1 · 🟡 Light — **Aug 7**, engine `6e881d5e`
+	  (PR #31, shared with T9). `EventRegistry` + a distinct `EventTypeId` wrapping `StringId`;
+	  record keeps tag, dense index, size/align, `EventWire`; `static_assert` on
+	  trivially-copyable. **The mapping T → id is a `detail::g_eventTypeSlot<T>` template
+	  variable — process-global, not registry-scoped**, so registries are not isolated from
+	  each other. Recorded in [[Events — Design]] as the type-check mechanism.
+- [x] **S3-T9** — `EventStream` core + tests ([[Events — Design]]) · P1 · 🟢 Deep — **Aug 7**,
+	  engine `6e881d5e` (PR #31, same commit as T8). Absolute-`u64` ring, three positions,
+	  `makeVisible`/`retire`/cursors; retire-rule cases written first, 9 `TEST_CASE`s.
+	  **Two card conditions unmet, both said out loud:** the zero-steady-state-alloc test was
+	  **removed**, not adapted — its global `operator new` replacement collides with TSan's own
+	  in `libclang_rt.tsan_cxx`, so that guarantee is now **untested** (→ [[Backlog]]); and the
+	  method is `makeVisible`, not the note's `flip`.
 - [x] **S3-T7** — `base/stringid/StringId.hpp` + tests ([[StringId — Design]]) · P1 · 🟡 Light —
 	  **Aug 4**, engine `7e4564db` (PR #27). **Story E's head done; T8 unblocked.** constexpr
 	  FNV-1a/64; no macro, no UDL, no table. Three calls landed **against the note as first

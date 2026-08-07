@@ -48,6 +48,12 @@ kept — they show where future work lands.
 
 ## core
 
+- #prio/high · **`EventStream` zero-steady-state-alloc is untested** — S3-T9's done-condition,
+  dropped in PR #31: the test counted allocations by replacing global `operator new`/`delete`,
+  which **collides with TSan's own** in `libclang_rt.tsan_cxx` and broke the `linux-tsan` link.
+  Any replacement must survive that leg — asserting `capacity()` never moves gets most of it
+  without touching the allocator, since `grow()` is the only unbounded allocation in the loop.
+  **Trigger:** now — it is a live coverage hole, not a deferred want.
 - #prio/medium · **Resources — hot-reload / eviction** — candidate ADR; depends on the
   UUID/cache model ported from v1 (F7, F13, F31). **Trigger:** the resource cache being real (M6).
 
@@ -82,6 +88,9 @@ kept — they show where future work lands.
 
 ## etc — cross-cutting
 
+- #prio/xhigh · **CI cache storage is at 7.89 GB / 10 GB across 199 entries** — every run writes
+  a fresh timestamped `ccache-<leg>-<ts>` entry (`ci.yml:99`, `ci.yml:166`) instead of replacing
+  one; investigate and cap it. **Trigger:** fired — observed Aug 6, LRU eviction already active.
 - #prio/high · **Better way to add source/header files to CMake** — research the options
   (explicit lists, `CONFIGURE_DEPENDS` glob, generator script); current per-file editing is
   painful and v1's global glob was worse. **Trigger:** the next module that grows past a
@@ -100,6 +109,9 @@ kept — they show where future work lands.
   runs outside the editor.
 - #prio/xlow · **Retrofit `base` to the spelled-out-names rule** — `loc` / `fmtStr` predate it.
   **Trigger:** the next PR that touches those signatures for another reason.
+- #prio/xlow · **Rename `TechEngine::detail` → `internal`** — 13 files, the `ci.yml`
+  `\bdetail::log` guard and the CONVENTIONS *Open* row ratified Jul 30. **Trigger:** fired —
+  mechanical, nothing gates it.
 - #prio/xlow · **Command `/catch-up`** — session re-entry after a multi-day gap. **Trigger:**
   the first session that opens with "where was I".
 

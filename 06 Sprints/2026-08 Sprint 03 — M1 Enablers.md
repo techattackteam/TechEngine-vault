@@ -244,21 +244,53 @@ plannable at the Aug 29–30 boundary.
 > (task-graph ADR) — at M1 the streams container is owned by the headless driver and cursors
 > are free-standing objects. **E draws 0 🟠 · 2 🟢 · 2 🟡** — see the budget note.
 
-- [ ] **S3-T7** — `base/StringId.hpp` + tests · **P1** · 🟡 Light — done:
+- [x] **S3-T7** — `base/StringId.hpp` + tests · **P1** · 🟡 Light — **done 2026-08-04**
+      (engine `7e4564db`, PR #27) — full write-up on [[Sprint Board]]'s Done column. Three
+      calls landed against the note as first written: header in **`base/stringid/`**, the
+      value **private behind `value()`**, and the formatter takes **no spec**. done:
       `struct StringId { u64 value; }` with a `constexpr explicit` ctor from `string_view`
       (FNV-1a/64, case-sensitive — ADR-014 §1); defaulted `==`/`<=>`; `std::hash` = identity;
       `StringId{}` = 0 invalid sentinel; **no macro, no UDL, no table** ([[StringId — Design]]
       § *Design*); `std::formatter` prints hex, placement per the Math split; Catch2 pins the
       known vectors (`""` → `0xcbf29ce484222325`, `"a"` → `0xaf63dc4c8601ec8c`),
       `static_assert`s constexpr evaluation, case-sensitivity, sentinel.
-- [ ] **S3-T8** — event registry in `core` · **P1** · 🟡 Light — done:
+- [x] **S3-T8** — event registry in `core` · **P1** · 🟡 Light — **done 2026-08-07**
+      (engine `6e881d5e`, PR #31 — **one commit carries T8 and T9**). Shipped
+      `EventRegistry` + `EventTypeRecord` {id, tag, `streamIndex`, size, alignment,
+      `EventWire`} with `registerEvent<T>(tag, wire)` and a `static_assert` on
+      trivially-copyable. Two things the card didn't foresee:
+      **(1) `EventTypeId` is its own type**, a `constexpr` wrapper over `StringId` with the
+      value private behind `value()` — the S3-T7 privacy call applied one level up, which is
+      what stops an event id and a raw tag hash being interchangeable.
+      **(2) The T → id mapping is process-global** — `detail::g_eventTypeSlot<T>`, an inline
+      template variable, written by `registerEvent` and read by `publish`/`read`. Registries
+      are therefore **not isolated**: a second `EventRegistry` overwrites the first's slots,
+      and the tests exploit this (a throwaway registry, discarded, still leaves `publish`
+      working). Fine for a single composition root; **name it in [[Events — Design]]** before
+      anything grows a second registry. done:
       `registerEvent<T>("Tag.Name")`-shaped call, invoked from the composition root **only**
       (no file-scope statics — ADR-014 §6), recording {`EventTypeId`, dense stream index,
       size/align, reserved wire flag} and rejecting non-trivially-copyable payloads at compile
       time (ADR-014 §2); registry **keeps the tag string** → always-on collision `TE_CHECK`
       (incl. a tag hashing to 0) + tooling-only id→tag lookup ([[StringId — Design]] § *Reverse
       lookup*); Catch2: collision fires, lookup resolves. Needs S3-T7.
-- [ ] **S3-T9** — `EventStream` core mechanics + tests · **P1** · 🟢 Deep — done: ring with
+- [x] **S3-T9** — `EventStream` core mechanics + tests · **P1** · 🟢 Deep — **done 2026-08-07**
+      (engine `6e881d5e`, PR #31 — same commit as T8). Shipped the absolute-`u64` ring with
+      three positions, `publish<T>` staging by value, batch marks, the AND-shaped retire, and
+      cursor reads that clamp to the head; retire-rule cases written first, 9 `TEST_CASE`s.
+      Three deviations from the card, none of them silent:
+      **(1) the barrier method is `makeVisible`, not the note's `flip`** — [[Events — Design]]
+      needs the rename or the code does; S3-T10 is where that gets settled.
+      **(2) The zero-steady-state-alloc test was removed, not adapted, and the guarantee is
+      now unverified.** It counted allocations by replacing global `operator new`/`delete` in
+      the test exe — which **collides with TSan's own replacements** in
+      `libclang_rt.tsan_cxx` and broke the `linux-tsan` link. Deleting it was the right call
+      under a red CI; leaving the property untested is not, so it is a [[Backlog]] item.
+      The cheap 80% is asserting `capacity()` never moves — `grow()` is the only unbounded
+      allocation in a steady-state loop, since `m_marks` is `reserve(64)`'d.
+      **(3) A throwaway publish/read demo landed in `App.cpp`** under `TODO(S3-T10)`. Carded
+      work, not an exercise this time — but PR #25's lesson says the removal is T10's job to
+      actually do. done: ring with
       absolute `u64` sequences and three positions (retire head · visible end · staging tail);
       `publish<T>` stages by value; `flip(frame, tick)` records marks; `retire(frame, tick)`
       drops batches only after a frame boundary **and** a fixed tick have both passed
