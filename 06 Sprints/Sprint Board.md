@@ -70,10 +70,10 @@ kanban-plugin: board
 - [x] **S3-T9** — `EventStream` core + tests ([[Events — Design]]) · P1 · 🟢 Deep — **Aug 7**,
 	  engine `6e881d5e` (PR #31, same commit as T8). Absolute-`u64` ring, three positions,
 	  `makeVisible`/`retire`/cursors; retire-rule cases written first, 9 `TEST_CASE`s.
-	  **Two card conditions unmet, both said out loud:** the zero-steady-state-alloc test was
-	  **removed**, not adapted — its global `operator new` replacement collides with TSan's own
-	  in `libclang_rt.tsan_cxx`, so that guarantee is now **untested** (→ [[Backlog]]); and the
-	  method is `makeVisible`, not the note's `flip`.
+	  The zero-steady-state-alloc test lost its mechanism to TSan's own `operator new`
+	  replacement and was **re-expressed as `capacity() == 64`** — no allocator interposition,
+	  same guarantee for the ring. One card condition still open: the method is `makeVisible`,
+	  not the note's `flip`.
 - [x] **S3-T7** — `base/stringid/StringId.hpp` + tests ([[StringId — Design]]) · P1 · 🟡 Light —
 	  **Aug 4**, engine `7e4564db` (PR #27). **Story E's head done; T8 unblocked.** constexpr
 	  FNV-1a/64; no macro, no UDL, no table. Three calls landed **against the note as first

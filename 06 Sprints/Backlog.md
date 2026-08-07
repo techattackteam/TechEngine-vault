@@ -48,12 +48,6 @@ kept — they show where future work lands.
 
 ## core
 
-- #prio/high · **`EventStream` zero-steady-state-alloc is untested** — S3-T9's done-condition,
-  dropped in PR #31: the test counted allocations by replacing global `operator new`/`delete`,
-  which **collides with TSan's own** in `libclang_rt.tsan_cxx` and broke the `linux-tsan` link.
-  Any replacement must survive that leg — asserting `capacity()` never moves gets most of it
-  without touching the allocator, since `grow()` is the only unbounded allocation in the loop.
-  **Trigger:** now — it is a live coverage hole, not a deferred want.
 - #prio/medium · **Resources — hot-reload / eviction** — candidate ADR; depends on the
   UUID/cache model ported from v1 (F7, F13, F31). **Trigger:** the resource cache being real (M6).
 

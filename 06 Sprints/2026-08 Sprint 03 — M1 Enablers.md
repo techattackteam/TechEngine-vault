@@ -281,13 +281,15 @@ plannable at the Aug 29–30 boundary.
       Three deviations from the card, none of them silent:
       **(1) the barrier method is `makeVisible`, not the note's `flip`** — [[Events — Design]]
       needs the rename or the code does; S3-T10 is where that gets settled.
-      **(2) The zero-steady-state-alloc test was removed, not adapted, and the guarantee is
-      now unverified.** It counted allocations by replacing global `operator new`/`delete` in
-      the test exe — which **collides with TSan's own replacements** in
-      `libclang_rt.tsan_cxx` and broke the `linux-tsan` link. Deleting it was the right call
-      under a red CI; leaving the property untested is not, so it is a [[Backlog]] item.
-      The cheap 80% is asserting `capacity()` never moves — `grow()` is the only unbounded
-      allocation in a steady-state loop, since `m_marks` is `reserve(64)`'d.
+      **(2) The zero-steady-state-alloc test outgrew its mechanism.** It counted allocations
+      by replacing global `operator new`/`delete` in the test exe, which **collides with
+      TSan's own replacements** in `libclang_rt.tsan_cxx` and broke the `linux-tsan` link — an
+      allocator-interposing test cannot coexist with a sanitizer that interposes the allocator.
+      Removed under a red CI, then **re-expressed the same day without touching the allocator**:
+      `grow()` always doubles, so `capacity() == 64` after a publish/flip/read/retire loop is an
+      exact witness that the ring never reallocated. **Residual, accepted:** `m_marks` is
+      `reserve(64)`'d and holds ≤1 mark in that loop, so it cannot allocate either — but nothing
+      observable asserts it.
       **(3) A throwaway publish/read demo landed in `App.cpp`** under `TODO(S3-T10)`. Carded
       work, not an exercise this time — but PR #25's lesson says the removal is T10's job to
       actually do. done: ring with
