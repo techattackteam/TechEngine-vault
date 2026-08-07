@@ -171,13 +171,39 @@ plannable at the Aug 29–30 boundary.
       placed where they measured nothing, and a declaration leaked into `app`'s **public**
       header. #26 replaced it with the carded call sites. **Retro line: "it works" and "it is
       the card" are different reviews, and the exercise passed the first.**
-- [ ] **S3-T5** — memory tracking: global `operator new`/`delete` replacement · **P2** ·
-      🟠 Moderate — done: `TE_PROFILER_ALLOC/FREE` in `Profile.hpp`; the replacement lives in
-      **`app`'s composition-root TU**, never a `base` static-lib TU (ADR-013 §7 — a
-      linker-stripped replacement is a silently partial profile); a profiled headless run
-      shows a non-empty memory plot with the Logger's allocations visible **and the session
-      does not drop** (the asymmetric-delete check); array + aligned + sized forms replaced,
-      or the omissions named; nothing compiled with the option off.
+- [x] **S3-T5** — memory tracking: global `operator new`/`delete` replacement · **P2** ·
+      🟠 Moderate — **done 2026-08-07** (engine `dc790d7d`, PR #34). Shipped
+      `TE_PROFILER_ALLOC/FREE` plus **all 20 replaceable forms** — throwing · nothrow · array ·
+      aligned · sized — in `engine/app/src/diagnostics/MemoryTracking.cpp`: `new_handler` loop
+      honoured, null-guarded frees, aligned traffic split onto `_aligned_malloc`/`_aligned_free`
+      on MSVC. **Demo shipped** — a `windows-profile` capture carries a live Memory-usage plot
+      and the session survives to frame 120, so the asymmetric-delete hazard did not fire; the
+      link is clean, with **no LNK2005** against `msvcprt.lib`'s own `operator new`. Four things
+      the card didn't foresee:
+      **(1) The pull-in needs a symbol, not a rule.** `app` is a static lib too, so a TU holding
+      only definitions is never pulled into the exe. `memoryTrackingAnchor()` — a no-op called
+      from `run()` — is what forces it. ADR-013 §7 named the hazard and left the fix open.
+      **(2) Tracy's *secure* variants**, not §7's `TracyAlloc`/`TracyFree`. `TracySecureAlloc`/
+      `TracySecureFree` pass `secure = true`, which gates the record on `ProfilerAvailable()`;
+      a global `operator new` fires during CRT static init and can precede Tracy's own
+      construction. Mechanism, so [[Profiler — Design]] absorbs it and the ADR is unedited.
+      **(3) The sanitizer collision is S3-T9's, one module over.** An allocator-interposing TU
+      cannot coexist with ASan/TSan, which replace the same functions. ADR-013 §4 keeps the
+      sanitizer *legs* `TE_PROFILE=OFF`, but that is CI policy, not a mechanical block —
+      `techengine_test` links `TechEngine::app`, so `windows-asan -DTE_PROFILE=ON` was one flag
+      from a red link. The TU now **detects the sanitizer itself** (`__has_feature` /
+      `__SANITIZE_*`) and compiles the replacements out, which survives any preset combination.
+      Cost: a **silently absent memory plot** under a sanitizer, named because the build won't.
+      **(4) It carries a conventions change.** `Profile.hpp` moved `base/profiler/` →
+      **`base/diagnostics/`**, and `CONVENTIONS.md` → *Headers* relaxed from one folder per
+      **design note** to one per **subject area** — the profiler is instrumentation, which is
+      what a reader opening `diagnostics/` is already looking for. This reverses S3-T4's folder
+      call **deliberately**; that write-up and [[Sprint Board]]'s are dated history and stay,
+      [[Profiler — Design]] carries the current path, and S3-T6's grep directory moves with it.
+      **Residual, accepted.** The plot's witness was a deliberate 12-byte `new` in the loop, so
+      the capture proves *the pipe works* — not that the Logger's own allocations are covered,
+      which is what the card's condition asked for. That throwaway did **not** merge (PR #25's
+      lesson, applied). `linux-profile` still has never been built.
 - [ ] **S3-T6** — overhead number + coverage statement · **P2** · 🟡 Light — done:
       `windows-release` built twice, `TE_PROFILE` ON vs OFF, headless loop timed, delta
       recorded in [[B3 — Build & Testing Notes]] against ADR-013 §6's **< 5%** bar; a miss
@@ -190,8 +216,8 @@ plannable at the Aug 29–30 boundary.
       what the loop was doing alongside the number.
       **The automated coverage is a grep, not a test** *(folded in 2026-08-03)* — one `check`
       line in `.github/workflows/ci.yml:61` banning
-      `ZoneScoped|ZoneTransient|FrameMark|tracy/` outside
-      `engine/base/include/TechEngine/base/profiler/`, which makes ADR-013 §2 (every call site
+      `ZoneScoped|ZoneTransient|FrameMark|Tracy(Secure)?(Alloc|Free)|tracy/` outside
+      `engine/base/include/TechEngine/base/diagnostics/`, which makes ADR-013 §2 (every call site
       spells **our** name, so swapping Tracy stays a one-header edit) and §6 (no transient
       zones — F19's exact failure mode) structural instead of review-only. The Catch2
       side-effect-free case stays, with its value stated honestly: `App.cpp` / `FrameLoop.cpp`

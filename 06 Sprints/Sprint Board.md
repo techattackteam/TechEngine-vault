@@ -51,8 +51,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
-	  lives in `app`'s TU, never a `base` static-lib TU. **Unblocked** — S3-T4 done.
 
 
 ## 👀 Review / Demo
@@ -61,6 +59,17 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
+	  **Aug 7**, engine `dc790d7d` (PR #34). All 20 replaceable forms in `app`'s
+	  `diagnostics/MemoryTracking.cpp`; a `windows-profile` capture shows a live Memory-usage
+	  plot with the session intact at frame 120, and the link is clean against `msvcprt.lib`.
+	  **Story D's last code card — only S3-T6 (the overhead number) remains.** Three things
+	  the card learned: `app` is a static lib too, so the replacement needs a **called anchor
+	  symbol**, not a rule; the macros forward to Tracy's **secure** variants, because a global
+	  `operator new` runs during CRT static init and can precede Tracy's construction; and the
+	  TU **detects ASan/TSan itself** rather than trusting ADR-013 §4's OFF policy. Carries the
+	  `CONVENTIONS.md` folder-rule relaxation (design note → subject area) that moved
+	  `Profile.hpp` into `base/diagnostics/`.
 - [x] **S3-T8** — event registry in `core` · P1 · 🟡 Light — **Aug 7**, engine `6e881d5e`
 	  (PR #31, shared with T9). `EventRegistry` + a distinct `EventTypeId` wrapping `StringId`;
 	  record keeps tag, dense index, size/align, `EventWire`; `static_assert` on
@@ -87,9 +96,10 @@ kanban-plugin: board
 - [x] **S3-T4** — `base/profiler/Profile.hpp` + frame mark · P1 · 🟠 Moderate — **Aug 3**,
 	  engine `87ed6dd0` (PR #25) + `dd866aa7` (PR #26). **The sprint's demo shipped** — a
 	  `windows-profile` capture shows `FrameLoop::advance` → `FixedSteps` nested under each
-	  frame mark, Tracy `0.13.1` on both sides. Header sits in **`base/profiler/`**, not
+	  frame mark, Tracy `0.13.1` on both sides. Header landed in **`base/profiler/`**, not
 	  ADR-013 §2's `base/Profile.hpp`: CONVENTIONS' folder-per-utility rule (S3-T2) landed a
-	  day after the ADR and wins, recorded in [[Profiler — Design]] with the ADR unedited.
+	  day after the ADR and won, recorded in [[Profiler — Design]] with the ADR unedited.
+	  **Moved again at S3-T5** to `base/diagnostics/` when that rule was relaxed.
 	  "No Tracy symbol when OFF" is discharged **by construction** — `TE_PROFILE=OFF` never
 	  runs the fetch, so there is no target to link — not by inspecting a binary.
 	  **Two PRs, because the first merged an exercise rather than the card** — retro line.

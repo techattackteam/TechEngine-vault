@@ -6,8 +6,8 @@
 > rationale lives in the ADR and is not repeated here.
 
 **Module:** `base` (CPU) · `client` (GPU) · **Kind:** utility (global macros) ·
-**Status:** accepted — build wiring (S3-T3) and CPU macros (S3-T4) landed; `ALLOC`/`FREE`
-owed by S3-T5, GPU zones by R1
+**Status:** accepted — build wiring (S3-T3), CPU macros (S3-T4) and memory tracking (S3-T5)
+landed; the overhead number is owed by S3-T6, GPU zones by R1
 **ADRs:** [[ADR-013 — Profiler (Tracy-backed instrumentation)]] *(the decision)* ·
 [[ADR-006 — v2 core architecture & module layout]] §5 — **its `Profiler` row is superseded
 by ADR-013 §9**; the rest of §5 stands
@@ -64,18 +64,45 @@ flowchart LR
 | `TE_PROFILER_SCOPE(name)` | `base` | `ZoneScopedN` |
 | `TE_PROFILER_FUNCTION()` | `base` | `ZoneScoped` |
 | `TE_PROFILER_FRAME()` | `base` | `FrameMark` |
-| `TE_PROFILER_ALLOC(p, n)` / `TE_PROFILER_FREE(p)` | `base` | `TracyAlloc` / `TracyFree` |
+| `TE_PROFILER_ALLOC(p, n)` / `TE_PROFILER_FREE(p)` | `base` | `TracySecureAlloc` / `TracySecureFree` |
 | `TE_PROFILER_GPU_CONTEXT()` / `_GPU_ZONE(name)` / `_GPU_COLLECT()` | `client` | `TracyGpuContext` / `TracyGpuZone` / `TracyGpuCollect` |
 
 Every macro expands to nothing without `TE_PROFILE_ENABLED`, and the header then includes no
 third-party header. Zone names are **string literals** — the macro's whole cost model is the
 `static constexpr` source-location record it emits at the call site.
 
-**The header is `engine/base/include/TechEngine/base/profiler/Profile.hpp`** (S3-T4), not
-ADR-013 §2's `base/Profile.hpp`. The folder is `CONVENTIONS.md` → *Headers*' one-folder-per-
-utility rule, decided in S3-T2 **the day after** the ADR was accepted; the ADR keeps its text,
-the same refinement precedent as `dt` → `deltaTime`. `TE_PROFILER_ALLOC`/`_FREE` are declared
-in the Surface table above but **not yet written** — S3-T5 owns them.
+**The header is `engine/base/include/TechEngine/base/diagnostics/Profile.hpp`**, not ADR-013
+§2's `base/Profile.hpp`. It landed in `base/profiler/` at S3-T4 under `CONVENTIONS.md` →
+*Headers*' then-current one-folder-per-**design-note** rule, and moved to `diagnostics/` at
+S3-T5 when that rule was **relaxed to one folder per subject area** — the profiler is
+instrumentation, which is what a reader opening `diagnostics/` is already looking for. The ADR
+keeps its text either way, the same refinement precedent as `dt` → `deltaTime`.
+
+**The memory pair forwards to Tracy's *secure* variants**, not ADR-013 §7's `TracyAlloc`/
+`TracyFree`. `TracySecureAlloc`/`TracySecureFree` pass `secure = true`, which gates the record
+on `ProfilerAvailable()`; a global `operator new` replacement fires during CRT static init, so
+it can run before Tracy's profiler is constructed. One branch, and the non-secure pair has no
+check to fall back on. Mechanism, not decision — no ADR edit, same precedent as the folder
+move above.
+
+### Memory tracking
+
+Landed S3-T5 in `engine/app/src/diagnostics/MemoryTracking.cpp` — **all 20 replaceable forms**
+(throwing · nothrow · array · aligned · sized), `new_handler` loop honoured, null-guarded
+frees, aligned traffic on `_aligned_malloc`/`_aligned_free` under MSVC and `std::aligned_alloc`
+elsewhere. Three mechanics the ADR left open:
+
+| Piece | How |
+|---|---|
+| **Pull-in** | `app` is a static lib, so a definitions-only TU is never linked in. `memoryTrackingAnchor()` — a no-op called from `run()` — forces it. ADR-013 §7 named the hazard; this is the fix |
+| **Sanitizers** | The TU detects ASan/TSan itself (`__has_feature` / `__SANITIZE_*`) and compiles the replacements out. ADR-013 §4's OFF-on-sanitizer-legs is CI policy; this is mechanical, so it holds for any preset combination. **Cost: the memory plot is silently absent under a sanitizer** |
+| **Symmetry** | Every `new` form has its `delete` counterpart, aligned frees kept on the aligned path. This is what keeps §7's asymmetric-delete disconnect from firing |
+
+**Verified 2026-08-07**: a `windows-profile` capture holds a live Memory-usage plot with the
+session intact at frame 120, and the link is clean — **no LNK2005** against `msvcprt.lib`'s own
+`operator new`, which was the open question. The witness was a deliberate 12-byte `new` in the
+loop, since removed: what the capture proves is that the pipe works end to end, not that any
+particular library's allocations are attributed.
 
 ### Where the zones go
 
@@ -146,7 +173,8 @@ exe. Both tools are downloads from the Tracy release — neither is built here.
 - [[Game Loop — Frame Flow]] · [[Task Graph — Execution Flow]] — the phases and levels the
   zones wrap
 - [[v1 Code Audit]] — F19 (per-frame alloc / string work in timing)
-- Code: `engine/base/include/TechEngine/base/profiler/Profile.hpp` (the macros) ·
+- Code: `engine/base/include/TechEngine/base/diagnostics/Profile.hpp` (the macros) ·
   `engine/app/src/App.cpp` + `engine/app/src/FrameLoop.cpp` (the zones) ·
+  `engine/app/src/diagnostics/MemoryTracking.cpp` + `.hpp` (the allocator replacement) ·
   `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:32` · `CMakeLists.txt:16` ·
   `CMakePresets.json` (build wiring)
