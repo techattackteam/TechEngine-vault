@@ -53,8 +53,8 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
-- [x] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — **Aug 8**.
-	  **Story D complete — all four cards done.** OFF `0.0206` · ON-disconnected `0.0339` ·
+- [x] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — **Aug 8**, engine
+	  `44a845f1` (PR #37). **Story D complete — all four cards done.** OFF `0.0206` · ON-disconnected `0.0339` ·
 	  ON-connected `0.1583` µs/frame; **+0.1377 µs = 0.0008% of a 16.6 ms frame** against
 	  ADR-013 §6's < 5% ([[B3 — Build & Testing Notes]] § *Overhead*). Tracy-spelling grep in
 	  `ci.yml`, one OFF-path Catch2 case, coverage stated in [[Profiler — Design]].

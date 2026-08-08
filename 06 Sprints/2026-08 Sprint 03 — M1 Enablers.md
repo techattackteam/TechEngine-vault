@@ -204,8 +204,8 @@ plannable at the Aug 29–30 boundary.
       the capture proves *the pipe works* — not that the Logger's own allocations are covered,
       which is what the card's condition asked for. That throwaway did **not** merge (PR #25's
       lesson, applied). `linux-profile` still has never been built.
-- [x] **S3-T6** — overhead number + coverage statement · **P2** · 🟡 Light — **done 2026-08-08**.
-      **Story D complete — all four cards done.** Number in [[B3 — Build & Testing Notes]]
+- [x] **S3-T6** — overhead number + coverage statement · **P2** · 🟡 Light — **done 2026-08-08**
+      (engine `44a845f1`, PR #37), CI green. **Story D complete — all four cards done.** Number in [[B3 — Build & Testing Notes]]
       § *Overhead*: OFF 0.0206 · ON-disconnected 0.0339 · ON-connected 0.1583 µs/frame
       (medians of 3, `windows-release`, MSVC). **+0.1377 µs = 0.0008% of a 16.6 ms frame**
       against §6's < 5%. Guard shipped in `.github/workflows/ci.yml:61`; coverage statement in
