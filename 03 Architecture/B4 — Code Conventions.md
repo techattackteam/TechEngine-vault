@@ -58,6 +58,12 @@ opinions about*) fired on S2-T2.
   [[Backlog]] entry with a next-time-you-touch-it trigger, not a rename pass. Same day,
   `.clang-format` went `ColumnLimit: 380 → 280` with argument bin-packing off. Driver: Miguel.
 
+- **2026-08-08 — initialization is `= value`, not `{value}`.** `std::uint32_t m_alignment = 0;`.
+  Braces keep only what `=` can't express: value-init `{}`, multi-field aggregates, explicit-ctor
+  calls, deliberate narrowing guards. Nothing enforces it —
+  `modernize-use-default-member-init` is not in `.clang-tidy`, so no gate re-adds braces.
+  `base`/`core`/`app` swept the same day (13 files); member-init lists left alone. Driver: Miguel.
+
 ## Open — local ergonomics (not a code rule)
 
 - If CLion still has `EnableClangFormatSupport=false`, turn it **on** so the IDE and CI agree —

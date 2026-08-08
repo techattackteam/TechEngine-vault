@@ -82,9 +82,12 @@ kept — they show where future work lands.
 
 ## etc — cross-cutting
 
-- #prio/xhigh · **CI cache storage is at 7.89 GB / 10 GB across 199 entries** — every run writes
-  a fresh timestamped `ccache-<leg>-<ts>` entry (`ci.yml:99`, `ci.yml:166`) instead of replacing
-  one; investigate and cap it. **Trigger:** fired — observed Aug 6, LRU eviction already active.
+- #prio/xhigh · **CI ccache is only hitting on `win-msvc Debug`** — that leg builds in ~22 s
+  while every other takes 1 min+ (linux sanitizers ~2 min), and storage sits at 7.89 GB / 10 GB
+  across 199 entries because every run writes a fresh timestamped `ccache-<leg>-<ts>` entry
+  (`ci.yml:99`, `ci.yml:166`) instead of replacing one; likely one bug — LRU eviction under the
+  cap leaves only the most recent leg warm. Cap the entries, then re-check the hit rates.
+  **Trigger:** fired — storage observed Aug 6, per-leg timings Aug 8 on the S3-T10 PR.
 - #prio/high · **Better way to add source/header files to CMake** — research the options
   (explicit lists, `CONFIGURE_DEPENDS` glob, generator script); current per-file editing is
   painful and v1's global glob was worse. **Trigger:** the next module that grows past a

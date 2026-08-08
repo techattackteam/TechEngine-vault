@@ -107,7 +107,7 @@ so it cannot ride the zero check.
 
 | Call | Shape |
 |---|---|
-| **Storage** | one **type-erased** `EventStream` over a byte buffer sized from the registry record; the driver holds `std::vector<EventStream>` indexed by the dense stream index — what that index is for. `publish<T>` memcpys (registration already guaranteed trivially-copyable); `read<T>` asserts the stream's id is `eventTypeId<T>()`, so type safety is a runtime check, not the compiler's |
+| **Storage** | one **type-erased** `EventStream` over a byte buffer sized from the registry record; `EventStreamManager` holds the `std::vector<EventStream>` indexed by the dense stream index — what that index is for — and the driver owns the manager (§ *Container + loop wiring*). `publish<T>` memcpys (registration already guaranteed trivially-copyable); `read<T>` asserts the stream's id is `eventTypeId<T>()`, so type safety is a runtime check, not the compiler's |
 | **Overflow** | capacity hint at registration, **geometric growth**. Steady state allocates nothing — the property the card's `operator new` count asserts — and a leak shows up as growth instead of silent loss. Bounded in practice, not by construction |
 | **Reads** | **eager compaction — every retire**, so the visible region is always contiguous and `read<T>` returns one `std::span` |
 | **Spelling** | ADR-014 §3's *flip* is **`makeVisible(frame, tick)`** in code, and its mark is `EventBatchMark` — "flip" is GPU page-flip vocabulary and implies two buffers swapping, which is the mechanism this section just replaced. Same refinement precedent as `dt` → `deltaTime` (`CONVENTIONS.md` → *Names are spelled out*); the ADR is not edited |
@@ -170,10 +170,42 @@ A cursor is one `u64`. Reading hands back everything from the cursor to
 older than `m_retireHeadSequence` is clamped forward to it, which is how a lagging reader
 misses silently instead of dangling.
 
+## Container + loop wiring (pinned 2026-08-08, with S3-T10)
+
+`EventStreamManager` (`core/events/`) owns the `std::vector<EventStream>`, indexed by the
+registry's dense stream index. Driver-owned at M1 — **this is the object that moves onto
+`Scene` at M5** (ADR-014 §5); nothing else about the shape changes when it does.
+
+| Call | Shape |
+|---|---|
+| **Construction** | `EventStreamManager{registry}` builds one stream per record, so **every `registerEvent` must precede it**. Enforced rather than documented: the ctor takes a non-const `EventRegistry&` and **seals** it, and a later registration is a `TE_CHECK` naming the tag — the failure lands on the registration that caused it instead of on the first publish |
+| **Lookup** | `getStream(id)` returns a **pointer**, gated by `TE_VERIFY` on both "record found" and "index in range"; `publish` drops, `read` returns an empty span. Always-on check **plus** a defined path — the same shape as a rejected registration, and what makes the miss reachable from a test |
+| **Capacity** | one `initialCapacity` for every stream. The per-type hint § *Stream storage* assumes has no home yet — `EventTypeRecord` carries no capacity field. Open below |
+| **Profiler** | zones on the **container's** `makeVisible`/`retire`, not on `EventStream`'s — one zone per barrier instead of one per stream per sub-step (ADR-013 §6) |
+
+**The loop stays events-ignorant.** `FrameLoop::advance(deltaTime, onFixedStep)` calls the
+hook once per fixed sub-step, after `tick++`; the driver's hook publishes and calls
+`makeVisible`. Everything else is driver-side — frame-tail `makeVisible`, the cursor read,
+then `retire` **last**. That hook is what becomes `FixedUpdate`'s slot at M5.
+
+Three ordering facts, each of which is a silent bug if reversed:
+
+- `frameIndex` and `deltaTime` are set **before** the sub-step loop, so the hook stamps marks
+  with the current frame. `alpha` cannot be — it is not known until the accumulator settles.
+- `retire` at the frame **tail** is ADR-014 §3's "frame start" in a rotated loop, and it is
+  what stops it dropping a batch the tail read never saw.
+- A 0-tick frame runs no hook at all: nothing is published, and nothing retires either,
+  because the tick did not advance.
+
 ## Open (deliberately — each has an owner)
 
 - **Script façade surface** (`onEvent<T>`-style, runner-drained; publishes routed
   through the façade) → **scripting ADR**.
+- **Binding a cursor to a system — mandatory, not sugar** (sharpened 2026-08-08, after S3-T10).
+  `read<T>(cursor)` needs the *caller* to hold the cursor, and a system cannot: the cursor lives
+  on its schedule entry. So the executor has to bind stream + cursor before the system body
+  sees it — a view handed in, or the drain below. Deferred deliberately until there is a
+  `Schedule` to test it against. **Owner:** the task-graph ADR.
 - **Engine-side `onEvent<T>` for C++ systems** — the executor drains at the system's slot and
   calls a handler, instead of the system body writing the `read` loop. Same pull, same
   barrier; sugar, not a semantic change. The loop stays the primitive (batch access and a
@@ -196,8 +228,14 @@ misses silently instead of dangling.
 - **API spelling** (`publish<T>` / `read<T>` view type, header layout) → implementation +
   `CONVENTIONS.md`; not a decision, a naming pass.
 - **Re-registration on DLL reload** — the registry rejects a second `registerEvent<T>`, so a
-  reloaded game DLL cannot re-register its types. No reload exists at M1. **Owner:** the
-  module/script reload work, whenever it lands.
+  reloaded game DLL cannot re-register its types; **the seal (S3-T10) closes the door
+  further** — after the streams are built, *no* registration is accepted, reload or not.
+  Both are the same constraint made explicit, not a new one, and no reload exists at M1.
+  **Owner:** the module/script reload work, whenever it lands.
+- **Per-type capacity hint** — every stream is built with one shared `initialCapacity`
+  because `EventTypeRecord` has no capacity field. Growth is geometric, so a hot stream
+  costs a few early reallocations rather than being wrong. **Owner:** the first event type
+  with a known high rate — add the field then, with a real number behind it.
 
 ## References
 

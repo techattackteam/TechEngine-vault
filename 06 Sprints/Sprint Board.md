@@ -23,10 +23,8 @@ kanban-plugin: board
 	  the ON path is not unit-tested and CI never compiles it.
 
 
-## 📋 E — events + `StringId` *(T7 → T8 → T9 → T10)*
+## 📋 E — events + `StringId` — ✅ **complete** *(T7 → T8 → T9 → T10)*
 
-- [ ] **S3-T10** — loop wiring + headless demo · P1 · 🟢 Deep — flip per fixed sub-step,
-	  retire at frame start; first event across a deterministic barrier. Needs S3-T9.
 
 
 ## 📋 F — file access *(T11 → T12 → T13)*
@@ -59,6 +57,19 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T10** — loop wiring + headless demo · P1 · 🟢 Deep — **Aug 8**, engine `ad47ec20`
+	  (PR #35). **Story E complete — all four cards done.** `advance(deltaTime, onFixedStep)`
+	  calls a hook per fixed sub-step and the **driver** publishes, flips, reads and retires
+	  around it, so `app`'s loop still knows nothing about events; that hook is `FixedUpdate`'s
+	  slot at M5. `EventStreamManager` owns the streams by dense index and **seals** the
+	  registry when it builds them, so a late `registerEvent` fails at the registration rather
+	  than at the first publish. Two things the card learned:
+	  **`frameIndex` had to move to the top of `advance`** — stamped from the bottom, every
+	  batch retires a frame early, and **no end-of-call assertion can see it**; the three hook
+	  cases came out of review, not the card. And **`TE_ASSERT` was the wrong tier for a
+	  lookup miss** — it vanishes in Release *and* fell through into the vector; `TE_VERIFY`
+	  plus a null return is the registry's own check-then-defined-path shape.
+
 - [x] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
 	  **Aug 7**, engine `dc790d7d` (PR #34). All 20 replaceable forms in `app`'s
 	  `diagnostics/MemoryTracking.cpp`; a `windows-profile` capture shows a live Memory-usage
@@ -81,8 +92,9 @@ kanban-plugin: board
 	  `makeVisible`/`retire`/cursors; retire-rule cases written first, 9 `TEST_CASE`s.
 	  The zero-steady-state-alloc test lost its mechanism to TSan's own `operator new`
 	  replacement and was **re-expressed as `capacity() == 64`** — no allocator interposition,
-	  same guarantee for the ring. One card condition still open: the method is `makeVisible`,
-	  not the note's `flip`.
+	  same guarantee for the ring. Its one open condition — the method is `makeVisible`, not
+	  the note's `flip` — **closed at S3-T10**: the note carries the rename and T10's §ref
+	  follows it.
 - [x] **S3-T7** — `base/stringid/StringId.hpp` + tests ([[StringId — Design]]) · P1 · 🟡 Light —
 	  **Aug 4**, engine `7e4564db` (PR #27). **Story E's head done; T8 unblocked.** constexpr
 	  FNV-1a/64; no macro, no UDL, no table. Three calls landed **against the note as first

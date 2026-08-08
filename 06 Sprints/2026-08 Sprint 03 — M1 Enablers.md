@@ -328,14 +328,53 @@ plannable at the Aug 29–30 boundary.
       back-to-back 0-tick frames (events must survive to the next tick), lagging cursor,
       ring wraparound. **Write the retire-rule cases first — the story's spike, in place.**
       Needs S3-T8.
-- [ ] **S3-T10** — loop wiring + headless demo · **P1** · 🟢 Deep — done: `FrameLoop::advance`
+- [x] **S3-T10** — loop wiring + headless demo · **P1** · 🟢 Deep — **done 2026-08-08**
+      (engine `ad47ec20`, PR #35), CI green. **Story E complete.** done: `FrameLoop::advance`
       flips at the end of every fixed sub-step and once at the frame tail, retires at frame
-      start ([[Events — Design]] § *Flip* / *Retire*); `TE_PROFILER_SCOPE` literal-name zones
-      on flip + retire (expand to nothing until Story D lands — **no ordering dep on D**); the
-      headless driver (`engine/app/src/App.cpp`) publishes in a fixed step and a frame-tail
+      start ([[Events — Design]] § *Make visible* / *Retire*); `TE_PROFILER_SCOPE` literal-name
+      zones on flip + retire (expand to nothing until Story D lands — **no ordering dep on D**);
+      the headless driver (`engine/app/src/App.cpp`) publishes in a fixed step and a frame-tail
       read consumes it **exactly once** at the next barrier — the first event across a
       deterministic barrier; the streams container stays driver-owned, named as the M5 `Scene`
       hand-off. Needs S3-T9.
+      Four calls the card did not foresee, all recorded in [[Events — Design]] § *Container +
+      loop wiring*:
+      **(1) The loop does not know events exist.** `advance(deltaTime, onFixedStep)` takes a
+      hook called once per sub-step and the *driver* publishes and flips inside it; the
+      frame-tail flip, the read and `retire` are driver-side too. The card's wording put all
+      four inside `advance`, which would have made `app`'s loop depend on `core`'s streams for
+      no gain — and the hook is what becomes `FixedUpdate`'s slot at M5 anyway. `advance`
+      moved into the header as a template, and `base` became a PUBLIC dep of `app`.
+      **(2) `frameIndex` now increments at the top of `advance`.** It was last, so a hook
+      would have stamped its marks with the *previous* frame and every batch would have
+      retired a frame early. **Nothing observable after `advance` returns changed — which is
+      exactly why it shipped untested at first.** The existing `FrameLoopTests` pass under
+      either ordering; only a case that inspects the context *from inside the hook* can tell
+      them apart. Caught in review, three cases added. Retro line: **a fix whose whole point
+      is mid-call state cannot be covered by end-of-call assertions.**
+      **(3) The container needed an `EventStreamManager` type, and it needed a seal.** Streams are
+      built from the registry's records once, so a type registered afterwards silently had no
+      stream. `EventStreamManager`'s ctor now seals the registry — a late `registerEvent` is a
+      `TE_CHECK` naming the tag. This forecloses DLL-reload re-registration, which was already
+      an open item with the same owner.
+      **(4) `getStream` returns a pointer behind `TE_VERIFY`, not a reference behind
+      `TE_ASSERT`.** The assert compiled out in Release *and* fell through into
+      `m_streams[record->streamIndex]` with a null record. Now always-on, with `publish`
+      dropping and `read` returning an empty span — the same check-plus-defined-path shape the
+      registry's rejections use, which is what makes the case testable at all.
+      Tests: `EventStreamManagerTests.cpp` (8 cases — construction, seal, routing, barrier
+      fan-out, the miss, and the publish-in-sub-step → read-once frame shape) · a
+      registration-after-seal case in `EventRegistryTests.cpp` · three hook cases in
+      `FrameLoopTests.cpp` (the frame the hook sees · ×N invocations on a catch-up frame ·
+      none on a 0-tick frame). The capture handler both event suites use moved to a shared
+      `tests/events/AssertCapture.hpp` rather than being copied a second time.
+      **Three review findings, all fixed before merge:** the missing hook coverage above, a
+      commented-out per-frame `TE_LOGGER_INFO` left in the driver, and `EventTypeId::stringID()`
+      → **`stringId()`** — the type is `StringId`, so the accessor's capitalization was the
+      odd one out.
+
+**Story E complete.**
+
 ### Story F — File access *(sized 2026-08-02, off [[File Access — Design]])*
 
 > Ordering: **T11 → T12 → T13**, a strict chain, independent of Stories D/E. Gate said
