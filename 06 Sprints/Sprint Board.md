@@ -15,12 +15,8 @@ kanban-plugin: board
 	  from `S2-B1`, which was created Jul 31 and **never reached this board**. Not droppable.
 
 
-## 📋 D — profiler hooks *(T3 → T4 → {T5, T6})*
+## 📋 D — profiler hooks — ✅ **complete** *(T3 → T4 → {T5, T6})*
 
-- [ ] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — < 5% bar into
-	  [[B3 — Build & Testing Notes]], recorded with what the loop was doing when it was
-	  taken; **ci.yml Tracy-spelling guard** (§2 + §6 made structural); says out loud that
-	  the ON path is not unit-tested and CI never compiles it.
 
 
 ## 📋 E — events + `StringId` — ✅ **complete** *(T7 → T8 → T9 → T10)*
@@ -57,6 +53,18 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — **Aug 8**.
+	  **Story D complete — all four cards done.** OFF `0.0206` · ON-disconnected `0.0339` ·
+	  ON-connected `0.1583` µs/frame; **+0.1377 µs = 0.0008% of a 16.6 ms frame** against
+	  ADR-013 §6's < 5% ([[B3 — Build & Testing Notes]] § *Overhead*). Tracy-spelling grep in
+	  `ci.yml`, one OFF-path Catch2 case, coverage stated in [[Profiler — Design]].
+	  **The card's own recipe could not produce a number** — timing the headless loop measures
+	  the 60 Hz spin pacer, which pins both builds at 16.6 ms; the run needed the pacer out and
+	  a synthetic `deltaTime`, on a throwaway patch that did not merge. **`TRACY_ON_DEMAND`
+	  made it three runs, not two**, and the disconnected one turned out to be the interesting
+	  one: 2.2 ns per call site, Tracy's own quoted figure. **§6's ratio form is not evaluable
+	  at M1** — against a 0.02 µs baseline the delta is +669%, which measures the empty loop;
+	  the absolute cost is the checkable form until M2/R1 give it real frame content.
 - [x] **S3-T10** — loop wiring + headless demo · P1 · 🟢 Deep — **Aug 8**, engine `ad47ec20`
 	  (PR #35). **Story E complete — all four cards done.** `advance(deltaTime, onFixedStep)`
 	  calls a hook per fixed sub-step and the **driver** publishes, flips, reads and retires
@@ -69,7 +77,6 @@ kanban-plugin: board
 	  cases came out of review, not the card. And **`TE_ASSERT` was the wrong tier for a
 	  lookup miss** — it vanishes in Release *and* fell through into the vector; `TE_VERIFY`
 	  plus a null return is the registry's own check-then-defined-path shape.
-
 - [x] **S3-T5** — memory tracking: global `new`/`delete` replacement · P2 · 🟠 Moderate —
 	  **Aug 7**, engine `dc790d7d` (PR #34). All 20 replaceable forms in `app`'s
 	  `diagnostics/MemoryTracking.cpp`; a `windows-profile` capture shows a live Memory-usage

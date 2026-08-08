@@ -84,6 +84,41 @@ Observed on the first `TE_PROFILE=ON` build (2026-08-03, S3-T3, MSVC only):
 - **`linux-profile` is unverified and CI never builds it.** The profiled config can rot
   silently on the Clang leg; the named antidote is a nightly profile leg (ADR-008 §9).
 
+### Overhead — measured 2026-08-08 (S3-T6)
+
+`windows-release`, MSVC, one machine, median of 3 runs each.
+
+| Build | µs/frame | vs OFF |
+|---|---|---|
+| `TE_PROFILE=OFF` | 0.0206 | — |
+| ON, no consumer connected | 0.0339 | +0.0133 µs · +65% |
+| ON, `tracy-capture` attached | 0.1583 | +0.1377 µs · +669% |
+
+**What the loop was doing** — it is the denominator, so it is half the number. Unpaced (the
+60 Hz spin pacer deleted), `advance` fed a synthetic `FIXED_DELTA_TIME` so every frame runs
+exactly one fixed tick, `-DTE_LOG_ACTIVE_LEVEL=6` so no log line executes, 100 000 frames.
+Per frame: **5 zones + 1 frame mark** — `FrameLoop::advance` · `FixedSteps` · `MakeVisible` ×2 ·
+`Retire` · `TE_PROFILER_FRAME`. The harness was a throwaway local patch; none of it merged.
+
+**Against ADR-013 §6's < 5% bar: 0.1377 µs on a 16.6 ms frame is 0.0008%.** Passes by ~6000×.
+
+**The +669% is real and says nothing about the profiler.** The denominator is a loop doing
+0.02 µs of work, so §6's *ratio* form is not evaluable at M1 — the absolute per-frame cost is
+the checkable figure until the loop has real per-frame content. It becomes a ratio again at
+M2's task graph and R1's renderer, which is when §6 says to re-run this anyway.
+
+Two things the three-way split shows, neither of them a problem:
+
+- **Disconnected costs 2.2 ns per call site** (13.3 ns ÷ 6). That is `TRACY_ON_DEMAND`'s
+  early-out, and it lands on Tracy's own quoted ~2.25 ns/zone almost exactly.
+- **Connected costs ~23 ns per record** (137.7 ns ÷ 6) — ~10× the disconnected path: the queue
+  write plus the serialisation thread. Not chased; §6 is not missed, so there is no cause to
+  name.
+
+The ON builds also compile in S3-T5's global `new`/`delete` replacement, so the delta covers
+every allocation as well as every zone. This loop allocates nothing in steady state, so that
+contributes ~0 **here** — which will not survive the first system that allocates per frame.
+
 ## Scaffold checklist
 
 Moved — this note fed the ADR, and the ADR is where the checklist landed:

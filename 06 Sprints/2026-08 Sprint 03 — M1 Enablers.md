@@ -204,7 +204,31 @@ plannable at the Aug 29–30 boundary.
       the capture proves *the pipe works* — not that the Logger's own allocations are covered,
       which is what the card's condition asked for. That throwaway did **not** merge (PR #25's
       lesson, applied). `linux-profile` still has never been built.
-- [ ] **S3-T6** — overhead number + coverage statement · **P2** · 🟡 Light — done:
+- [x] **S3-T6** — overhead number + coverage statement · **P2** · 🟡 Light — **done 2026-08-08**.
+      **Story D complete — all four cards done.** Number in [[B3 — Build & Testing Notes]]
+      § *Overhead*: OFF 0.0206 · ON-disconnected 0.0339 · ON-connected 0.1583 µs/frame
+      (medians of 3, `windows-release`, MSVC). **+0.1377 µs = 0.0008% of a 16.6 ms frame**
+      against §6's < 5%. Guard shipped in `.github/workflows/ci.yml:61`; coverage statement in
+      [[Profiler — Design]] § *Coverage*. Four things the card did not foresee:
+      **(1) The card's recipe could not produce a number.** "Time the headless loop" measures
+      the **pacer** — `App.cpp`'s 60 Hz spin pins every frame at 16.6 ms in both builds, so the
+      delta reads ~0%. The card's own rule (*check what the loop is doing*) was written about a
+      loop that was too slow; it fired for the opposite reason. The run needed the pacer
+      deleted, a synthetic `FIXED_DELTA_TIME` fed to `advance` (same tick pattern, no wall
+      clock), `TE_LOG_ACTIVE_LEVEL=6` and 100 000 frames — a throwaway patch, **not merged**.
+      **(2) `TRACY_ON_DEMAND=ON` splits the answer in two.** A disconnected client collects
+      nothing, so the obvious run measures the early-out. Three runs, not two — and the
+      disconnected one is worth keeping: **2.2 ns per call site**, which is Tracy's own quoted
+      ~2.25 ns/zone almost exactly. Connected is ~23 ns per record.
+      **(3) §6's bar is not evaluable as worded.** Against the loop's own baseline the delta is
+      **+669%** — because the baseline is 0.02 µs of nothing. A ratio needs frame content that
+      does not exist at M1, so the absolute per-frame cost is the checkable form until M2/R1.
+      Recorded in B3; **ADR-013 unedited** — S3-P1 owns whether that is an amendment.
+      **(4) The Catch2 case had to guard its own helpers, not just the test.** The two
+      side-effect helpers are unreferenced under `TE_PROFILE_ENABLED` (the macros discard their
+      arguments), so leaving them outside the `#if` would have broken `windows-profile` under
+      `/W4 /WX` while CI stayed green — S3-T4's GOTCHA class, caught before the build.
+      Original done-conditions:
       `windows-release` built twice, `TE_PROFILE` ON vs OFF, headless loop timed, delta
       recorded in [[B3 — Build & Testing Notes]] against ADR-013 §6's **< 5%** bar; a miss
       gets its **cause named** (zone placement vs Tracy) before anything is changed.

@@ -6,8 +6,8 @@
 > rationale lives in the ADR and is not repeated here.
 
 **Module:** `base` (CPU) · `client` (GPU) · **Kind:** utility (global macros) ·
-**Status:** accepted — build wiring (S3-T3), CPU macros (S3-T4) and memory tracking (S3-T5)
-landed; the overhead number is owed by S3-T6, GPU zones by R1
+**Status:** accepted — build wiring (S3-T3), CPU macros (S3-T4), memory tracking (S3-T5) and
+the overhead number (S3-T6) landed; GPU zones owed by R1
 **ADRs:** [[ADR-013 — Profiler (Tracy-backed instrumentation)]] *(the decision)* ·
 [[ADR-006 — v2 core architecture & module layout]] §5 — **its `Profiler` row is superseded
 by ADR-013 §9**; the rest of §5 stands
@@ -136,6 +136,35 @@ include dir `SYSTEM`, so there is **no manual re-export** (and no CMake-3.25 pro
 CMake emits `-external:W0` beside `-external:I` on MSVC, so `/W4 /WX` needs **no change** to
 `te_warnings`.
 
+### Coverage — said out loud, because the automation does not say it
+
+**CI never compiles `TE_PROFILE=ON`.** Not on either leg, not in any config, not on the
+sanitizer trio. Everything below follows from that.
+
+| Claim | How it is actually held |
+|---|---|
+| The macros expand to nothing when OFF | `App.cpp` / `FrameLoop.hpp` compile the OFF path on all four legs — that much is real |
+| …and do not evaluate their arguments | one Catch2 case, `engine/base/tests/diagnostics/ProfileTests.cpp`. **That is its whole value** — it is `#if !defined(TE_PROFILE_ENABLED)`-guarded, so it never runs on the ON path |
+| Every call site spells `TE_PROFILER_*`, not Tracy | a **grep**, not a test: `.github/workflows/ci.yml`'s `check` line bans `ZoneScoped\|ZoneTransient\|FrameMark\|Tracy(Secure)?(Alloc\|Free)\|tracy/` outside `base/diagnostics/` |
+| No transient / runtime-named zones on a per-frame path | the same grep. This is what makes ADR-013 §6's rule structural instead of review-only, and it is **the only** gate on it |
+| The ON path works at all | **demo capture, S3-T4 and S3-T5 — not a test.** One `windows-profile` run, one machine, MSVC only |
+| `linux-profile` works | **nothing.** Never configured, never built |
+
+The grep is the honest half: it catches the failure mode that actually matters (F19's
+runtime-named zone reappearing in a per-frame path) without compiling Tracy anywhere. It
+catches nothing about whether the ON build still *links*.
+
+**The antidote stays deferred** — one profile leg on ADR-008 §9's nightly schedule, per
+ADR-013 § *Consequences*. Its trigger, named here rather than left implicit: **a profile
+build found broken by someone trying to use it.** When that happens the cost of the nightly
+leg has already been paid once, in a worse currency.
+
+**The overhead number lives in [[B3 — Build & Testing Notes]] § *Overhead*** (S3-T6,
+2026-08-08): +0.14 µs/frame with Tracy attached — **0.0008%** of a 16.6 ms frame against
+ADR-013 §6's < 5%. The finding worth carrying forward is that §6's *ratio* form is not
+evaluable while the headless loop has no per-frame content; the absolute figure is what is
+checkable until M2's task graph and R1's renderer give it a real denominator.
+
 ### Profiling workflow
 
 ```bash
@@ -176,5 +205,7 @@ exe. Both tools are downloads from the Tracy release — neither is built here.
 - Code: `engine/base/include/TechEngine/base/diagnostics/Profile.hpp` (the macros) ·
   `engine/app/src/App.cpp` + `engine/app/src/FrameLoop.cpp` (the zones) ·
   `engine/app/src/diagnostics/MemoryTracking.cpp` + `.hpp` (the allocator replacement) ·
+  `.github/workflows/ci.yml` (the Tracy-spelling grep) ·
+  `engine/base/tests/diagnostics/ProfileTests.cpp` (the OFF-path case) ·
   `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:32` · `CMakeLists.txt:16` ·
   `CMakePresets.json` (build wiring)
