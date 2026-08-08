@@ -9,7 +9,7 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## 📋 C — S2 loose ends · [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
+## 📋 C — S2 loose ends — ✅ **complete** *(B1)*
 
 
 
@@ -46,23 +46,25 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — **Aug 8**,
-	  [PR #38](https://github.com/techattackteam/TechEngine/pull/38) (`bd03e493`), **unmerged and
-	  never compiled**. Carried from `S2-B1`, created Jul 31 and **never reached this board**.
-	  `DiagnosticsScope` — RAII, first thing in `run()`; both `main()`s are now
-	  `return TechEngine::run();`. **The bug was absent init, not duplicated init**: only `editor`
-	  called `initLogging()`, so the shipped `runtime` installed **no sink at all**, and
-	  `shutdownLogging()` had no caller anywhere. **Nothing to move for the assert handler** — no
-	  exe ever installed one and `base` seeds the default statically; re-parked on
-	  [[Assert — Design]] until `platform` exists. **Registers no module tag** — `editor`'s was
-	  discarded at the call site and nothing reads one. **S2-T3's residual closed**: the app suite
-	  is the first ever to call `initLogging()`, in one case, because the log path is fixed and
-	  relative. Moves to Done on a green merge.
-
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
 
+- [x] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — **Aug 8**,
+	  engine `10258eec` (PR #38). **Story C complete.** Carried from `S2-B1`, created Jul 31 and
+	  **never reached this board** — the card the retro wrote a process rule about.
+	  `DiagnosticsScope` is an RAII pair in `app`, first thing in `run()`; both `main()`s are now
+	  `return TechEngine::run();`. **The bug was absent init, not duplicated init** — only `editor`
+	  called `initLogging()`, so the shipped `runtime` installed **no sink at all** and
+	  `shutdownLogging()` had no caller anywhere in the tree. **Two of the card's three clauses had
+	  no referent**: no exe ever installed an assert handler (`base` seeds the default statically —
+	  re-parked on [[Assert — Design]] until `platform` exists), and the module tag `editor`
+	  "registered" was discarded at the call site, so the scope registers none.
+	  **S2-T3's residual closed** — the app suite is the first ever to call `initLogging()`, so
+	  `spdlogSink` is finally reachable from ctest; one case, because the log path is fixed and
+	  relative and a second writer would race it under `-j`. The second scope in that case is
+	  deliberate: truncate-on-open makes a surviving first line the **only** witness that the
+	  destructor ran.
 - [x] **S3-T6** — overhead number + coverage statement · P2 · 🟡 Light — **Aug 8**, engine
 	  `44a845f1` (PR #37). **Story D complete — all four cards done.** OFF `0.0206` · ON-disconnected `0.0339` ·
 	  ON-connected `0.1583` µs/frame; **+0.1377 µs = 0.0008% of a 16.6 ms frame** against

@@ -95,6 +95,11 @@ one exercising `spdlogSink` and the session file — S2-T3's residual, closed he
 case builds a second scope on purpose: the file truncates on open, so a surviving first line is the
 only observable proof `shutdownLogging()` never fired.
 
+> **Unstated assumption in that case.** It reads `logs/techengine.log` relative to the working
+> directory ctest hands the exe — `catch_discover_tests`' default, the module's binary dir. Green on
+> all four legs, so it holds today; a `WORKING_DIRECTORY` in `cmake/techengine_test.cmake` would
+> break it as a missing file, which reads like a dead sink.
+
 ### Call site picks its channel (decided S2-T3)
 **Per-TU `TE_LOG_CHANNEL`**, defined **before** including `Log.hpp`; unset → `DEFAULT_CHANNEL`.
 One channel per TU is the intended shape, so the plain macros stay channel-free at the call site.

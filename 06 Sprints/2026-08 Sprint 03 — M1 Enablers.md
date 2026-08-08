@@ -116,11 +116,10 @@ plannable at the Aug 29–30 boundary.
 
 ### Story C — Sprint 02 loose ends
 
-- [ ] **S3-B1** — diagnostics init belongs in `app`, not the exe · **P1** · 🟠 Moderate —
-      **in review 2026-08-08** ([PR #38](https://github.com/techattackteam/TechEngine/pull/38),
-      branch `S3-B1/Diagnostics-init`, engine `bd03e493`) — **unmerged, CI not yet run, nothing
-      built locally.** Carried from S2-T2's parked list, reclassified `S2-B1` on Jul 31 and
-      **never reached the board** (retro → *Process improvements*). **Story C's only card.**
+- [x] **S3-B1** — diagnostics init belongs in `app`, not the exe · **P1** · 🟠 Moderate —
+      **done 2026-08-08** (engine `10258eec`, PR #38), CI green. **Story C complete.**
+      Carried from S2-T2's parked list, reclassified `S2-B1` on Jul 31 and
+      **never reached the board** (retro → *Process improvements*).
       Shipped: `DiagnosticsScope`, an RAII pair in `engine/app/src/diagnostics/`, first thing in
       `run()`; both `main()`s collapse to `return TechEngine::run();`
       ([[Logger — Design]] § *Bring-up*). Three things the card didn't foresee:
@@ -144,9 +143,14 @@ plannable at the Aug 29–30 boundary.
       writer would race it under `ctest -j`. It builds a **second scope** deliberately — truncate-on-open
       means a surviving first line is the only observable proof `shutdownLogging()` never fired,
       which is otherwise a destructor with no witness (S3-T10's lesson, applied).
-      **Unverified, said plainly:** not compiled, no `ctest` run. The test assumes ctest's working
-      directory for this exe is the app module's binary dir (`catch_discover_tests` default) — if the
-      path assertion fails, that is the thing to check before the sink.
+      **The one assumption CI settled:** the case reads `logs/techengine.log` relative to whatever
+      working directory ctest hands the exe — `catch_discover_tests`' default, this module's binary
+      dir. Green on all four legs, so the default holds on both platforms. It is still an
+      **assumption the test does not state**; a `WORKING_DIRECTORY` change in
+      `cmake/techengine_test.cmake` breaks it with a missing-file failure that reads like a broken
+      sink. Named in [[Logger — Design]] § *Bring-up*, not guarded.
+
+**Story C complete.**
 
 ### Story D — Profiler hooks *(sized 2026-08-02, off [[ADR-013 — Profiler (Tracy-backed instrumentation)]])*
 
@@ -510,9 +514,9 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
       (`5afb6d28`). **Story B complete.**
 - [x] Stories D/E/F's cards were **written after** their artifact, never before —
       **held Aug 2**, all three cut the same day their artifact landed.
-- [ ] **S3-B1 closed** — one composition root owns diagnostics init. **In review Aug 8**
-      ([PR #38](https://github.com/techattackteam/TechEngine/pull/38)); ticks on merge, not before —
-      the branch has never been compiled.
+- [x] **S3-B1 closed** — one composition root owns diagnostics init. **Met Aug 8**
+      (engine `10258eec`, PR #38). The sprint's only Bug card, and the one that was never
+      droppable.
 - [ ] **Nothing built without a consumer, with one recorded exception:** math is a *vocabulary*,
       argued in [[Math — Design]] § Trigger. If a second exception appears, the rule is the thing
       to re-examine — not the exception.
