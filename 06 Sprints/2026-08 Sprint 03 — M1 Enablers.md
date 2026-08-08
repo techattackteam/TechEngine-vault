@@ -117,12 +117,36 @@ plannable at the Aug 29–30 boundary.
 ### Story C — Sprint 02 loose ends
 
 - [ ] **S3-B1** — diagnostics init belongs in `app`, not the exe · **P1** · 🟠 Moderate —
-      carried from S2-T2's parked list, reclassified `S2-B1` on Jul 31 and **never reached the
-      board** (retro → *Process improvements*). done: `initLogging()`, channel/module
-      registration and the assert-handler install move into the **`app` composition root**
-      (ADR-011 §2 §8), so `apps/runtime` and `apps/editor` stop each owning a copy;
-      S2-T3's residual — `initLogging`/`spdlogSink` uncovered by ctest — is either **closed or
-      explicitly re-parked with the reason**, not left silent.
+      **in review 2026-08-08** ([PR #38](https://github.com/techattackteam/TechEngine/pull/38),
+      branch `S3-B1/Diagnostics-init`, engine `bd03e493`) — **unmerged, CI not yet run, nothing
+      built locally.** Carried from S2-T2's parked list, reclassified `S2-B1` on Jul 31 and
+      **never reached the board** (retro → *Process improvements*). **Story C's only card.**
+      Shipped: `DiagnosticsScope`, an RAII pair in `engine/app/src/diagnostics/`, first thing in
+      `run()`; both `main()`s collapse to `return TechEngine::run();`
+      ([[Logger — Design]] § *Bring-up*). Three things the card didn't foresee:
+      **(1) The bug was worse than "duplicated init" — it was *absent* init.** The card's framing
+      says the exes "each own a copy". They didn't: only `editor` called `initLogging()`, so the
+      shipped **`runtime` installed no sink at all** and every `TE_LOGGER_*` in `run()` reached the
+      ring and stopped. `shutdownLogging()` had **no caller anywhere in the tree**, so the session
+      file was never closed either.
+      **(2) There was nothing to move for the assert handler.** No exe installs one and
+      `Assert.cpp:17` seeds `defaultAssertHandler` statically, so the card's third clause had no
+      referent. ADR-011 §6's debugger-aware handler needs `platform`, which does not exist —
+      **re-parked on [[Assert — Design]]**, and the scope is logging-only.
+      **(3) Registering nothing is the call.** The card said "channel/module registration" moves
+      too; `editor` registered `"editor"` and **discarded the handle**, and nothing in the engine
+      reads a module or channel. Registering a tag with no reader is building without a consumer,
+      so the scope registers none — the tag lands with the first module that wants a channel, which
+      is when ADR-011 §2's per-module entry point gets written.
+      **S2-T3's residual closed, not re-parked.** `TechEngineAppTests` now calls `initLogging()`,
+      the first suite ever to, so `spdlogSink` and the session file are reachable from ctest. **One**
+      case: `logs/techengine.log` is a fixed relative path with no injection point, so a second
+      writer would race it under `ctest -j`. It builds a **second scope** deliberately — truncate-on-open
+      means a surviving first line is the only observable proof `shutdownLogging()` never fired,
+      which is otherwise a destructor with no witness (S3-T10's lesson, applied).
+      **Unverified, said plainly:** not compiled, no `ctest` run. The test assumes ctest's working
+      directory for this exe is the app module's binary dir (`catch_discover_tests` default) — if the
+      path assertion fails, that is the thing to check before the sink.
 
 ### Story D — Profiler hooks *(sized 2026-08-02, off [[ADR-013 — Profiler (Tracy-backed instrumentation)]])*
 
@@ -486,7 +510,9 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
       (`5afb6d28`). **Story B complete.**
 - [x] Stories D/E/F's cards were **written after** their artifact, never before —
       **held Aug 2**, all three cut the same day their artifact landed.
-- [ ] **S3-B1 closed** — one composition root owns diagnostics init.
+- [ ] **S3-B1 closed** — one composition root owns diagnostics init. **In review Aug 8**
+      ([PR #38](https://github.com/techattackteam/TechEngine/pull/38)); ticks on merge, not before —
+      the branch has never been compiled.
 - [ ] **Nothing built without a consumer, with one recorded exception:** math is a *vocabulary*,
       argued in [[Math — Design]] § Trigger. If a second exception appears, the rule is the thing
       to re-examine — not the exception.

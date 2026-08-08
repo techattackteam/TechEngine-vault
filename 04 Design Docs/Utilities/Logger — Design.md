@@ -2,10 +2,11 @@
 
 > Living design doc. Terse (CLAUDE.md token economy). ADR = the irreversible decision; this doc = the _how_.
 
-**Module:** `base` (helper/utility — dependency-free leaf) · **Kind:** utility · **Status:** decided — implementing (S2-T2/T3)
+**Module:** `base` (helper/utility — dependency-free leaf) · **Kind:** utility · **Status:** active
 **ADRs:** **[[ADR-011 — Diagnostics (Logger & Assert)]] — the decisions** ·
 [[ADR-005 — v2 tech stack & toolchain]] (spdlog) · [[ADR-006 — v2 core architecture & module layout]] §5/§6
-**Sprint:** [[2026-08 Sprint 02 — Base Foundation]] — S2-T2 / S2-T3
+**Sprint:** [[2026-08 Sprint 02 — Base Foundation]] — S2-T2 / S2-T3 ·
+[[2026-08 Sprint 03 — M1 Enablers]] — S3-B1 (bring-up)
 
 ## Purpose
 Structured, low-overhead logging for the whole engine, wrapping **spdlog** (don't rebuild infra).
@@ -74,6 +75,25 @@ registered handle**, not an enum, and gives two-level filtering (module → chan
 
 **Registered names are stored, never copied** — pass a literal or a static. Table caps are fixed
 (no allocation): overflow → default channel + a stderr line, never a resize.
+
+### Bring-up — one scope at the composition root (S3-B1)
+`DiagnosticsScope` (`engine/app/src/diagnostics/Diagnostics.cpp`) calls `initLogging()` in its ctor
+and `shutdownLogging()` in its dtor, constructed first in `run()`. Both `main()`s are
+`return TechEngine::run();` — no exe touches diagnostics. RAII over an init/shutdown pair because
+`run()` will grow early returns.
+
+**Nothing is registered.** No module tag, no channel: nothing reads one yet, and the editor's old
+`"editor"` handle was discarded at the call site. The tag lands with the first module that wants a
+channel — which is also when ADR-011 §2's per-module registration entry point gets written.
+
+> **Process-global, not scope-local.** A second scope built while the first is alive initializes
+> nothing, and *its* destructor tears logging down for both.
+
+**Coverage.** `TechEngineAppTests` is the only suite that calls `initLogging()`, so it is the only
+one exercising `spdlogSink` and the session file — S2-T3's residual, closed here. **One** case, since
+`logs/techengine.log` is a fixed relative path and a second writer races it under `ctest -j`. That
+case builds a second scope on purpose: the file truncates on open, so a surviving first line is the
+only observable proof `shutdownLogging()` never fired.
 
 ### Call site picks its channel (decided S2-T3)
 **Per-TU `TE_LOG_CHANNEL`**, defined **before** including `Log.hpp`; unset → `DEFAULT_CHANNEL`.

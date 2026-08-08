@@ -11,8 +11,6 @@ kanban-plugin: board
 
 ## 📋 C — S2 loose ends · [[2026-08 Sprint 03 — M1 Enablers]] (Aug 1 – Aug 28)
 
-- [ ] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — carried
-	  from `S2-B1`, which was created Jul 31 and **never reached this board**. Not droppable.
 
 
 ## 📋 D — profiler hooks — ✅ **complete** *(T3 → T4 → {T5, T6})*
@@ -46,8 +44,20 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
-
 ## 👀 Review / Demo
+
+- [ ] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — **Aug 8**,
+	  [PR #38](https://github.com/techattackteam/TechEngine/pull/38) (`bd03e493`), **unmerged and
+	  never compiled**. Carried from `S2-B1`, created Jul 31 and **never reached this board**.
+	  `DiagnosticsScope` — RAII, first thing in `run()`; both `main()`s are now
+	  `return TechEngine::run();`. **The bug was absent init, not duplicated init**: only `editor`
+	  called `initLogging()`, so the shipped `runtime` installed **no sink at all**, and
+	  `shutdownLogging()` had no caller anywhere. **Nothing to move for the assert handler** — no
+	  exe ever installed one and `base` seeds the default statically; re-parked on
+	  [[Assert — Design]] until `platform` exists. **Registers no module tag** — `editor`'s was
+	  discarded at the call site and nothing reads one. **S2-T3's residual closed**: the app suite
+	  is the first ever to call `initLogging()`, in one case, because the log path is fixed and
+	  relative. Moves to Done on a green merge.
 
 
 

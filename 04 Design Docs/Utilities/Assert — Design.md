@@ -140,9 +140,14 @@ ASSERT (§5, on), ENSURE report-once scope (§5, per call-site), `TE_ASSUME` (§
 + install mechanism (§5), bootstrap/recursion/stderr fallback (§7).
 
 Live, and owned by the ADR's exit triggers:
-- **The Linux/Clang debugger-aware handler** has no implementation yet — ADR-011 §6 requires an
-  equivalent **or an explicit no-op** so the required Linux check stays green. Lands with `platform`,
-  not this sprint (S2-T5 leaves it a documented hook).
+- **The debugger-aware handler has no implementation on either leg** — ADR-011 §6 requires a Linux
+  equivalent **or an explicit no-op** so the required Linux check stays green. Lands with `platform`
+  (S2-T5 leaves it a documented hook).
+  **S3-B1 checked and installed nothing** (2026-08-08): its card read "move the assert-handler
+  install into `app`", but there was never a copy to move — no exe installs a handler, and
+  `Assert.cpp` seeds `defaultAssertHandler` as the static initial value. The composition-root scope
+  is logging-only. **Re-parked, not closed** — the install point stays `setAssertHandler` at
+  `run()`'s top, whenever `platform` gives it something to install.
 
 ## References
 - **[[ADR-011 — Diagnostics (Logger & Assert)]]** — the decisions
