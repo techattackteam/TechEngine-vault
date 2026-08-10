@@ -2,7 +2,7 @@
 
 > Living design doc. **ADR = the irreversible decision; this doc = the _how_.**
 
-**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** read side shipped (S3-T11/T12); wiring open (S3-T13)
+**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** **read side shipped** (Story F, S3-T11…T13); write half is M3
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 ·
 **v1:** [[v1 Code Audit]] F30 · F16 · **Backlog:** [[Backlog]] → `platform`
 
@@ -61,6 +61,24 @@ flowchart TB
 
 `MountTable` is the shared state; the two halves resolve against it with **different
 policies**, which is why it is its own type rather than a private member of either.
+
+### Wiring
+
+`run()` (`engine/app/src/App.cpp`) owns `MountTable` and `FileAccess` **by value**, builds
+`EngineContext` over them, and mounts afterwards — services first, then mounts. The context
+is a non-owning view, so a mount established later is visible through it; a Catch2 case pins
+that, because it is the thing a future `FileAccess` that snapshots the table would break.
+
+`EngineContext` (`core`) has **one field** today. `Clock` stays owned by `run()` and the
+event streams stay driver-owned (S3-T10), so neither joined it just because ADR-006 §4's
+sketch listed them. `FrameContext` carries `const EngineContext&`, which deletes its
+copy-assignment — a frame is observed through the loop's `const&`, never reseated.
+
+**The demo mount is throwaway.** `engine/app/assets/` reached through a configure-time
+`TE_DEMO_ASSETS_DIR`, marked `TODO(S3-T13)` in both `App.cpp` and `engine/app/CMakeLists.txt`.
+It bakes a source-tree path into the binary and resolves to nothing in an installed build —
+acceptable only because M3 replaces it. The real answer is `platform::executablePath()`
+([[Backlog]] → `platform`); v1 had it Windows-only and used `current_path()` everywhere else.
 
 ### Why no interface
 
@@ -225,4 +243,6 @@ parameter type is a mechanical edit at every call site.
   `runtime/editor/src/fileSystem/FileSystem.cpp` · `runtime/editor/src/project/ProjectManager.cpp:262-271`
 - Code: `engine/platform/include/TechEngine/platform/files/` — `FileAccess.hpp` ·
   `MountTable.hpp` · `VirtualPath.hpp` · `FileResult.hpp`; impls under `src/files/`; Catch2
-  in `tests/files/` (`TechEnginePlatformTests`, new at S3-T11). Wiring → S3-T13.
+  in `tests/files/` (`TechEnginePlatformTests`, new at S3-T11). Wiring:
+  `engine/core/include/TechEngine/core/EngineContext.hpp` + `engine/app/src/App.cpp`;
+  F30's regression case is `engine/core/tests/EngineContextTests.cpp`.

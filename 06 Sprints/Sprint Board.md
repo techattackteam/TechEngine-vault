@@ -21,10 +21,8 @@ kanban-plugin: board
 
 
 
-## 📋 F — file access *(T11 → T12 → T13)*
+## 📋 F — file access — ✅ **complete** *(T11 → T12 → T13)*
 
-- [ ] **S3-T13** — wiring + runtime proof · P2 · 🟡 Light — `EngineContext.files`; a headless
-	  `runtime` reads through a virtual path — F30's regression test. Needs S3-T12.
 
 
 ## 📋 G — process *(first to cut)*
@@ -38,10 +36,28 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
+
 ## 👀 Review / Demo
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
+
+- [x] **S3-T13** — wiring + runtime proof · P2 · 🟡 Light — **Aug 10**, engine `a82a5c5d`
+	  (PR #41). **Story F complete — F30 closed.** Composition root owns `MountTable` +
+	  `FileAccess` by value; `EngineContext` carries `FileAccess& files`.
+	  **`EngineContext` did not exist yet** — the card read as wiring, but `FrameContext.hpp`
+	  still said "no engine services exist yet"; T13 created the type, one field.
+	  **The regression test is the Catch2 case, not the demo run** — a log line is not a gate,
+	  so `EngineContextTests.cpp` puts it in CI, including one case pinning that the context
+	  sees a mount established *after* it was built. **`FrameContext` gained the context**
+	  after being deferred and reversed: 14 loop call sites cost one argument each, via a
+	  file-scope `g_loopEngine`. **The demo mount moved out of Windows temp into
+	  `engine/app/assets/`** — it had been writing the file it then read. That bakes a source
+	  path into the binary and only holds until M3; `platform::executablePath()` is carded.
+	  **`te_test_support`** — `ScratchDirectory`'s third paste became an INTERFACE target
+	  linked by `techengine_test()`, which also closes CONVENTIONS' *Target naming scheme* row.
+	  One build break, mine: the `FrameLoop` call-site sweep matched `loop(`, the determinism
+	  case names its loops `first`/`second`, and **the verifying grep reused the same pattern**.
 
 - [x] **S3-T12** — `FileAccess` + tests · P1 · 🟠 Moderate — **Aug 10**, engine `d773a656`
 	  (PR #40). **T13 unblocked — Story F's last card.** `read`/`status`/`list`/`resolve` in
@@ -58,7 +74,6 @@ kanban-plugin: board
 	  asymmetry. Tests grew 17 → **26** in review (binary round-trip of all 256 byte values,
 	  256 KiB read, case-sensitivity across all four entry points, output-parameter contracts).
 	  Review also caught `list` reporting an I/O failure as `NotADirectory`.
-
 - [x] **S3-T11** — `MountTable` + path resolution + tests · P1 · 🟡 Light — **Aug 10**,
 	  engine `da864fa5` (PR #39). **Story F's head; T12 unblocked.** `MountTable` +
 	  `splitVirtualPath` + `FileResult` in `platform/files/`, 18 Catch2 cases in the new
@@ -75,7 +90,6 @@ kanban-plugin: board
 	  `performance-enum-size`), **two logged not fixed** — [[Known Issues]] **D2** (`mount()`
 	  validates nothing; blocks M3's port of v1's mount set) · **D3** (the case check vs
 	  symlinks).
-
 - [x] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — **Aug 8**,
 	  engine `10258eec` (PR #38). **Story C complete.** Carried from `S2-B1`, created Jul 31 and
 	  **never reached this board** — the card the retro wrote a process rule about.

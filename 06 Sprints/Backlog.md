@@ -42,6 +42,13 @@ kept — they show where future work lands.
 
 ## platform
 
+- #prio/high · **`executablePath()`** — `GetModuleFileNameW` / `/proc/self/exe`, so a mount can
+  be anchored to the binary rather than to CWD or a baked source path. S3-T13 shipped its demo
+  mount as a configure-time `TE_DEMO_ASSETS_DIR` define precisely because this did not exist,
+  and that resolves to nothing in an installed build. v1's own call was Windows-only
+  (`ProjectManager.cpp:268` @ `v1-reference`) and everything else there used `current_path()`.
+  **Trigger:** fired — M3 needs it for the editor's real `assets://` mount, and the S3-T13
+  demo is thrown away in the same breath.
 - #prio/medium · **File watching** — v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
   [[ADR-014 — Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
@@ -60,6 +67,9 @@ kept — they show where future work lands.
 - #prio/high · **Frame pacing** — S2-T7's spin-to-deadline stand-in is not shippable; the
   Windows 15.6 ms timer evidence and the open questions live on [[Game Loop — Frame Flow]].
   **Trigger:** the first build that runs unattended.
+- #prio/medium · **Throw the S3-T13 demo mount away** — `App.cpp`'s `TODO(S3-T13)` block,
+  `engine/app/assets/`, and the `TE_DEMO_ASSETS_DIR` define in `engine/app/CMakeLists.txt`.
+  Goes with M3's real mount set. **Trigger:** M3 project creation.
 
 ## net
 
@@ -88,6 +98,11 @@ kept — they show where future work lands.
   (`ci.yml:99`, `ci.yml:166`) instead of replacing one; likely one bug — LRU eviction under the
   cap leaves only the most recent leg warm. Cap the entries, then re-check the hit rates.
   **Trigger:** fired — storage observed Aug 6, per-leg timings Aug 8 on the S3-T10 PR.
+- #prio/low · **`.gitattributes` for committed test assets** — `engine/app/assets/demo.txt`
+  gets CRLF on Windows checkout. Harmless while the demo only logs a byte count; silent the
+  day a case asserts on a repo-committed file's *contents* and the two CI legs disagree
+  (scratch-directory assets are written by the test, so they are unaffected).
+  **Trigger:** the first test that reads a committed asset rather than a scratch one.
 - #prio/high · **Better way to add source/header files to CMake** — research the options
   (explicit lists, `CONFIGURE_DEPENDS` glob, generator script); current per-file editing is
   painful and v1's global glob was worse. **Trigger:** the next module that grows past a

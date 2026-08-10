@@ -516,13 +516,47 @@ plannable at the Aug 29–30 boundary.
       pointed at a file"); a test helper built `std::string` from a possibly-null `data()`;
       and two comments claimed more than they could — the `clock_cast` note named which
       implementation exposes `to_sys` vs `to_utc`, which the standard does not fix.
-- [ ] **S3-T13** — wiring + runtime proof · **P2** · 🟡 Light — done: composition root
-      owns `MountTable` + `FileAccess` **by value**, `EngineContext` carries
-      `IFileAccess& files` (ADR-006 §4, per its 2026-08-02 amendment); a mount is
-      established and a headless `runtime` **reads a file through the virtual path** —
-      that run is F30's regression test, since v1 could not do it at all;
-      `TechEngineSDKSmoke` still compiles (no `platform` type leaking into the SDK).
-      Needs S3-T12.
+- [x] **S3-T13** — wiring + runtime proof · **P2** · 🟡 Light — **done 2026-08-10** (engine
+      `a82a5c5d`, PR #41), CI green. **Story F complete.** done: composition root owns
+      `MountTable` + `FileAccess` **by value**, `EngineContext` carries `FileAccess& files`
+      (ADR-006 §4); a mount is established and the headless run **reads a file through the
+      virtual path**; `TechEngineSDKSmoke` still compiles. Needs S3-T12.
+      Four calls the card did not foresee:
+      **(1) `EngineContext` did not exist** — the card read as wiring, but `FrameContext.hpp`
+      still carried `TODO(S3): + const EngineContext& engine — no engine services exist yet`.
+      T13 created the type. It has **one field**; `Clock` stays owned by `run()` and the event
+      streams stay driver-owned per S3-T10.
+      **(2) F30's regression test is the Catch2 case, not the demo run.** The card named the
+      headless run, but a log line is not a gate. `EngineContextTests.cpp` puts the proof in
+      CI: `core` holds the context, `platform` holds the implementation, no editor code in the
+      link. A third case pins that the context **observes a mount established after it was
+      built** — the composition root wires services before mounts, and that case is what
+      catches a future `FileAccess` that snapshots the table by value.
+      **(3) `FrameContext` gained the context after all.** Deferred mid-card as too big for a
+      🟡, then reversed. A reference member deletes copy-assignment — fine, nothing in the tree
+      assigns a frame — and the 14 loop call sites cost one argument each rather than three
+      lines, because one file-scope `g_loopEngine` over an empty `MountTable` serves the suite.
+      **(4) The demo mount moved out of temp and into the repo.** It first wrote its own file
+      under `temp_directory_path()`, which proves less than reading one already there and made
+      the shipped `run()` write to disk. Now `engine/app/assets/demo.txt` + a configure-time
+      `TE_DEMO_ASSETS_DIR`. **That bakes a source path into the binary** and only holds because
+      the demo dies at M3 — the honest fix is `platform::executablePath()`, which v1 had only
+      in a Windows-only form. Carded ([[Backlog]] → `platform`, trigger fired).
+      Also: **`te_test_support`** — `ScratchDirectory` was pasted a third time, so it moved to
+      `tests/support/include/TechEngine/testing/` behind an INTERFACE target that
+      `techengine_test()` links into every suite. Build-only, so `te_*` per the naming
+      principle — which closes `CONVENTIONS.md`'s *Target naming scheme* row: its trigger was
+      "the next new target", and the principle predicted the spelling without a new decision.
+      **The one build break was mine and my own check missed it**: the sweep updating
+      `FrameLoop`'s call sites matched `FrameLoop loop(`, and the determinism case names its
+      loops `first`/`second` — then the verifying grep reused the same pattern, so it came back
+      clean. Caught by CI on the Windows leg. Retro line: **a verification that reuses the
+      edit's own pattern verifies nothing.**
+
+**Story F complete.** F30 is closed: `platform` declares *and* implements file access, and a
+CI case proves a virtual-path read with no editor in the link. The write half is M3's
+([[File Access — Design]] § *Surface*), and two known defects ride out of the story —
+[[Known Issues]] **D2** (`mount()` validates nothing) and **D3** (the case check vs symlinks).
 
 #### How D / E / F get planned
 
