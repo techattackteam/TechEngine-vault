@@ -37,15 +37,27 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S3-T12** — `IFileAccess` + `FileAccess` + tests · P1 · 🟠 Moderate — interface **and**
-	  impl in `platform` — that placement *is* the F30 fix. `FileResult`, never a log on a
-	  miss. Needs S3-T11.
-
 
 ## 👀 Review / Demo
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
+
+- [x] **S3-T12** — `FileAccess` + tests · P1 · 🟠 Moderate — **Aug 10**, engine `d773a656`
+	  (PR #40). **T13 unblocked — Story F's last card.** `read`/`status`/`list`/`resolve` in
+	  `platform`, all `const`, `FileResult` everywhere, never a log on a miss.
+	  **`IFileAccess` was written then deleted before it shipped** — one impl, nothing carded
+	  needs a second, and ADR-006 §4's `IFileSystem& fs` turns out to be a v1 artifact: every
+	  other field in that sketch is concrete, and file access was the lone interface only
+	  because v1 declared it in `core` and implemented it in `editor`. That *is* F30
+	  ([[File Access — Design]] § *Why no interface*). **`FileResult` grew `IsADirectory`** —
+	  `ifstream` opens a directory successfully on Linux and fails on Windows, so it needs an
+	  explicit check. **`lastModified` needed `clock_cast`** — `file_time_type`'s epoch is
+	  unspecified, so v1's raw tick count meant different things per platform.
+	  **`list` does not union overlays**, decided rather than defaulted; a case pins the
+	  asymmetry. Tests grew 17 → **26** in review (binary round-trip of all 256 byte values,
+	  256 KiB read, case-sensitivity across all four entry points, output-parameter contracts).
+	  Review also caught `list` reporting an I/O failure as `NotADirectory`.
 
 - [x] **S3-T11** — `MountTable` + path resolution + tests · P1 · 🟡 Light — **Aug 10**,
 	  engine `da864fa5` (PR #39). **Story F's head; T12 unblocked.** `MountTable` +

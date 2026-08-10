@@ -2,7 +2,7 @@
 
 > Living design doc. **ADR = the irreversible decision; this doc = the _how_.**
 
-**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** `MountTable` shipped (S3-T11); `IFileAccess` open (S3-T12/T13)
+**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** read side shipped (S3-T11/T12); wiring open (S3-T13)
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 ·
 **v1:** [[v1 Code Audit]] F30 · F16 · **Backlog:** [[Backlog]] → `platform`
 
@@ -23,10 +23,11 @@ called one.
 
 | What | Call | Ref |
 |---|---|---|
-| **Name** | **`IFileAccess`** — the `…System` suffix is retired | ADR-006 §5's two-bucket test; F16 |
-| **Module** | `platform`, interface *and* impl | ADR-006 §1 — platform's contents list *file I/O*. Resolves §5's "platform/core" with no judgement call; `core → platform`, so `EngineContext` still reaches it |
+| **Name** | **`FileAccess`** — the `…System` suffix is retired | ADR-006 §5's two-bucket test; F16 |
+| **Module** | `platform`, declaration *and* impl | ADR-006 §1 — platform's contents list *file I/O*. Resolves §5's "platform/core" with no judgement call; `core → platform`, so `EngineContext` still reaches it |
 | **Kind** | helper **service** — owned + injected, never globally located | ADR-006 §5 |
-| **Wiring** | composition root owns by value; `EngineContext` carries `IFileAccess& files` | ADR-006 §4 (F13: non-owning refs, no `shared_ptr`) |
+| **No interface** | **concrete class, no `IFileAccess`** — revisit when a second impl is real | S3-T12 — below |
+| **Wiring** | composition root owns by value; `EngineContext` carries `FileAccess& files` | ADR-006 §4 (F13: non-owning refs, no `shared_ptr`) |
 | **Path scheme** | v1's `alias://relative/path`; `int` priority, highest first | v1 `FileSystem.cpp:8-17` — kept, it worked |
 | **Case** | **case-sensitive everywhere; the resolver never case-folds** | Only rule that behaves identically on both CI legs — see *Design* |
 | **Errors** | `FileResult` status enum returned, data via out-param. No exceptions | Below — v1 returned bare `bool` |
@@ -45,9 +46,9 @@ composes both.
 flowchart TB
   root["composition root (app)<br/>owns all three by value"]
   mt["MountTable<br/>alias → physical roots + priority"]
-  fa["FileAccess : IFileAccess<br/>resolve · read · status · list"]
-  fw["FileWriteAccess : IFileWriteAccess<br/>write · create · remove · copy · move"]
-  ec["EngineContext.files : IFileAccess&"]
+  fa["FileAccess<br/>resolve · read · status · list"]
+  fw["FileWriteAccess (M3)<br/>write · create · remove · copy · move"]
+  ec["EngineContext.files : FileAccess&"]
   ed["editor asset pipeline"]
 
   root --> mt & fa & fw
@@ -61,29 +62,62 @@ flowchart TB
 `MountTable` is the shared state; the two halves resolve against it with **different
 policies**, which is why it is its own type rather than a private member of either.
 
+### Why no interface
+
+Dropped at S3-T12, before it shipped. There is **one implementation and nothing carded
+needs a second** — the archive-mount idea is a `MountTable` concern, and the suite runs
+against real scratch directories rather than doubles.
+
+**ADR-006 §4's `IFileSystem& fs` is a v1 artifact, not a decision.** Every other field in
+that sketch is concrete — `JobSystem&`, `Clock&`, `FrameAllocator&`, `ResourceRegistry&`,
+`EventBus&`. File access was the lone interface because in v1 `core` *declared* it and
+`editor` *implemented* it, so the interface was the seam across a module boundary that
+should not have existed. That is **F30**, and putting the impl in `platform` is what fixes
+it — which removes the interface's reason to exist.
+
+Reintroduce when a second implementation is real: an archive- or network-backed VFS, or a
+null one for an asset-less dedicated server. Extraction is mechanical, and the call sites
+are already written against the four methods that would become the interface.
+
 ### Surface
 
 ```cpp
-enum class FileResult : std::uint8_t { Ok, InvalidPath, NoMount, NotFound, NotADirectory, AccessDenied, IoError };
+enum class FileResult : std::uint8_t { Ok, InvalidPath, NoMount, NotFound,
+                                       IsADirectory, NotADirectory, AccessDenied, IoError };
 
 struct FileStatus {
     std::filesystem::path physicalPath;
-    bool     isDirectory  = false;
-    uint64_t size         = 0;
-    uint64_t lastModified = 0;
+    bool          isDirectory  = false;
+    std::uint64_t size         = 0;
+    std::uint64_t lastModified = 0;   // Seconds since the Unix epoch, on every platform
 };
 
-class IFileAccess {
+class FileAccess {                    // ctor takes const MountTable&, stores a non-owning ptr
 public:
-    virtual ~IFileAccess() = default;
-    virtual FileResult read(std::string_view virtualPath, std::vector<std::byte>& out) = 0;
-    virtual FileResult status(std::string_view virtualPath, FileStatus& out) = 0;
-    virtual FileResult list(std::string_view virtualPath, bool recursive,
-                            std::vector<std::string>& out) = 0;
-    virtual FileResult resolve(std::string_view virtualPath,
-                               std::filesystem::path& out) = 0;
+    FileResult read(std::string_view virtualPath, std::vector<std::byte>& out) const;
+    FileResult status(std::string_view virtualPath, FileStatus& out) const;
+    FileResult list(std::string_view virtualPath, bool recursive,
+                    std::vector<std::string>& out) const;
+    FileResult resolve(std::string_view virtualPath, std::filesystem::path& out) const;
 };
 ```
+
+**All four are `const`** — the table is the only state and `FileAccess` holds it by
+`const MountTable*`. **`IsADirectory`** is `read`'s wrong-kind result, the mirror of
+`list`'s `NotADirectory`; it is an explicit check because `ifstream` opens a directory
+successfully on Linux and fails on Windows. **`lastModified` is Unix seconds** —
+`file_time_type`'s epoch is unspecified (MSVC counts from 1601, libstdc++ from 1970) and an
+implementation need only provide one of `file_clock::to_sys` / `::to_utc`, so `clock_cast`
+is the only portable spelling.
+
+`FileStatus` keeps four fields; v1's `alias` / `virtualPath` / `name` / `extension` are all
+recoverable from the caller's own argument or from `physicalPath`, and its `exists` flag is
+what `FileResult` is for.
+
+**`list` does not union overlays.** It lists the mount that wins the existence walk, so a
+file only a lower-priority mount holds is *readable but never listed*. The asymmetry is
+deliberate — union costs a dedupe pass and a rule for a name that is a file in one mount and
+a directory in another, and no consumer needs it. Revisit at M6 if a resource scan does.
 
 `IFileWriteAccess` carries v1's mutating half — `write` · `createDirectory` ·
 `remove` · `copy` · `move` · `rename`, over both files and directories — same
@@ -189,6 +223,6 @@ parameter type is a mechanical edit at every call site.
 - [[v1 Code Audit]] **F30** (impl editor-only) · **F16** (everything is a System)
 - v1 prior art @ `v1-reference`: `engine/core/include/TechEngine/core/fileSystem/IFileSystem.hpp` ·
   `runtime/editor/src/fileSystem/FileSystem.cpp` · `runtime/editor/src/project/ProjectManager.cpp:262-271`
-- Code: `engine/platform/include/TechEngine/platform/files/` — `MountTable.hpp` ·
-  `VirtualPath.hpp` · `FileResult.hpp`; impls under `src/files/`; Catch2 in
-  `tests/files/` (`TechEnginePlatformTests`, new at S3-T11). `IFileAccess` → S3-T12.
+- Code: `engine/platform/include/TechEngine/platform/files/` — `FileAccess.hpp` ·
+  `MountTable.hpp` · `VirtualPath.hpp` · `FileResult.hpp`; impls under `src/files/`; Catch2
+  in `tests/files/` (`TechEnginePlatformTests`, new at S3-T11). Wiring → S3-T13.

@@ -477,15 +477,45 @@ plannable at the Aug 29–30 boundary.
       and **two logged rather than fixed** — [[Known Issues]] **D2** (`mount()` validates
       nothing, so v1's `"editorAssets://"` spelling mounts a dead alias silently; fix before
       M3 ports that set) and **D3**.
-- [ ] **S3-T12** — `IFileAccess` + `FileAccess` + tests · **P1** · 🟠 Moderate — done:
-      interface and impl **both in `platform`** (ADR-006 §1 — this is F30's actual fix, so
-      `runtime` gets an implementation without linking the editor); `read`/`status`/`list`/
-      `resolve` per the note's *Surface*, every one returning `FileResult` with data via
-      out-param, **no exceptions and no logging on a miss** (v1 logged an error when a
-      caller probed for an optional file); reads into `std::vector<std::byte>` and
-      **nothing more** — serialization moved to M2 (Sprint 04), so its `Buffer` is one rung
-      out and a bridging abstraction here would be dead on arrival; **no lock** — say out
-      loud in the note if that stops being true. Needs S3-T11.
+- [x] **S3-T12** — `FileAccess` + tests · **P1** · 🟠 Moderate — **done 2026-08-10** (engine
+      `d773a656`, PR #40), CI green. done: `read`/`status`/`list`/`resolve` in `platform`
+      (ADR-006 §1 — this is F30's actual fix, so `runtime` gets an implementation without
+      linking the editor), every one returning `FileResult` with data via out-param, **no
+      exceptions and no logging on a miss** (v1 logged an error when a caller probed for an
+      optional file); reads into `std::vector<std::byte>` and **nothing more** —
+      serialization moved to M2 (Sprint 04); **no lock**. Needs S3-T11.
+      Four calls the card did not foresee:
+      **(1) `IFileAccess` was written, then deleted before it shipped.** One implementation,
+      nothing carded needs a second, and the suite runs against real scratch dirs not doubles.
+      **ADR-006 §4's `IFileSystem& fs` is a v1 artifact** — every other field in that sketch
+      is concrete, and file access was the lone interface only because v1 declared it in
+      `core` and implemented it in `editor`. That *is* F30; moving the impl to `platform`
+      removes the interface's reason to exist. Written up as [[File Access — Design]]
+      § *Why no interface*.
+      **(2) `FileResult` grew `IsADirectory`** — `read` on a directory needs an explicit
+      check, because `ifstream` **opens one successfully on Linux and fails on Windows**. Same
+      class of leg-divergence as S3-T11's case rule, found by asking rather than by CI.
+      **(3) `lastModified` needed `clock_cast`.** `file_time_type`'s epoch is unspecified —
+      MSVC counts from 1601, libstdc++ from 1970 — and an implementation need only provide one
+      of `file_clock::to_sys` / `::to_utc`. v1 shipped the raw tick count, so its timestamps
+      meant different things per platform. The test bounds `lastModified` above by `now + 60`,
+      which is what actually catches an unconverted count.
+      **(4) `list` does not union overlays** — decided, not defaulted. It lists the mount that
+      wins the existence walk, so a file only a lower-priority mount holds is readable but
+      never listed; union costs a dedupe pass and a file-vs-directory collision rule nobody
+      needs yet. A case pins the asymmetry so it cannot drift silently.
+      Tests: `FileAccessTests.cpp` — **26 cases** behind a `MountedScratch` fixture. Grown in
+      review from 17: binary round-trip of all 256 byte values (an embedded NUL truncates a
+      `strlen` bug; `0x0D 0x0A` catches a missing `std::ios::binary` on Windows), a 256 KiB
+      read, case-sensitivity across **all four** entry points (`MountTable` pinned the rule;
+      these pin that the surface goes *through* it), escape rejection reaching `read`,
+      `list`'s three missing miss kinds, and the output-parameter contracts — `list` replaces
+      rather than appends, and a failed `status` leaves the caller's struct untouched.
+      **Review findings:** `list` reported an I/O failure as `NotADirectory` (the `error_code`
+      from `is_directory` was discarded, and a false return is indistinguishable from "you
+      pointed at a file"); a test helper built `std::string` from a possibly-null `data()`;
+      and two comments claimed more than they could — the `clock_cast` note named which
+      implementation exposes `to_sys` vs `to_utc`, which the standard does not fix.
 - [ ] **S3-T13** — wiring + runtime proof · **P2** · 🟡 Light — done: composition root
       owns `MountTable` + `FileAccess` **by value**, `EngineContext` carries
       `IFileAccess& files` (ADR-006 §4, per its 2026-08-02 amendment); a mount is
