@@ -2,7 +2,7 @@
 
 > Living design doc. **ADR = the irreversible decision; this doc = the _how_.**
 
-**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** draft
+**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** `MountTable` shipped (S3-T11); `IFileAccess` open (S3-T12/T13)
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 ·
 **v1:** [[v1 Code Audit]] F30 · F16 · **Backlog:** [[Backlog]] → `platform`
 
@@ -30,6 +30,7 @@ called one.
 | **Path scheme** | v1's `alias://relative/path`; `int` priority, highest first | v1 `FileSystem.cpp:8-17` — kept, it worked |
 | **Case** | **case-sensitive everywhere; the resolver never case-folds** | Only rule that behaves identically on both CI legs — see *Design* |
 | **Errors** | `FileResult` status enum returned, data via out-param. No exceptions | Below — v1 returned bare `bool` |
+| **Path validation** | the splitter rejects a malformed path outright → `InvalidPath` | S3-T11 — below |
 | **Async** | **none.** Sync-only | M2's threading ADR is unwritten; see *Open* |
 | **Surface** | **split** read-side / mutating | Below |
 | **Mount authority** | `MountTable`, mounted at the **composition root only** — on neither interface | v1 put `mount()` on the interface every consumer held |
@@ -63,7 +64,7 @@ policies**, which is why it is its own type rather than a private member of eith
 ### Surface
 
 ```cpp
-enum class FileResult { Ok, NoMount, NotFound, NotADirectory, AccessDenied, IoError };
+enum class FileResult : std::uint8_t { Ok, InvalidPath, NoMount, NotFound, NotADirectory, AccessDenied, IoError };
 
 struct FileStatus {
     std::filesystem::path physicalPath;
@@ -106,10 +107,43 @@ because that is what M1's own consumers need.
 Distinguishing `NoMount` from `NotFound` is the reason for the enum: v1's `bool` +
 `TE_LOGGER_ERROR` meant a probe for an *optional* file logged an error on the normal path.
 
+### Path validation
+
+`splitVirtualPath` is the gate — a path that fails it never reaches a mount, and
+`resolveExisting` returns `InvalidPath` without touching disk. Rejected:
+
+| Rejected | Because |
+|---|---|
+| no `://`, or an empty alias | not a virtual path. v1's `find('://')` was a **multichar `char` literal** that truncated to `'/'`, so this check could never fire for anything containing a slash |
+| `/` or `:` in the alias | the alias is a key, not a path |
+| a relative starting `/`, or containing `:` | `root / "/etc/passwd"` and `root / "C:/Windows"` **discard `root`** — `operator/` replaces on an absolute or foreign-root RHS |
+| a `..` **segment** (`..hidden` and `icon..png` stay legal) | escapes the mount root |
+| a backslash anywhere | Windows treats it as a separator, which re-opens the two rows above |
+
+**`..` is rejected outright, not normalised.** A virtual path is an *identity* — the resource
+cache, the watcher map and asset manifests all key on the string, so two spellings of one file
+means two cache entries. Nothing emits `..`: `list()` returns normalised paths and manifests
+are tool-written. Relative references between assets resolve a rung up, at the loader, which
+hands the VFS a composed path. Also mechanical: `VirtualPathParts` holds `string_view`s into
+the input, and a normalised path is a substring of nothing.
+
 **Case:** `alias://Foo/Bar.png` and `alias://foo/bar.png` are different paths on both
 legs. Windows' filesystem will happily resolve the wrong case and Linux CI will not — so
 the resolver does no folding, and a Catch2 case pins that a wrong-case path returns
 `NotFound` rather than opening the file.
+
+`std::filesystem` does **not** level this — it abstracts the API, not the filesystem's case
+semantics, and `exists()` forwards straight to the OS. Nor is it one behaviour per platform:
+APFS is case-insensitive by default and NTFS has had per-directory case sensitivity since
+Win10 1803. So `exists()` is only the cheap reject; every surviving candidate then has to
+prove its spelling. `path::operator==` *is* case-sensitive on MSVC (a lexical compare that
+never touches disk) — the mechanism asks the OS for the real name via `canonical()` and
+compares lexically. That has a live defect: **[[Known Issues]] D3** — `canonical()` resolves
+symlinks, so a link *inside* a mount reports `NotFound` for a correctly-cased file.
+
+`canonical(physicalRoot)` is cached on `MountEntry` at mount time, since resolution is the
+asset-load path. It is empty when the root did not exist at mount time — a mount may legally
+precede the directory — and resolution falls back to canonicalising on the spot.
 
 ### Threading
 
@@ -144,6 +178,9 @@ parameter type is a mechanical edit at every call site.
 - **Archive / pak mounts.** Mounting an archive rather than a directory. `MountTable`'s
   shape allows it; no consumer until shipping.
 - **Threading** → M2's threading ADR (above).
+- **Two live defects**, both from S3-T11's review, neither blocking T12: [[Known Issues]]
+  **D2** (`mount()` validates nothing — fix before M3 ports v1's mount set) · **D3** (the
+  case check and symlinks).
 
 ## References
 
@@ -151,5 +188,7 @@ parameter type is a mechanical edit at every call site.
   `EngineContext`) · §5 (System/helper taxonomy)
 - [[v1 Code Audit]] **F30** (impl editor-only) · **F16** (everything is a System)
 - v1 prior art @ `v1-reference`: `engine/core/include/TechEngine/core/fileSystem/IFileSystem.hpp` ·
-  `runtime/editor/src/fileSystem/FileSystem.cpp` · `runtime/editor/src/project/ProjectManager.cpp:263-271`
-- Code: *(none yet — S3-T11…T13)*
+  `runtime/editor/src/fileSystem/FileSystem.cpp` · `runtime/editor/src/project/ProjectManager.cpp:262-271`
+- Code: `engine/platform/include/TechEngine/platform/files/` — `MountTable.hpp` ·
+  `VirtualPath.hpp` · `FileResult.hpp`; impls under `src/files/`; Catch2 in
+  `tests/files/` (`TechEnginePlatformTests`, new at S3-T11). `IFileAccess` → S3-T12.

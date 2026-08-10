@@ -76,3 +76,51 @@ Revisit when §10 is decided.
 **Trigger:** the first target that includes `Log.hpp` without linking `base` — `te_sdk` is
 the likely one (ADR-011 §10). Cheap enough (~6 lines + a test case) to ride along with the
 next card that touches the logging gate.
+
+---
+
+### D2 — `MountTable::mount()` accepts an alias no virtual path can match
+
+`mount()` validates nothing. `mount("editorAssets://", root, 100)` stores the alias **with**
+the separator; `splitVirtualPath` yields `"editorAssets"`, `entry.alias != parts.alias`, and
+every read through that mount returns `NoMount`. Empty and `"a/b"` aliases are the same class.
+
+**Silent because both ends look fine.** The mount call succeeds, `mountCount()` counts it,
+`entries()` lists it — and every lookup misses. Nothing reports it at mount time, and
+`NoMount` at resolve time reads as "you asked for the wrong alias".
+
+`engine/platform/src/files/MountTable.cpp:27` (no validation) ·
+`engine/platform/src/files/VirtualPath.cpp:33` (the alias the split produces)
+
+**Proposed fix** — `TE_CHECK` in `mount()`: alias non-empty, no `/`, no `:`. `base` is already
+a `DEPS` of `platform`, and `EventRegistry::registerType` is the precedent for the shape
+(check, then a defined path). Plus a Catch2 case, which S3-T11 has no equivalent of.
+
+**Trigger: M3 project creation.** v1 spelled every mount `"editorAssets://"`
+(`runtime/editor/src/project/ProjectManager.cpp:262-271` @ `v1-reference`), and [[File Access — Design]]
+§ *Consumers* has M3 lifting that mount set. Fix it **before** that port, not after.
+
+---
+
+### D3 — the case check rejects any path through a symlink
+
+`matchesOnDiskCase` compares `canonical(candidate)` against `canonicalRoot / relative`.
+`canonical()` resolves symlinks, so a symlinked directory **below** the mount root makes the
+left side the link target and the right side the logical path. They never compare equal, and
+a correctly-cased file resolves to `NotFound`.
+
+A symlinked *root* is fine — both sides get canonicalised. Only links inside the mount break.
+
+**Silent because `NotFound` is a legitimate answer.** The caller cannot tell "no such file"
+from "the resolver disqualified it", and the case rule that caused it is invisible from the
+call site.
+
+`engine/platform/src/files/MountTable.cpp:7`
+
+**Proposed fix** — per-component `directory_iterator` spelling check instead of `canonical`:
+it never leaves the logical path, so links are transparent. Costs a directory scan per
+component, which is why `canonical` was chosen first. Only `matchesOnDiskCase` changes.
+
+**Trigger:** the first symlinked or junctioned asset directory — a Linux/macOS dev layout, or
+`mklink /D` on Windows. Also revisit if M6's resource loading makes the per-component cost
+measurable, since that decides which way the trade goes.

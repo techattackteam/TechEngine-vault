@@ -438,15 +438,45 @@ plannable at the Aug 29–30 boundary.
 > **F draws 0 🟢 · 1 🟠 · 2 🟡** — the 🟠 squeeze the D/E budget notes pre-named resolves;
 > see below.
 
-- [ ] **S3-T11** — `MountTable` + virtual-path resolution + tests · **P1** · 🟡 Light —
-      done: `engine/platform/…/MountTable.hpp` holds {alias, physical root, `int` priority},
-      sorted highest-first; `mount`/`unmount` **only here**, never on an interface
-      ([[File Access — Design]] § *Design*); splits `alias://rel` and exposes the two
-      resolution policies — read (probe candidates in priority order, first **existing**
-      wins) vs write (highest-priority mount, **no** existence probe); Catch2 pins priority
-      order, unknown alias → `NoMount` vs known-alias-no-file → `NotFound`, and a
-      **wrong-case path returns `NotFound`** — the case rule is the one that behaves
-      differently on the two CI legs if it is ever folded.
+- [x] **S3-T11** — `MountTable` + virtual-path resolution + tests · **P1** · 🟡 Light —
+      **done 2026-08-10** (engine `da864fa5`, PR #39), CI green. done:
+      `engine/platform/…/files/MountTable.hpp` holds {alias, physical root, canonical root,
+      `int` priority}, sorted highest-first; `mount`/`unmount` **only here**, never on an
+      interface ([[File Access — Design]] § *Design*); `splitVirtualPath` splits `alias://rel`
+      and `resolveExisting` probes candidates in priority order, first **existing** wins;
+      Catch2 (18 cases, the new `TechEnginePlatformTests`) pins priority order and tie order,
+      unknown alias → `NoMount` vs known-alias-no-file → `NotFound`, and a **wrong-case path
+      returns `NotFound`** on both legs.
+      Five calls the card did not foresee:
+      **(1) Only the "must exist" half shipped.** The card promised both policies; the write
+      one (highest-priority mount, no probe) has **no consumer until M3** and was cut rather
+      than guessed. The names that landed say the policy, not the caller — `resolveExisting`
+      now, `resolveTarget` when M3 needs it.
+      **(2) `FileResult` grew `InvalidPath`.** The note's six values had nowhere to put a
+      malformed path, and folding it into `NoMount` throws away exactly the diagnostic v1
+      never produced. **v1 could not produce it at all**: `str.find('://')` is a *multichar
+      `char` literal*, truncating to `'/'` — it works by accident on `alias://rel` and the
+      "missing `://`" warning can never fire for any path holding a slash.
+      **(3) Path validation was not in the note and is the security-shaped part.**
+      `root / "/etc/passwd"` and `root / "C:/Windows"` **discard `root`** —
+      `std::filesystem::operator/` replaces on an absolute or foreign-root RHS. Rejecting
+      absolute relatives, `..` segments and backslashes closes it; written up as
+      [[File Access — Design]] § *Path validation*.
+      **(4) `exists()` is not enough for the case rule.** It forwards to the OS, which folds
+      on NTFS and APFS, so the case test would pass one leg and fail the other. Every
+      surviving candidate re-proves its spelling via `canonical()`, whose root half is cached
+      on `MountEntry` at mount time. **That mechanism has a defect** — [[Known Issues]] D3.
+      **(5) v1's overlay never actually ran.** The existence probe in `resolveInternal` is
+      **commented out** (`runtime/editor/src/fileSystem/FileSystem.cpp` @ `v1-reference`), so
+      the priority scheme the note kept as "it worked" returned the first candidate blind.
+      **Review findings:** two fixed pre-merge (`unmount` did `erase(it); --it;` — UB, and
+      underflow when the match is at `begin()`; `performance-enum-size` on `FileResult`, where
+      all four existing enums already carried `: std::uint8_t`), three cleanups applied
+      (redundant whole-path `..` scan and unreachable leading-`/` guard removed, the `..`
+      helper made a file-scope `static` to match `matchesOnDiskCase`, canonical root cached),
+      and **two logged rather than fixed** — [[Known Issues]] **D2** (`mount()` validates
+      nothing, so v1's `"editorAssets://"` spelling mounts a dead alias silently; fix before
+      M3 ports that set) and **D3**.
 - [ ] **S3-T12** — `IFileAccess` + `FileAccess` + tests · **P1** · 🟠 Moderate — done:
       interface and impl **both in `platform`** (ADR-006 §1 — this is F30's actual fix, so
       `runtime` gets an implementation without linking the editor); `read`/`status`/`list`/

@@ -23,12 +23,6 @@ kanban-plugin: board
 
 ## 📋 F — file access *(T11 → T12 → T13)*
 
-- [ ] **S3-T11** — `MountTable` + path resolution + tests ([[File Access — Design]]) · P1 ·
-	  🟡 Light — `alias://` + priority; `mount()` lives **here only**, not on an interface.
-	  Case-sensitivity test is the one that differs across CI legs. Story F's head.
-- [ ] **S3-T12** — `IFileAccess` + `FileAccess` + tests · P1 · 🟠 Moderate — interface **and**
-	  impl in `platform` — that placement *is* the F30 fix. `FileResult`, never a log on a
-	  miss. Needs S3-T11.
 - [ ] **S3-T13** — wiring + runtime proof · P2 · 🟡 Light — `EngineContext.files`; a headless
 	  `runtime` reads through a virtual path — F30's regression test. Needs S3-T12.
 
@@ -43,12 +37,32 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S3-T12** — `IFileAccess` + `FileAccess` + tests · P1 · 🟠 Moderate — interface **and**
+	  impl in `platform` — that placement *is* the F30 fix. `FileResult`, never a log on a
+	  miss. Needs S3-T11.
+
 
 ## 👀 Review / Demo
 
 
-
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
+
+- [x] **S3-T11** — `MountTable` + path resolution + tests · P1 · 🟡 Light — **Aug 10**,
+	  engine `da864fa5` (PR #39). **Story F's head; T12 unblocked.** `MountTable` +
+	  `splitVirtualPath` + `FileResult` in `platform/files/`, 18 Catch2 cases in the new
+	  `TechEnginePlatformTests`. **Only the "must exist" policy shipped** — the write half has
+	  no consumer until M3, so `resolveExisting` is named for the policy, not the caller.
+	  **`FileResult` grew `InvalidPath`**: v1 could not report a malformed path at all, because
+	  `find('://')` is a multichar `char` literal that truncates to `'/'`. **Path validation
+	  was not in the note** and is the security-shaped part — `root / "/etc/passwd"` *discards*
+	  `root`, so absolute relatives, `..` segments and backslashes are rejected outright
+	  ([[File Access — Design]] § *Path validation*). **`exists()` alone breaks the case rule**
+	  — it folds on NTFS and APFS, so every candidate re-proves its spelling via `canonical()`.
+	  Also: **v1's overlay never ran** — its existence probe is commented out.
+	  Two review findings fixed pre-merge (`unmount`'s `erase(it); --it;` UB;
+	  `performance-enum-size`), **two logged not fixed** — [[Known Issues]] **D2** (`mount()`
+	  validates nothing; blocks M3's port of v1's mount set) · **D3** (the case check vs
+	  symlinks).
 
 - [x] **S3-B1** — Diagnostics init belongs in `app`, not the exe · P1 · 🟠 Moderate — **Aug 8**,
 	  engine `10258eec` (PR #38). **Story C complete.** Carried from `S2-B1`, created Jul 31 and
