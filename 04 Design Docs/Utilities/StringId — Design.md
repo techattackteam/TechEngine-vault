@@ -1,7 +1,7 @@
 # StringId — Design
 
-> Living design doc. **Status: active** — the decision is
-> [[ADR-014 — Events (buffered streams) & StringId]] §1 (**Accepted 2026-08-02**).
+> Living design doc. **Status: active.** The decision itself is
+> [[ADR-014 — Events (buffered streams) & StringId]] §1, accepted 2026-08-02.
 
 **Module:** `base` (`base/stringid/StringId.hpp`) · **Kind:** helper (utility)
 **ADRs:** [[ADR-014 — Events (buffered streams) & StringId]] §1 ·
@@ -9,110 +9,193 @@
 
 ## Purpose
 
-The one hashed-string identity primitive: `u64` FNV-1a of a stable tag, `constexpr`.
-Consumers **today**: `ComponentTypeId` and `EventTypeId` (typed wrappers). Near:
-input action names (M5 action mapping), cvar/console names (T1 lane), maybe
-material/shader parameter names. **Not**: resources (UUID model, ADR-006 §1) ·
-physics keys (F17's fix keys off `Entity`, not strings).
+The engine's one hashed-string identity primitive. A `StringId` is a 64-bit FNV-1a hash of a
+stable tag, computed at compile time wherever possible.
+
+**Consumers today:** `ComponentTypeId` and `EventTypeId`, both typed wrappers over it.
+
+**Consumers soon:** input action names (M5 action mapping), cvar and console names (the T1
+lane), and possibly material and shader parameter names.
+
+**Not consumers:** resources use a UUID model instead (ADR-006 §1). Physics keys off
+`Entity` rather than strings, which is F17's fix.
 
 ## Decided
 
-| Fact | Where |
-|---|---|
-| `u64` FNV-1a, case-sensitive, bytes-as-written — frozen (disk + wire carry it) | ADR-014 §1 |
-| `constexpr` from a literal via a plain ctor — **no macro**, no `TE_SID` | ADR-014 §1 |
-| No runtime intern table; identity = the hash | ADR-014 §1 |
-| Persistent ids must pass a registering seam (collision `TE_CHECK`); ad-hoc keys unchecked | ADR-014 §1 |
-| Debug reverse-lookup tooling-only, never per-frame | ADR-014 §1, ADR-013 §6 |
-| SDK exposure deferred; first `sdk/include/` landing trips the smoke gate by design | ADR-014 §7 |
+| Fact                                                                                                                     | Where                  |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| A `u64` FNV-1a hash. Case-sensitive, over the bytes as written. The algorithm is frozen, because disk and wire carry it. | ADR-014 §1             |
+| `constexpr` from a literal, through a plain constructor. **No macro**, no `TE_SID`.                                      | ADR-014 §1             |
+| No runtime intern table. The identity *is* the hash.                                                                     | ADR-014 §1             |
+| Persistent ids must pass a registering seam, which holds a collision `TE_CHECK`. Ad-hoc keys stay unchecked.             | ADR-014 §1             |
+| Debug reverse-lookup is tooling-only. Never per-frame.                                                                   | ADR-014 §1, ADR-013 §6 |
+| SDK exposure is deferred. The first landing in `sdk/include/` trips the smoke gate by design.                            | ADR-014 §7             |
 
-## Design — surface (pinned 2026-08-02, pre-Story-E)
+## Surface
 
-**Type shape.** A struct over a **private** `u64` — not an enum-class (an enum can't carry
-the hashing constructor), and **not the public field first sketched here**: private is what
-makes the two entry points below the *only* ones (2026-08-04, with S3-T7). Read access is a
-`constexpr value()` accessor — the type is what disk and wire carry, so getting the value
-out is required, and a read reopens nothing. Defaulted `==` / `<=>`; `std::hash`
-specialization is the identity (the value *is* a hash). `u64` is spelled
-`std::uint64_t` in code — no alias exists and this card does not add one
-(`CONVENTIONS.md` → *Naming*, the same `dt` → `deltaTime` precedent).
+Pinned 2026-08-02, before Story E.
 
-**Construction.** One canonical path: `constexpr explicit StringId(std::string_view)`.
-Compile-time in constant expressions (`constexpr StringId kHit{"Game.Hit"};`
-static-asserts the hash at build time), runtime for config-loaded names (input actions,
-cvars). **No macro** (ADR-014 §1), **no UDL for now** — a second spelling of the same
-thing; add only if ergonomics demand it.
+### The type
 
-**Raw-value round-trip: `static constexpr StringId fromValue(u64)`** *(2026-08-04, with
-S3-T7)*. ADR-007 §1 puts the hash on disk and the wire, so a `StringId` must be
-rebuildable from bytes — and the explicit ctor makes the type a non-aggregate, so
-`StringId{raw}` cannot. With the member private, the factory is the **only** way a value
-that was not hashed here enters the type — an invariant the compiler holds, not a
-convention, so `grep fromValue` really does enumerate every wire/disk entry point. That is
-the boundary worth naming for a frozen format. The alternative shape — aggregate + a free
-`hashTag()`, which makes *hashing* the greppable seam and keeps the type structural
-(usable as a non-type template parameter) — was weighed and dropped; neither shape
-enforces "this came from a hash", and the C++ shape is reversible where the hash is not.
+A struct wrapping a **private** `std::uint64_t`.
 
-**Hash the bytes as `unsigned char`.** `char` is signed on both legs, so XOR-ing it
-directly sign-extends and any byte ≥ `0x80` hashes to a different value than the
-reference vectors. The algorithm is frozen (disk + wire), so this is cheap to get right
-now and expensive later. The two published ASCII vectors below **cannot** catch it — the
-single-high-byte case in the tests is what does.
+It is not an enum class, because an enum cannot carry the hashing constructor. The field is
+private, which is a change from the public field first sketched here (2026-08-04, with
+S3-T7). Private is what makes the two entry points below the *only* two.
 
-**Sentinel.** `StringId{}` (`value == 0`) = invalid/none. FNV-1a of `""` is the offset
-basis, not 0, so 0 never collides with a real literal hash by construction; a tag that
-*computes* to 0 is rejected by the same registration `TE_CHECK` as a collision.
+Reading the value back is a `constexpr value()` accessor. The type is what disk and wire
+carry, so getting the raw value out is required, and a read reopens nothing.
 
-**Reverse lookup & collision check — `base` holds no table.** The registering seams
-(component/event registries, `core`) already receive the tag string at the composition
-root; they **keep it** (startup-only, trivial memory). That storage does double duty:
-duplicate id + different tag ⇒ the always-on collision `TE_CHECK` (ADR-007 §1); id → tag
-queries for tooling (ADR-014 §1's tooling-only rule — never per-frame). `StringId`
-itself stays a pure value type below everything, per layering.
+`==` and `<=>` are defaulted. The `std::hash` specialization returns the value itself, since
+the value already is a hash.
 
-**Formatting.** `std::formatter<StringId>` prints the hex value, `0x` + 16 digits, fixed
-width; it takes **no format spec** (there is one sensible rendering of an opaque id, and
-a silently-ignored spec is worse than a rejected one). It cannot resolve tags (`base`
-can't reach `core` registries — layering); tag resolution is the tooling layer's job.
+`u64` is spelled `std::uint64_t` in code. No alias exists and this card does not add one,
+following `CONVENTIONS.md` → *Naming*. That is the same precedent that turned `dt` into
+`deltaTime`.
 
-**Placement** *(2026-08-04, with S3-T7)*. `base/stringid/StringId.hpp` +
-`base/stringid/Format.hpp` — **not** ADR-014 §1's `base/StringId.hpp`. `CONVENTIONS.md` →
-*Headers* (folder per utility, named after its design note) landed 2026-08-03, a day after
-the ADR, and wins; the same resolution S3-T4 reached for `base/profiler/`. The ADR is not
-edited. The formatter gets its own header per the Math split — `<format>` is a heavy
-include and this type is pulled in by everything that carries an id. It does **not** ride
-`diagnostics/FormatString.hpp`: that file is the positional-format-string wrapper, not a
-home for formatters.
+### Construction
 
-**Tests (write with the card).** Known FNV-1a/64 vectors (`""` →
-`0xcbf29ce484222325`, `"a"` → `0xaf63dc4c8601ec8c`, `"foobar"` →
-`0x85944171f73967e8`); a **single `0x80` byte** against the algorithm restated for one
-byte — the signed-`char` trap above, which no ASCII vector reaches; `static_assert` on
-constexpr evaluation; case-sensitivity (differing case ⇒ differing id); sentinel invalid;
-runtime `std::string` and compile-time literal agree; `fromValue` round-trips. Collision
-`TE_CHECK` fires on duplicate-id-different-tag registration — **that one lands with the
-registry (S3-T8)**, not here; `base` holds no table.
+There is one canonical path: `constexpr explicit StringId(std::string_view)`.
+
+It runs at compile time inside a constant expression. `constexpr StringId kHit{"Game.Hit"};`
+static-asserts the hash at build time. It runs at runtime for names loaded from config, such
+as input actions and cvars.
+
+**No macro** (ADR-014 §1). **No user-defined literal for now** either. A `_sid` suffix would
+be a second spelling of the same thing, so add it only if ergonomics demand it.
+
+### Rebuilding an id from raw bytes
+
+`static constexpr StringId fromValue(std::uint64_t)`, added 2026-08-04 with S3-T7.
+
+ADR-007 §1 puts the hash on disk and on the wire, so a `StringId` has to be rebuildable from
+those bytes. The explicit constructor makes the type a non-aggregate, so `StringId{raw}` will
+not compile.
+
+With the member private, this factory is the **only** way a value that was not hashed here
+can enter the type. That is an invariant the compiler holds, not a convention we maintain.
+So `grep fromValue` really does enumerate every wire and disk entry point, which is the
+boundary worth naming for a frozen format.
+
+The alternative shape was an aggregate plus a free `hashTag()` function. That makes *hashing*
+the greppable seam instead, and it keeps the type structural, so it could serve as a non-type
+template parameter. It was weighed and dropped. Neither shape can enforce "this value came
+from a hash", and the C++ shape is reversible where the hash format is not.
+
+### Hash the bytes as `unsigned char`
+
+`char` is signed on both CI legs. XOR-ing it directly sign-extends, so any byte at `0x80` or
+above hashes to a different value than the reference vectors give.
+
+The algorithm is frozen, because it is on disk and on the wire. So this is cheap to get right
+now and expensive to fix later.
+
+The two published ASCII vectors in *Tests* cannot catch this, since ASCII stays below `0x80`.
+The single-high-byte case is what does.
+
+### The sentinel
+
+`StringId{}` has `value == 0` and means invalid, or none.
+
+FNV-1a of the empty string is the offset basis rather than 0, so 0 never collides with a real
+literal hash by construction. A tag that happens to *compute* to 0 is rejected by the same
+registration `TE_CHECK` that catches collisions.
+
+### Reverse lookup and collision checking
+
+**`base` holds no table.**
+
+The registering seams, meaning the component and event registries in `core`, already receive
+the tag string at the composition root. They keep it. That is startup-only and costs trivial
+memory.
+
+That stored string then does two jobs. A duplicate id with a different tag fires the
+always-on collision `TE_CHECK` (ADR-007 §1). And an id can be mapped back to its tag for
+tooling, under ADR-014 §1's rule that reverse lookup is tooling-only and never per-frame.
+
+`StringId` itself stays a pure value type sitting below all of that, which is what layering
+requires.
+
+### Formatting
+
+`std::formatter<StringId>` prints the hex value: `0x` followed by 16 fixed-width digits.
+
+It takes **no format spec**. There is one sensible way to render an opaque id, and a silently
+ignored spec is worse than a rejected one.
+
+It cannot resolve tags. `base` cannot reach `core`'s registries, per layering. Turning an id
+back into its tag is the tooling layer's job.
+
+### Placement
+
+`base/stringid/StringId.hpp` and `base/stringid/Format.hpp`, decided 2026-08-04 with S3-T7.
+
+This is **not** ADR-014 §1's `base/StringId.hpp`. `CONVENTIONS.md` → *Headers* says one
+folder per utility, named after its design note. That rule landed 2026-08-03, a day after the
+ADR, and it wins. S3-T4 reached the same resolution for `base/profiler/`. The ADR is not
+edited.
+
+The formatter gets its own header, following the Math split. `<format>` is a heavy include
+and this type is pulled in by everything that carries an id.
+
+It does **not** ride on `diagnostics/FormatString.hpp`. That file is the positional
+format-string wrapper. It is not a home for formatters.
+
+### Tests
+
+Write these with the card.
+
+- The known FNV-1a/64 vectors: `""` → `0xcbf29ce484222325`, `"a"` → `0xaf63dc4c8601ec8c`,
+  `"foobar"` → `0x85944171f73967e8`.
+- A **single `0x80` byte**, checked against the algorithm restated by hand for one byte. This
+  is the signed-`char` trap above, and no ASCII vector reaches it.
+- A `static_assert` proving the hash evaluates at compile time.
+- Case sensitivity, so two tags differing only in case give different ids.
+- The sentinel is invalid.
+- A runtime `std::string` and a compile-time literal produce the same id.
+- `fromValue` round-trips.
+
+The collision `TE_CHECK` on a duplicate-id-different-tag registration **lands with the
+registry at S3-T8**, not here. `base` holds no table to check against.
 
 ## Open (deliberately)
 
-- **Runtime hashing on hot paths** — `StringId{"Game.Hit"}` is free *only* in a constant
-  expression. In a non-constexpr context it re-hashes on every call, and Debug folds nothing
-  — ADR-013 §6's per-frame-names trap wearing a different hat. The convention is a
-  `static constexpr` local at the call site; open is whether that needs a CI grep or just the
-  habit. **Owner:** the first hot consumer (M5 input actions).
-- **Untrusted ids** — FNV-1a is not collision-resistant: given one tag, a second colliding
-  tag is cheap to construct. ADR-007 §1 puts `ComponentTypeId` on the wire, so a
-  **peer-supplied id must resolve against the registry and be rejected if unknown** — never
-  trusted as identity, and never used to index anything before that check. The registry's
-  `TE_CHECK` (S3-T8) catches *authoring* collisions only; this is a different threat. **Owner:**
-  the netcode transport ADR (M4) — no note exists yet, so this line is the only record.
-- **UDL sugar** (`"…"_sid`) — only if literal-heavy call sites demand it; naming pass.
-- **SDK exposure** — scripting ADR; first `sdk/include/` landing trips the smoke gate
-  by design (ADR-014 §7).
+### Runtime hashing on hot paths
+
+`StringId{"Game.Hit"}` is free *only* inside a constant expression. Anywhere else it re-hashes
+the string on every call, and a Debug build folds nothing.
+
+This is ADR-013 §6's per-frame-names trap wearing a different hat.
+
+The convention is a `static constexpr` local at the call site. What is open is whether that
+needs a CI grep to enforce, or whether the habit is enough. **Owner:** the first hot consumer,
+which is M5 input actions.
+
+### Untrusted ids
+
+FNV-1a is not collision-resistant. Given one tag, constructing a second tag that collides with
+it is cheap.
+
+ADR-007 §1 puts `ComponentTypeId` on the wire. So a **peer-supplied id must be resolved
+against the registry, and rejected if it is unknown.** It is never trusted as identity, and
+never used to index anything before that check.
+
+The registry's `TE_CHECK` at S3-T8 catches *authoring* collisions only. This is a different
+threat and needs a different answer. **Owner:** the netcode transport ADR at M4. No note
+exists for it yet, so this line is the only record.
+
+### UDL sugar
+
+`"…"_sid`, only if literal-heavy call sites end up demanding it. A naming pass, not a design
+question.
+
+### SDK exposure
+
+Goes to the scripting ADR. The first `StringId` landing in `sdk/include/` will trip the smoke
+gate, by design (ADR-014 §7).
 
 ## References
 
-- [[ADR-014 — Events (buffered streams) & StringId]] §1 — rationale + alternatives
-  (interned pointer, `type_index` — both rejected)
-- FNV-1a 64: offset `14695981039346656037`, prime `1099511628211`
+- [[ADR-014 — Events (buffered streams) & StringId]] §1: the rationale and the alternatives.
+  An interned pointer and `type_index` were both rejected there.
+- FNV-1a 64: offset basis `14695981039346656037`, prime `1099511628211`

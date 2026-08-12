@@ -1,46 +1,71 @@
 # File Access — Design
 
-> Living design doc. **ADR = the irreversible decision; this doc = the _how_.**
+> Living design doc. The ADR holds the decision that is hard to reverse. This doc holds the *how*.
 
-**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** **read side shipped** (Story F, S3-T11…T13); write half is M3
+**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** read side shipped (Story F, S3-T11 to T13), write half is M3
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 ·
 **v1:** [[v1 Code Audit]] F30 · F16 · **Backlog:** [[Backlog]] → `platform`
 
 ## Purpose
 
-The engine's **virtual filesystem**: mount aliases onto physical roots, resolve
-`alias://relative/path` into a real path, read bytes. Every asset, shader and config load
-goes through it, so **nothing above `platform` ever holds a disk path**.
+`FileAccess` is the engine's virtual filesystem. Code above `platform` asks for
+`assets://textures/brick.png`. It never asks for
+`C:/dev/TechEngine/engine/app/assets/textures/brick.png`. `FileAccess` turns the first into
+the second and reads the bytes.
 
-Fixes **F30** — v1 declared `IFileSystem` in `core` but its only implementation was
-`editor`'s, so a shipped runtime could not load an asset. Also fixes **F16** *by name*:
-v1's was `class FileSystem : public System, public IFileSystem`, a stateless-ish helper
-modelled as a lifecycle System. In v2 "System" is a reserved word (ADR-006 §5 — ticks,
-touches `Scene` state, ordering is load-bearing). This is none of those, so it is not
-called one.
+Every asset, shader and config load goes through it. That is the whole point: **no disk path
+ever leaves `platform`.** A path anywhere higher would bake one machine's layout into the
+engine.
+
+### What this fixes from v1
+
+**F30: the shipped runtime could not load an asset.**
+
+v1 declared the `IFileSystem` interface in `core`, but wrote the only implementation in
+`editor`. `runtime` links `core` and not `editor`. So a shipped game held an interface with
+nothing behind it. The fix is to put both the header and the implementation in `platform`.
+Every module links `platform`, so every module gets a working one.
+
+**F16: it was modelled as a System, and it is not one.**
+
+v1 wrote `class FileSystem : public System, public IFileSystem`. In v2, "System" means a
+specific thing (ADR-006 §5). A System ticks every frame, touches `Scene` state, and the
+order it runs in matters. File access does none of that. It is a helper you call. So it does
+not inherit `System`, and it does not carry the `…System` suffix.
 
 ## Decided
 
+This table is the summary. Every row that needed an argument has one in *Design* below.
+
 | What | Call | Ref |
 |---|---|---|
-| **Name** | **`FileAccess`** — the `…System` suffix is retired | ADR-006 §5's two-bucket test; F16 |
-| **Module** | `platform`, declaration *and* impl | ADR-006 §1 — platform's contents list *file I/O*. Resolves §5's "platform/core" with no judgement call; `core → platform`, so `EngineContext` still reaches it |
-| **Kind** | helper **service** — owned + injected, never globally located | ADR-006 §5 |
-| **No interface** | **concrete class, no `IFileAccess`** — revisit when a second impl is real | S3-T12 — below |
-| **Wiring** | composition root owns by value; `EngineContext` carries `FileAccess& files` | ADR-006 §4 (F13: non-owning refs, no `shared_ptr`) |
-| **Path scheme** | v1's `alias://relative/path`; `int` priority, highest first | v1 `FileSystem.cpp:8-17` — kept, it worked |
-| **Case** | **case-sensitive everywhere; the resolver never case-folds** | Only rule that behaves identically on both CI legs — see *Design* |
-| **Errors** | `FileResult` status enum returned, data via out-param. No exceptions | Below — v1 returned bare `bool` |
-| **Path validation** | the splitter rejects a malformed path outright → `InvalidPath` | S3-T11 — below |
-| **Async** | **none.** Sync-only | M2's threading ADR is unwritten; see *Open* |
-| **Surface** | **split** read-side / mutating | Below |
-| **Mount authority** | `MountTable`, mounted at the **composition root only** — on neither interface | v1 put `mount()` on the interface every consumer held |
+| **Name** | `FileAccess`. No `…System` suffix. | ADR-006 §5, F16 |
+| **Module** | `platform`, both the header and the implementation. | ADR-006 §1 |
+| **Kind** | A helper service. The composition root owns it and injects it. Never looked up globally. | ADR-006 §5 |
+| **Interface** | None. One concrete class, no `IFileAccess`. | S3-T12 |
+| **Wiring** | `EngineContext` carries `FileAccess& files`. | ADR-006 §4 (F13) |
+| **Path scheme** | `alias://relative/path`, kept from v1. Mount priority is an `int`, highest first. | v1 `FileSystem.cpp:8-17` |
+| **Case** | Case-sensitive on every platform. The resolver never case-folds. | See *Case sensitivity* |
+| **Errors** | A `FileResult` enum is the return value. Data comes back through an out-param. No exceptions. | See *Resolution* |
+| **Path validation** | A malformed path is rejected before it reaches a mount. | S3-T11 |
+| **Async** | None. Every call is synchronous. | See *Open questions* |
+| **Surface** | Split in two. The read side ships now, the write side ships at M3. | See *The write surface* |
+| **Mount authority** | Only the composition root mounts. `mount()` lives on `MountTable`. | See *Wiring* |
 
 ## Design
 
-Three types, each small. The split exists so the runtime's dependency manifest is honest:
-`runtime` constructs the read half and links nothing else; the editor's asset pipeline
-composes both.
+### The three types
+
+`MountTable` holds the mounts. `FileAccess` reads. `FileWriteAccess` writes, and arrives
+at M3.
+
+The read and write halves are separate types for one reason. `runtime` should be able to
+build the read half and link nothing else. If both halves were one class, every shipped game
+would carry write code it never calls. The editor's asset pipeline composes both.
+
+`MountTable` is its own type rather than a private member, because the two halves read it
+under different rules. The read side walks every mount that matches. The write side takes
+only the top one. See *Resolution*.
 
 ```mermaid
 flowchart TB
@@ -56,48 +81,67 @@ flowchart TB
   fw --> mt
   ec -.-> fa
   ed -.-> fw
-  %% solid = owns; dashed = holds a non-owning ref
+  %% solid = owns, dashed = holds a non-owning ref
 ```
-
-`MountTable` is the shared state; the two halves resolve against it with **different
-policies**, which is why it is its own type rather than a private member of either.
 
 ### Wiring
 
-`run()` (`engine/app/src/App.cpp`) owns `MountTable` and `FileAccess` **by value**, builds
-`EngineContext` over them, and mounts afterwards — services first, then mounts. The context
-is a non-owning view, so a mount established later is visible through it; a Catch2 case pins
-that, because it is the thing a future `FileAccess` that snapshots the table would break.
+`run()` in `engine/app/src/App.cpp` is the composition root. It owns `MountTable` and
+`FileAccess` **by value**, builds `EngineContext` over them, and mounts afterwards.
 
-`EngineContext` (`core`) has **one field** today. `Clock` stays owned by `run()` and the
-event streams stay driver-owned (S3-T10), so neither joined it just because ADR-006 §4's
-sketch listed them. `FrameContext` carries `const EngineContext&`, which deletes its
-copy-assignment — a frame is observed through the loop's `const&`, never reseated.
+That order matters. `EngineContext` holds a reference, not a copy, so a mount added after
+the context is built is still visible through it. A Catch2 case pins this. The case exists
+because a future `FileAccess` that snapshotted the table in its constructor would pass every
+other test and quietly break this one.
 
-**The demo mount is throwaway.** `engine/app/assets/` reached through a configure-time
-`TE_DEMO_ASSETS_DIR`, marked `TODO(S3-T13)` in both `App.cpp` and `engine/app/CMakeLists.txt`.
-It bakes a source-tree path into the binary and resolves to nothing in an installed build —
-acceptable only because M3 replaces it. The real answer is `platform::executablePath()`
-([[Backlog]] → `platform`); v1 had it Windows-only and used `current_path()` everywhere else.
+**`EngineContext` has one field today**, `FileAccess& files`.
 
-### Why no interface
+ADR-006 §4 sketched a fuller context, with `Clock`, the event streams and others beside it.
+That sketch is a shape, not a checklist. A service earns a field when something actually
+needs to reach it *through the context*, and nothing does yet. So `Clock` stays owned by
+`run()`, and the event streams stay owned by their drivers (S3-T10).
 
-Dropped at S3-T12, before it shipped. There is **one implementation and nothing carded
-needs a second** — the archive-mount idea is a `MountTable` concern, and the suite runs
-against real scratch directories rather than doubles.
+`FrameContext` carries the per-frame values plus a `const EngineContext& engine`. A
+reference member deletes the struct's copy-assignment, which is the intent. A system
+observes a frame through the loop's `const&`. Nobody should be able to reseat one frame's
+context onto another.
 
-**ADR-006 §4's `IFileSystem& fs` is a v1 artifact, not a decision.** Every other field in
-that sketch is concrete — `JobSystem&`, `Clock&`, `FrameAllocator&`, `ResourceRegistry&`,
-`EventBus&`. File access was the lone interface because in v1 `core` *declared* it and
-`editor` *implemented* it, so the interface was the seam across a module boundary that
-should not have existed. That is **F30**, and putting the impl in `platform` is what fixes
-it — which removes the interface's reason to exist.
+### The demo mount is throwaway
 
-Reintroduce when a second implementation is real: an archive- or network-backed VFS, or a
-null one for an asset-less dedicated server. Extraction is mechanical, and the call sites
-are already written against the four methods that would become the interface.
+It mounts `engine/app/assets/` through `TE_DEMO_ASSETS_DIR`, a path baked in at configure
+time. Both `App.cpp` and `engine/app/CMakeLists.txt` carry a `TODO(S3-T13)` on it.
 
-### Surface
+The problem is that a source-tree path means nothing in an installed build. The mount
+resolves to a directory that is not there. This is acceptable only because M3 replaces the
+whole mount set anyway.
+
+The real fix is `platform::executablePath()`, on [[Backlog]] under `platform`. Mount
+relative to the binary, not to the source tree. v1 had that function on Windows only and
+fell back to `current_path()` elsewhere, which breaks as soon as the game is launched from
+a different working directory.
+
+### Why there is no interface
+
+There is one implementation, and no carded work needs a second. So there is no
+`IFileAccess`.
+
+Two things that look like they would need one do not. Archive mounts are a `MountTable`
+concern, not a second `FileAccess`. And the tests need no fake, because they run against
+real scratch directories.
+
+**ADR-006 §4 does list `IFileSystem& fs`, and that is a v1 leftover rather than a decision.**
+Look at the rest of that sketch: `JobSystem&`, `Clock&`, `FrameAllocator&`,
+`ResourceRegistry&`, `EventBus&`. All concrete. File access was the only interface in the
+list, and F30 is the reason. In v1 the declaration and the implementation lived in different
+modules, so an interface was the only way to bridge them. Put the implementation in
+`platform` and there is no gap left to bridge.
+
+Bring the interface back when a second implementation is real. The candidates are an
+archive-backed VFS, a network-backed one, or a null one for a dedicated server with no
+assets. Extraction is mechanical. Every call site already goes through the four methods
+that would become the interface.
+
+### The read surface
 
 ```cpp
 enum class FileResult : std::uint8_t { Ok, InvalidPath, NoMount, NotFound,
@@ -120,129 +164,186 @@ public:
 };
 ```
 
-**All four are `const`** — the table is the only state and `FileAccess` holds it by
-`const MountTable*`. **`IsADirectory`** is `read`'s wrong-kind result, the mirror of
-`list`'s `NotADirectory`; it is an explicit check because `ifstream` opens a directory
-successfully on Linux and fails on Windows. **`lastModified` is Unix seconds** —
-`file_time_type`'s epoch is unspecified (MSVC counts from 1601, libstdc++ from 1970) and an
-implementation need only provide one of `file_clock::to_sys` / `::to_utc`, so `clock_cast`
-is the only portable spelling.
+**All four methods are `const`.** `FileAccess` owns no state of its own. It holds the table
+as a `const MountTable*` and only reads it.
 
-`FileStatus` keeps four fields; v1's `alias` / `virtualPath` / `name` / `extension` are all
-recoverable from the caller's own argument or from `physicalPath`, and its `exists` flag is
-what `FileResult` is for.
+**`read` on a directory returns `IsADirectory`.** The check has to be explicit, because
+`std::ifstream` opens a directory successfully on Linux and fails on Windows. Without it,
+the same call gives an empty buffer on one CI leg and an error on the other. `list` has the
+mirror result, `NotADirectory`.
 
-**`list` does not union overlays.** It lists the mount that wins the existence walk, so a
-file only a lower-priority mount holds is *readable but never listed*. The asymmetry is
-deliberate — union costs a dedupe pass and a rule for a name that is a file in one mount and
-a directory in another, and no consumer needs it. Revisit at M6 if a resource scan does.
+**`lastModified` is seconds since the Unix epoch, on every platform.** It is deliberately
+not a `file_time_type`, because that type's epoch is unspecified. MSVC counts from 1601 and
+libstdc++ counts from 1970, so the raw number means different things on the two legs.
+Converting is awkward too: an implementation only has to provide one of `file_clock::to_sys`
+and `file_clock::to_utc`. `std::chrono::clock_cast` is the one spelling that works either
+way.
 
-`IFileWriteAccess` carries v1's mutating half — `write` · `createDirectory` ·
-`remove` · `copy` · `move` · `rename`, over both files and directories — same
-`FileResult` convention.
+**`FileStatus` keeps four fields.** v1's version also carried `alias`, `virtualPath`, `name`
+and `extension`. The caller already passed the virtual path in, and the other three come out
+of `physicalPath`. v1's `exists` flag is what `FileResult` replaced.
 
-**It ships with [[Roadmap]] M3, not M1.** M3 creates the project root, writes
-`project.toml` and lays out the asset dirs, so the consumer is one rung out — this is a
-*sequencing* call, not a parking-lot deferral. Held back because the write surface should
-be shaped by M3's actual writes rather than guessed a sprint early; M1 ships the read half
-because that is what M1's own consumers need.
+### `list` returns one mount, not the union
+
+`list` returns the contents of whichever mount wins the existence walk. A file that only a
+lower-priority mount holds is readable through `read`, but it never appears in `list`.
+
+That is inconsistent, and it is deliberate. A union would need a dedupe pass, plus a rule
+for the case where one name is a file in one mount and a directory in another. Nothing needs
+that today. Revisit at M6 if the resource scan does.
+
+### The write surface (M3)
+
+`IFileWriteAccess` carries v1's mutating half: `write`, `createDirectory`, `remove`, `copy`,
+`move` and `rename`, over both files and directories. It uses the same `FileResult`
+convention as the read side.
+
+**It ships at [[Roadmap]] M3, and that is sequencing rather than a deferral.** M3 is the rung
+that creates the project root, writes `project.toml` and lays out the asset directories. It
+is the first code that writes anything at all. Shaping the write surface around M3's real
+writes beats guessing them a sprint early. M1 ships the read half because M1's own consumers
+read.
 
 ### Resolution
 
+Both sides start by splitting `alias://rel` into an alias and a relative path. They differ
+after that.
+
 | | Read side | Write side |
 |---|---|---|
-| Split | `alias://rel` → (`alias`, `rel`) | same |
-| Walk | every mount with that alias, **priority order**, first that **exists** wins | **highest-priority** mount with that alias, no existence probe |
-| Miss | `NoMount` (alias unknown) vs `NotFound` (alias known, no candidate) — distinguished | `NoMount` only |
-| Parents | — | `create_directories` on the parent |
+| Which mount wins | Walks every mount with that alias, in priority order. The first one where the file **exists** wins. | Takes the highest-priority mount with that alias. It never probes for existence. |
+| Nothing found | `NoMount` if the alias was never mounted. `NotFound` if it was, but no mount holds the file. | `NoMount` only. |
+| Missing parent dirs | Not applicable. | `create_directories` on the parent first. |
 
-Distinguishing `NoMount` from `NotFound` is the reason for the enum: v1's `bool` +
-`TE_LOGGER_ERROR` meant a probe for an *optional* file logged an error on the normal path.
+The read side probes because mounts overlay. A higher-priority mount shadows a lower one,
+and walking in priority order is what makes that work. The write side does not probe,
+because a write goes to the top mount whether the file is already there or not.
 
-### Path validation
+**Telling `NoMount` and `NotFound` apart is why `FileResult` is an enum at all.** v1 returned
+a `bool` and logged through `TE_LOGGER_ERROR` on failure. Looking for an *optional* file
+therefore printed an error every time it was absent, which is the normal path.
 
-`splitVirtualPath` is the gate — a path that fails it never reaches a mount, and
-`resolveExisting` returns `InvalidPath` without touching disk. Rejected:
+### What counts as a valid path
 
-| Rejected | Because |
+`splitVirtualPath` is the gate. A path that fails it never reaches a mount, and
+`resolveExisting` returns `InvalidPath` without touching the disk. Five things are rejected.
+
+| Rejected | Why |
 |---|---|
-| no `://`, or an empty alias | not a virtual path. v1's `find('://')` was a **multichar `char` literal** that truncated to `'/'`, so this check could never fire for anything containing a slash |
-| `/` or `:` in the alias | the alias is a key, not a path |
-| a relative starting `/`, or containing `:` | `root / "/etc/passwd"` and `root / "C:/Windows"` **discard `root`** — `operator/` replaces on an absolute or foreign-root RHS |
-| a `..` **segment** (`..hidden` and `icon..png` stay legal) | escapes the mount root |
-| a backslash anywhere | Windows treats it as a separator, which re-opens the two rows above |
+| No `://`, or an empty alias before it | It is not a virtual path. v1 could not catch this: it wrote `find('://')`, which is a multi-character `char` literal rather than a string. It truncated to `'/'`, so the check passed for any path containing a slash. |
+| A `/` or a `:` inside the alias | The alias is a key. It is not itself a path. |
+| A relative part that starts with `/`, or contains `:` | This is the dangerous one. `root / "/etc/passwd"` and `root / "C:/Windows"` each evaluate to the right-hand side alone. `std::filesystem::operator/` discards the left side when the right side is absolute or names a different root. An unchecked path escapes the mount completely. |
+| A `..` **segment** | It escapes the mount root. `..hidden` and `icon..png` stay legal, because the rule is about a whole segment. |
+| A backslash anywhere | Windows reads it as a separator, which re-opens the two rows above. |
 
-**`..` is rejected outright, not normalised.** A virtual path is an *identity* — the resource
-cache, the watcher map and asset manifests all key on the string, so two spellings of one file
-means two cache entries. Nothing emits `..`: `list()` returns normalised paths and manifests
-are tool-written. Relative references between assets resolve a rung up, at the loader, which
-hands the VFS a composed path. Also mechanical: `VirtualPathParts` holds `string_view`s into
-the input, and a normalised path is a substring of nothing.
+**`..` is rejected, not normalised away.** That is the less obvious choice, so here is the
+reasoning.
 
-**Case:** `alias://Foo/Bar.png` and `alias://foo/bar.png` are different paths on both
-legs. Windows' filesystem will happily resolve the wrong case and Linux CI will not — so
-the resolver does no folding, and a Catch2 case pins that a wrong-case path returns
-`NotFound` rather than opening the file.
+A virtual path is an **identity**, not just a lookup key. The resource cache, the watcher
+map and the asset manifests all key on the exact string. If `a://x/../y/f.png` and
+`a://y/f.png` both resolved, one file would sit in the cache twice under two names.
 
-`std::filesystem` does **not** level this — it abstracts the API, not the filesystem's case
-semantics, and `exists()` forwards straight to the OS. Nor is it one behaviour per platform:
-APFS is case-insensitive by default and NTFS has had per-directory case sensitivity since
-Win10 1803. So `exists()` is only the cheap reject; every surviving candidate then has to
-prove its spelling. `path::operator==` *is* case-sensitive on MSVC (a lexical compare that
-never touches disk) — the mechanism asks the OS for the real name via `canonical()` and
-compares lexically. That has a live defect: **[[Known Issues]] D3** — `canonical()` resolves
-symlinks, so a link *inside* a mount reports `NotFound` for a correctly-cased file.
+Nothing in the engine produces `..` anyway. `list()` returns normalised paths, and manifests
+are written by tools. When one asset references another relatively, the loader resolves that
+a rung above the VFS and hands down a composed path.
 
-`canonical(physicalRoot)` is cached on `MountEntry` at mount time, since resolution is the
-asset-load path. It is empty when the root did not exist at mount time — a mount may legally
-precede the directory — and resolution falls back to canonicalising on the spot.
+There is a mechanical reason too. `VirtualPathParts` holds `string_view`s pointing into the
+caller's string. A normalised path would be a new string, so the views would have nothing to
+point at.
+
+### Case sensitivity
+
+**`alias://Foo/Bar.png` and `alias://foo/bar.png` are two different paths, on Windows as
+well as on Linux.** The resolver never folds case. A Catch2 case pins that a wrong-case path
+returns `NotFound` instead of quietly opening the file.
+
+The reason is CI. Windows resolves the wrong case happily and Linux does not, so a
+case-typo bug would pass locally and fail on one leg only. Case-sensitive everywhere is the
+one rule that behaves identically on both.
+
+**`std::filesystem` does not solve this for us.** It abstracts the API, not the filesystem's
+behaviour. `exists()` forwards straight to the OS and inherits whatever that OS does.
+
+It is not even one behaviour per platform. APFS on macOS is case-insensitive by default.
+NTFS has supported per-directory case sensitivity since Windows 10 1803. The answer depends
+on the volume, not only on the OS.
+
+**So `exists()` is only the cheap first pass.** Every candidate that survives it still has to
+prove its spelling. A plain lexical compare is not enough on its own, even though
+`std::filesystem::path::operator==` *is* case-sensitive on MSVC. That operator never touches
+the disk, so it only compares what the caller wrote against what the caller wrote.
+
+The mechanism is to ask the OS for the file's real name through `canonical()`, then compare
+that name lexically against the requested path.
+
+**That has a live defect, [[Known Issues]] D3.** `canonical()` also resolves symlinks. A
+symlink inside a mount canonicalises to its target's name, which does not match what was
+asked for. A correctly-cased file then reports `NotFound`.
+
+`canonical(physicalRoot)` is computed once at mount time and cached on `MountEntry`, because
+resolution sits on the asset-load path and `canonical()` hits the disk. The cache is empty
+when the root did not exist at mount time. That is legal, since a mount may precede its
+directory. Resolution then canonicalises on the spot instead.
 
 ### Threading
 
-**None.** Mounts are established at the composition root and the table is frozen
-afterwards, so no lock is needed — v1 took a `shared_mutex` on every single read.
-That is a *consequence* of moving `mount()` off the interface, not an independent
-decision, and it is re-opened by M2's threading ADR the moment a job thread reads.
+**There is none, and none is needed.** All mounting happens at the composition root, before
+the loop starts. The table is frozen after that, so concurrent readers see a constant.
+
+This is worth stating because v1 took a `shared_mutex` on every single read. The difference
+is not that v2 is braver. It follows from moving `mount()` off the interface that every
+consumer held. When anyone can mount at any time, every read needs a lock.
+
+M2's threading ADR re-opens this the moment a job thread reads a file.
 
 ### Buffer type
 
-`std::vector<std::byte>` out-param for now. v1 read into a `Buffer` from
-`serialization/buffer.hpp`; v2 has no serialization module yet.
+`read` fills a `std::vector<std::byte>` out-param. v1 read into a `Buffer` from
+`serialization/buffer.hpp`, and v2 has no serialization module yet.
 
-**Short-lived on purpose.** Serialization moved to [[Roadmap]] **M2** on 2026-08-02, so its
-`Buffer` arrives in Sprint 04 — one rung out, not at M6. Don't build a buffer abstraction
-here to bridge the gap; the out-param signature is the whole bridge, and swapping the
-parameter type is a mechanical edit at every call site.
+**This is meant to be temporary, and the replacement is close.** Serialization moved to
+[[Roadmap]] M2 on 2026-08-02, so `Buffer` arrives in Sprint 04.
 
-## Consumers
+Do not build a buffer abstraction here to bridge those few weeks. The out-param *is* the
+bridge. Changing the parameter type later is a mechanical edit at each call site, and there
+are few call sites.
+
+## Who uses it
 
 | Rung | Uses |
 |---|---|
-| **M3** project | project root + `project.toml`; **owns the mount set** (v1's `editorAssets://`, `projectResources://`, `projectCache://` — `ProjectManager.cpp:263-271`); **first writer** → brings `IFileWriteAccess` |
-| **M6** resources | every asset load, by virtual path |
-| editor | asset pipeline import/bake → the write side |
+| **M3** project | The project root and `project.toml`. It **owns the mount set**, which is v1's `editorAssets://`, `projectResources://` and `projectCache://` (`ProjectManager.cpp:263-271`). It is also the first writer, so it brings the write half with it. |
+| **M6** resources | Every asset load, by virtual path. |
+| editor | The asset pipeline's import and bake steps, which write. |
 
 ## Open questions
 
-- **File watching.** v1 had `IFileWatcher` (`core/fileSystem/IFileWatcher.hpp`) for editor
-  hot-reload — callback subscriptions, so it also needs re-reading against
-  [[ADR-014 — Events (buffered streams) & StringId]]'s no-callbacks rule. Out of M1.
-- **Archive / pak mounts.** Mounting an archive rather than a directory. `MountTable`'s
-  shape allows it; no consumer until shipping.
-- **Threading** → M2's threading ADR (above).
-- **Two live defects**, both from S3-T11's review, neither blocking T12: [[Known Issues]]
-  **D2** (`mount()` validates nothing — fix before M3 ports v1's mount set) · **D3** (the
-  case check and symlinks).
+- **File watching.** v1 had `IFileWatcher` for editor hot-reload. It is out of M1, and it
+  needs more than a port. It was built on callback subscriptions, which
+  [[ADR-014 — Events (buffered streams) & StringId]] rules out. Re-read it against that ADR
+  before designing a v2 one.
+- **Archive mounts.** Mounting a `.pak` file instead of a directory. `MountTable`'s shape
+  allows it. No consumer needs it before shipping.
+- **Threading.** Goes to M2's threading ADR. See above.
+- **Two live defects.** Both came out of S3-T11's review, and neither blocks T12.
+  [[Known Issues]] **D2**: `mount()` validates nothing, so fix it before M3 ports v1's mount
+  set. [[Known Issues]] **D3**: `canonical()` and symlinks, described under
+  *Case sensitivity*.
 
 ## References
 
-- [[ADR-006 — v2 core architecture & module layout]] §1 (module contents) · §4 (DI +
-  `EngineContext`) · §5 (System/helper taxonomy)
-- [[v1 Code Audit]] **F30** (impl editor-only) · **F16** (everything is a System)
-- v1 prior art @ `v1-reference`: `engine/core/include/TechEngine/core/fileSystem/IFileSystem.hpp` ·
-  `runtime/editor/src/fileSystem/FileSystem.cpp` · `runtime/editor/src/project/ProjectManager.cpp:262-271`
-- Code: `engine/platform/include/TechEngine/platform/files/` — `FileAccess.hpp` ·
-  `MountTable.hpp` · `VirtualPath.hpp` · `FileResult.hpp`; impls under `src/files/`; Catch2
-  in `tests/files/` (`TechEnginePlatformTests`, new at S3-T11). Wiring:
-  `engine/core/include/TechEngine/core/EngineContext.hpp` + `engine/app/src/App.cpp`;
-  F30's regression case is `engine/core/tests/EngineContextTests.cpp`.
+- [[ADR-006 — v2 core architecture & module layout]] §1 (module contents) · §4 (DI and
+  `EngineContext`) · §5 (the System and helper taxonomy)
+- [[v1 Code Audit]] **F30** (the implementation was editor-only) · **F16** (everything was a
+  System)
+- v1 prior art at the `v1-reference` tag:
+  `engine/core/include/TechEngine/core/fileSystem/IFileSystem.hpp` ·
+  `runtime/editor/src/fileSystem/FileSystem.cpp` ·
+  `runtime/editor/src/project/ProjectManager.cpp:262-271`
+- Code: headers in `engine/platform/include/TechEngine/platform/files/` are `FileAccess.hpp`
+  · `MountTable.hpp` · `VirtualPath.hpp` · `FileResult.hpp`. Implementations are under
+  `src/files/`. Catch2 cases are in `tests/files/` (`TechEnginePlatformTests`, new at
+  S3-T11).
+- Wiring: `engine/core/include/TechEngine/core/EngineContext.hpp` and
+  `engine/app/src/App.cpp`. F30's regression case is
+  `engine/core/tests/EngineContextTests.cpp`.

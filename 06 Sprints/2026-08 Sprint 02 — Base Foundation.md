@@ -1,55 +1,62 @@
 # 2026-08 · Sprint 02 — Base Foundation
 
 - **Quarter:** [[2026-Q3]]
-- **Dates:** **Jul 25 – Jul 31 2026** (1 week). **Closed 4 weeks early on 2026-08-02** — the
-  goal was met Jul 30 and the board emptied Jul 31, so the remaining four weeks became
-  Sprint 03 rather than idle sprint. Planned as a 5-week one-off transition (the 4-week
-  Sat→Fri cadence was adopted mid-sprint on 2026-07-26); it was never sized for five weeks of
-  work, and that under-fill is exactly why it ran out.
-  Review + retro: **2026-08-02** → [[2026-08-02 Sprint 02 Retrospective]].
-  **Downstream dates are unaffected:** [[2026-08 Sprint 03 — M1 Enablers]] takes
-  **Aug 1 – Aug 28**, so the already-published **Aug 29–30** boundary still stands.
+- **Dates:** **Jul 25 to Jul 31, 2026**, so one week. **Closed 4 weeks early, on 2026-08-02.**
+  The goal was met Jul 30 and the board emptied Jul 31, so the remaining four weeks became
+  Sprint 03 rather than an idle sprint.
+  It had been planned as a 5-week one-off transition, since the 4-week Sat-to-Fri cadence was
+  adopted mid-sprint on 2026-07-26. It was never sized for five weeks of work, and that
+  under-fill is exactly why it ran out.
+  Review and retro: **2026-08-02** → [[2026-08-02 Sprint 02 Retrospective]].
+  **Downstream dates are unaffected.** [[2026-08 Sprint 03 — M1 Enablers]] takes
+  **Aug 1 to Aug 28**, so the already-published **Aug 29 to 30** boundary still stands.
 - **Epic:** v2 base foundation
 - **Decisions behind it:** [[ADR-006 — v2 core architecture & module layout]] §4 §6 ·
   [[ADR-007 — v2 networking & ECS replication foundation]] §5
 
 ## 🎯 Sprint goal
 
-> **`base` you can trust:** Logger, Assert and Clock — unit-tested and proven by a real
-> consumer, the first sliver of the app loop. **Horizontal base, not the vertical slice.**
+> **A `base` you can trust.** Logger, Assert and Clock, unit-tested and proven by a real
+> consumer, which is the first sliver of the app loop.
+>
+> This is the horizontal base, not the vertical slice.
 
-The first v2 code that isn't a skeleton. Scope is narrow on purpose: the rest of `base`
-(Profiler, memory tracking, Pool, SlotMap, ring buffer) has **no Sprint-02 consumer**, so
-building it now would be speculation ([[Planning Workflow — Artifact Gate]]). The C2
-vertical slice is **Sprint 03**.
+This is the first v2 code that is not a skeleton.
+
+The scope is narrow on purpose. The rest of `base`, meaning the Profiler, memory tracking,
+Pool, SlotMap and the ring buffer, has **no Sprint 02 consumer**. Building any of it now would
+be speculation ([[Planning Workflow — Artifact Gate]]).
+
+The C2 vertical slice is **Sprint 03**.
 
 ### Scope calls locked at planning (2026-07-25)
 
 | Question | Call | Why |
 |---|---|---|
-| Loop depth | **Accumulator + `FrameContext`** — no phases, no `Schedule`, no ECS | ADR-007 §5 is already decided; it's the only consumer that genuinely exercises the Clock's tick/frame correlation. Phase stubs without ECS systems would be scaffolding for a consumer that doesn't exist. |
-| Window | **Out — headless** | A window pulls in `platform` + GLFW + input + glad2 — that's C2's opening move a sprint early, and none of it is unit-testable. |
-| Fixed timestep | **Now** (rides with the accumulator) | Falls out of the loop-depth call. |
-| Process work | **In** — `CONVENTIONS.md` + `te-module` skill | Both triggers fired this sprint (first module code / scaffold exists). |
+| Loop depth | **The accumulator plus `FrameContext`.** No phases, no `Schedule`, no ECS. | ADR-007 §5 is already decided, and this is the only consumer that genuinely exercises the Clock's tick and frame correlation. Phase stubs without ECS systems would be scaffolding for a consumer that does not exist. |
+| Window | **Out. Headless instead.** | A window pulls in `platform`, GLFW, input and glad2. That is C2's opening move a sprint early, and none of it is unit-testable. |
+| Fixed timestep | **Now.** It rides along with the accumulator. | It falls out of the loop-depth call. |
+| Process work | **In**, meaning `CONVENTIONS.md` and the `te-module` skill. | Both triggers fired this sprint: the first module code exists, and so does the scaffold. |
 
 ## 🚦 Artifact gate
 
 | Item | ADR? | Design note? | Outcome |
 |---|---|---|---|
-| **Diagnostics** (Logger + Assert) | ✅ | already exist | Cross-module + hard to reverse — `base`'s public header surface and an engine-wide failure contract. **Heavy → task S2-T1, ordered first.** [[Logger — Design]] / [[Assert — Design]] stay the *living how*; the ADR freezes only the calls. |
-| **Clock** | ❌ | ✅ | Local to `base`, reversible, decision already made 2026-07-24. **Light → drafted in this session:** [[Clock — Design]]. |
-| **App loop sliver** | ❌ | ✅ exists | [[Game Loop — Frame Flow]] is its note. No new artifact. |
-| **`CONVENTIONS.md`** | ❌ | ❌ | It *is* documentation, not a decision. Straight to task. |
-| **`te-module` skill** | ❌ | ❌ | Tooling. Straight to task. |
+| **Diagnostics**, meaning Logger and Assert | ✅ | They already exist. | Cross-module and hard to reverse, since it sets `base`'s public header surface and an engine-wide failure contract. **Heavy, so task S2-T1, ordered first.** [[Logger — Design]] and [[Assert — Design]] stay the *living how*, and the ADR freezes only the calls. |
+| **Clock** | ❌ | ✅ | Local to `base`, reversible, and the decision was already made on 2026-07-24. **Light, so drafted in this session:** [[Clock — Design]]. |
+| **App loop sliver** | ❌ | ✅ It exists. | [[Game Loop — Frame Flow]] is its note. No new artifact is owed. |
+| **`CONVENTIONS.md`** | ❌ | ❌ | It *is* documentation, not a decision. Straight to a task. |
+| **`te-module` skill** | ❌ | ❌ | Tooling. Straight to a task. |
 
-> **One decision home.** ADR-011 will freeze the load-bearing Diagnostics calls; the two
-> design notes get *Decided* one-liners + §refs pointing at it — **never copied rationale**
-> (or the copies drift, which is exactly what this weekend's review had to clean up).
+> **One decision home.** ADR-011 will freeze the load-bearing Diagnostics calls. The two design
+> notes then get *Decided* one-liners plus section references pointing at it, and **never
+> copied rationale**. Copies drift, which is exactly what this weekend's review had to clean
+> up.
 
 ## Stories & tasks
 
-> Each task: `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light`. Pick **weight-fits-day first**,
-> then priority ([[Planning Workflow — Artifact Gate]]).
+> Every task carries `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light`. Pick by **weight fits the
+> day first**, then by priority ([[Planning Workflow — Artifact Gate]]).
 
 ### Story A — Diagnostics decided
 
@@ -208,56 +215,69 @@ T13 blocks T14 and T15.
 
 ## Definition of Done
 
-- [x] **ADR-011 (Diagnostics) Accepted**; both design notes index it, no copied rationale.
-- [x] **Vault split done (ADR-012)** — `docs/` its own repo, board edits no longer touch engine
-      PRs, reconciliation stamp live. *Added mid-sprint 2026-07-27; see the capacity note.*
-- [x] **Logger, Assert, Clock** live in `base`, each with Catch2 tests, **CI green both legs**.
-- [x] **Headless app loop** runs a fixed-timestep accumulator publishing `FrameContext`, with
-      a **tick-exact** determinism test and a **clamp** test. *(S2-T7 + S2-T8, PRs #18/#19.)*
-- [x] Demo: correlated frame/tick log output from a headless run — **shown, not recorded.**
-      S2-T9 was descoped, so there is no stored artifact; `App::run`'s output is the demo.
-      *(A recorded artifact was offered as a new card at the 2026-08-02 review and **not
-      pulled** — see § Sprint review.)*
-- [x] Root `CONVENTIONS.md` exists; CLAUDE.md's conventions section is a pointer.
-- [x] **Nothing built without a Sprint-02 consumer** — the pressure test holds (no Profiler,
-      no FrameAllocator, no Pool/SlotMap/ring buffer).
+- [x] **ADR-011 (Diagnostics) is Accepted.** Both design notes index it, with no copied
+      rationale.
+- [x] **The vault split is done (ADR-012).** `docs/` is its own repo, board edits no longer
+      touch engine PRs, and the reconciliation stamp is live. *Added mid-sprint on 2026-07-27.
+      See the capacity note.*
+- [x] **Logger, Assert and Clock** live in `base`, each with Catch2 tests, and **CI is green on
+      both legs**.
+- [x] **The headless app loop** runs a fixed-timestep accumulator that publishes
+      `FrameContext`, with a **tick-exact** determinism test and a **clamp** test. *(S2-T7 and
+      S2-T8, PRs #18 and #19.)*
+- [x] Demo: correlated frame and tick log output from a headless run. It was **shown, not
+      recorded.** S2-T9 was descoped, so there is no stored artifact, and `App::run`'s output
+      is the demo. *(A recorded artifact was offered as a new card at the 2026-08-02 review and
+      **not pulled**. See the sprint review below.)*
+- [x] A root `CONVENTIONS.md` exists, and CLAUDE.md's conventions section is a pointer to it.
+- [x] **Nothing was built without a Sprint 02 consumer.** The pressure test holds: no Profiler,
+      no FrameAllocator, and no Pool, SlotMap or ring buffer.
 
 ## Capacity note
 
-**This sprint is deliberately under-filled.** 12 tasks across ~5 weeks (≈15 deep slots) is
-slack by design, and that is the point: Sprint 01's retro identified **refilling freed time**
-as the live burnout risk, not overload.
+**This sprint is deliberately under-filled.** Twelve tasks across about 5 weeks, which is
+roughly 15 deep slots, is slack by design.
 
-> **The rule, in writing: finish early → the next deep day stays empty.** Slack is the
-> deliverable, not a gap to fill. If the sprint runs genuinely dry, pull *nothing* — bank it,
-> and let Sprint 03 (C2, the vertical slice) start rested.
+That is the point. Sprint 01's retro identified **refilling freed time** as the live burnout
+risk, not overload.
 
-Weight matches day-type — rhythm on the [[Dashboard]] (deep Mon/Thu + one weekend day ·
-moderate Fri · light Tue · relaxed Wed · other weekend day off). Weekend days are a
-**swappable pair** — nothing here is assigned to Sat or Sun specifically.
+> **The rule, in writing: finish early, and the next deep day stays empty.** Slack is the
+> deliverable, not a gap to fill. If the sprint runs genuinely dry, pull *nothing*. Bank it,
+> and let Sprint 03, the C2 vertical slice, start rested.
 
-**Ordering constraint:** S2-T1 (the ADR) gates T2–T6. T13 gates T14/T15. Everything else is free.
+Weight matches the day type, following the rhythm on the [[Dashboard]]: deep on Mon and Thu
+plus one weekend day, moderate on Fri, light on Tue, relaxed on Wed, and the other weekend day
+off. Weekend days are a **swappable pair**, so nothing here is assigned to Sat or Sun
+specifically.
 
-### Mid-sprint scope change — 2026-07-27
+**Ordering constraint.** S2-T1, the ADR, gates T2 through T6. T13 gates T14 and T15.
+Everything else is free.
 
-**12 → 15 tasks** (T13/T14/T15, the ADR-012 vault split), added on day 3. Recorded rather
-than absorbed silently, because the note above forbids refilling freed time.
+### Mid-sprint scope change, 2026-07-27
 
-**This is not that case** — the rule targets *refilling slack when the sprint runs dry*; this
-is new work arriving with a real trigger. The distinction matters, so: **zero 🟢 Deep tasks
-were added.** The added weights are 🟠 + 🟡 + 🟡, which draw on moderate/light capacity (Fri /
-Tue), while the protected resource — deep slots for T4/T7/T8 — is untouched. That is why T13
-is **P1 but Moderate**: prioritised without displacing the sprint goal.
+**Twelve tasks became fifteen**, with T13, T14 and T15 covering the ADR-012 vault split, added
+on day 3. It is recorded here rather than absorbed silently, because the rule above forbids
+refilling freed time.
 
-**Still a net increase, and the trade is on the table:** if light capacity gets tight, push
-**S2-T11** (`te-module`, P3 🟡) to Sprint 03. It is the same tooling category, the lowest
-priority in the sprint, and it has no consumer waiting. Take that trade before letting
+**This is not that case.** The rule targets *refilling slack when the sprint runs dry*. This is
+new work arriving with a real trigger.
+
+The distinction matters, so it was handled deliberately: **zero 🟢 Deep tasks were added.** The
+added weights are 🟠, 🟡 and 🟡, which draw on moderate and light capacity, meaning Fri and Tue.
+The protected resource, the deep slots for T4, T7 and T8, is untouched. That is why T13 is
+**P1 but Moderate**: prioritised without displacing the sprint goal.
+
+**It is still a net increase, and the trade is on the table.** If light capacity gets tight,
+push **S2-T11** (`te-module`, P3 🟡) to Sprint 03. It is the same tooling category, it is the
+lowest priority in the sprint, and it has no consumer waiting. Take that trade before letting
 anything touch the Deep slots.
 
 ## Sprint review — 2026-08-02
 
-**What shipped** — 15 cards, 12 PRs, green on both legs, no revert. Folded in from the
-[[Sprint Board]]'s Done column before it was reset (the board holds live state, never history).
+**What shipped.** Fifteen cards across 12 PRs, green on both legs, with no revert.
+
+These were folded in from the [[Sprint Board]]'s Done column before it was reset. The board
+holds live state, never history.
 
 | Card | Shipped |
 |---|---|
@@ -278,9 +298,13 @@ anything touch the Deep slots.
 | **S2-T15** | Reconciliation stamp on [[Dashboard]] → PR #16. Shipped **already reading "behind"**, which is the mechanism working |
 | **V0 · V2 · S2-P1/P2/P3** | Opus-5 prompting patterns applied · [[Backlog]] compressed 382 → 103 lines · planning flow rebuilt (four task kinds, [[Known Issues]], defect-vs-bug bar) · [[Roadmap]] rewritten to the chain + lanes · Q3 + Dashboard realigned |
 
-**Demo / artifact:** none recorded. S2-T9 was descoped, so the demo was the throwaway
-`main.cpp` runs emitting correlated frame/tick lines — **shown, not stored.** The
-recorded-demo workflow ([[Backlog]] → *etc*) was **not** pulled into Sprint 03: M1 is headless
-utilities, and the first capture worth keeping is the profiler one Sprint 03's DoD names.
+**Demo and artifact.** None was recorded.
+
+S2-T9 was descoped, so the demo was the throwaway `main.cpp` runs emitting correlated frame
+and tick lines. It was **shown, not stored.**
+
+The recorded-demo workflow ([[Backlog]] → *etc*) was **not** pulled into Sprint 03. M1 is
+headless utilities, and the first capture worth keeping is the profiler one that Sprint 03's
+Definition of Done names.
 
 → Retrospective: [[2026-08-02 Sprint 02 Retrospective]].

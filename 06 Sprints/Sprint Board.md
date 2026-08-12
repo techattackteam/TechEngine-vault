@@ -9,23 +9,23 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## 📋 C — S2 loose ends — ✅ **complete** *(B1)*
+## 📋 C · S2 loose ends · ✅ **complete** *(B1)*
 
 
 
-## 📋 D — profiler hooks — ✅ **complete** *(T3 → T4 → {T5, T6})*
+## 📋 D · profiler hooks · ✅ **complete** *(T3 → T4 → {T5, T6})*
 
 
 
-## 📋 E — events + `StringId` — ✅ **complete** *(T7 → T8 → T9 → T10)*
+## 📋 E · events + `StringId` · ✅ **complete** *(T7 → T8 → T9 → T10)*
 
 
 
-## 📋 F — file access — ✅ **complete** *(T11 → T12 → T13)*
+## 📋 F · file access · ✅ **complete** *(T11 → T12 → T13)*
 
 
 
-## 📋 G — process *(first to cut)*
+## 📋 G · process *(first to cut)*
 
 - [ ] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — ADR-011 amended in place twice vs
 	  [[ADR Index]]'s immutability rule. One of the two is wrong.

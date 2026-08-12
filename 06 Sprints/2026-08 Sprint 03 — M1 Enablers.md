@@ -1,55 +1,59 @@
 # 2026-08 · Sprint 03 — M1 Enablers
 
 - **Quarter:** [[2026-Q3]]
-- **Dates:** **Sat Aug 1 – Fri Aug 28 2026** (4 weeks, Sat→Fri — the **first clean cycle**;
-  Sprint 02 closed 4 weeks early, see its note). Review + plan on the **Aug 29–30** weekend,
-  which is day 1 of Sprint 04.
+- **Dates:** **Sat Aug 1 to Fri Aug 28, 2026.** Four weeks, Sat to Fri, and the **first clean
+  cycle**, since Sprint 02 closed 4 weeks early (see its note). Review and planning fall on the
+  **Aug 29 to 30** weekend, which is day 1 of Sprint 04.
 - **Epic:** M1 · enablers ([[Roadmap]] → *The chain*)
 - **Decisions behind it:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 §6 ·
   [[ADR-005 — v2 tech stack & toolchain]] · [[v1 Code Audit]] F28 · F30 · F19
 
 ## 🎯 Sprint goal
 
-> **M1's two gates decided, and the vocabulary every later module is written against, built.**
-> The Profiler and Events ADRs land; math ships; file access gets its note. **Decide first,
-> then build** — the sprint is deliberately artifact-heavy at the front.
+> **Decide M1's two gates, and build the vocabulary every later module is written against.**
+> The Profiler and Events ADRs land, math ships, and file access gets its note.
+>
+> Decide first, then build. The sprint is deliberately artifact-heavy at the front.
 
-M0 is done. M1 is the rung whose contents are *written against* by everything above it, and
-two of its items ([[Profiler — Design|Profiler]], Events) are named [[Roadmap]] **gates** — the
-Profiler one also gates **M2's threading ADR**, so closing it here is what keeps the next rung
-plannable at the Aug 29–30 boundary.
+M0 is done. M1 is the rung whose contents everything above it is *written against*.
+
+Two of its items, the [[Profiler — Design|Profiler]] and Events, are named **gates** on the
+[[Roadmap]]. The Profiler one also gates **M2's threading ADR**. So closing it here is what
+keeps the next rung plannable at the Aug 29 to 30 boundary.
 
 ### Scope calls locked at planning (2026-08-02)
 
 | Question | Call | Why |
 |---|---|---|
-| How much of M1 | **Gates + leaf enablers** | Profiler ADR · Events ADR · `IFileSystem` note · math. Both gates close, so M1 closes on the [[Roadmap]]'s own definition (*gate Accepted + unlock demonstrable*) even with items carrying |
-| Deterministic RNG · crash handler | **Out** — Sprint 04 | Narrow, and neither has an M1 consumer. The crash handler also wants `platform`, which does not exist |
-| Memory tracking | **Out — it is S3-D1's consequence** | [[Profiler — Design]] § Direction routes it *through* the profiler, so it is downstream of that ADR, not a parallel item |
-| `StringId` | **Folded into S3-D2** | The Events ADR names the event-id type, which is what pins `StringId`'s shape. Building it first is sizing past an open decision — the S2-T2 mistake |
-| cvars + dev console | **Moved to the T1 editor lane** | Recorded on [[Roadmap]] § *Why this shape*; it was silently dropped from M1's contents in a table reflow |
+| How much of M1 | **The gates plus the leaf enablers** | That is the Profiler ADR, the Events ADR, the `IFileSystem` note, and math. Both gates close, so M1 closes on the [[Roadmap]]'s own definition, which is *gate Accepted and unlock demonstrable*. That holds even with items carrying over. |
+| Deterministic RNG, and the crash handler | **Out. They go to Sprint 04.** | Both are narrow, and neither has an M1 consumer. The crash handler also wants `platform`, which does not exist yet. |
+| Memory tracking | **Out, because it is S3-D1's consequence** | [[Profiler — Design]] → *Direction* routes it *through* the profiler. So it is downstream of that ADR rather than a parallel item. |
+| `StringId` | **Folded into S3-D2** | The Events ADR names the event-id type, and that is what pins `StringId`'s shape. Building it first would be sizing past an open decision, which is the S2-T2 mistake. |
+| cvars and the dev console | **Moved to the T1 editor lane** | Recorded on [[Roadmap]] → *Why this shape*. It had been silently dropped from M1's contents during a table reflow. |
 
 ## 🚦 Artifact gate
 
 | Item | ADR? | Design note? | Outcome |
 |---|---|---|---|
-| **Profiler** (hooks + memory tracking) | ✅ | ✅ exists | Cross-module (zones land in every system) and hard to reverse — a version-pinned wire protocol and a socket that must not ship. **Heavy → S3-D1, ordered first.** [[Profiler — Design]] stays the living *how*; its interim *Direction* table collapses to §refs when the ADR lands |
-| **Events** (F28) + **`StringId`** | ✅ | ADR decides if one is owed | [[Roadmap]] names "Events redesign" as an M1 gate. Blast radius = every publisher/subscriber, plus [[Game Loop — Frame Flow]]'s open *dispatch point*. **Heavy → S3-D2** |
-| **`IFileSystem`** (F30) | ❌ | ✅ **owed** | ADR-006 §4/§5 already decided the seam and its injection; what is open — mount/virtual-path scheme, sync vs async, error model — is one module's shape, not a cross-module decision. **Not light** (needs v1 prior art + how M3/M6 consume it) → **S3-D3, a task** |
-| **math** | ❌ | ✅ | Library (ADR-005) and placement (ADR-006 §5) already decided; the rest is naming and surface. **Light → drafted in this session:** [[Math — Design]] |
-| **Diagnostics init in `app`** | ❌ | ❌ | A bug, not a decision. Straight to a card |
-| **ADR amendment policy** | ❌ | ❌ | Process/meta — it edits [[ADR Index]]'s own rules. Straight to task |
-| **Skill `te-review`** | ❌ | ❌ | Tooling. Straight to task |
+| **Profiler**, meaning hooks plus memory tracking | ✅ | ✅ It exists. | Cross-module, since zones land in every system, and hard to reverse, because of a version-pinned wire protocol and a socket that must not ship. **Heavy, so S3-D1, ordered first.** [[Profiler — Design]] stays the living *how*, and its interim *Direction* table collapses to section references once the ADR lands. |
+| **Events** (F28) and **`StringId`** | ✅ | The ADR decides whether one is owed. | [[Roadmap]] names "Events redesign" as an M1 gate. The blast radius is every publisher and subscriber, plus [[Game Loop — Frame Flow]]'s open *dispatch point*. **Heavy, so S3-D2.** |
+| **`IFileSystem`** (F30) | ❌ | ✅ **Owed.** | ADR-006 §4 and §5 already decided the seam and its injection. What is still open is the mount and virtual-path scheme, sync against async, and the error model. That is one module's shape, not a cross-module decision. It is **not light**, because it needs v1's prior art and an understanding of how M3 and M6 consume it. **So S3-D3, as a task.** |
+| **math** | ❌ | ✅ | The library (ADR-005) and the placement (ADR-006 §5) are already decided. The rest is naming and surface. **Light, so drafted in this session:** [[Math — Design]]. |
+| **Diagnostics init in `app`** | ❌ | ❌ | A bug, not a decision. Straight to a card. |
+| **ADR amendment policy** | ❌ | ❌ | Process and meta work, since it edits [[ADR Index]]'s own rules. Straight to a task. |
+| **Skill `te-review`** | ❌ | ❌ | Tooling. Straight to a task. |
 
-> **Coverage finding, said out loud** ([[Planning Workflow — Artifact Gate]] § *Coverage check*):
-> M1 has **seven** items and **one** design note. This sprint closes that for the four items it
-> takes; RNG and the crash handler carry into Sprint 04 **still artifact-less**, and that is the
-> first thing to fix when they are pulled — not after.
+> **Coverage finding, said out loud** ([[Planning Workflow — Artifact Gate]] → *Coverage
+> check*). M1 has **seven** items and **one** design note.
+>
+> This sprint closes that gap for the four items it takes. RNG and the crash handler carry into
+> Sprint 04 **still artifact-less**, and that is the first thing to fix when they are pulled,
+> not something to fix afterwards.
 
 ## Stories & tasks
 
-> Each task: `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light`. Pick **weight-fits-day first**,
-> then priority ([[Planning Workflow — Artifact Gate]]).
+> Every task carries `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light`. Pick by **weight fits the
+> day first**, then by priority ([[Planning Workflow — Artifact Gate]]).
 
 ### Story A — M1's gates *(Design — ordered first; Stories D/E/F wait on these)*
 
@@ -596,78 +600,94 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
 
 ## Definition of Done
 
-- [x] **Both M1 gates Accepted** — **done Aug 2**: [[ADR-013 — Profiler (Tracy-backed instrumentation)]]
-      + [[ADR-014 — Events (buffered streams) & StringId]] in [[ADR Index]], so
-      **M2's threading ADR is unblocked** at the Aug 29–30 boundary.
-- [x] Every system touched has a **design note as its hub**, *Decided* rows §ref'ing the ADR
-      with **no copied rationale** — **done Aug 2**: [[Profiler — Design]] · [[Events — Design]]
-      + [[StringId — Design]] · [[File Access — Design]] · [[Math — Design]]. M1's design-note
-      gap is closed for the four items this sprint takes; RNG + crash handler still carry.
-- [x] `math/Math.hpp` + `math/Format.hpp` in `base` with Catch2 tests, **CI green both legs** —
-      **met.** `Math.hpp` Aug 2 (`05cf3718`), `Format.hpp` + the first real `TEST_CASE`s Aug 3
-      (`5afb6d28`). **Story B complete.**
-- [x] Stories D/E/F's cards were **written after** their artifact, never before —
-      **held Aug 2**, all three cut the same day their artifact landed.
-- [x] **S3-B1 closed** — one composition root owns diagnostics init. **Met Aug 8**
-      (engine `10258eec`, PR #38). The sprint's only Bug card, and the one that was never
+- [x] **Both M1 gates Accepted. Done Aug 2.**
+      [[ADR-013 — Profiler (Tracy-backed instrumentation)]] and
+      [[ADR-014 — Events (buffered streams) & StringId]] are both in [[ADR Index]], so
+      **M2's threading ADR is unblocked** at the Aug 29 to 30 boundary.
+- [x] Every system touched has a **design note as its hub**, with *Decided* rows referencing
+      the ADR's sections and **no copied rationale**. **Done Aug 2:** [[Profiler — Design]] ·
+      [[Events — Design]] and [[StringId — Design]] · [[File Access — Design]] ·
+      [[Math — Design]]. M1's design-note gap is closed for the four items this sprint takes.
+      RNG and the crash handler still carry.
+- [x] `math/Math.hpp` and `math/Format.hpp` are in `base` with Catch2 tests, and **CI is green
+      on both legs**. **Met.** `Math.hpp` landed Aug 2 (`05cf3718`), and `Format.hpp` plus the
+      first real `TEST_CASE`s landed Aug 3 (`5afb6d28`). **Story B is complete.**
+- [x] Stories D, E and F had their cards **written after** their artifact, never before.
+      **Held Aug 2.** All three were cut the same day their artifact landed.
+- [x] **S3-B1 closed**, so one composition root owns diagnostics init. **Met Aug 8**, engine
+      `10258eec`, PR #38. It was the sprint's only Bug card, and the one that was never
       droppable.
-- [ ] **Nothing built without a consumer, with one recorded exception:** math is a *vocabulary*,
-      argued in [[Math — Design]] § Trigger. If a second exception appears, the rule is the thing
-      to re-examine — not the exception.
-- [x] Demo: a **profiler capture of the headless frame loop** — the first thing this engine can
-      *measure* rather than print. **Met Aug 3** (S3-T4): `advance` → `FixedSteps` nested under
-      each frame mark, `windows-profile` → Tracy `0.13.1` desktop over loopback. ADR-013 §3's
-      topology held, so no re-naming was needed.
+- [ ] **Nothing was built without a consumer, with one recorded exception.** Math is a
+      *vocabulary*, and that is argued in [[Math — Design]] → *Trigger*. If a second exception
+      appears, the rule is the thing to re-examine, not the exception.
+- [x] Demo: a **profiler capture of the headless frame loop**. That is the first thing this
+      engine can *measure* rather than print. **Met Aug 3** at S3-T4: `advance` then
+      `FixedSteps` nested under each frame mark, from `windows-profile` into the Tracy `0.13.1`
+      desktop app over loopback. ADR-013 §3's topology held, so nothing needed renaming.
 
 ## Capacity note
 
-**Sized up materially, not proportionally.** Sprint 02 planned 15 cards for ~5 weeks and closed
-them in **6 days**; this plans ~20 in 4 weeks — a third more work in a fifth less time, and
-still deliberately **below** the observed rate. The Sprint-02 rate was bought with **both
-weekend days worked** and a Thursday that closed **six cards** (retro → *Sustainability*), and
-its cards were small utilities behind an ADR written first. M1's are new subsystems whose
-decisions do not exist yet.
+**Sized up materially, but not proportionally.**
 
-Capacity from the [[Dashboard]] cadence: **12 🟢 Deep** (Mon + Thu + one weekend day × 4) ·
-**4 🟠 Moderate** (Fri) · **4–8 🟡 Light** (Tue, plus Wed only if wanted).
+Sprint 02 planned 15 cards for about 5 weeks and closed them in **6 days**. This sprint plans
+about 20 in 4 weeks. That is a third more work in a fifth less time, and it is still
+deliberately **below** the observed rate.
 
-| | Sized now | Stories D/E/F draw | Left empty |
+Two things bought Sprint 02's rate, and neither repeats here. **Both weekend days were
+worked**, including a Thursday that closed **six cards** (see the retro → *Sustainability*).
+And its cards were small utilities sitting behind an ADR that had already been written.
+
+M1's cards are new subsystems whose decisions do not exist yet.
+
+Capacity comes from the [[Dashboard]] cadence: **12 🟢 Deep** (Mon, Thu, and one weekend day,
+across 4 weeks) · **4 🟠 Moderate** (Fri) · **4 to 8 🟡 Light** (Tue, plus Wed only if wanted).
+
+| | Sized now | What Stories D, E and F draw | Left empty |
 |---|---|---|---|
-| 🟢 **Deep** | 2 — D1, D2 | ~7 | **2 — protected** |
-| 🟠 **Moderate** | 3 — D3, T1, B1 | ~2 | — |
-| 🟡 **Light** | 3 — T2, P1, P2 | ~3 | Wed stays optional |
+| 🟢 **Deep** | 2: D1, D2 | About 7 | **2, and they are protected** |
+| 🟠 **Moderate** | 3: D3, T1, B1 | About 2 | None |
+| 🟡 **Light** | 3: T2, P1, P2 | About 3 | Wed stays optional |
 
-> **Fully sized 2026-08-02 — all three stories cut, and the reserve was wrong in an
-> instructive direction.** Actual: **3 🟢** (T3, T9, T10) · **6 🟠** (D3✓, T1, B1, T4, T5,
-> T12) · **8 🟡** (T2, P1, P2, T6, T7, T8, T11, T13) = 17 cards. Against capacity
-> **12 🟢 · 4 🟠 · 4–8 🟡**, that is **9 deep days spare** while both cheap columns sit at
-> or over their ceiling — the reserve guessed ~7 🟢 for D/E/F and they drew 3.
+> **Fully sized on 2026-08-02. All three stories were cut, and the reserve turned out wrong in
+> an instructive direction.**
 >
-> **So the 🟠 squeeze the D and E notes pre-named for the Aug 15–16 review does not need a
-> cut.** It was read as "5 🟠 vs 4 Fridays" — but weight is *fits-the-day*, not
-> *is-the-day*: a 🟢 Deep day absorbs a 🟠 and more, and there are nine of them free. Both
-> earlier options (ride a Wed opt-in · slip to Sprint 04) stay unused. **Take the review
-> question off the agenda and record why** — the honest finding is not a capacity problem
-> but a **sizing-model one**: three ADRs' worth of work decomposed into far lighter cards
-> than the pre-ADR reserve assumed, which is exactly what *don't size past an open
+> The actual sizing came to 17 cards: **3 🟢** (T3, T9, T10), **6 🟠** (D3 ✓, T1, B1, T4, T5,
+> T12) and **8 🟡** (T2, P1, P2, T6, T7, T8, T11, T13).
+>
+> Against a capacity of **12 🟢 · 4 🟠 · 4 to 8 🟡**, that leaves **9 deep days spare**, while
+> both cheap columns sit at or over their ceiling. The reserve had guessed about 7 🟢 for
+> Stories D, E and F, and they drew 3.
+>
+> **So the 🟠 squeeze that the D and E notes pre-named for the Aug 15 to 16 review needs no
+> cut.** It had been read as "5 🟠 against 4 Fridays". But weight means *fits the day*, not
+> *is the day*. A 🟢 Deep day absorbs a 🟠 and more, and nine of them are free. Both earlier
+> options, riding a Wed opt-in or slipping to Sprint 04, go unused.
+>
+> **Take the review question off the agenda, and record why.** The honest finding is not a
+> capacity problem. It is a **sizing-model** one: three ADRs' worth of work decomposed into far
+> lighter cards than the pre-ADR reserve assumed. That is exactly what *don't size past an open
 > decision* is supposed to produce. Worth a retro line.
 >
 > Two deep slots still stay protected, and the surplus is still **banked, not filled**.
 
 > **Two deep slots stay empty, and this is the sprint where that rule finally gets tested.**
-> Sprint 01's "finish early → the next deep day stays empty" has **never** been exercised —
-> Sprint 02 was *finished*, not run dry, so the slack was never reached. If Stories D/E/F come
-> in under budget, the answer is still **bank it**.
+>
+> Sprint 01's rule was "finish early, and the next deep day stays empty". It has **never** been
+> exercised. Sprint 02 was *finished* rather than run dry, so the slack was never reached.
+>
+> If Stories D, E and F come in under budget, the answer is still **bank it**.
 
-Weekend days are a **swappable pair** — nothing here is assigned to Sat or Sun.
+Weekend days are a **swappable pair**, so nothing here is assigned to Sat or to Sun.
 
-**Ordering:** S3-D1 → Story D · S3-D2 → Story E · S3-D3 → Story F. Those three are the only
-hard sequence. Story B (math), S3-B1 and Story G float — they are what a light or moderate day
-picks up while an ADR is still unwritten.
+**Ordering.** S3-D1 comes before Story D, S3-D2 before Story E, and S3-D3 before Story F.
+Those three are the only hard sequence.
 
-**The trade, pre-authorised:** if capacity tightens, cut **S3-P2** first, then **S3-P1**. Never
-touch a 🟢 Deep slot, and **never cut S3-B1** — a Bug card is the one kind that is not
-droppable ([[Planning Workflow — Artifact Gate]] § *Task attributes*).
+Story B (math), S3-B1 and Story G float. They are what a light or moderate day picks up while
+an ADR is still unwritten.
+
+**The trade, pre-authorised.** If capacity tightens, cut **S3-P2** first, then **S3-P1**. Never
+touch a 🟢 Deep slot. And **never cut S3-B1**: a Bug card is the one kind that is not droppable
+([[Planning Workflow — Artifact Gate]] → *Task attributes*).
 
 ## Sprint review (fill Aug 29–30)
 

@@ -1,55 +1,66 @@
 # Task Graph — Execution Flow
 
-> Living design doc. **Status: draft** — not yet accepted.
-> **ADR = the decision; this doc = the _how_.** Decisions live in
-> [[ADR-007 — v2 networking & ECS replication foundation]] §6 — this is the **execution
-> view** (one end-to-end sequence), not a restatement of the rules.
+> Living design doc. **Status: draft**, not yet accepted.
+>
+> The ADR holds the decision, this doc holds the *how*. The decisions live in
+> [[ADR-007 — v2 networking & ECS replication foundation]] §6. This note is the **execution
+> view**, meaning one end-to-end sequence. It is not a restatement of the rules.
 
 **Module:** `core` · **Kind:** system · **Status:** draft
-**Runs inside:** [[Game Loop — Frame Flow]] — this doc is one stage of one phase
+**Runs inside:** [[Game Loop — Frame Flow]]. This doc covers one stage of one phase.
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
-**Roadmap:** [[Roadmap]] — **M2** threading ADR (topology · GL context owner · pool shape) →
-**M5** task-graph ADR (the System interface, this doc) → **M10** work-stealing implementation
+**Roadmap:** [[Roadmap]]. **M2**'s threading ADR (topology, GL context owner, pool shape),
+then **M5**'s task-graph ADR (the System interface, which is this doc), then **M10**'s
+work-stealing implementation
 
 ## Purpose
 
-How a registered system becomes running work. Three layers people conflate:
+How a registered system becomes running work.
+
+Three layers get conflated whenever people talk about this, so name them separately first.
 
 | Layer | What it is |
 |---|---|
-| **`Schedule`** | the **input data** — mutable entries (phase, enabled, access) |
-| **Task graph** | the **derived structure** — built once from the schedule; systems = nodes, conflict/order edges = task edges |
-| **Executor** | the **runner** — walks the prebuilt graph each frame |
+| **`Schedule`** | The **input data**. Mutable entries, each carrying a phase, an enabled flag and an access declaration. |
+| **Task graph** | The **derived structure**, built once from the schedule. Systems are the nodes. Conflict edges and explicit order edges are the task edges. |
+| **Executor** | The **runner**. It walks the prebuilt graph once per frame. |
 
-`Schedule` = what you registered · task graph = what got compiled from it · executor = what runs it.
+In one line: the `Schedule` is what you registered, the task graph is what got compiled from
+it, and the executor is what runs it.
 
 ## Design
 
-### Stage 1 — Compose time (once, `app` composition root)
+### Stage 1: compose time, once, at `app`'s composition root
 
 ```cpp
 schedule.add<MovementSystem>(Phase::FixedUpdate,
                              DeclareAccess<Write<Transform>, Read<Velocity>>);
 ```
 
-- Access covers **components *and* resources**.
-- Lowered to **`ComponentDenseId` bitmasks** at registration → cheap set ops later.
-- Engine defaults are ordinary entries — no privileged path; disable/replace = a list edit.
-- `.after<A>()` escape hatch for semantic order with **no** data conflict (pairwise only).
+- An access declaration covers **components and resources**, not components alone.
+- It is lowered to **`ComponentDenseId` bitmasks** at registration time. Conflict detection
+  later is then a cheap set operation.
+- Engine defaults are ordinary entries. There is no privileged path, so disabling or replacing
+  one is an edit to a list.
+- `.after<A>()` is the escape hatch for semantic ordering where there is **no** data conflict
+  to derive an edge from. It is pairwise only.
 
-### Stage 2 — Build the task graph (once, **on schedule mutation**)
+### Stage 2: build the graph, once, on schedule mutation
 
-1. Partition entries **by phase** (a system is in exactly one).
-2. Within a phase: `conflict(A,B) ⇔ A.writes ∩ B.touches ≠ ∅` — w∩w, w∩r, r∩w.
-   **r∩r ⇒ parallel.**
-3. Conflict ⇒ deterministic serializing edge; plus explicit `.after<>` edges.
-4. Topological sort → **levels**. That cached structure **is** the task graph.
+1. Partition the entries **by phase**. A system belongs to exactly one.
+2. Within a phase, two systems conflict when `A.writes ∩ B.touches ≠ ∅`. That covers
+   write-write, write-read and read-write. **Two readers never conflict, so they run in
+   parallel.**
+3. Every conflict becomes a deterministic serializing edge. Explicit `.after<>` edges are
+   added alongside them.
+4. Topologically sort the result into **levels**. That cached structure *is* the task graph.
 
-**Built once, not per frame** — no per-frame allocation or string work (the F19 fix).
+**This is built once, not per frame.** No allocation and no string work happen inside a frame,
+which is F19's fix.
 
-### Stage 3 — Per frame (executor walks the prebuilt graph)
+### Stage 3: per frame, the executor walks the prebuilt graph
 
 ```mermaid
 flowchart TD
@@ -64,56 +75,66 @@ flowchart TD
   I --> J["Present (client-only)"]
 ```
 
-- **Within a phase** — walk levels top-down. Same-level systems have disjoint writes →
-  safely parallel (today level-by-level; later fed to the job pool **unchanged**).
-  Systems do **value read/write only** here.
-- **At each phase barrier** — the command buffer is applied **single-threaded, in
-  deterministic order**; `NetId`s assigned. All structural change (spawn/despawn/
-  add/remove) lands here. Determinism-under-parallelism holds by construction.
-- **Debug safety net:** `Scene` asserts **`actual ⊆ declared`** — touching an undeclared
-  component fires `TE_ASSERT`. Compiled out in release.
+**Within a phase**, the executor walks the levels from the top down. Systems on the same level
+have disjoint writes by construction, so they are safe to run in parallel. Today that means
+level by level. Later the same level structure feeds a job pool **unchanged**.
+
+Systems perform value reads and writes only at this point. Nothing structural happens here.
+
+**At each phase barrier**, the command buffer is applied **single-threaded, in a deterministic
+order**, and `NetId`s are assigned. Every structural change lands here: spawn, despawn, add
+and remove. That is what makes determinism hold even once the levels run in parallel.
+
+**A debug safety net backs the declarations.** `Scene` asserts that the **actual** access is a
+subset of the **declared** access, so touching an undeclared component fires `TE_ASSERT`. It
+compiles out in release.
 
 ### Where scripts slot in (ADR-010, Proposed)
 
-`ScriptSystem` is an ordinary entry pinned to the **terminal slot** of `FixedUpdate` and
-`Update`:
+`ScriptSystem` is an ordinary entry, pinned to the **terminal slot** of both `FixedUpdate` and
+`Update`.
 
 ```
 [ level 0 ‖ level 1 ‖ … ]  →  [ ScriptSystem: all scripts ]  →  ‖ barrier: apply command buffer ‖
 ```
 
-Scripts run after every system in the phase; their spawns queue into the **same** command
-buffer — no separate path.
+Scripts therefore run after every system in the phase. Their spawns queue into the **same**
+command buffer as everything else, so there is no separate path to keep consistent.
 
 ## Open questions
 
-Grouped by the ADR that owns them; [[Roadmap]] rung in brackets.
+Grouped by the ADR that owns them. The [[Roadmap]] rung is in brackets.
 
-**→ threading ADR [M2]** — settled *before* the window lane, not with this doc
+### Owned by the threading ADR [M2]
 
-- **Thread topology + GL context ownership** — who owns the context and how work reaches it,
-  and therefore which thread the executor runs on.
-- **Pool shape** — the interface the executor is written against, shipped serial (one worker).
+These get settled *before* the window lane, not with this doc.
 
-**→ task-graph ADR [M5]**
+- **Thread topology and GL context ownership.** Who owns the context, and how work reaches it.
+  That decides which thread the executor runs on.
+- **Pool shape.** The interface the executor is written against. It ships serial, with one
+  worker.
 
-- **Terminal slot** — ADR-010 §4 needs it; `.after<A>()` is pairwise and can't express
-  "after everything". Mechanism undecided.
-- **Level granularity** — whole-system nodes only, or intra-system chunking for wide
-  parallel iteration?
-- **Schedule mutation at runtime** — rebuild cost + when a rebuild is legal (mid-frame?).
+### Owned by the task-graph ADR [M5]
 
-**→ deferred to implementation [M10]**
+- **The terminal slot.** ADR-010 §4 needs it, and `.after<A>()` cannot express it, because it
+  is pairwise and this means "after everything". The mechanism is undecided.
+- **Level granularity.** Whole-system nodes only, or intra-system chunking for wide parallel
+  iteration?
+- **Schedule mutation at runtime.** What a rebuild costs, and when a rebuild is legal. Is
+  mid-frame allowed?
 
-- **Work-stealing executor + Jolt pool integration** (fixes F15) — levels walk serially until
-  measurement says otherwise; the level structure feeds a pool **unchanged**, so this changes
-  no interface.
+### Deferred to implementation [M10]
+
+- **A work-stealing executor, plus Jolt pool integration.** This fixes F15. Levels walk
+  serially until a measurement says otherwise. The level structure feeds a pool **unchanged**,
+  so this changes no interface.
 
 ## References
 
-- [[ADR-007 — v2 networking & ECS replication foundation]] §6 — the decisions
-- [[ADR-006 — v2 core architecture & module layout]] §5 — System/helper taxonomy
-- [[Game Loop — Frame Flow]] — the frame this graph executes inside (incl. `FixedUpdate` ×N)
-- [[ADR-010 — User authoring model (Systems & Scripts)]] — script terminal slot
-- [[v1 Code Audit]] — F15 (3 ad-hoc threading models), F19 (per-frame alloc)
-- Code: *(none yet — `core` is greenfield)*
+- [[ADR-007 — v2 networking & ECS replication foundation]] §6: the decisions
+- [[ADR-006 — v2 core architecture & module layout]] §5: the System and helper taxonomy
+- [[Game Loop — Frame Flow]]: the frame this graph executes inside, including `FixedUpdate`
+  running N times
+- [[ADR-010 — User authoring model (Systems & Scripts)]]: the script terminal slot
+- [[v1 Code Audit]]: F15 (three ad-hoc threading models) · F19 (per-frame allocation)
+- Code: none yet, `core` is greenfield

@@ -1,90 +1,122 @@
 # Clock — Design
 
-> Living design doc. **Status: accepted** (2026-08-02) — drafted in the 2026-07-25 planning
-> session (light artifact per [[Planning Workflow — Artifact Gate]]), shipped by S2-T6 and
-> closed out by S2-T7/T8. Build to it.
-> **ADR = the decision; this doc = the _how_.** No ADR is owed here — the Clock is local
-> to `base`, reversible, and its shape was settled in [[Game Loop — Frame Flow]].
+> Living design doc. **Status: accepted** (2026-08-02). Drafted in the 2026-07-25 planning
+> session as a light artifact ([[Planning Workflow — Artifact Gate]]), shipped by S2-T6, and
+> closed out by S2-T7 and T8. Build to it.
+>
+> The ADR holds the decision, this doc holds the *how*. No ADR is owed here. The Clock is
+> local to `base`, it is reversible, and its shape was settled in [[Game Loop — Frame Flow]].
 
-**Module:** `base` · **Kind:** utility (helper you *call*) · **Status:** accepted — implemented (S2-T6)
+**Module:** `base` · **Kind:** utility (a helper you *call*) · **Status:** accepted, implemented (S2-T6)
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §4 §6 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §5
-**Consumers:** the app loop (writes) · [[Logger — Design]] / [[Profiler — Design]] (read the frame stamp)
-**Sprint:** [[2026-08 Sprint 02 — Base Foundation]] — S2-T6
+**Consumers:** the app loop (writes) · [[Logger — Design]] and [[Profiler — Design]] (read the frame stamp)
+**Sprint:** [[2026-08 Sprint 02 — Base Foundation]], S2-T6
 
 ## Purpose
 
-The engine's **time source** — and deliberately nothing more. The hard part of this
-design is what the Clock *refuses* to own.
+The engine's **time source**, and deliberately nothing else.
+
+The interesting part of this design is what the Clock refuses to own. It does not hold
+simulation time, and it does not decide how fast the game runs. Both belong elsewhere, and
+the two sections below explain why.
 
 ## Decided
 
 | Fact | Where |
 |---|---|
-| Read-only time facade in `EngineContext` as `const Clock&` — loop writes, systems read | ADR-006 §4 |
-| Lives in **`base`**, no `platform` seam — `steady_clock` is std and QPC-backed | this note; the Profiler does **not** put pressure on it ([[ADR-013 — Profiler (Tracy-backed instrumentation)]] §5) |
-| Owns: monotonic `now()`, wall-clock stamp, `totalTime`, **diagnostic** frame counter | [[Game Loop — Frame Flow]] (2026-07-24) |
-| Does **not** own `dt` / `fixedDt` / `tick` / `alpha` / `role` — those live on `FrameContext` | [[Game Loop — Frame Flow]] (2026-07-24), ADR-007 §5 |
-| Monotonic for **durations**; wall-clock **only** for stamps | this note (local call; no ADR owes it) |
-| The frame stamp is **pushed by `app`** into diagnostics — `base` holds no `Clock` reference | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
-| `timeScale` / pause / slow-mo is **loop policy**, not a Clock knob | [[Game Loop — Frame Flow]] |
-| **No testability seam** — the loop takes its delta as a parameter, so nothing fakes the Clock | S2-T7 (2026-07-30), below |
+| A read-only time facade. `EngineContext` carries it as a `const Clock&`. The loop writes, systems read. | ADR-006 §4 |
+| It lives in **`base`**, with no `platform` seam. `steady_clock` is standard, and it is QPC-backed on Windows. | This note. The profiler puts no pressure on it ([[ADR-013 — Profiler (Tracy-backed instrumentation)]] §5). |
+| It owns a monotonic `now()`, a wall-clock stamp, `totalTime`, and a **diagnostic** frame counter. | [[Game Loop — Frame Flow]] (2026-07-24) |
+| It does **not** own `dt`, `fixedDt`, `tick`, `alpha` or `role`. Those live on `FrameContext`. | [[Game Loop — Frame Flow]] (2026-07-24), ADR-007 §5 |
+| Monotonic time is for **durations**. Wall-clock time is for **stamps only**. | This note. It is a local call, so no ADR owes it. |
+| `app` **pushes** the frame stamp into diagnostics. `base` holds no `Clock` reference. | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
+| `timeScale`, pause and slow motion are **loop policy**, not Clock knobs. | [[Game Loop — Frame Flow]] |
+| **There is no testability seam.** The loop takes its delta as a parameter, so nothing needs to fake the Clock. | S2-T7 (2026-07-30), below |
 
 ## Design
 
-### Why sim time is not here
+### Why simulation time is not here
 
-A process can host **more than one sim** — the editor hosts a client *and* a server (v1's
-F1 trigger), and tests run several headless sims. A process-wide Clock can hold exactly one
-`tick`/`alpha`, and `role` is meaningless as a global. `FrameContext` is per-call, so each
-sim carries its own. Full rationale: [[Game Loop — Frame Flow]] → *Where time lives*.
+One process can host more than one simulation. Tests run several headless sims side by side,
+and that is the case which exists today.
 
-### The frame counter is correlation-only
+**The v2 editor hosts a client only.** v1's editor hosted a client *and* a server in one
+process, which is the mistake behind F1 and F2. That case does not come back, so it is not
+what this section is protecting against. [[Game Loop — Frame Flow]] records the same call.
 
-[[Logger — Design]]'s `[f 1043]` stamp and the Profiler are **global macros** and cannot take a
-`FrameContext` — they need an ambient number. So the Clock keeps one, and it is **approximate when two
-sims share a process**. It is never the simulation's source of truth; anything that must be exact reads
-`FrameContext.tick`.
+A process-wide Clock can hold exactly one `tick` and one `alpha`. With two sims running,
+whose would they be? `role` is worse: it has no meaning at all as a global, because two sims
+in one process do not have to share a role.
 
-**The Clock owns the counter; it does not hand itself to the Logger.** `app` reads `frame()` and
-**pushes** the value into diagnostics once per frame — an ambient global `Clock*` read from a log macro
-would be a second access path to an `EngineContext` service, which ADR-006 §4 exists to remove.
-Decided in [[ADR-011 — Diagnostics (Logger & Assert)]] §9.
+`FrameContext` is passed per call, so each sim carries its own. The full argument is in
+[[Game Loop — Frame Flow]] under *Where time lives*.
 
-### Surface (shape, not a spec — impl decides the details)
+### The frame counter is for correlation only
+
+The Logger's `[f 1043]` stamp and the profiler's zones are **global macros**. A macro cannot
+be handed a `FrameContext`, so it needs an ambient frame number from somewhere. The Clock
+keeps one for exactly that.
+
+That number is **approximate when two sims share a process**, for the reason above. It is
+never the simulation's source of truth. Anything that has to be exact reads
+`FrameContext.tick` instead.
+
+**The Clock owns the counter, but it never hands itself to the Logger.** Once per frame,
+`app` reads `frame()` and pushes the value into diagnostics.
+
+The alternative would be an ambient global `Clock*` that a log macro reads directly. That is
+a second way to reach an `EngineContext` service, which is the exact pattern ADR-006 §4
+exists to remove. Decided in [[ADR-011 — Diagnostics (Logger & Assert)]] §9.
+
+### Surface
+
+This is the shape, not a specification. The implementation decides the details.
 
 | Call | Returns | For |
 |---|---|---|
-| `now()` | monotonic `TimePoint` | durations, the loop's `dt` |
-| `totalTime()` | seconds since start | ambient elapsed |
-| `wallClock()` | `system_clock` stamp | log timestamps only |
-| `frame()` | diagnostic counter | Logger/Profiler correlation |
+| `now()` | A monotonic `TimePoint` | Durations, and the loop's `dt` |
+| `totalTime()` | Seconds since start | Ambient elapsed time |
+| `wallClock()` | A `system_clock` stamp | Log timestamps only |
+| `frame()` | The diagnostic counter | Logger and profiler correlation |
 
-The loop is the only writer: it computes `dt` from `now()` and bumps `frame()` once per
-frame. Everything else takes `const Clock&`.
+The loop is the only writer. It computes `dt` from `now()` and bumps the frame counter once
+per frame. Everything else takes a `const Clock&`.
 
-### Testability seam — RESOLVED, there isn't one (S2-T7, 2026-07-30)
+### There is no testability seam
 
-The open question was (a) inject the loop's delta vs (b) put a seam inside `Clock`. **(a), taken
-one step further:** `FrameLoop::advance(frameDeltaTime)` is a pure function of its parameter and
-holds **no `Clock` reference at all**. Sampling `now()`, bumping `advanceFrame()` and pushing the
-diagnostic stamp all live in `app`'s driver (`engine/app/src/App.cpp`).
+**Resolved at S2-T7 (2026-07-30), and the answer is that none is needed.**
 
-So the determinism/clamp tests (S2-T8) call `advance()` with a synthetic delta sequence: no fake
-clock, no virtual, and `Clock` stays the concrete no-seam utility this note wanted.
+The question was whether to inject the loop's delta, or to put a seam inside `Clock` so tests
+could fake time. The answer is the first option, taken one step further.
+
+`FrameLoop::advance(frameDeltaTime)` is a pure function of its parameter. It holds no `Clock`
+reference at all. Sampling `now()`, bumping the frame counter and pushing the diagnostic
+stamp all happen in `app`'s driver, in `engine/app/src/App.cpp`.
+
+So the determinism and clamp tests (S2-T8) simply call `advance()` with a synthetic sequence
+of deltas. No fake clock, no virtual function, and `Clock` stays the plain concrete utility
+this note wanted.
 
 ## Open questions
 
-- **Profiler-grade resolution — DISSOLVED, not answered** (2026-08-02,
-  [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §5). Tracy timestamps with its own
-  timer and never reads `Clock`, so the profiler never needed this. `Clock` stays as it is:
-  no `platform` seam, no raw timer. If `steady_clock` ever proves too coarse it will surface
-  as **frame pacing** ([[Backlog]] → `app`, [[Game Loop — Frame Flow]]) — and the profiler is
-  now the instrument that measures *that*.
+### Is `steady_clock` precise enough for profiling?
+
+**Dissolved rather than answered**, on 2026-08-02 by
+[[ADR-013 — Profiler (Tracy-backed instrumentation)]] §5.
+
+The question assumed the profiler would read `Clock`. It does not. Tracy carries its own
+timer and its own calibration, so it never asks us for a timestamp. `Clock` therefore needs
+no `platform` seam and no raw timer, and it stays exactly as it is.
+
+If `steady_clock` ever does prove too coarse, it will surface as a **frame pacing** problem
+rather than a profiling one. That is already a [[Backlog]] item under `app`, with its
+evidence recorded in [[Game Loop — Frame Flow]]. The profiler is now the instrument that
+would measure it.
 
 ## References
 
-- [[Game Loop — Frame Flow]] — where sim time lives, and why not here
-- [[Logger — Design]] — the `[f N]` stamp consumer
-- Code: `engine/base/include/TechEngine/base/time/Clock.hpp` · `engine/base/src/time/Clock.cpp` ·
-  its only writer, `engine/app/src/App.cpp`
+- [[Game Loop — Frame Flow]]: where simulation time lives, and why it is not here
+- [[Logger — Design]]: the consumer of the `[f N]` stamp
+- Code: `engine/base/include/TechEngine/base/time/Clock.hpp` ·
+  `engine/base/src/time/Clock.cpp` · its only writer, `engine/app/src/App.cpp`

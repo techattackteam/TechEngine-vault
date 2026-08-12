@@ -1,29 +1,31 @@
 # 🗃️ Backlog
 
-**A parking lot for ideas — one bullet each, nothing more.** Not a design doc, not a
-planning source. Groom at `/sprint-plan`.
+A parking lot for ideas. **One bullet each, and nothing more.** It is not a design doc, and it
+is not a planning source. Groom it at `/sprint-plan`.
 
-- **One bullet, a `#prio/…` and a `Trigger:`.** An entry that grows a decision, a rationale or
-  a `How:` has outgrown this file — it belongs in an ADR or a design note
+- **Each entry is one bullet, a `#prio/…` and a `Trigger:`.** An entry that grows a decision, a
+  rationale or a `How:` has outgrown this file. It belongs in an ADR or a design note
   ([[Planning Workflow — Artifact Gate]]).
-- **Prio is *want*; `Trigger:` is *readiness*.** They are orthogonal and both must hold: a
-  `#prio/xhigh` whose trigger has not fired is **not** pullable. Draining top-down means
-  top-down *among the fired*. Not the board's `P1/P2/P3` — that scores value to one sprint's
-  goal ([[Planning Workflow — Artifact Gate]] § *Priority + weight*); this scores value at all.
+- **Prio means *want*. `Trigger:` means *readiness*.** They are orthogonal, and both must hold.
+  A `#prio/xhigh` whose trigger has not fired is **not** pullable, so draining top-down means
+  top-down *among the entries whose trigger has fired*.
+  This is not the board's `P1/P2/P3`. That scores value against one sprint's goal
+  ([[Planning Workflow — Artifact Gate]] → *Priority + weight*). This scores whether a thing
+  has value at all.
 - **Five levels, re-bucketed at `/sprint-plan`:** `#prio/xhigh` › `#prio/high` ›
-  `#prio/medium` › `#prio/low` › `#prio/xlow`. Filter with `tag:#prio/high` in search, or the
-  tag pane. A bucket nobody re-scores downward is a broken bucket — that pass is part of
-  grooming, not optional.
-- **Decided ⇒ deleted.** The moment a decision lands in an ADR or a design note, the entry
-  goes — no tombstone, no trace. [[ADR Index]] is the record of what's settled.
-- **Scheduled ⇒ deleted.** Pulling into a sprint is a **move**, not a copy — the entry is cut
-  as the card is written. There is no `✅ Scheduled` state and no "done" state.
-- **On the ladder ⇒ deleted.** [[Roadmap]] owns *sequencing*, which is what a `Trigger:` was
-  doing. An entry that is only a thing plus a trigger is superseded the moment a rung carries
-  it. What survives here is what no rung names.
+  `#prio/medium` › `#prio/low` › `#prio/xlow`. Filter with `tag:#prio/high` in search, or use
+  the tag pane. A bucket that nobody ever re-scores downward is a broken bucket, so that pass
+  is part of grooming rather than optional.
+- **Decided means deleted.** The moment a decision lands in an ADR or a design note, the entry
+  goes. No tombstone, and no trace. [[ADR Index]] is the record of what is settled.
+- **Scheduled means deleted.** Pulling an entry into a sprint is a **move**, not a copy. The
+  entry is cut as the card is written. There is no `✅ Scheduled` state and no "done" state.
+- **On the ladder means deleted.** [[Roadmap]] owns *sequencing*, which is what a `Trigger:`
+  was doing. An entry that is only a thing plus a trigger is superseded the moment a rung
+  carries it. What survives here is what no rung names.
 
-Grouped by module ([[ADR-006 — v2 core architecture & module layout]] §1). Empty groups are
-kept — they show where future work lands.
+Entries are grouped by module ([[ADR-006 — v2 core architecture & module layout]] §1). Empty
+groups are kept, because they show where future work will land.
 
 ---
 
