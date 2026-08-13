@@ -37,6 +37,18 @@ groups are kept, because they show where future work will land.
   header*; [[ADR-011 — Diagnostics (Logger & Assert)]] § *Consequences*). Measure it, then ask
   whether the headers can drop `<format>` entirely or the split is simply the right shape.
   **Trigger:** fired — both headers exist and nothing gates the measurement.
+- #prio/low · **Clear `/te-review`'s first pass over `base`** — three findings from the S3-P2
+  dry-run on `Log.cpp`, none of which any gate catches. (1) The `.cpp`-private includes are
+  quoted, against `CONVENTIONS.md` → *Includes*; the format gate passes them because
+  `.clang-format`'s `.*` catch-all files a quoted path as third-party, which is also why no
+  blank line separates them from `<spdlog/…>`. Fixing the includes without fixing the category
+  regex only moves the problem. (2) `RingEntry` (`Log.cpp:49`) is a `.cpp`-local type at
+  external linkage with a generic name — *Internal linkage* prefers a specific one first, so
+  `LogRingEntry`. (3) `addLogSink`'s `bool` is discarded at `Log.cpp:242`, its only call site,
+  which falsifies the *Attributes* row's own justification for having no `[[nodiscard]]` ("a
+  bool nobody ignores") and fires the **Error handling** *Open* row. Not a defect:
+  `deliverRecord` falls back to stderr. **Trigger:** fired — all three are in the tree, and (3)
+  is a `CONVENTIONS.md` decision rather than a code fix.
 - #prio/medium · **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting

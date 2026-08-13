@@ -29,9 +29,6 @@ kanban-plugin: board
 
 - [ ] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — ADR-011 amended in place twice vs
 	  [[ADR Index]]'s immutability rule. One of the two is wrong.
-- [ ] **S3-P2** — Session skills · P3 · 🟠 Moderate — **first to cut, partially:**
-	  `/card-close` alone closes the card. Then `/card-start`, then `te-review`.
-	  Every existing skill is planning-side; nothing covers the per-card loop.
 
 
 ## 🔨 In Progress
@@ -42,6 +39,31 @@ kanban-plugin: board
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
+
+- [x] **S3-P2** — Session skills: `/card-close` · `/card-start` · `te-review` · P3 · 🟠 Moderate —
+	  **Aug 13**, engine `42e32981` (PR #42). **Story G's first card; S3-P1 is all that's left.**
+	  Three commands in `.claude/commands/`, no engine code. **Grew from one skill to three and
+	  was re-sized 🟡 → 🟠 mid-card.**
+	  **The note had already asked for `/card-close`** — [[Working with Claude — Operating Guide]]
+	  said the card "still wants its outcome written on it when the work lands", by hand. The same
+	  paragraph records S2-T14 retiring `/task-start` + `/task-wrap` as vault-in-repo friction;
+	  this pair is not their revival, because `/card-start`'s freshness check exists *because of*
+	  that split.
+	  **`/card-close`'s dry-run found the skill's own gap** — rebuilt against a vault worktree
+	  predating S3-T12's close, it reproduced `IsADirectory`, `clock_cast` and the overlay
+	  asymmetry unaided, but missed every fact that lives only in the PR conversation. Gather
+	  gained `gh pr view --comments`. **That step then returned nothing on this card's own PR**,
+	  which had no review. The run also filed a [[Known Issues]] row out of its own reading of the
+	  code, so a guardrail now sends fresh defects to `te-review` instead.
+	  **`/card-start`'s done-clause has no referent** — it says "the next task card", and Stories
+	  C–F are all complete. Only its freshness step ran, and it fired: the stamp is `5afb6d28`
+	  (Aug 3), `master` is **15 commits ahead**, so every design note is formally suspect until
+	  the Aug 15–16 review.
+	  **`te-review` found a green gate hiding a broken rule** — `Log.cpp`'s quoted relative
+	  includes pass the format gate, because `.clang-format`'s `.*` catch-all files them as
+	  third-party. Its findings → [[Backlog]]. **No [[Known Issues]] row: `addLogSink`'s
+	  discarded return looked like one until `deliverRecord`'s stderr fallback turned it from
+	  silent into merely degraded.** Both runs of the rubric over-filed here before the check.
 
 - [x] **S3-T13** — wiring + runtime proof · P2 · 🟡 Light — **Aug 10**, engine `a82a5c5d`
 	  (PR #41). **Story F complete — F30 closed.** Composition root owns `MountTable` +
@@ -59,7 +81,6 @@ kanban-plugin: board
 	  linked by `techengine_test()`, which also closes CONVENTIONS' *Target naming scheme* row.
 	  One build break, mine: the `FrameLoop` call-site sweep matched `loop(`, the determinism
 	  case names its loops `first`/`second`, and **the verifying grep reused the same pattern**.
-
 - [x] **S3-T12** — `FileAccess` + tests · P1 · 🟠 Moderate — **Aug 10**, engine `d773a656`
 	  (PR #40). **T13 unblocked — Story F's last card.** `read`/`status`/`list`/`resolve` in
 	  `platform`, all `const`, `FileResult` everywhere, never a log on a miss.

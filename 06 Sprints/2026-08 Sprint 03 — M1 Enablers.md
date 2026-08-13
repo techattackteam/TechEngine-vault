@@ -591,8 +591,10 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
       **mechanism** (the dated `**Amended:**` header entry ADR-011 already uses) and what is
       **off-limits** (reversing a *Decision* — that still needs a superseding ADR); ADR-011's
       two amendments either conform or are converted; the `/adr` skill matches.
-- [ ] **S3-P2** — Session skills: `/card-close` · `/card-start` · `te-review` · **P3** · 🟠 Moderate —
-      every skill in `.claude/commands/` is planning-side. Nothing covers the per-card execution
+- [x] **S3-P2** — Session skills: `/card-close` · `/card-start` · `te-review` · **P3** · 🟠 Moderate —
+      **done 2026-08-13** (engine `42e32981`, PR #42), CI green on all eight checks per the merge.
+      **All three shipped, so the partial cut went unused.** Every skill in `.claude/commands/` was
+      planning-side. Nothing covered the per-card execution
       loop, which now runs a dozen times a sprint. **Ordered, and the order is the cut order.**
       1. **`/card-close`** — the post-merge pass. Board Done entry (date · engine sha · PR ·
          what the card learned · note links), the design note updated with the calls the card
@@ -615,6 +617,12 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
       card and the other two go to [[Backlog]]. Re-sized 🟡 → 🟠 on **Aug 13** when the card grew
       from one skill to three; the capacity table's 🟡 count below is the sizing as it stood on
       Aug 2 and is left as the record.
+
+      **Outcome against the three clauses.** (1) met — the rebuild ran against a vault worktree
+      predating S3-T12's close, and what it missed rewrote the skill's *Gather* step. (2) **not
+      met as written**: "the next task card" has no referent while Stories C–F are all complete,
+      so only the freshness step ran; it fired, and Sprint 04's first card is the real test.
+      (3) met, three findings, no trim needed. Deviations on [[Sprint Board]].
 
 ## Definition of Done
 

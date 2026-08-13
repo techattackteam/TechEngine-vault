@@ -45,8 +45,8 @@ follow that calendar. Match the session type to the day's mode:
 
 | Mode | Session type | Commands |
 |------|--------------|----------|
-| Deep | Implementation | core loop; `/code-review` before commit |
-| Moderate | Lighter implementation — finish/refactor, wrap up | core loop (shorter) |
+| Deep | Implementation | `/card-start` → core loop → `/code-review` → `/card-close` |
+| Moderate | Lighter implementation — finish/refactor, wrap up | same, shorter |
 | Light | Read code/docs, small fixes, ADR drafting | `/arch-review`, `/adr` |
 | Relaxed | Optional light planning / docs, or rest | — |
 | Off | No engine work | — |
@@ -77,6 +77,9 @@ repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
 | `/arch-review <area>`          | Technical-lead review of a system (analysis, no edits)    |
 | `/feature-breakdown <feature>` | Epic → Story → session-sized Tasks                        |
+| `/card-start [card]`           | **Before building:** freshness check, design note, open defects, then the branch |
+| `/card-close [card]`           | **After the merge:** board entry, design note, [[Known Issues]], [[Backlog]] |
+| `/te-review [target]`          | House-rules review — `CONVENTIONS.md`'s judgment rows + the ADR structural invariants |
 | `/vault-clean [folder]`        | Sweep the vault for stale / redundant / malformed / orphaned content and tidy it |
 
 Built-in ones worth habituating: **plan mode** for design, **`/code-review`**
@@ -91,9 +94,12 @@ flowchart TD
   SYS["Assess a built system"] --> AR["/arch-review<br/>analysis only"]
   AR -. may surface .-> DEC
   FB --> TASK["A sprint task"]
-  TASK --> LOOP["Core loop<br/>design → you implement → verify"]
+  TASK --> CS["/card-start<br/>ground it, then branch"]
+  CS --> LOOP["Core loop<br/>design → you implement → verify"]
   LOOP --> CR["/code-review<br/>before every commit"]
-  CR --> PR["You open the PR<br/>card annotated by hand"]
+  LOOP --> TR["/te-review<br/>house rules with no gate"]
+  CR & TR --> PR["You open the PR"]
+  PR --> CC["/card-close<br/>board · note · Known Issues"]
   SUN(["Weekend — non-boundary"]) --> WR["/weekly-review"]
   LSUN(["Every 4th weekend — sprint boundary"]) --> SP["/sprint-plan<br/>demo + retro + plan<br/>(absorbs the weekly review)"]
   SP --> FB
@@ -105,13 +111,18 @@ flowchart TD
 - **Work commands fire on a trigger, not the clock:** a load-bearing decision → `/adr`;
   decomposing a feature → `/feature-breakdown`; assessing existing code → `/arch-review`;
   before any commit → `/code-review`.
-- **Task bracketing is manual** since the vault split (S2-T14 retired `/task-start` and
-  `/task-wrap` — most of what they enforced was vault-in-repo friction). Branch discipline
-  lives in CLAUDE.md rule 9: cut from a **freshly fetched `origin/master`**, name it
-  `<card ID>/<slug>`. **You open the PR**, and a merged branch is dead (squash + linear
-  history), never reused. The card still wants its outcome written on it when the work
-  lands — that annotation is the retro's raw material, and it is now a vault commit that
-  needs no PR.
+- **Task bracketing is a command pair again** (S3-P2, 2026-08-13), and it is deliberately not a
+  revival of the `/task-start` + `/task-wrap` that S2-T14 retired. Those enforced vault-in-repo
+  friction, which the split removed. `/card-start`'s freshness check exists **because of** that
+  same split, and `/card-close` automates the annotation this note already asked for by hand.
+  Branch discipline is still CLAUDE.md rule 9: cut from a **freshly fetched `origin/master`**,
+  name it `<card ID>/<slug>` — `/card-start` offers exactly that command and cuts it only when
+  you say so. **You open the PR**, and a merged branch is dead (squash + linear history), never
+  reused. The card's annotation is the retro's raw material, and it is a vault commit that needs
+  no PR.
+- **`/card-close` reads the PR conversation, not just the diff.** A merged diff is an end state,
+  so it cannot show what was written and then deleted, or what review caught. Those are usually
+  the best lines on a card, and they exist only in the PR.
 - **Agents support these, they don't replace them:** `/adr` can lean on
   `adr-consistency-checker`; research / prior-art during design → `engine-researcher` /
   `v1-reference-miner`.
