@@ -591,12 +591,30 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
       **mechanism** (the dated `**Amended:**` header entry ADR-011 already uses) and what is
       **off-limits** (reversing a *Decision* — that still needs a superseding ADR); ADR-011's
       two amendments either conform or are converted; the `/adr` skill matches.
-- [ ] **S3-P2** — Skill `te-review` · **P3** · 🟡 Light — [[Backlog]] trigger fired
-      (`CONVENTIONS.md` landed Jul 30). done: a review rubric over `CONVENTIONS.md` + the ADR
-      structural invariants (module DAG · no third-party type in a public header · the SDK acid
-      test · no `[[nodiscard]]` · internal linkage is `static`); **dry-run on a Sprint-02 file
-      finds something real, or the rubric is trimmed until it does** — a rubric that only ever
-      says "looks fine" is worse than none.
+- [ ] **S3-P2** — Session skills: `/card-close` · `/card-start` · `te-review` · **P3** · 🟠 Moderate —
+      every skill in `.claude/commands/` is planning-side. Nothing covers the per-card execution
+      loop, which now runs a dozen times a sprint. **Ordered, and the order is the cut order.**
+      1. **`/card-close`** — the post-merge pass. Board Done entry (date · engine sha · PR ·
+         what the card learned · note links), the design note updated with the calls the card
+         made against it, [[Known Issues]] rows, retro lines. This format is reproduced by hand
+         today, and S3-B1 shows the failure mode: created Jul 31, **never reached the board**.
+         done: a dry-run rebuilds an existing entry (S3-T12 is the fullest) from the PR and the
+         diff, without being handed the format.
+      2. **`/card-start`** — mechanizes `CLAUDE.md` rule 2. Open the design note, run the
+         *Reconciled against* diff (`git log --oneline <sha>..origin/master`), say plainly
+         whether the note is suspect, restate the card's acceptance. done: run it on the next
+         task card and it surfaces a freshness fact that was not already known.
+      3. **`te-review`** — the original card, unchanged. [[Backlog]] trigger fired
+         (`CONVENTIONS.md` landed Jul 30). A review rubric over `CONVENTIONS.md` + the ADR
+         structural invariants (module DAG · no third-party type in a public header · the SDK
+         acid test · no `[[nodiscard]]` · internal linkage is `static`). done: **dry-run on a
+         Sprint-02 file finds something real, or the rubric is trimmed until it does.** A rubric
+         that only ever says "looks fine" is worse than none.
+
+      **The cut is partial, not whole.** If the day runs short, `/card-close` alone closes this
+      card and the other two go to [[Backlog]]. Re-sized 🟡 → 🟠 on **Aug 13** when the card grew
+      from one skill to three; the capacity table's 🟡 count below is the sizing as it stood on
+      Aug 2 and is left as the record.
 
 ## Definition of Done
 
@@ -685,7 +703,8 @@ Those three are the only hard sequence.
 Story B (math), S3-B1 and Story G float. They are what a light or moderate day picks up while
 an ADR is still unwritten.
 
-**The trade, pre-authorised.** If capacity tightens, cut **S3-P2** first, then **S3-P1**. Never
+**The trade, pre-authorised.** If capacity tightens, cut **S3-P2** first (partially: keep
+`/card-close`, drop the other two skills to [[Backlog]]), then **S3-P1**. Never
 touch a 🟢 Deep slot. And **never cut S3-B1**: a Bug card is the one kind that is not droppable
 ([[Planning Workflow — Artifact Gate]] → *Task attributes*).
 

@@ -29,8 +29,9 @@ kanban-plugin: board
 
 - [ ] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — ADR-011 amended in place twice vs
 	  [[ADR Index]]'s immutability rule. One of the two is wrong.
-- [ ] **S3-P2** — Skill `te-review` · P3 · 🟡 Light — **first to cut.** Dry-run must find
-	  something real or the rubric gets trimmed.
+- [ ] **S3-P2** — Session skills · P3 · 🟠 Moderate — **first to cut, partially:**
+	  `/card-close` alone closes the card. Then `/card-start`, then `te-review`.
+	  Every existing skill is planning-side; nothing covers the per-card loop.
 
 
 ## 🔨 In Progress
