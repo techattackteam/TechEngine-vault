@@ -127,8 +127,13 @@ groups are kept, because they show where future work will land.
   (`JPH::Allocate`/`Free`/aligned + `JPH_OVERRIDE_NEW_DELETE`), miniaudio
   (`ma_allocation_callbacks`), GLFW 3.4 (`glfwInitAllocator`) →
   [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §7. **Trigger:** the first init of each dep.
-- #prio/medium · **Path-filter docs-only PRs** — a vault-free docs change still burns the full
-  matrix; needs the dummy-job pattern, not `paths-ignore`. **Trigger:** the second docs-only PR.
+- #prio/medium · **Skip CI on PRs carrying no engine code, and auto-merge them** — a vault-free
+  docs or `.claude/` change still burns the full matrix (~22 billed min). Needs the dummy-job
+  pattern, not `paths-ignore`: a job skipped at the workflow level never reports, so the 8
+  required checks stay pending and the PR cannot merge at all. Auto-merge is the second half
+  and removes the self-review [[ADR-009 — Branching strategy & merge rules]] § *Consequences*
+  leans on in place of a second reviewer, so it needs a scope rule for what counts as "no
+  code". **Trigger:** fired — S3-P2 (#42) and S3-P1 (`a9deb2c4`) were both code-free.
 - #prio/medium · **Recorded-demo workflow** — capture + store. **Trigger:** the first demo
   worth keeping.
 - #prio/low · **README at repo root** (public-facing). **Trigger:** T2 — the first build that
