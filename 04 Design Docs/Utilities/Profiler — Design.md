@@ -43,7 +43,7 @@ optimizing blind.
 | Shipping builds cannot ship the listening socket, because the client is never compiled. | ADR-013 §4 |
 | Sanitizer legs stay `TE_PROFILE=OFF`. | ADR-013 §4 |
 | Tracy carries its own timer. The profiler never reads `Clock`. | ADR-013 §5 |
-| Overhead is **zero** when compiled out, and under **5%** frame-time delta when compiled in. | ADR-013 §6 |
+| Overhead is **zero** when compiled out. Compiled in, the bar is the **absolute +0.1377 µs per frame**. | ADR-013 §6 *(amended 2026-08-20; was "under 5% frame-time delta")* |
 | **No runtime-named or transient zones on a per-frame path.** Zone names are literals. | ADR-013 §6 |
 | Memory tracking rides the profiler: a global `new`/`delete` replacement in `app`, plus each dependency's allocator hook. | ADR-013 §7 |
 | GPU zones live in **`client`**, not `base`, and land with the render graph. | ADR-013 §8 |
@@ -56,7 +56,7 @@ optimizing blind.
 ```mermaid
 flowchart LR
   subgraph proc["profiled process (runtime / editor / test exe)"]
-    A["TE_PROFILER_SCOPE"] --> B["base/Profile.hpp"]
+    A["TE_PROFILER_SCOPE"] --> B["base/diagnostics/Profile.hpp"]
     B --> C["Tracy client"]
   end
   C -->|"TCP 8086, loopback"| D["Tracy desktop app"]
@@ -196,13 +196,14 @@ paid once, in a worse currency.
 
 It lives in [[B3 — Build & Testing Notes]] → *Overhead*, measured at S3-T6 on 2026-08-08.
 
-With Tracy attached, the cost is +0.14 µs per frame. That is **0.0008%** of a 16.6 ms frame,
-against ADR-013 §6's budget of under 5%.
+With Tracy attached, the cost is +0.14 µs per frame. That is **0.0008%** of a 16.6 ms frame.
 
-The finding worth carrying forward is about the budget's shape. §6 states it as a *ratio*, and
-a ratio is not evaluable while the headless loop has almost no per-frame content. The absolute
-figure is the checkable one, and it stays that way until M2's task graph and R1's renderer give
-the ratio a real denominator.
+**That absolute figure is now ADR-013 §6's bar.** §6 originally stated a *ratio*, "under 5%
+frame-time delta", and a ratio is not evaluable while the headless loop has almost no per-frame
+content: against a 0.02 µs baseline the same measurement reads **+669%**, which describes the
+empty loop rather than the profiler. §6 was amended on 2026-08-20 (S3-P1) to the absolute
+**+0.1377 µs**, and it stays absolute until M2's task graph and R1's renderer give the ratio a
+real denominator.
 
 ### Profiling workflow
 

@@ -136,6 +136,12 @@ list, and F30 is the reason. In v1 the declaration and the implementation lived 
 modules, so an interface was the only way to bridge them. Put the implementation in
 `platform` and there is no gap left to bridge.
 
+**It is still recorded as a `decision` amendment on ADR-006** (2026-08-20). "Leftover rather
+than a decision" is about the ADR's *intent*; the amendment policy's gate is *effect*, and a
+reader following §4 plus its 2026-08-02 amendment would have built an `IFileAccess`. That is
+[[ADR Index]] § *What is not an amendment* → the mirror case: the ADR said it, this note now
+says otherwise, so it gets declared rather than left to rot.
+
 Bring the interface back when a second implementation is real. The candidates are an
 archive-backed VFS, a network-backed one, or a null one for a dedicated server with no
 assets. Extraction is mechanical. Every call site already goes through the four methods

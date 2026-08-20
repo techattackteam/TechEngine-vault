@@ -2,8 +2,9 @@
 
 Weekly reviews and sprint retrospectives — one dated note (`YYYY-MM-DD`) per entry.
 
-- **Weekly review** — once per weekend (`/weekly-review`), 3× per sprint.
-- **Sprint retro** — every 4th weekend, the sprint boundary (`/sprint-plan`), with demo +
+- **Weekly review** — once per weekend (`/weekly-review`), 1× per sprint. If the weekend is
+  lost, it runs on the next Mon or Thu evening instead (weekday fallback, 2026-08-20).
+- **Sprint retro** — every 2nd weekend, the sprint boundary (`/sprint-plan`), with demo +
   planning. It **replaces** that weekend's weekly review — one entry, not two.
 
 Cadence + weekly rhythm live on [[Dashboard]]. Entries appear here as they're written,
@@ -11,6 +12,7 @@ newest first.
 
 | Date | Entry |
 |---|---|
+| 2026-08-20 | [[2026-08-20 Weekly Review]] — **catch-up, Aug 3 to 20** (two reviews missed); Sprint 03 complete 8 days early; 4 drift findings; sprint length cut to 2 weeks |
 | 2026-08-02 | [[2026-08-02 Sprint 02 Retrospective]] — Sprint 02 closed **4 weeks early**; first reconciliation-stamp advance; `S2-B1` found evaporated |
 | 2026-07-25 | [[2026-07-25 Sprint 01 Retrospective]] — Sprint 01 closed: demo, CI thrash post-mortem, "bank the day" rule |
 | 2026-07-25 | [[2026-07-25 Weekly Review]] — scaffold + CI green; 4 artifact-drift findings, all reconciled |

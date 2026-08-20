@@ -99,13 +99,17 @@ reconciliation could not replay it.
 
 ### Where time lives: `FrameContext` against `Clock`
 
-Both exist in ADR-006 §4. `EngineContext` carries a `const Clock&`, and `FrameContext` is
-passed per frame. Each fact has exactly one owner.
+Both exist in ADR-006 §4, which sketches `EngineContext` as carrying a `const Clock&`.
+`FrameContext` is passed per frame. Each fact has exactly one owner.
+
+> **Not wired yet (checked 2026-08-20).** The shipped `EngineContext` has exactly one field,
+> `FileAccess& files`, added at S3-T13. The loop still constructs its own `Clock` locally, at
+> `engine/app/src/App.cpp:49`. The split below is the decided shape, not the built one.
 
 | | Owns | Read by |
 |---|---|---|
 | **`FrameContext`** (a parameter) | `dt`, `fixedDt`, `tick`, `alpha`, `role`, `frameIndex`. This is the authoritative simulation state. | Systems, through `update(Scene&, const FrameContext&)` (ADR-007 §6) |
-| **`Clock`** (an `EngineContext` service, in `base`) | Monotonic `now()`, a wall-clock stamp, `totalTime`, and a **diagnostic** frame counter | **The loop only** |
+| **`Clock`** (in `base`; an `EngineContext` service once wired, ADR-006 §4) | Monotonic `now()`, a wall-clock stamp, `totalTime`, and a **diagnostic** frame counter | **The loop only** |
 
 The loop owns the accumulator. It publishes into `FrameContext`, bumps the Clock's diagnostic
 counter once per frame, and **pushes that number into diagnostics** so the Logger and profiler

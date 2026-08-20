@@ -28,6 +28,16 @@
   the F16 shape this ADR exists to kill. §5's "**platform**/core" for the impl resolves
   to **`platform`** — §1's own contents table lists *file I/O* there. Seam, injection,
   ownership and the F30 fix are unchanged. Record: [[File Access — Design]].
+- **Amended 2026-08-20 — decision:** **file access ships with no interface.** §4's
+  `EngineContext` field is **`FileAccess& files`**, was `IFileSystem& fs` and read as
+  `IFileAccess& files` under the amendment above; §5's row names the concrete class, not an
+  impl behind an interface. `IFileAccess` was written and deleted before it shipped. One
+  implementation exists, nothing carded needs a second, and v1 needed the interface only to
+  bridge a `core` declaration to an `editor` implementation, which is F30 itself. Module,
+  injection, ownership and the F30 fix are unchanged, and an interface returns when a second
+  implementation is real. Found at S3-T12 (2026-08-10), declared at the 2026-08-20 weekly
+  review, which caught the amendment above still naming a type that never shipped.
+  Record: [[File Access — Design]] § *Why there is no interface*.
 
 ## Context
 
@@ -184,6 +194,9 @@ rule; a small **immutable, non-owning `EngineContext`** carries the few engine-w
 services. Reject a DI framework (re-hides deps — another F5) and a fat god-struct (a
 locator with nicer syntax).
 
+> **Amended 2026-08-20:** the `IFileSystem& fs` field below is **`FileAccess& files`**, a
+> concrete class in `platform` with no interface. See the dated header entry.
+
 ```cpp
 // core — engine-wide SERVICES only (non-owning refs, engine-lifetime). NO device here:
 // presentation (GPU device) is owned by the renderer System, not a shared service.
@@ -244,6 +257,10 @@ systems.
 | Physics | **System** (fixed phase, core/server) | owns Jolt world; authoritative |
 | Audio playback | **System** (client-side) | owns miniaudio; components live in core |
 | movement, camera, animation, culling, replication | **System** | scheduled stages; engine or user |
+
+> **Amended 2026-08-20:** the *FileSystem* row's "`IFileSystem` impl" is the **concrete
+> `FileAccess` class**, with no interface. Its *helper (service)* classification and its
+> injection are unchanged. See the dated header entry.
 
 **System interface deferred.** B1 commits the *principle* (registerable, stateful-
 capable, declares access, {phase, enabled} metadata, engine==user, replaceable). The

@@ -664,7 +664,7 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
 - [x] **S3-B1 closed**, so one composition root owns diagnostics init. **Met Aug 8**, engine
       `10258eec`, PR #38. It was the sprint's only Bug card, and the one that was never
       droppable.
-- [ ] **Nothing was built without a consumer, with one recorded exception.** Math is a
+- [x] **Nothing was built without a consumer, with one recorded exception.** Math is a
       *vocabulary*, and that is argued in [[Math — Design]] → *Trigger*. If a second exception
       appears, the rule is the thing to re-examine, not the exception.
 - [x] Demo: a **profiler capture of the headless frame loop**. That is the first thing this
@@ -737,7 +737,12 @@ an ADR is still unwritten.
 touch a 🟢 Deep slot. And **never cut S3-B1**: a Bug card is the one kind that is not droppable
 ([[Planning Workflow — Artifact Gate]] → *Task attributes*).
 
-## Sprint review (fill Aug 29–30)
+## Sprint review (fill Aug 22-23)
+
+> **Closed early.** All 17 cards were done on **Aug 20**, 8 days ahead of the Aug 28 end
+> date, so the boundary moves to the **Aug 22-23** weekend ([[Dashboard]] § *Rhythm*:
+> an early close moves the boundary, not the cadence). Sprint 04 is the first **2-week**
+> sprint.
 
 - What shipped:
 - Demo / artifact:
