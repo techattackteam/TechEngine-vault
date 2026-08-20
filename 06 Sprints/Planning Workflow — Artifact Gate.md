@@ -27,8 +27,10 @@ carries the argument (CLAUDE.md rule 2).
 This is not a style preference. An Accepted ADR can hold a clause that has since been
 partially superseded, and [[ADR Index]] currently tracks two of them.
 
-The ADR body is frozen and never edited. The design note's *Decided* rows are the reconciled
-view. Plan straight off the ADR and you can size a card against a dead clause.
+An ADR body changes only by dated amendment ([[ADR Index]] § *Amending an Accepted ADR*),
+and a partially superseded clause is not amended at all. So a § can be dead, or can have its
+current value sitting in a header entry above it. The design note's *Decided* rows are the
+reconciled view. Plan straight off the ADR and you can size a card against either.
 
 Two sources, in priority order.
 
