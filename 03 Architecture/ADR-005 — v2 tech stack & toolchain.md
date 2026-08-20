@@ -185,4 +185,4 @@ change an axis:
   fix the commitment or drop it (and lose UBSan/TSan **and continuous OS-independence
   validation** — the price just went up) — don't let it rot silently.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

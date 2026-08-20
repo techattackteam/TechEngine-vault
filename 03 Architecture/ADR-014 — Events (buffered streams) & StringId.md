@@ -199,4 +199,4 @@ linker-stripped). No file-scope statics, and no per-type macro — ADR-007 §1's
 - **ADR-010 changes shape** (scripts gain declared access) → script event access folds
   into the tier-1 path; nothing here assumes otherwise.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

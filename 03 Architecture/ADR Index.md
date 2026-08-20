@@ -49,5 +49,50 @@ partial scope is tracked here.
 - **Superseded by ADR-NNN** — replaced; kept for history.
 - **Deprecated** — no longer relevant.
 
-> ADRs are immutable once Accepted. To change a decision, write a new ADR that
-> supersedes the old one — don't edit history.
+## Amending an Accepted ADR
+
+*Adopted 2026-08-20 (S3-P1), replacing a blanket "never edit an Accepted ADR" that five of
+the eleven active ADRs had already broken.*
+
+An Accepted ADR is a **history, not a claim about the present**. What immutability really
+protects against is the **silent** edit, where a value changes and no reader can tell what
+it used to be. So the body is appended to, never quietly rewritten, and the gate is **how
+much argument the change needs**, not whether a decision moved.
+
+- **Amend in place** when the change fits **one dated header entry**: one clause, one value
+  or one term, with the **old value quoted** and the trigger named.
+- **Write a superseding ADR** when the change needs its own *Context* and *Alternatives*.
+  That is the test. Would you have to **argue** for it, or can you just record it?
+- **Never amendable: the headline decision in the title.** ADR-011 dropping spdlog is a new
+  ADR, however small the wording change looks.
+
+Cross-ADR reversals are unchanged. A superseding ADR that reverses one clause of another is
+rowed in *Partial supersessions* above, and the superseded body is still never edited.
+
+### Mechanism
+
+One entry per amendment, in the header directly under `**Task:**`, oldest first:
+
+```
+- **Amended YYYY-MM-DD — <kind>:** <old → new>. <why>. <trigger card>.
+```
+
+| Kind | Covers | Also needs |
+| --- | --- | --- |
+| `vocabulary` | A rename or a repositioning that reverses no decision. | nothing |
+| `correction` | The ADR contradicted itself, or stated a fact that turned out false, and nobody would build differently. | nothing |
+| `decision` | A clause changed value. | An inline `> **Amended YYYY-MM-DD:**` marker at the point of change, so a reader landing mid-document sees it. |
+
+**When two kinds fit, the stronger wins.** Anything somebody would build differently
+against is a `decision`, whatever prompted it.
+
+### What is not an amendment
+
+- **A design note refining a detail the ADR never decided.** A header's folder, a method
+  name, a table layout: the note owns those and the ADR stays untouched. This is the common
+  case, and [[Planning Workflow — Artifact Gate]] § *An ADR or a design note* is why.
+- **Template boilerplate**, which is not decision content.
+
+The mirror case **is** an amendment. If the ADR *did* decide it and a design note now says
+otherwise, that is an undeclared `decision` amendment, not a free pass. Left alone, the note
+quietly becomes the source of truth and the ADR rots without anyone noticing.

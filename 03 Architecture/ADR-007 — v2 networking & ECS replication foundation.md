@@ -271,4 +271,4 @@ flowchart LR
 - If C++26 static reflection ships on MSVC (ADR-005 seam) → the stable tag can be reflected
   instead of declared; identity model unchanged (additive).
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

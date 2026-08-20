@@ -233,4 +233,4 @@ ADR** — they depend on an ECS that does not exist yet.
   *Deferred, not rejected:* it is the natural upgrade path, but mandating it now
   reintroduces precisely the friction scripts exist to remove.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

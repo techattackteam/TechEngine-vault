@@ -203,4 +203,4 @@ inferring skew from nothing.
 - **CI gaining a docs job** (link-checking, vale, a vault linter) — the vault would then
   have a build to break, and §2's "no ceremony" premise expires.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

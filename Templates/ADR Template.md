@@ -20,4 +20,4 @@ The decision, stated plainly in the present tense ("We use…").
 ## Alternatives considered
 - **<option>** — why rejected/deferred.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

@@ -10,6 +10,13 @@
   this one departs from it) · living *how*: [[Profiler — Design]]
 - **Task:** S3-D1 ([[2026-08 Sprint 03 — M1 Enablers]]) — **gates Story D and M2's
   threading ADR.**
+- **Amended 2026-08-20 — decision:** §6's compiled-in bar is the **absolute per-frame
+  cost**, was **"< 5% frame-time delta"**. The ratio is not evaluable at M1: measured on the
+  headless loop the delta is **+669%**, because the baseline is a 0.02 µs empty loop, so the
+  figure describes the loop rather than the profiler. The checkable form until M2/R1 gives
+  the frame real content is **+0.1377 µs, or 0.0008% of a 16.6 ms frame**
+  ([[B3 — Build & Testing Notes]] § *Overhead*). The budget's purpose, the zero-when-OFF
+  fact, the no-`ZoneTransient` rule and "not a CI gate" are all unchanged. Found at S3-T6.
 - **Supersedes:** **ADR-006 §5's `Profiler` classification row only** (`:233` — helper
   *service*, "owned + injected via `EngineContext`"). See §9. Every other clause of §5 —
   including "profiler wraps the executor" and the F19 fix — **remains in force** and is
@@ -197,6 +204,12 @@ two and the reverse of how the question was parked.
   frame. **The budget is deliberately loose because it is not there to police Tracy; it is
   there to catch us** — a zone inside an inner loop, or a runtime-named zone on a per-frame
   path.
+> **Amended 2026-08-20:** the bar above is the **absolute** per-frame cost, not the ratio.
+> At M1 the measured delta is **+0.1377 µs (0.0008% of a 16.6 ms frame)**; expressed as a
+> ratio against a 0.02 µs empty loop the same measurement reads **+669%**, which measures
+> the loop. Revisit the ratio form once M2/R1 give the frame real content. See the header
+> entry and [[B3 — Build & Testing Notes]] § *Overhead*.
+
 - **The rule with teeth: no `ZoneTransient` / runtime-named zones on any per-frame path.**
   Zone names are string literals. This is F19 restated as a reviewable invariant, and it is
   the thing to reject in review.
@@ -402,4 +415,4 @@ axis, as a number or an event:
   or per-sim zone naming, which is a §2-level change and earns an amendment. Note the shape
   is the same one ADR-011 §9 named for the frame stamp.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

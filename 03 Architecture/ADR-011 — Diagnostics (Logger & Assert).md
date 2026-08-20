@@ -8,13 +8,13 @@
   [[ADR-008 — v2 build & testing baseline]] §7 §8 · living *how*:
   [[Logger — Design]] · [[Assert — Design]]
 - **Task:** S2-T1 ([[2026-08 Sprint 02 — Base Foundation]]) — **gates S2-T2…T6.**
-- **Amended 2026-07-27:** §7's no-recursion guard now aborts **only if the nested failure's
+- **Amended 2026-07-27 — decision:** §7's no-recursion guard now aborts **only if the nested failure's
   own tier is fatal**, was "and aborts" unconditionally. No decision reversed — fatality was
   always a property of the tier (§5), and the original wording made a `TE_ENSURE` fatal purely
   by firing inside a handler, which contradicts its "log + continue" definition. Found while
   implementing S2-T4: the guard's test could not raise a nested failure without killing the
   runner.
-- **Amended 2026-07-30:** §3's file sink is a **single file truncated on open**, was
+- **Amended 2026-07-30 — decision:** §3's file sink is a **single file truncated on open**, was
   **rotating** (5 MB × 3). Found in S2-T5: rotation keeps N stale runs on disk for no
   consumer and makes "which file is *this* run?" ambiguous. Nothing else changed — the sink
   is still synchronous, still degrades to console-only if unopenable.
@@ -391,7 +391,12 @@ axis, as a number or an event, not a feeling:
 - **Async logging becomes a measured need** (file-sink I/O showing on a frame-time
   profile) → async sink behind the unchanged façade; ordering guarantees then need
   deciding, so it earns an amendment.
+
+> Each trigger above names its own mechanism, and they are the ones
+> [[ADR Index]] § *Amending an Accepted ADR* codifies: a one-file backend swap is a dated
+> `decision` entry, while a per-sim diagnostics context needs its own argument and so
+> supersedes §9.
 - **`TE_ASSERT` in RelWithDebInfo measurably costs** on a profiled dev-runtime build →
   flip §5's call for that config only.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

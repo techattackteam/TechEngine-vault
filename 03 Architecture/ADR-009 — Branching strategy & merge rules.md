@@ -150,4 +150,4 @@ So it's Accepted deliberately, not by default — evidence that should change an
 - **Story branches routinely outliving a sprint / heavy conflicts** → shorter stories
   (`/feature-breakdown`), not a `develop` buffer.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

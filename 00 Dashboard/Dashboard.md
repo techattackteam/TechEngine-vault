@@ -121,7 +121,9 @@ _Tasks → [[Sprint Board]]._
 Recently locked — full set in [[ADR Index]]:
 - [ ] **Profiler** (S3-D1) + **Events/`StringId`** (S3-D2) → **being written this sprint**; both gate M1, and the Profiler one gates M2's threading ADR
 - [ ] Threading · task-graph · serialization · renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
-- [ ] **Can an Accepted ADR be amended in place?** ADR-011 has been, twice; [[ADR Index]] says no → **S3-P1**
+- [x] **Can an Accepted ADR be amended in place?** **Yes — resolved 2026-08-20 (S3-P1)**,
+  [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
+  not whether a decision moved; the headline decision in a title is never amendable.
 
 ## Health check (update weekly · 2026-08-02)
 

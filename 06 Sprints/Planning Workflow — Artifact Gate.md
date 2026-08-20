@@ -143,8 +143,9 @@ An ADR's *Decision* and *Consequences* sections already **are** the design. Spli
 
 - The ADR would **balloon** past its job, which is the decision plus its rationale. Then peel
   the detail out into a note.
-- The shape will **churn during implementation**. ADRs are immutable, so changing one means
-  writing a superseding ADR. Design notes are living.
+- The shape will **churn during implementation**. An ADR only ever gains dated amendments
+  ([[ADR Index]] § *Amending an Accepted ADR*), and routine churn is not what that mechanism
+  is for. Design notes are living, so the churn belongs there.
 
 So there is exactly one legitimate split. The ADR holds the frozen decision and the why. The
 design note holds the mutable working shape.

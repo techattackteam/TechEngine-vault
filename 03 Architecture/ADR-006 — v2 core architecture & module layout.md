@@ -315,4 +315,4 @@ leans to a stateful object with declared access, **not** a bare function pointer
 - **`net`/`server` land** as real modules when B1b + transport are done — the slots and
   their dependency edges are reserved so this needs no reshape.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.

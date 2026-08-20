@@ -361,4 +361,4 @@ So it's Accepted deliberately, not by default — evidence that should change an
 - **Presets:** if the Win/Linux preset matrix drifts out of sync in practice → a
   generated/toolchain-file approach instead of hand-maintained presets.
 
-> Add to [[ADR Index]]. Once Accepted, treat as immutable — supersede with a new ADR.
+> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.
