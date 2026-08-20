@@ -256,6 +256,8 @@ keeps the next rung plannable at the Aug 29 to 30 boundary.
       **+669%** — because the baseline is 0.02 µs of nothing. A ratio needs frame content that
       does not exist at M1, so the absolute per-frame cost is the checkable form until M2/R1.
       Recorded in B3; **ADR-013 unedited** — S3-P1 owns whether that is an amendment.
+      **Answered 2026-08-20 at S3-P1: yes, a `decision` amendment**, so §6 now carries the
+      absolute number and an inline marker ([[ADR Index]] § *Amending an Accepted ADR*).
       **(4) The Catch2 case had to guard its own helpers, not just the test.** The two
       side-effect helpers are unreferenced under `TE_PROFILE_ENABLED` (the macros discard their
       arguments), so leaving them outside the `#if` would have broken `windows-profile` under
@@ -585,12 +587,31 @@ to ask; the honest answer at that point is to cut a story, not to compress it.
 
 ### Story G — Process *(first thing cut when capacity tightens)*
 
-- [ ] **S3-P1** — ADR amendment policy · **P2** · 🟡 Light — [[ADR Index]] says an Accepted ADR
-      is immutable and changes need a superseding record; **ADR-011 has been amended in place twice** (the ENSURE guard, and rotation → truncate-on-open in `ef50f44`). One of the two
-      is wrong. done: § *Statuses* states whether in-place amendment is allowed, by what
-      **mechanism** (the dated `**Amended:**` header entry ADR-011 already uses) and what is
-      **off-limits** (reversing a *Decision* — that still needs a superseding ADR); ADR-011's
-      two amendments either conform or are converted; the `/adr` skill matches.
+- [x] **S3-P1** — ADR amendment policy · **P2** · 🟡 Light — **done 2026-08-20**
+      (engine `f52e332b`, PR #43; vault `0511c5e`), all eight checks green.
+      **Story G complete, and the sprint's last card.** → [[ADR Index]] § *Amending an
+      Accepted ADR*.
+      **Three of the four `done:` clauses held. The off-limits one did not, and that is the
+      card.** It specified "reversing a *Decision* still needs a superseding ADR". The policy
+      landed the opposite: a `decision` amendment is allowed **in place** when it fits one
+      dated header entry with the old value quoted and the trigger named. Only the
+      **headline decision in the title** is never amendable. The gate is how much argument a
+      change needs, not whether a decision moved.
+      **Mechanism, as asked, extended.** Kinds are `vocabulary` / `correction` / `decision`,
+      the stronger wins where two fit, and a `decision` also carries an inline marker at the
+      point of change. The § also states what is *not* an amendment, which is the case that
+      kept recurring at S3-T4 and S3-T7: a design note refining a detail the ADR never
+      decided owns that detail outright.
+      **ADR-011's two conform and were not converted**, only labelled — both already quoted
+      their old value and carried inline markers. The card's premise understated the problem:
+      **5 of the 11 active ADRs carry 8 amendments**, and ADR-011's own reversal triggers
+      promise amendments that its closing line forbids.
+      **`/adr` matches, and so do six more artifacts** — `/vault-clean`, the
+      adr-consistency-checker, [[ADR Template]] plus the footer boilerplate copied into 10
+      ADRs, the Artifact Gate's churn clause and the Dashboard's open question. It landed in
+      **its own §**, not § *Statuses*.
+      **Closes S3-T6's parked question** (Story D, above): ADR-013 §6's un-evaluable "< 5%"
+      bar becomes the absolute **+0.1377 µs**, filed as a `decision` amendment.
 - [x] **S3-P2** — Session skills: `/card-close` · `/card-start` · `te-review` · **P3** · 🟠 Moderate —
       **done 2026-08-13** (engine `42e32981`, PR #42), CI green on all eight checks per the merge.
       **All three shipped, so the partial cut went unused.** Every skill in `.claude/commands/` was

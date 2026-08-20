@@ -25,10 +25,8 @@ kanban-plugin: board
 
 
 
-## 📋 G · process *(first to cut)*
+## 📋 G · process · ✅ **complete** *(P2 → P1)*
 
-- [ ] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — ADR-011 amended in place twice vs
-	  [[ADR Index]]'s immutability rule. One of the two is wrong.
 
 
 ## 🔨 In Progress
@@ -39,6 +37,30 @@ kanban-plugin: board
 
 
 ## ✅ Done — [[2026-08 Sprint 03 — M1 Enablers]]
+
+- [x] **S3-P1** — ADR amendment policy · P2 · 🟡 Light — **Aug 20**, engine `f52e332b`
+	  (PR #43) + vault `0511c5e`. **Story G complete, and the sprint's last card — 8 days
+	  early.** [[ADR Index]] § *Amending an Accepted ADR*: the gate is how much argument a
+	  change needs, not whether a decision moved.
+	  **The card's own `done:` clause encoded the wrong answer.** It fixed the off-limits line
+	  as "reversing a *Decision* still needs a superseding ADR", which is precisely what the
+	  evidence overturned — a `decision` amendment **is** allowed in place, and what is never
+	  amendable is the **headline decision in the title**. **Retro line: a card written from a
+	  premise bakes that premise into its acceptance.**
+	  **The premise was too narrow.** "ADR-011 vs the index, one of the two is wrong" was
+	  really **5 of the 11 active ADRs and 8 amendments**, and ADR-011 contradicts *itself*:
+	  its reversal triggers promise a dated amendment three times, then the closer says treat
+	  as immutable. So the rule was the wrong one and **nothing was converted** — ADR-011's
+	  two conform as written and only gained kind labels. It also landed in **its own §**,
+	  not § *Statuses* as the card specified.
+	  **S3-T6's parked question closed** — ADR-013 §6's "< 5%" bar becomes the absolute
+	  **+0.1377 µs**, classed `decision`, so the mechanism's first use exercises the inline
+	  marker too.
+	  **17 files across both repos, against a card that named one skill** — the old rule was
+	  template boilerplate copied into 10 ADRs. Sizing held at 🟡 anyway.
+	  **No review and no comments on the PR**, so no [[Known Issues]] rows. **Retro line: 8
+	  required checks and ~14 CI minutes for three markdown files**, which fired the
+	  [[Backlog]] skip-CI entry's trigger on the spot.
 
 - [x] **S3-P2** — Session skills: `/card-close` · `/card-start` · `te-review` · P3 · 🟠 Moderate —
 	  **Aug 13**, engine `42e32981` (PR #42). **Story G's first card; S3-P1 is all that's left.**
