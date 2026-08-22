@@ -744,7 +744,12 @@ touch a 🟢 Deep slot. And **never cut S3-B1**: a Bug card is the one kind that
 > an early close moves the boundary, not the cadence). Sprint 04 is the first **2-week**
 > sprint.
 
-- What shipped:
-- Demo / artifact:
+- What shipped: **all 19 cards** (13 Dev · 3 Design · 1 Bug · 2 Process): the three artifacts
+  (ADR-013 · ADR-014 · [[File Access — Design]]) · math (`5afb6d28`) · diagnostics init
+  (`10258eec`) · profiler hooks + memory tracking (`7610b931` to `44a845f1`) · events +
+  `StringId` (`7e4564db` to `ad47ec20`) · file access (`da864fa5` to `a82a5c5d`) · session
+  skills + amendment policy (`42e32981`, `f52e332b`). Per-card records above.
+- Demo / artifact: the `windows-profile` Tracy captures (S3-T4's frame marks, S3-T5's live
+  memory plot) and the overhead number in [[B3 — Build & Testing Notes]] § *Overhead*.
 
-→ Retrospective in [[07 Journal]].
+→ [[2026-08-22 Sprint 03 Retrospective]].

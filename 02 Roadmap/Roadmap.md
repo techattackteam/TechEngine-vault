@@ -29,15 +29,15 @@ flowchart TB
 
 ## The chain
 
-| #      | Rung                   | Contents                                                                                                                                  | Gate                                                                                              |
-| ------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **M0** | `base`                 | Logger · Assert · Clock · headless fixed-timestep loop                                                                                    | [[ADR-011 — Diagnostics (Logger & Assert)]] 🟢                                                    |
-| **M1** | enablers               | math · **file access** `IFileAccess` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · crash handler | Profiler ADR · Events redesign                                                                    |
-| **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a minimal pool · **binary serialization + ADR-005's trait seam**                                                          | **threading ADR** — gated on M1's Profiler · **serialization ADR**                                                        |
-| **M3** | project ‖ M2           | root + `project.toml` (toml++) · path/mount resolution · **`IFileWriteAccess`** — M1 ships the read half only · shader + asset dirs · **`projects/dev/` testbed**                                | none: toml, not the binary format                                                                 |
-| **M4** | window                 | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                      | M2's context-ownership call                                                                       |
-| **M5** | Scene & scheduling     | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping    | **task-graph ADR** — the System interface ([[ADR-006 — v2 core architecture & module layout]] §5) |
-| **M6** | content                | Resources (CPU/UUID) · project↔scene binding                                                | **none** — its seam closed at M2. ⚠️ the only gateless rung; revisit whether Resources owes one |
+| #      | Rung                        | Contents                                                                                                                                                          | Gate                                                                                              |
+| ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **M0** | `base`                      | Logger · Assert · Clock · headless fixed-timestep loop                                                                                                            | [[ADR-011 — Diagnostics (Logger & Assert)]] 🟢                                                    |
+| **M1** | enablers                    | math · **file access** `IFileAccess` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · crash handler         | Profiler ADR · Events redesign                                                                    |
+| **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a minimal pool · **binary serialization + ADR-005's trait seam**                                | **threading ADR** — gated on M1's Profiler · **serialization ADR**                                |
+| **M3** | project ‖ M2                | root + `project.toml` (toml++) · path/mount resolution · **`IFileWriteAccess`** — M1 ships the read half only · shader + asset dirs · **`projects/dev/` testbed** | none: toml, not the binary format                                                                 |
+| **M4** | window                      | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                                              | M2's context-ownership call                                                                       |
+| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping                            | **task-graph ADR** — the System interface ([[ADR-006 — v2 core architecture & module layout]] §5) |
+| **M6** | content                     | Resources (CPU/UUID) · project↔scene binding                                                                                                                      | **none** — its seam closed at M2. ⚠️ the only gateless rung; revisit whether Resources owes one   |
 
 ## The lanes
 
@@ -124,8 +124,9 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 | Dates | Sprint | Rung |
 |-------|--------|------|
 | Jul 25 – Jul 31 | [[2026-08 Sprint 02 — Base Foundation]] | **M0 ✅** — goal met Jul 30; sprint **closed 4 weeks early** |
-| Aug 1 – Aug 28 | [[2026-08 Sprint 03 — M1 Enablers]] | **M1** — both gates (Profiler ADR · Events redesign) + math + **file access**. RNG · crash handler · memory tracking **carry** |
-| Aug 29 – Sep 25 | Sprint 04 — planned on the Aug 29–30 boundary | **M2** — **two** ADRs now (threading, unblocked by M1's Profiler · **serialization**) ‖ **M3**, plus M1's carried items. ⚠️ **Scope call at the boundary**: Sprint 03 fit two ADRs *and* three stories, but M3 is a third lane — one of the three may have to wait |
+| Aug 1 – Aug 28 | [[2026-08 Sprint 03 — M1 Enablers]] | **M1 ✅** closed Aug 20, 8 days early; both gates Accepted Aug 2. RNG · crash handler **carry** (memory tracking shipped at S3-T5) |
+| Aug 22 to Sep 4 | [[2026-08 Sprint 04 — M2 Concurrency & Serialization]] | **M2**: threading + serialization ADRs, first code against each. **Scope call made at the boundary: M3 waits.** A 2-week box holds two heavy ADRs and their first code, not a third lane |
+| Sep 5 to Sep 18 | Sprint 05, planned on the Sep 5-6 boundary | **M3** candidate: project root + `project.toml` + `projects/dev/` testbed + `IFileWriteAccess`, plus whatever M2 leaves. RNG and crash handler still carry, artifact-less |
 
 ## Quarters
 

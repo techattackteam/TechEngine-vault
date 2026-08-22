@@ -31,24 +31,6 @@ groups are kept, because they show where future work will land.
 
 ## base
 
-- #prio/xhigh · **Escape `<format>`'s weight** — `math/Format.hpp` is split from `Math.hpp`, and
-  `FormatBuffer`/`FormatString` sit apart from their consumers, for one unmeasured reason:
-  `<format>` is heavy in a header every TU sees ([[Math — Design]] § *Formatters in their own
-  header*; [[ADR-011 — Diagnostics (Logger & Assert)]] § *Consequences*). Measure it, then ask
-  whether the headers can drop `<format>` entirely or the split is simply the right shape.
-  **Trigger:** fired — both headers exist and nothing gates the measurement.
-- #prio/low · **Clear `/te-review`'s first pass over `base`** — three findings from the S3-P2
-  dry-run on `Log.cpp`, none of which any gate catches. (1) The `.cpp`-private includes are
-  quoted, against `CONVENTIONS.md` → *Includes*; the format gate passes them because
-  `.clang-format`'s `.*` catch-all files a quoted path as third-party, which is also why no
-  blank line separates them from `<spdlog/…>`. Fixing the includes without fixing the category
-  regex only moves the problem. (2) `RingEntry` (`Log.cpp:49`) is a `.cpp`-local type at
-  external linkage with a generic name — *Internal linkage* prefers a specific one first, so
-  `LogRingEntry`. (3) `addLogSink`'s `bool` is discarded at `Log.cpp:242`, its only call site,
-  which falsifies the *Attributes* row's own justification for having no `[[nodiscard]]` ("a
-  bool nobody ignores") and fires the **Error handling** *Open* row. Not a defect:
-  `deliverRecord` falls back to stderr. **Trigger:** fired — all three are in the tree, and (3)
-  is a `CONVENTIONS.md` decision rather than a code fix.
 - #prio/medium · **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
@@ -106,43 +88,23 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
-- #prio/xhigh · **CI ccache is only hitting on `win-msvc Debug`** — that leg builds in ~22 s
-  while every other takes 1 min+ (linux sanitizers ~2 min), and storage sits at 7.89 GB / 10 GB
-  across 199 entries because every run writes a fresh timestamped `ccache-<leg>-<ts>` entry
-  (`ci.yml:99`, `ci.yml:166`) instead of replacing one; likely one bug — LRU eviction under the
-  cap leaves only the most recent leg warm. Cap the entries, then re-check the hit rates.
-  **Trigger:** fired — storage observed Aug 6, per-leg timings Aug 8 on the S3-T10 PR.
 - #prio/low · **`.gitattributes` for committed test assets** — `engine/app/assets/demo.txt`
   gets CRLF on Windows checkout. Harmless while the demo only logs a byte count; silent the
   day a case asserts on a repo-committed file's *contents* and the two CI legs disagree
   (scratch-directory assets are written by the test, so they are unaffected).
   **Trigger:** the first test that reads a committed asset rather than a scratch one.
-- #prio/high · **Better way to add source/header files to CMake** — research the options
-  (explicit lists, `CONFIGURE_DEPENDS` glob, generator script); current per-file editing is
-  painful and v1's global glob was worse. **Trigger:** the next module that grows past a
-  handful of files.
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
 - #prio/medium · **Point each dep's allocator hook at the profiler** — Jolt
   (`JPH::Allocate`/`Free`/aligned + `JPH_OVERRIDE_NEW_DELETE`), miniaudio
   (`ma_allocation_callbacks`), GLFW 3.4 (`glfwInitAllocator`) →
   [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §7. **Trigger:** the first init of each dep.
-- #prio/medium · **Skip CI on PRs carrying no engine code, and auto-merge them** — a vault-free
-  docs or `.claude/` change still burns the full matrix (~22 billed min). Needs the dummy-job
-  pattern, not `paths-ignore`: a job skipped at the workflow level never reports, so the 8
-  required checks stay pending and the PR cannot merge at all. Auto-merge is the second half
-  and removes the self-review [[ADR-009 — Branching strategy & merge rules]] § *Consequences*
-  leans on in place of a second reviewer, so it needs a scope rule for what counts as "no
-  code". **Trigger:** fired — S3-P2 (#42) and S3-P1 (`a9deb2c4`) were both code-free.
 - #prio/medium · **Recorded-demo workflow** — capture + store. **Trigger:** the first demo
   worth keeping.
 - #prio/low · **README at repo root** (public-facing). **Trigger:** T2 — the first build that
   runs outside the editor.
 - #prio/xlow · **Retrofit `base` to the spelled-out-names rule** — `loc` / `fmtStr` predate it.
   **Trigger:** the next PR that touches those signatures for another reason.
-- #prio/xlow · **Rename `TechEngine::detail` → `internal`** — 13 files, the `ci.yml`
-  `\bdetail::log` guard and the CONVENTIONS *Open* row ratified Jul 30. **Trigger:** fired —
-  mechanical, nothing gates it.
 - #prio/xlow · **Command `/catch-up`** — session re-entry after a multi-day gap. **Trigger:**
   the first session that opens with "where was I".
 

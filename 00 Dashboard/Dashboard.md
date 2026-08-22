@@ -7,11 +7,11 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q3 (Jul–Sep) |
-| **Sprint** | [[2026-08 Sprint 03 — M1 Enablers]] *(Aug 1 – Aug 28)* |
-| **Sprint goal** | **M1's two gates decided, and the vocabulary every later module is written against, built.** Profiler + Events ADRs land; math ships; file access gets its note. **Decide first, then build.** |
-| **Current focus** | ✅ **Sprint 03 is complete: 17 of 17 cards, 8 days early** (last card S3-P1, Aug 20, `f52e332b`). Both M1 gates were Accepted Aug 2; F28 closed at S3-T10 and F30 at S3-T13. **The board is empty** — In Progress and Review/Demo both have nothing in them. 🔨 Next: **run `/sprint-plan`** and open **Sprint 04, the first 2-week sprint**. Sprint 03's retro and demo fold into it. Before any `/card-start`, **reconcile the 4 drift findings** in [[2026-08-20 Weekly Review]]. |
-| **Top blocker** | **Sprint 04 unplanned, and the board is empty** — nothing is workable until `/sprint-plan` runs. Watch: CI-minute budget (ADR-008 §9; S3-P1 spent ~14 min on three markdown files) · clang-tidy unproven on Windows · Tracy's Linux leg never built in CI |
-| **Next milestone** | ✅ **M1 closed Aug 20** on the [[Roadmap]]'s own bar (gates Accepted + unlock demonstrable), 8 days ahead of plan → Sprint 04 opens **M2 ‖ M3** — M2 now carries **two** ADRs (threading · **serialization**, moved up from M6 on Aug 2). RNG · crash handler · memory tracking carry |
+| **Sprint** | [[2026-08 Sprint 04 — M2 Concurrency & Serialization]] *(Aug 22 to Sep 4, the first 2-week sprint)* |
+| **Sprint goal** | **Decide M2: the threading and serialization ADRs both Accepted, each proven by first code against its real interface.** Stories B and C stay unsized until their ADR lands. |
+| **Current focus** | 🔨 **S4-D1 (threading ADR) and S4-D2 (serialization ADR) come first**; Stories B and C are cut from them mid-sprint. Side cards (`<format>` measurement · ccache · coverage job · CMake listing · two cleanups · skip-CI) fill the light and moderate days and are the cut-first list. The sprint's first `/card-start` doubles as S3-P2's acceptance test. |
+| **Top blocker** | None hard. Watch: CI-minute budget (ADR-008 §9; S4-P3 adds a per-PR coverage job, so its cost gets measured) · clang-tidy unproven on Windows · Tracy's Linux leg never built in CI · **checkpoint Aug 29-30: an M2 ADR not Accepted by then costs its story** |
+| **Next milestone** | **M2** ([[Roadmap]]): both ADRs Accepted plus a minimal pool and a headless binary round-trip. **M3 waits for Sprint 05** (scope call recorded on the [[Roadmap]]). RNG · crash handler carry (memory tracking shipped at S3-T5) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `32bc327c` (2026-08-20) |
 
@@ -36,6 +36,11 @@ bring-up and file access. **Four findings, two of them live poison** — see
 that is what this stamp has always meant. Previous advance: 2026-08-02, from `2b4bc38e`
 ([[2026-08-02 Sprint 02 Retrospective]]), which found no hub drift.
 
+**Re-checked 2026-08-22** at the Sprint 04 boundary: `origin/master` is still `32bc327c`, zero
+unreviewed commits, so the stamp stands without a new sweep. The boundary found only
+vault-internal staleness (memory tracking still listed as an M1 carry after S3-T5 shipped it;
+a Current-focus order that was already done), fixed the same day.
+
 ## 🗓️ Rhythm
 
 **Sprints: 2 weeks**, one headline goal (**changed from 4 on 2026-08-20**). A sprint **week
@@ -55,12 +60,11 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **weekend of Aug 22-23 2026** — `/sprint-plan`.
-*(A **sprint boundary**, not the planned weekly review: Sprint 03 met its goal Aug 20 with
-8 days left, so it closes early. Sprint 04 is the first **2-week** sprint; run on Aug 22 it
-takes **Sat Aug 22 to Fri Sep 4**, with a weekly review on **Aug 29-30** and the next
-boundary on **Sep 5-6**. The Aug 8-9 and Aug 15-16 reviews were missed and were caught up
-in one entry on Thu Aug 20 — [[2026-08-20 Weekly Review]].)*
+→ **Next ceremony:** **weekend of Aug 29-30 2026**: `/weekly-review`, which is also
+Sprint 04's mid-sprint checkpoint (an M2 ADR not Accepted by then costs its story, not
+compression). The next boundary is **Sep 5-6**: `/sprint-plan` opens Sprint 05.
+*(Sprint 04 ran its planning on Sat Aug 22, the moved-up boundary from Sprint 03's early
+close: [[2026-08-22 Sprint 03 Retrospective]].)*
 
 **An early close moves the boundary, not the cadence.** A sprint that meets its goal with weeks
 to spare is re-planned at the next weekend, and the new sprint's 2-week range is set from that
@@ -119,7 +123,7 @@ Build order from here: the [[Roadmap]] ladder — **chain M0–M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005–008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop — [[2026-08 Sprint 02 — Base Foundation]] | ✅ done (Jul 30) |
-| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | ✅ **M1 done** (Aug 20) → 🔨 **M2 ‖ M3**, planned at Sprint 04 |
+| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | ✅ **M1 done** (Aug 20) → 🔨 **M2** in [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]; M3 at Sprint 05 |
 
 _Tasks → [[Sprint Board]]._
 
