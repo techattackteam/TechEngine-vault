@@ -2,7 +2,8 @@
 
 > Living design doc. **Status: active.** The decisions live in
 > [[ADR-015 — Threading (sim on main, render thread owns GL)]]; this note is the working
-> shape. Created with the ADR at S4-D1, mechanism pinned before Story B is cut.
+> shape. Created with the ADR at S4-D1 (2026-08-22), mechanism pinned ahead of the
+> implementation cards.
 
 **Module:** `core` (JobSystem) · `app` hosts the loop · **Kind:** system · **Status:** active
 **ADRs:** [[ADR-015 — Threading (sim on main, render thread owns GL)]] ·
@@ -46,7 +47,7 @@ flowchart LR
 
 On the dedicated server only `main` exists, plus the pool.
 
-### Surface, pinned for Story B
+### Surface (pinned 2026-08-22)
 
 - `JobSystem` owns the workers; constructed at the composition root, before `EngineContext`.
 - `submit(span<Task>) -> BatchId` and `wait(BatchId)`. A `Task` is a plain callable with no
@@ -77,4 +78,4 @@ follows `CONVENTIONS.md`'s subject-area folder rule when Story B lands.
 - [[Task Graph — Execution Flow]]: the levels this pool runs
 - [[Game Loop — Frame Flow]]: the loop the topology hosts
 - [[v1 Code Audit]]: F15 · F31
-- Code: none yet. Story B lands the first `JobSystem` files in `core`.
+- Code: none yet. S4-T4 lands the first `JobSystem` files in `core`.

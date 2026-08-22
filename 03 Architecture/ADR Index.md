@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 016 | [[ADR-016 — Serialization (binary primitives & describe-once seam)]] | Accepted | 2026-08 |
 | 015 | [[ADR-015 — Threading (sim on main, render thread owns GL)]] | Accepted | 2026-08 |
 | 014 | [[ADR-014 — Events (buffered streams) & StringId]]  | Accepted | 2026-08 |
 | 013 | [[ADR-013 — Profiler (Tracy-backed instrumentation)]] | Accepted | 2026-08 |
@@ -28,7 +29,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > ADR-001/002/003 describe the **v1 reference prototype** and are moved to
 > `_archive v1/` — history/prior art, out of the active list. Mine them via
 > [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **016** (numbers are never reused).
+> Next number is **017** (numbers are never reused).
 
 ### Partial supersessions
 

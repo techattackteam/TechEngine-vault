@@ -21,6 +21,14 @@
      (so "this plan *is* the deferred job-system's task graph" is now identity by name, not
      an equivalence to argue); §4's "scheduler must support role-conditioned schedules" and
      §6's access-set consumer "scheduler" mean the **task-graph build**.
+- **Amended 2026-08-22 — vocabulary (spelling only; no decision reversed):** §1's
+  `TE_COMPONENT("TechEngine.Transform")` is a **macro sketch**; the registration is
+  **macro-free**: the stable tag is a plain `constexpr` argument and its 64-bit hash **is
+  `StringId`** (FNV-1a/64, [[ADR-014 — Events (buffered streams) & StringId]] §1). The
+  decided content (author-declared stable tag, content-derived 64-bit hash, carried on disk
+  and wire) is unchanged. Driver:
+  [[ADR-016 — Serialization (binary primitives & describe-once seam)]] §5; precedent:
+  `EventTypeId` and `CONVENTIONS.md` → *Macros*.
 
 ## Context
 

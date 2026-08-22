@@ -52,11 +52,17 @@
       into §4 on review, with P2 owning the upgrade behind a P1 measurement. Ride-along: the
       grounding pass found and fixed [[Task Graph — Execution Flow]]'s two stale M10 refs
       (now P1/P2). **Story B cut into S4-T4 → S4-T5. M4 and M5 are unblocked on this half.**
-- [ ] **S4-D2** · serialization ADR via `/adr` · P1 · 🟢 Deep · done: Accepted; settles the
-      binary format and ADR-005's trait/registration seam (the "serializable" fact ADR-007 §7
-      has every component register); names its consumers (M5 components · M6 resources ·
-      T2/T4 bake · N3 snapshots) without building for them; the design note is created as the
-      hub; Story C is cut.
+- [x] **S4-D2** · serialization ADR via `/adr` · P1 · 🟢 Deep · **done 2026-08-22**
+      ([[ADR-016 — Serialization (binary primitives & describe-once seam)]] **Accepted**;
+      [[Serialization — Design]] created active, surface pinned pre-cut). Two paths one seam
+      (bulk trivially-copyable · visited) · the describe-once visit is both archive driver
+      and the reflection seam · little-endian, deterministic, `{magic, version, flags}`
+      header · one header version, re-bake over migration, per-type versions trigger'd on
+      the first non-regenerable content · tags hash with `StringId`, macro-free, recorded as
+      a vocabulary amendment on ADR-007 §1's `TE_COMPONENT` sketch · document schemas stay
+      with M5/M6/T4/N3. Review finding, applied to both new notes: **sprint-relative labels
+      ("Story C") do not belong in durable artifacts**; card IDs and dates replaced them.
+      **Story C cut into S4-T6 → S4-T7. Story A complete: both M2 gates Accepted on day 1.**
 
 ### Story B — concurrency bring-up *(sized 2026-08-22, off ADR-015)*
 
@@ -77,10 +83,24 @@
       named worker under the frame marks (half of the sprint's demo);
       `TechEngineSDKSmoke` still compiles. Needs S4-T4.
 
-### Story C — serialization first slice · ~2-3 tasks · **size after S4-D2**
+### Story C — serialization first slice *(sized 2026-08-22, off ADR-016)*
 
-> Heavy-gated, so deliberately unsized. Expected shape: the trait seam plus a headless binary
-> round-trip.
+> Ordering: **T6 → T7**, independent of Story B. Gate said **neither** on both: ADR-016 is
+> Accepted and [[Serialization — Design]] § *Surface* carries the pinned shape. No file I/O
+> anywhere here: the writer is M3's, so everything round-trips through memory.
+
+- [ ] **S4-T6** · `Writer`/`Reader` primitives + bulk path + tests · P1 · 🟢 Deep · done:
+      `core` carries the pinned surface (primitives · `{magic, version, flags}` header
+      written and checked by the pair · bulk `span<const T>` path · fail-soft `Reader` with
+      a status, whose shape answers the note's error-surface question in code); Catch2 pins:
+      every primitive round-trips, a bulk span round-trips, truncated and corrupted buffers
+      fail soft, wrong magic and wrong version are rejected; green on all legs.
+- [ ] **S4-T7** · visit seam + non-POD round-trip demo · P1 · 🟢 Deep · done: the
+      describe-once `visit` binding is decided in code (ADL vs trait, recorded in the note)
+      and a hand-made non-POD struct round-trips through both archives; the drift-guard
+      question gets its honest answer recorded in the note (what a test can actually pin);
+      the headless driver round-trips a struct through the seam and logs it, the sprint
+      demo's other half; `TechEngineSDKSmoke` still compiles. Needs S4-T6.
 
 ### Story D — measurements & cleanups *(Dev)*
 
@@ -119,8 +139,9 @@
 
 ## Definition of Done
 
-- [ ] Both M2 ADRs are Accepted, each with a design note as its hub, and Stories B and C were
-      cut **after** their artifact, never before.
+- [x] Both M2 ADRs are Accepted, each with a design note as its hub, and Stories B and C were
+      cut **after** their artifact, never before. **Met 2026-08-22, day 1**: ADR-015 with
+      [[Concurrency — Design]], ADR-016 with [[Serialization — Design]].
 - [ ] M2's unlock is demonstrable: a Tracy capture with pool workers visible, and a headless
       binary round-trip through the trait seam.
 - [ ] Every pulled backlog entry was deleted at planning (six were), and nothing was built
@@ -139,8 +160,11 @@ Fridays is the same non-squeeze Sprint 03 recorded: a deep day absorbs a 🟠, a
 column has slack.
 
 > **Story B cut 2026-08-22, off ADR-015: 1 🟢 · 1 🟠**, against a shared ~4-6 🟢 reserve.
-> Under the guess again, the same direction as Sprint 03's sizing lesson. Story C's half of
-> the reserve is untouched until S4-D2 lands.
+> Under the guess again, the same direction as Sprint 03's sizing lesson.
+>
+> **Story C cut 2026-08-22, off ADR-016: 2 🟢.** B and C together draw **3 🟢 · 1 🟠**
+> against the reserve, so the sprint is fully sized on day 1 with deep slack to spare, the
+> Sprint 03 pattern repeating. The slack stays banked.
 
 **Said out loud: 4 of the 9 sized cards are Process (about 44%, and about 30% once B and C
 are cut).** All four were pulled deliberately at planning, every trigger fired. They live on
