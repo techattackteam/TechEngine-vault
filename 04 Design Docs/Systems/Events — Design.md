@@ -63,14 +63,17 @@ ADR-014 calls this "double-buffered". It is realized as one buffer, not two.
 
 ### Staging, at M1
 
-The executor is serial until M2, because the task graph runs level by level on one thread. So
+The executor is serial until P1, because the task graph runs level by level on one thread. So
 there is **one staging buffer per stream**.
 
 That is enough, because the append order already *equals* ADR-014 §3's merge key: schedule
 position, then FIFO within a publisher.
 
-M2's pool layers per-thread lanes and a real merge on top, under the **same key**. The
-semantics do not change, and the threading ADR owns the layout.
+P1's workers layer per-thread lanes and a real merge on top, under the **same key**. The
+semantics do not change. [[ADR-015 — Threading (sim on main, render thread owns GL)]] §5
+made `publish` **sim-thread-only until P1** and left the lane layout to P1. (Updated
+2026-08-22; this section previously said "until M2" and named the threading ADR as the
+layout's owner.)
 
 ### Making events visible
 
@@ -305,8 +308,9 @@ Three ordering facts, each of which is a silent bug if reversed.
   hand-declaring it. **Owner:** the task-graph ADR, since nothing can invoke it until
   `Schedule` and `SystemAccess` exist. Raised 2026-08-06 during S3-T9, because the raw call
   site read badly.
-- **Per-thread staging lanes and their merge.** The semantics are fixed above. **Owner:** the
-  M2 threading ADR.
+- **Per-thread staging lanes and their merge.** The semantics are fixed above. **Owner:**
+  **P1**, re-scoped by [[ADR-015 — Threading (sim on main, render thread owns GL)]] §5:
+  `publish` is sim-thread-only until then.
 - **Rewind truncation for client reconciliation.** ADR-014 §3 asserts that a replayed tick
   reproduces an identical stream, but nothing says how the mispredicted run's events leave.
   `retire` only drops from the front, so a rewind needs a **tail** truncation: drop back to a

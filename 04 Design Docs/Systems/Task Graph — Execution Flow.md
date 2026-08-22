@@ -11,9 +11,10 @@
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
-**Roadmap:** [[Roadmap]]. **M2**'s threading ADR (topology, GL context owner, pool shape),
-then **M5**'s task-graph ADR (the System interface, which is this doc), then **M10**'s
-work-stealing implementation
+**Roadmap:** [[Roadmap]]. **M2**'s threading ADR is **decided**:
+[[ADR-015 — Threading (sim on main, render thread owns GL)]], hub [[Concurrency — Design]].
+Next: **M5**'s task-graph ADR (the System interface, which is this doc), then the lanes:
+**P1** turns real workers on, **P2** brings the work-stealing implementation
 
 ## Purpose
 
@@ -105,14 +106,11 @@ command buffer as everything else, so there is no separate path to keep consiste
 
 Grouped by the ADR that owns them. The [[Roadmap]] rung is in brackets.
 
-### Owned by the threading ADR [M2]
+### Settled by ADR-015 (2026-08-22)
 
-These get settled *before* the window lane, not with this doc.
-
-- **Thread topology and GL context ownership.** Who owns the context, and how work reaches it.
-  That decides which thread the executor runs on.
-- **Pool shape.** The interface the executor is written against. It ships serial, with one
-  worker.
+Topology, GL ownership and the pool shape are decided: sim on main, the render thread owns
+the context, and the executor runs on the loop's thread against `JobSystem`'s batch submit
+and wait. Current shape: [[Concurrency — Design]] § *Decided*.
 
 ### Owned by the task-graph ADR [M5]
 
@@ -123,11 +121,11 @@ These get settled *before* the window lane, not with this doc.
 - **Schedule mutation at runtime.** What a rebuild costs, and when a rebuild is legal. Is
   mid-frame allowed?
 
-### Deferred to implementation [M10]
+### Deferred to implementation [P1 → P2]
 
 - **A work-stealing executor, plus Jolt pool integration.** This fixes F15. Levels walk
-  serially until a measurement says otherwise. The level structure feeds a pool **unchanged**,
-  so this changes no interface.
+  serially until a measurement says otherwise (workers turn on at P1, tuning is P2). The
+  level structure feeds a pool **unchanged**, so this changes no interface.
 
 ## References
 

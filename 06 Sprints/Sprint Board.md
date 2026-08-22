@@ -11,13 +11,13 @@ kanban-plugin: board
 
 ## 📋 A · M2 gates *(D1 cuts Story B · D2 cuts Story C)*
 
-- [ ] **S4-D1** · threading ADR via `/adr` · P1 · 🟢 Deep
 - [ ] **S4-D2** · serialization ADR via `/adr` · P1 · 🟢 Deep
 
 
-## 📋 B · concurrency bring-up *(⏳ size after S4-D1)*
+## 📋 B · concurrency bring-up *(T4 → T5)*
 
-- [ ] ⏳ ~2-3 tasks · cut when S4-D1 is Accepted
+- [ ] **S4-T4** · `JobSystem` interface + one-worker pool + tests · P1 · 🟢 Deep
+- [ ] **S4-T5** · `EngineContext` wiring + capture demo · P2 · 🟠 Moderate
 
 
 ## 📋 C · serialization first slice *(⏳ size after S4-D2)*
@@ -47,7 +47,18 @@ kanban-plugin: board
 ## 👀 Review / Demo
 
 
+
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
+
+- [x] **S4-D1** · threading ADR · P1 · 🟢 Deep · **Aug 22.**
+	  [[ADR-015 — Threading (sim on main, render thread owns GL)]] **Accepted**;
+	  [[Concurrency — Design]] created as the hub, surface pinned before the cut. Sim on main
+	  (drag-stall named, reversal trigger'd) · render thread owns GL, fed complete command
+	  lists · `JobSystem` in `core`, batch submit and wait, one worker at M2 · `publish`
+	  sim-thread-only until P1. The fork-join idle bubble went into §4 on review, P2 owns the
+	  upgrade behind a P1 measurement. Ride-along: [[Task Graph — Execution Flow]]'s two stale
+	  M10 refs now read P1/P2. **Story B cut into S4-T4 → S4-T5; S4-D2 is Story A's last card.**
+
 
 
 

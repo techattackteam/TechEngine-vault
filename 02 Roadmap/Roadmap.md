@@ -43,28 +43,28 @@ flowchart TB
 
 Listed in a suggested default order. The only hard edges are shown in *needs*.
 
-| ID | Rung | Contents | Needs / gate |
-|---|------|----------|--------------|
-| **P1** | parallel executor on | workers > 1, levels running concurrently, **TSan leg green** | M5 · M2 |
-| **T1** | editor — panels | dock · hierarchy · inspector · console/cvars · Profiler panel · scene save | M6 — ImGui only, no engine renderer |
-| **T2** | export slice | editor saves → `runtime` loads the project and runs it, **no importers linked** | T1 · M6 |
-| **R1** | renderer v0 | device seam (F22) · mesh + shader + material · camera · frustum culling · one forward pass | M6 · **renderer ADR** |
-| **T3** | editor — viewport | 3D scene view · picking (F21) · gizmos | R1 |
-| **N1** | transport | ENet/GNS/yojimbo pick · connect/disconnect · reliable + unreliable channels | **netcode transport ADR** |
-| **A1** | scripting SDK | user Systems + Scripts over `te_sdk` · game-DLL load + hot-reload | M5 · [[ADR-010 — User authoring model (Systems & Scripts)]] + scripting ADR |
-| **A2** | game UI | 2D pass · font/text · layout · input routing · script-drivable | R1 · **own ADR** |
-| **S1** | physics | Jolt — authoritative, fixed phase | M5 |
-| **N2** | replication slice | 2 processes, 1 replicated `Transform` | N1 · M5 |
-| **R2** | render graph | passes · shadows · depth prepass · post · GPU zones per pass | R1 |
-| **T4** | import + bake | assimp/stb in the editor · baked binary out | T1 · M6 |
-| **N3** | snapshot/delta replication | real encoder · dirty sets · per-component byte counters | N2 |
-| **C1** | animation & skinning | skeleton/clip assets · sampling System · GPU skinning | T4 · R1 |
-| **P2** | job system — tuning | work-stealing · Jolt pool integration (F15) | P1 + measurement |
-| **N4** | prediction + reconciliation | client prediction · rollback · server correction | N3 |
-| **R3** | signature rendering | scattering · volumetric fog · god rays · auto-exposure + bloom | R2 |
-| **N5** | interest management | relevance sets over R2's culling | N3 · R2 |
-| **T5** | packaging | distributable build · launcher args · no dev deps | T2 · T4 |
-| **C2** | audio | miniaudio | — |
+| ID     | Rung                        | Contents                                                                                   | Needs / gate                                                                |
+| ------ | --------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| **P1** | parallel executor on        | workers > 1, levels running concurrently, **TSan leg green**                               | M5 · M2                                                                     |
+| **T1** | editor — panels             | dock · hierarchy · inspector · console/cvars · Profiler panel · scene save                 | M6 — ImGui only, no engine renderer                                         |
+| **T2** | export slice                | editor saves → `runtime` loads the project and runs it, **no importers linked**            | T1 · M6                                                                     |
+| **R1** | renderer v0                 | device seam (F22) · mesh + shader + material · camera · frustum culling · one forward pass | M6 · **renderer ADR**                                                       |
+| **T3** | editor — viewport           | 3D scene view · picking (F21) · gizmos                                                     | R1                                                                          |
+| **N1** | transport                   | ENet/GNS/yojimbo pick · connect/disconnect · reliable + unreliable channels                | **netcode transport ADR**                                                   |
+| **A1** | scripting SDK               | user Systems + Scripts over `te_sdk` · game-DLL load + hot-reload                          | M5 · [[ADR-010 — User authoring model (Systems & Scripts)]] + scripting ADR |
+| **A2** | game UI                     | 2D pass · font/text · layout · input routing · script-drivable                             | R1 · **own ADR**                                                            |
+| **S1** | physics                     | Jolt — authoritative, fixed phase                                                          | M5                                                                          |
+| **N2** | replication slice           | 2 processes, 1 replicated `Transform`                                                      | N1 · M5                                                                     |
+| **R2** | render graph                | passes · shadows · depth prepass · post · GPU zones per pass                               | R1                                                                          |
+| **T4** | import + bake               | assimp/stb in the editor · baked binary out                                                | T1 · M6                                                                     |
+| **N3** | snapshot/delta replication  | real encoder · dirty sets · per-component byte counters                                    | N2                                                                          |
+| **C1** | animation & skinning        | skeleton/clip assets · sampling System · GPU skinning                                      | T4 · R1                                                                     |
+| **P2** | job system — tuning         | work-stealing · Jolt pool integration (F15)                                                | P1 + measurement                                                            |
+| **N4** | prediction + reconciliation | client prediction · rollback · server correction                                           | N3                                                                          |
+| **R3** | signature rendering         | scattering · volumetric fog · god rays · auto-exposure + bloom                             | R2                                                                          |
+| **N5** | interest management         | relevance sets over R2's culling                                                           | N3 · R2                                                                     |
+| **T5** | packaging                   | distributable build · launcher args · no dev deps                                          | T2 · T4                                                                     |
+| **C2** | audio                       | miniaudio                                                                                  | —                                                                           |
 
 **A rung closes when its gate is Accepted and its unlock is demonstrable** — not when every
 listed item is polished. Rungs overlap; the chain order is the commitment, the lane interleave

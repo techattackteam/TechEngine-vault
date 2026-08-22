@@ -42,21 +42,40 @@
 
 ### Story A — M2's gates *(Design · ordered first; Stories B and C wait on these)*
 
-- [ ] **S4-D1** · threading ADR via `/adr` · P1 · 🟢 Deep · done: Accepted in [[ADR Index]];
-      settles thread topology, GL context ownership, the pool interface plus the minimal pool's
-      shape, and how [[Task Graph — Execution Flow]]'s levels map onto it; the concurrency
-      design note is created as the hub; Story B is cut into carded tasks fitting the reserve.
+- [x] **S4-D1** · threading ADR via `/adr` · P1 · 🟢 Deep · **done 2026-08-22**
+      ([[ADR-015 — Threading (sim on main, render thread owns GL)]] **Accepted**;
+      [[Concurrency — Design]] created active, surface pinned pre-cut). Sim on main with the
+      drag-stall named and its reversal trigger'd · render thread owns GL, fed complete
+      per-frame command lists · `JobSystem` in `core`, batch submit and wait, one worker at
+      M2 · level = batch, barriers never on workers · `publish` sim-thread-only until P1
+      (re-scoped from [[Events — Design]]'s M2 reservation). The fork-join idle bubble went
+      into §4 on review, with P2 owning the upgrade behind a P1 measurement. Ride-along: the
+      grounding pass found and fixed [[Task Graph — Execution Flow]]'s two stale M10 refs
+      (now P1/P2). **Story B cut into S4-T4 → S4-T5. M4 and M5 are unblocked on this half.**
 - [ ] **S4-D2** · serialization ADR via `/adr` · P1 · 🟢 Deep · done: Accepted; settles the
       binary format and ADR-005's trait/registration seam (the "serializable" fact ADR-007 §7
       has every component register); names its consumers (M5 components · M6 resources ·
       T2/T4 bake · N3 snapshots) without building for them; the design note is created as the
       hub; Story C is cut.
 
-### Story B — concurrency bring-up · ~2-3 tasks · **size after S4-D1**
+### Story B — concurrency bring-up *(sized 2026-08-22, off ADR-015)*
 
-> Heavy-gated, so deliberately unsized ([[Planning Workflow — Artifact Gate]] § *Don't size
-> past an open decision*). Expected shape: the minimal pool against the real interface, with a
-> Tracy capture showing named worker threads as the demo hook.
+> Ordering: **T4 → T5**, independent of Story C. Gate said **neither** on both: ADR-015 is
+> Accepted and [[Concurrency — Design]] § *Surface* carries the pinned shape. The render
+> thread is **not** built here; it waits for M4's window (ADR-015 §2 decides, M4 proves).
+
+- [ ] **S4-T4** · `JobSystem` interface + one-worker pool + tests · P1 · 🟢 Deep · done:
+      `core` carries the [[Concurrency — Design]] § *Surface* shape (submit a batch, wait
+      that batch, `workerCount()`, the worker named for Tracy, submit-after-shutdown behind
+      `TE_CHECK` with a defined path); Catch2 pins: every task runs exactly once, `wait`
+      returns only after the batch completes, tasks execute on the worker thread (thread id
+      observed), the shutdown path; green on all legs, `linux-tsan` included.
+- [ ] **S4-T5** · `EngineContext` wiring + capture demo · P2 · 🟠 Moderate · done: the
+      composition root owns `JobSystem` by value and `EngineContext` gains `JobSystem& jobs`
+      (ADR-006 §4's sketch made real one field at a time, the S3-T13 pattern); the headless
+      driver submits a demo batch per frame; a `windows-profile` capture shows zones on the
+      named worker under the frame marks (half of the sprint's demo);
+      `TechEngineSDKSmoke` still compiles. Needs S4-T4.
 
 ### Story C — serialization first slice · ~2-3 tasks · **size after S4-D2**
 
@@ -118,6 +137,10 @@ Sized now: **2 🟢** (D1, D2) · **3 🟠** (T1, P3, P4) · **4 🟡** (T2, T3,
 for Stories B and C is **~4-6 🟢 plus whatever the deep days absorb**. Three 🟠 against two
 Fridays is the same non-squeeze Sprint 03 recorded: a deep day absorbs a 🟠, and the deep
 column has slack.
+
+> **Story B cut 2026-08-22, off ADR-015: 1 🟢 · 1 🟠**, against a shared ~4-6 🟢 reserve.
+> Under the guess again, the same direction as Sprint 03's sizing lesson. Story C's half of
+> the reserve is untouched until S4-D2 lands.
 
 **Said out loud: 4 of the 9 sized cards are Process (about 44%, and about 30% once B and C
 are cut).** All four were pulled deliberately at planning, every trigger fired. They live on
