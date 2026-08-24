@@ -33,7 +33,6 @@ kanban-plugin: board
 ## 📋 E · process *(first thing cut)*
 
 - [ ] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light
-- [ ] **S4-P2** · CMake source-listing research · P3 · 🟡 Light
 - [ ] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate
 - [ ] **S4-P4** · skip CI on docs-only PRs + auto-merge · P3 · 🟠 Moderate
 
@@ -47,6 +46,18 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
 
+- [x] **S4-P2** · CMake source-listing research · P3 · 🟡 Light · **Aug 24.**
+	  Vault-only, no code. The **No `GLOB`** rule stands. What was missing was the *reversal
+	  trigger*, and [[ADR-008 — v2 build & testing baseline]] §2 now carries a dated amendment
+	  naming it: a **self-registration `.cpp`** has no symbol another TU references, so leaving
+	  one out of the list is the single way this rule fails *silently* rather than at link.
+	  ADR-016's type-registration seam is the likely first, and the answer then is a **CI
+	  staleness check, not a glob**, since a glob would also drop the filtering the list does.
+	  Measured evidence in [[B3 — Build & Testing Notes]] → *Source listing*: across 54 commits,
+	  **0** `.cpp` files missing from a `SOURCES` list, 4 headers drifted (IDE grouping only,
+	  so nothing builds differently). `CONVENTIONS.md` needed no change. **Considered and
+	  declined:** globbing `HEADERS` alone, which buys back cosmetic drift at the price of a
+	  second rule inside one helper.
 - [x] **S4-T5** · `EngineContext` wiring + capture demo · P2 · 🟠 Moderate · **Aug 24.**
 	  a0d1d1b3 (#46), on S4-T4's branch. `EngineContext` gains `JobSystem& jobs`, one field at
 	  a time, the S3-T13 pattern. The capture shows the fork-join shape ADR-015 §4 predicted:

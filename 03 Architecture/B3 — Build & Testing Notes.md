@@ -18,6 +18,7 @@ ADR-005/006). Decisions already made live in the ADRs (linked); this collects
   `include/TechEngine/<module>/` **PUBLIC**, `src/` **PRIVATE** — a private include must
   not resolve for a consumer.
 - **No `GLOB`** — explicit source lists (v1 F6).
+  Re-tested 2026-08-24, rule stands: see *Source listing* below.
 - **One shared `techengine_module()` helper** to stamp out the per-module boilerplate
   (include dirs, visibility, warnings) consistently.
 
@@ -118,6 +119,73 @@ Two things the three-way split shows, neither of them a problem:
 The ON builds also compile in S3-T5's global `new`/`delete` replacement, so the delta covers
 every allocation as well as every zone. This loop allocates nothing in steady state, so that
 contributes ~0 **here** — which will not survive the first system that allocates per frame.
+
+## Source listing: re-tested 2026-08-24 (S4-P2)
+
+The **No `GLOB`** rule above came from v1's F6 and was never re-tested against v2. S4-P2
+tested it. **The rule stands, unchanged.** What did change is
+[[ADR-008 — v2 build & testing baseline]] §2, which stated the rule without ever naming the
+condition that would reopen it. It now carries one.
+
+### What the tree costs today
+
+Measured across the whole repo at engine `a0d1d1b3`:
+
+| Measure | Value |
+|---|---|
+| Tracked `.cpp` and `.hpp` files | 74 |
+| Commits on `master` | 54 |
+| Commits that added a source file | 21, median 2 to 3 files each |
+| `.cpp` files on disk missing from a `SOURCES` list | **0** |
+| Headers on disk missing from a `HEADERS` list | **4** |
+
+The explicit list costs roughly **one added line per new file**, and it has never once been
+wrong for a `.cpp`. That is the entire tax the alternatives exist to remove.
+
+The four header misses are `base/src/diagnostics/{FormatBuffer,LogInternal,SourceName}.hpp`
+and `core/tests/events/AssertCapture.hpp`. `HEADERS` is IDE grouping only
+(`cmake/techengine_module.cmake:3`), so nothing builds differently. `sdk` and
+`tests/support` list no headers at all, and that is correct: both are INTERFACE targets.
+
+### The three options
+
+| Option | Cost here | How it fails |
+|---|---|---|
+| **Explicit lists** (current) | ~1 line per new file | An unlisted `.cpp` fails **loud** at link. It is silent only when nothing references its symbols. |
+| **`CONFIGURE_DEPENDS` glob** | A directory re-scan on every build | The portability guarantee does not exist. See the quote below. |
+| **Generator script** | A new tool, plus a CI check to catch a stale list | It trades a one-line edit for a tool to maintain, and drift only becomes visible when CI runs. |
+
+CMake's own documentation is the deciding evidence against the glob. It says plainly:
+
+> "We do not recommend using GLOB to collect a list of source files from your source tree."
+> ([`file()` command reference](https://cmake.org/cmake/help/latest/command/file.html))
+
+The same paragraph adds that `CONFIGURE_DEPENDS` may not work reliably on all generators, and
+it **declines to name which generators do work**. That silence is the finding. Our two legs
+are both Ninja and would very likely work today, but there is no contract to hold CMake to,
+and a future generator move would be a second F6.
+
+### The one case where the explicit list fails silently
+
+A `.cpp` whose only job is **self-registration** has no symbol that any other TU references.
+Forget to list it and it does not fail to link. It simply is not there, and the type it would
+have registered is missing at runtime.
+
+This is not hypothetical here. ADR-016's type-registration seam, and the event and component
+registries, are exactly that shape.
+
+**The fix, when it arrives, is a CI staleness check, not a glob.** A glob would solve it by
+removing the list, which costs the filtering the list does: a throwaway demo `.cpp` under
+`src/` must not enter the build. A check keeps both.
+
+### Decided
+
+- **`SOURCES` and `HEADERS` both stay explicit.** One mechanism, not two. Relaxing `HEADERS`
+  alone was considered and declined: it buys back cosmetic drift at the price of a second
+  rule inside the same helper.
+- **`CONVENTIONS.md` is unchanged.** Its *CMake* section already carries the rule, correctly.
+- **The four drifted headers ride along** with the next card that touches `base` or `core`.
+  They are IDE grouping only, so they may sit a while, and that is acceptable.
 
 ## Scaffold checklist
 

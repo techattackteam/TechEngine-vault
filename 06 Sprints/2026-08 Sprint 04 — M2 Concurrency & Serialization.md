@@ -129,9 +129,15 @@
       replaces the timestamped accumulation, storage sits under the 10 GB cap, and a later run
       shows hits on the Linux legs. Rides along: `.claude/commands/sprint-plan.md` still says
       4-week sprints; fix the wording in the same PR.
-- [ ] **S4-P2** · CMake source-listing research · P3 · 🟡 Light · done: explicit lists,
-      `CONFIGURE_DEPENDS` glob and a generator script are compared with evidence in
-      [[B3 — Build & Testing Notes]]; the rule lands in `CONVENTIONS.md`, or is carded if it
+- [x] **S4-P2** · CMake source-listing research · P3 · 🟡 Light ·
+      **done 2026-08-24** (vault-only, no code). Entry on [[Sprint Board]]. The card's last
+      `done:` clause had no work behind it: the rule was **already** in `CONVENTIONS.md`, in
+      [[B3 — Build & Testing Notes]], and in ADR-008 §2 as an Accepted decision enforced by a
+      `FATAL_ERROR` in both helpers. So the real shape was the opposite one, re-testing an
+      Accepted rule rather than deciding an open one. **The rule stands**, both `SOURCES` and
+      `HEADERS` stay explicit, and ADR-008 §2 gains the reversal trigger it never had.
+      Original acceptance: explicit lists, `CONFIGURE_DEPENDS` glob and a generator script
+      compared with evidence in B3; the rule lands in `CONVENTIONS.md`, or is carded if it
       needs a sweep.
 - [ ] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate · done: one coverage job (Linux leg)
       runs on each PR and surfaces a report; it is not a required check; its minute cost is

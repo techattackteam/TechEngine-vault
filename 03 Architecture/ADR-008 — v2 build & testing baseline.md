@@ -25,6 +25,10 @@
   (its `GENERATE_DEBUG_SYMBOLS` default), so every Jolt TU was uncacheable and recompiled
   each run. `deps.cmake` now sets `GENERATE_DEBUG_SYMBOLS OFF` on MSVC (Clang keeps `-g`,
   which caches fine).
+- **Amended 2026-08-24 — decision:** §2's explicit-source-list rule gains the reversal
+  trigger it never had (no old value; the rule itself is unchanged). Every other reversible
+  call in this ADR names one and this one did not, so nothing said when to look again.
+  S4-P2.
 
 ## Context
 
@@ -126,6 +130,14 @@ techengine_module(core
   solo dev + AI must be able to read a module's `CMakeLists.txt` and see exactly its
   sources and deps. Cleverness in CMake is a maintenance tax (v1 proved the opposite
   failure — no abstraction — but the fix is *one* helper, not a DSL).
+
+> **Amended 2026-08-24:** the explicit-list rule stands, and now carries a reversal
+> trigger. **Revisit when a self-registration pattern lands** — a `.cpp` whose only job is
+> registering a type has no symbol another TU references, so leaving it out of the list is
+> the one way this rule fails *silently* rather than at link. ADR-016's type-registration
+> seam is the likely first. The answer then is a **CI staleness check**, not a glob: a glob
+> also drops the filtering the list does, and a scratch `.cpp` under `src/` must stay out of
+> the build. Measured evidence in [[B3 — Build & Testing Notes]] → *Source listing*.
 
 ### 3. Presets — `CMakePresets.json` is the build contract
 
