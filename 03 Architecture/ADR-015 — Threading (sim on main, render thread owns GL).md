@@ -13,6 +13,16 @@
   window bring-up and M5's executor. **P1 and P2 are [[Roadmap]] lane rungs, after M5:**
   P1 turns real workers on (workers > 1, levels running concurrently, TSan green), P2 tunes
   the pool (work-stealing, Jolt integration).
+- **Amended 2026-08-24 — decision:** **the pool ships with four workers.** §3 said "one
+  worker thread and a real queue", and raising the count was P1's job. S4-T5's first capture
+  showed the single worker running a four-task batch end to end, exactly the shape §4
+  predicted. Running the real width now retires this ADR's own negative ("one worker cannot
+  produce real contention, so P1 is where hidden races surface") while the pool is still
+  small enough to reason about, and it gives the `linux-tsan` leg something to find at M2
+  rather than at P1. The interface, the level-to-batch mapping, barrier placement and the
+  cross-thread rules are all unchanged: P1 still owns concurrent publishers and their lanes,
+  P2 still owns stealing and Jolt. Taken at S4-T5 (2026-08-24).
+  Record: [[Concurrency — Design]] § *Surface*.
 
 ## Context
 
@@ -66,6 +76,10 @@ ADR; M4 proves this seam with clear plus triangle running on the render thread.
 
 ### 3. JobSystem: hand-rolled in `core`, batch submit and join
 
+> **Amended 2026-08-24:** the pool ships with **four** workers, not the one named below.
+> Everything else in this section stands: the interface is still submit a batch and wait for
+> it, and P2 still owns stealing and Jolt.
+
 `JobSystem` is an engine-lifetime service in `core`, injected via `EngineContext`, name kept
 from ADR-006 §4's sketch. The M2 interface is the executor's shape and nothing more:
 **submit a batch of tasks, wait for that batch**. No futures, no continuations, no
@@ -74,6 +88,11 @@ real queue**, so the submit and join handoff is exercised under the `linux-tsan`
 day one. P1 raises the worker count; P2 adds stealing and Jolt pool integration (F15).
 
 ### 4. Task-graph levels map to batches
+
+> **Amended 2026-08-24:** with four workers, the "observable behavior stays serial" sentence
+> below no longer holds. Determinism at M2 rests on the level mapping, on levels having
+> disjoint writes, and on barriers running off the workers. It never rested on the worker
+> count alone.
 
 Within a phase the executor submits each level as one batch and waits before the next level
 (levels have disjoint writes by construction, ADR-007 §6). Phase barriers, command-buffer

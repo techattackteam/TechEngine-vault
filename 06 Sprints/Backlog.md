@@ -54,6 +54,11 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **Resources — hot-reload / eviction** — candidate ADR; depends on the
   UUID/cache model ported from v1 (F7, F13, F31). **Trigger:** the resource cache being real (M6).
 
+- #prio/low · **A test for `wait()` called from a pool worker** — the `TE_CHECK` added at
+  S4-T4 is the only guard, and it has no case, because without it the test hangs rather than
+  fails and costs a CI timeout to catch. **Trigger:** a test helper that can fail a case on a
+  deadline.
+
 ## client
 
 - *(none)*
@@ -87,6 +92,12 @@ groups are kept, because they show where future work will land.
   inspect (R2).
 
 ## etc — cross-cutting
+
+- #prio/medium · **`FETCHCONTENT_UPDATES_DISCONNECTED` is OFF with a comment explaining why it
+  is ON** — flipped as a ride-along in #46; the five lines above it still describe the old
+  value and the Windows/MSBuild failure it avoided. Either restore it or rewrite the comment.
+  **Trigger:** the next `cmake/deps.cmake` change, or the first re-appearance of that MSBuild
+  path error.
 
 - #prio/low · **`.gitattributes` for committed test assets** — `engine/app/assets/demo.txt`
   gets CRLF on Windows checkout. Harmless while the demo only logs a byte count; silent the

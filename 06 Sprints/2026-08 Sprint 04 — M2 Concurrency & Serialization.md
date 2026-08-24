@@ -70,13 +70,17 @@
 > Accepted and [[Concurrency — Design]] § *Surface* carries the pinned shape. The render
 > thread is **not** built here; it waits for M4's window (ADR-015 §2 decides, M4 proves).
 
-- [ ] **S4-T4** · `JobSystem` interface + one-worker pool + tests · P1 · 🟢 Deep · done:
+- [x] **S4-T4** · `JobSystem` interface + one-worker pool + tests · P1 · 🟢 Deep ·
+      **done 2026-08-24** (a0d1d1b3, #46). The pool ships **four** workers, not one: ADR-015
+      §3 amended mid-card off T5's capture. Entry on [[Sprint Board]]. Original acceptance:
       `core` carries the [[Concurrency — Design]] § *Surface* shape (submit a batch, wait
       that batch, `workerCount()`, the worker named for Tracy, submit-after-shutdown behind
       `TE_CHECK` with a defined path); Catch2 pins: every task runs exactly once, `wait`
       returns only after the batch completes, tasks execute on the worker thread (thread id
       observed), the shutdown path; green on all legs, `linux-tsan` included.
-- [ ] **S4-T5** · `EngineContext` wiring + capture demo · P2 · 🟠 Moderate · done: the
+- [x] **S4-T5** · `EngineContext` wiring + capture demo · P2 · 🟠 Moderate ·
+      **done 2026-08-24** (a0d1d1b3, #46), on S4-T4's branch. Entry on [[Sprint Board]].
+      Original acceptance: the
       composition root owns `JobSystem` by value and `EngineContext` gains `JobSystem& jobs`
       (ADR-006 §4's sketch made real one field at a time, the S3-T13 pattern); the headless
       driver submits a demo batch per frame; a `windows-profile` capture shows zones on the
@@ -143,7 +147,9 @@
       cut **after** their artifact, never before. **Met 2026-08-22, day 1**: ADR-015 with
       [[Concurrency — Design]], ADR-016 with [[Serialization — Design]].
 - [ ] M2's unlock is demonstrable: a Tracy capture with pool workers visible, and a headless
-      binary round-trip through the trait seam.
+      binary round-trip through the trait seam. **Concurrency half met 2026-08-24**
+      (a0d1d1b3, #46): the capture shows named worker zones under the frame marks. The
+      serialization half waits on S4-T6 → S4-T7.
 - [ ] Every pulled backlog entry was deleted at planning (six were), and nothing was built
       without a consumer.
 - [ ] The checkpoint held: an ADR not Accepted by the Aug 29-30 review costs its story, not

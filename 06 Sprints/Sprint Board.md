@@ -12,10 +12,9 @@ kanban-plugin: board
 ## 📋 A · M2 gates · ✅ **complete** *(D1 · D2, both Aug 22)*
 
 
-## 📋 B · concurrency bring-up *(T4 → T5)*
 
-- [ ] **S4-T4** · `JobSystem` interface + one-worker pool + tests · P1 · 🟢 Deep
-- [ ] **S4-T5** · `EngineContext` wiring + capture demo · P2 · 🟠 Moderate
+## 📋 B · concurrency bring-up · ✅ **complete** *(T4 · T5, both Aug 24)*
+
 
 
 ## 📋 C · serialization first slice *(T6 → T7)*
@@ -46,9 +45,42 @@ kanban-plugin: board
 ## 👀 Review / Demo
 
 
-
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
 
+- [x] **S4-T5** · `EngineContext` wiring + capture demo · P2 · 🟠 Moderate · **Aug 24.**
+	  a0d1d1b3 (#46), on S4-T4's branch. `EngineContext` gains `JobSystem& jobs`, one field at
+	  a time, the S3-T13 pattern. The capture shows the fork-join shape ADR-015 §4 predicted:
+	  `JobSystem.Wait` on main spanning the worker's task zones under the frame marks. Reading
+	  it is what moved the worker count (see S4-T4). **Retro:** the card rode T4's branch, so
+	  the squashed commit links only to T4 and T5 has no path back to its board card
+	  (ADR-012 § *Consequences*). Called out before the branch was cut and taken anyway;
+	  the cost is real but small, and one PR for a card and its proof is defensible.
+	  **Story B complete.**
+- [x] **S4-T4** · `JobSystem` interface + one-worker pool + tests · P1 · 🟢 Deep · **Aug 24.**
+	  a0d1d1b3 (#46). Two `done:` clauses had **no referent**: `Profile.hpp` had no
+	  thread-naming macro, so the card carried a `base` change (`TE_PROFILER_THREAD_NAME`),
+	  and nothing in the tree linked threads at all, so `find_package(Threads)` landed too.
+	  That is the third card running in a row whose clauses named something that did not
+	  exist (S3-B1, S3-T13).
+	  **The worker count moved mid-card, 1 → 4**, off T5's first capture showing the single
+	  worker running a four-task batch end to end. Filed as a dated `decision` amendment on
+	  [[ADR-015 — Threading (sim on main, render thread owns GL)]] §3 with an inline marker at
+	  §4, whose determinism-by-construction claim rested on the count.
+	  **Exception policy was undecided and got decided here**: a throwing task is caught,
+	  reported, and its batch decremented, so `wait` cannot park forever. It does **not**
+	  settle `CONVENTIONS.md`'s *Error handling* Open row. Recorded with four other
+	  implementation calls in [[Concurrency — Design]] § *Mechanism*.
+	  Review caught four ways to kill or hang the pool, all fixed in the same PR, none logged:
+	  an exception escaping a task, `wait` called from a worker, concurrent `shutdown`
+	  returning before the join, and a constructor throwing mid-spawn. Two missing tests were
+	  written with them.
+	  Naming drift resolved **toward the code**: the note pinned `te-worker-0`, the code
+	  shipped `TEWorker0`, and ADR-015 §5 leaves the format to the note.
+	  **Retro:** `linux-release` broke on a constant used only inside a `TE_ASSERT`. In
+	  Release the macro discards its condition entirely, so the only reader vanishes and
+	  `-Werror` kills the build. Anything named only inside a `TE_ASSERT` has this shape.
+	  Ride-along, not the card: Tracy moved v0.13.1 → v0.14.1 and
+	  `FETCHCONTENT_UPDATES_DISCONNECTED` went ON → OFF. **Unblocks M5's executor.**
 - [x] **S4-D2** · serialization ADR · P1 · 🟢 Deep · **Aug 22.**
 	  [[ADR-016 — Serialization (binary primitives & describe-once seam)]] **Accepted**;
 	  [[Serialization — Design]] created as the hub, surface pinned before the cut. Two paths
@@ -58,7 +90,6 @@ kanban-plugin: board
 	  `TE_COMPONENT` sketch) · document schemas stay with their consumers. Review finding: no
 	  sprint-relative labels in durable artifacts; both new notes swept to card IDs and dates.
 	  **Story C cut into S4-T6 → S4-T7. Story A complete: both M2 gates Accepted on day 1.**
-
 - [x] **S4-D1** · threading ADR · P1 · 🟢 Deep · **Aug 22.**
 	  [[ADR-015 — Threading (sim on main, render thread owns GL)]] **Accepted**;
 	  [[Concurrency — Design]] created as the hub, surface pinned before the cut. Sim on main
@@ -67,7 +98,6 @@ kanban-plugin: board
 	  sim-thread-only until P1. The fork-join idle bubble went into §4 on review, P2 owns the
 	  upgrade behind a P1 measurement. Ride-along: [[Task Graph — Execution Flow]]'s two stale
 	  M10 refs now read P1/P2. **Story B cut into S4-T4 → S4-T5; S4-D2 is Story A's last card.**
-
 
 
 
