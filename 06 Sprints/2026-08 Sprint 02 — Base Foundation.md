@@ -1,7 +1,8 @@
 # 2026-08 · Sprint 02 — Base Foundation
 
 - **Quarter:** [[2026-Q3]]
-- **Dates:** **Jul 25 to Jul 31, 2026**, so one week. **Closed 4 weeks early, on 2026-08-02.**
+- **Dates:** **Jul 25 to Jul 31, 2026**, so one week, re-dated at the retro. **Closed
+  2026-08-02, four weeks inside its original box** (below).
   The goal was met Jul 30 and the board emptied Jul 31, so the remaining four weeks became
   Sprint 03 rather than an idle sprint.
   It had been planned as a 5-week one-off transition, since the 4-week Sat-to-Fri cadence was
