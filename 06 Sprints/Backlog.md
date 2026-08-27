@@ -93,6 +93,13 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
+- #prio/xhigh · **Autonomous web-session cards** — research the shape, then adapt
+  `/sprint-plan`, [[Planning Workflow — Artifact Gate]], [[Technical Lead Charter]] and
+  [[Working with Claude — Operating Guide]] to carry it: which cards are eligible for an
+  unattended Claude Code on the web session, what that session cannot do (no compiling; no
+  `.github/workflows/` push — its OAuth token has no `workflow` scope), and the report it hands
+  back. **Trigger:** fired — pull at the next `/sprint-plan`.
+
 - #prio/medium · **`FETCHCONTENT_UPDATES_DISCONNECTED` is OFF with a comment explaining why it
   is ON** — flipped as a ride-along in #46; the five lines above it still describe the old
   value and the Windows/MSBuild failure it avoided. Either restore it or rewrite the comment.
