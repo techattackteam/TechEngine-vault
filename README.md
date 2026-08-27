@@ -41,7 +41,7 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 |--------|-------|
 | `00 Dashboard` | Single at-a-glance status page. Start here. |
 | `01 Vision` | Why TechEngine exists, principles, non-goals |
-| `02 Roadmap` | Quarterly goals, 4-week sprints, milestones |
+| `02 Roadmap` | Quarterly goals, 2-week sprints, milestones |
 | `03 Architecture` | ADRs, system overview, diagrams, [[Known Issues]] |
 | `04 Design Docs` | Living design docs per system + utility — the *how* behind the ADRs |
 | `05 Research` | Papers, SIGGRAPH notes, technique write-ups |

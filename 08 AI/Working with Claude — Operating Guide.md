@@ -73,7 +73,7 @@ repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
 | Command                        | Use it for                                                |
 | ------------------------------ | --------------------------------------------------------- |
 | `/weekly-review [notes]`       | Weekend review → writes the journal + updates dashboard    |
-| `/sprint-plan [focus]`         | 4-week sprint planning → retro + next sprint, sized to capacity |
+| `/sprint-plan [focus]`         | 2-week sprint planning → retro + next sprint, sized to capacity |
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
 | `/arch-review <area>`          | Technical-lead review of a system (analysis, no edits)    |
 | `/feature-breakdown <feature>` | Epic → Story → session-sized Tasks                        |
