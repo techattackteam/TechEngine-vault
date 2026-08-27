@@ -135,6 +135,7 @@ _Tasks → [[Sprint Board]]._
 - 🏛️ [[ADR Index]] · [[Known Issues]] · [[v1 Code Audit]] · [[Lessons from v1 (reference prototype)]]
 - 🧠 [[Technical Lead Charter]] · [[Working with Claude — Operating Guide]]
 - 📓 Journal: [[07 Journal]]
+- 🔗 [[References]]
 
 ## Active decisions
 

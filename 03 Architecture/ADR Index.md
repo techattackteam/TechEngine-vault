@@ -26,9 +26,10 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 > **Active ADRs only.** v2 foundation ADRs get written **after** the deep v1 audit.
 >
-> ADR-001/002/003 describe the **v1 reference prototype** and are moved to
-> `_archive v1/` — history/prior art, out of the active list. Mine them via
-> [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
+> [[ADR-001 — Render graph architecture]], [[ADR-002 — Resource system refactor]] and
+> [[ADR-003 — Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
+> prototype** and are moved to `_archive v1/` — history/prior art, out of the active list.
+> Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
 > Next number is **017** (numbers are never reused).
 
 ### Partial supersessions
