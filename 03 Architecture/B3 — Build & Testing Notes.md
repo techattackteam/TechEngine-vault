@@ -187,6 +187,67 @@ removing the list, which costs the filtering the list does: a throwaway demo `.c
 - **The four drifted headers ride along** with the next card that touches `base` or `core`.
   They are IDE grouping only, so they may sit a while, and that is acceptable.
 
+## Code coverage (S4-P3, 2026-08-27)
+
+Clang source-based coverage on the Linux leg. The instrumentation flags ride `te_warnings`
+(`cmake/coverage.cmake`), so first-party targets are measured and FetchContent deps never are.
+`techengine_test()` appends each test exe to a global `TE_TEST_TARGETS` property and
+`cmake/coverage_report.cmake` builds llvm-cov's `-object` list from it, so a new module needs
+no coverage edit.
+
+**The gate is 85% of changed lines, not of the project.** A global threshold falls every time
+`client` grows, because rendering is proven by demo scenes rather than unit tests, and a gate
+bypassed weekly teaches nothing. `diff-cover` computes it against the merge base.
+
+**The bypass is `[skip-coverage]` in the pull request description.** The job still runs and
+still reports: a required check skipped by a workflow `if:` never reports its context at all,
+which leaves the pull request pending forever instead of mergeable.
+
+### Running it locally
+
+Two commands, and CI runs the identical target. Threshold, base branch and the bypass all
+come from the environment, so there is no second code path to drift.
+
+```bash
+cmake --preset linux-coverage
+cmake --build --preset linux-coverage --target coverage
+```
+
+The browsable per-file report lands at `build/linux-coverage/coverage/html/index.html`.
+
+### Setup, and the four things that bit
+
+Miguel develops on Windows, so local coverage means WSL. **Use Ubuntu 24.04**, because
+`ubuntu-latest` is 24.04 and 22.04's libstdc++ 11 has neither `<format>` nor
+`chrono::clock_cast`, so the tree does not compile there at all.
+
+- **`diff-cover` is pinned to the version CI pins**, checked at configure time rather than
+  after a build and 183 tests. The distro package is older and its CLI differs: it wants
+  `--markdown-report FILENAME` where this expects `--format markdown:PATH`. Install with
+  `pipx install diff-cover==10.5.1`, then `pipx ensurepath` and a new shell.
+- **Set `core.autocrlf true` in WSL** when working through `/mnt/c`. Windows has it on and
+  there is no `.gitattributes`, so the working tree holds CRLF while the index holds LF. WSL
+  git defaults to `false`, sees every line of every file as modified, and diff coverage then
+  measures the entire codebase instead of the diff.
+- **Never build with `sudo`.** It leaves root-owned files in `build/` and in the tests' own
+  `/tmp/TechEngineTests` scratch root, and the next ordinary run fails on permissions for an
+  unrelated-looking reason. `/mnt/c` needs no elevation.
+- **`llvm` is a separate apt package** from `clang`, and `llvm-profdata` must match clang's
+  major version or the merge fails on an unsupported profile format.
+
+### First numbers, 2026-08-27
+
+Measured locally on `linux-coverage`, 183 of 183 tests passing under instrumentation.
+
+| Scope | Regions | Lines |
+|---|---|---|
+| Whole project | 85.57% | 94.80% |
+| The serialization card's diff (`4928447c...`) | — | 91% of 365 changed lines |
+
+That second row is the useful one: real work on this codebase clears the 85% bar without
+being written for it. **The CI minute cost is still unmeasured**, because the job has not run
+yet. It belongs in this section once it has.
+
 ## Scaffold checklist
 
 Moved — this note fed the ADR, and the ADR is where the checklist landed:

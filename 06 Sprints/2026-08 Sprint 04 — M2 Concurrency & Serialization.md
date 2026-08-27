@@ -147,8 +147,18 @@
       compared with evidence in B3; the rule lands in `CONVENTIONS.md`, or is carded if it
       needs a sweep.
 - [ ] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate · done: one coverage job (Linux leg)
-      runs on each PR and surfaces a report; it is not a required check; its minute cost is
-      measured and recorded against the CI budget.
+      runs on each PR and surfaces a report; it is a **required check** that blocks the merge
+      when under **85% of the lines the PR changes**, bypassable with `[skip-coverage]` in the
+      PR description; the `diff coverage` context is added to the `Master` ruleset and
+      [[ADR-008 — v2 build & testing baseline]] §9's required-check list carries a dated
+      amendment naming it; it runs locally through the same target as CI
+      ([[B3 — Build & Testing Notes]] § *Code coverage*); its minute cost is measured and
+      recorded against the CI budget.
+      **Scope changed mid-card, 2026-08-27.** The clause originally read "it is not a required
+      check". Blocking was decided once local runs showed the bar is reachable: the
+      serialization card's own diff measures 91%. The threshold is on **changed** lines rather
+      than the project, because a project-wide number falls every time `client` grows on
+      demo-scene verification, and a gate bypassed weekly teaches nothing.
 - [ ] **S4-P4** · skip CI on docs-only PRs, plus auto-merge · P3 · 🟠 Moderate · done: the
       dummy-job pattern reports all 8 required checks on docs-only PRs; the "no code" scope
       rule is written (as a dated ADR-009 amendment if it moves the self-review consequence);
