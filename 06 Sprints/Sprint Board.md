@@ -26,7 +26,6 @@ kanban-plugin: board
 ## 📋 D · measurements & cleanups
 
 - [ ] **S4-T1** · `<format>` weight: measure, then decide · P2 · 🟠 Moderate
-- [ ] **S4-T2** · rename `TechEngine::detail` to `internal` · P3 · 🟡 Light
 - [ ] **S4-T3** · `te-review`'s `base` findings · P3 · 🟡 Light
 
 
@@ -38,6 +37,8 @@ kanban-plugin: board
 
 
 ## 🔨 In Progress
+
+- [ ] **S4-T2** · rename `TechEngine::detail` to `internal` · P3 · 🟡 Light · branch `S4-T2/detail-to-internal` pushed; the `ci.yml` guard half still needs a local push
 
 
 

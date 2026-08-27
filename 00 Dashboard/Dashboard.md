@@ -8,10 +8,10 @@
 |---|---|
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 04 — M2 Concurrency & Serialization]] *(Aug 22 to Sep 4, the first 2-week sprint)* |
-| **Sprint goal** | **Decide M2: the threading and serialization ADRs both Accepted, each proven by first code against its real interface.** Stories B and C stay unsized until their ADR lands. |
-| **Current focus** | 🔨 **S4-D1 (threading ADR) and S4-D2 (serialization ADR) come first**; Stories B and C are cut from them mid-sprint. Side cards (`<format>` measurement · ccache · coverage job · CMake listing · two cleanups · skip-CI) fill the light and moderate days and are the cut-first list. The sprint's first `/card-start` doubles as S3-P2's acceptance test. |
-| **Top blocker** | None hard. Watch: CI-minute budget (ADR-008 §9; S4-P3 adds a per-PR coverage job, so its cost gets measured) · clang-tidy unproven on Windows · Tracy's Linux leg never built in CI · **checkpoint Aug 29-30: an M2 ADR not Accepted by then costs its story** |
-| **Next milestone** | **M2** ([[Roadmap]]): both ADRs Accepted plus a minimal pool and a headless binary round-trip. **M3 waits for Sprint 05** (scope call recorded on the [[Roadmap]]). RNG · crash handler carry (memory tracking shipped at S3-T5) |
+| **Sprint goal** | **Decide M2: the threading and serialization ADRs both Accepted, each proven by first code against its real interface.** Both stories were sized and cut on day 1. |
+| **Current focus** | 🔨 **Story C — S4-T6 → S4-T7**, the serialization first slice, which carries the sprint's remaining 🟢 work. Story A closed Aug 22 (both ADRs) and Story B Aug 24 (the job system). S4-T2 is in flight. Side cards left — `<format>` measurement · ccache · coverage job · two cleanups · skip-CI — fill the light and moderate days and are still the cut-first list. |
+| **Top blocker** | None hard. Watch: CI-minute budget (ADR-008 §9; S4-P3 adds a per-PR coverage job, so its cost gets measured) · clang-tidy unproven on Windows · Tracy's Linux leg never built in CI |
+| **Next milestone** | **M2** ([[Roadmap]]): both ADRs Accepted (Aug 22) and the pool shipped (Aug 24) — **the headless binary round-trip is what is left**, at S4-T6 → S4-T7. **M3 waits for Sprint 05** (scope call recorded on the [[Roadmap]]). RNG · crash handler carry (memory tracking shipped at S3-T5) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `32bc327c` (2026-08-20) |
 
@@ -36,8 +36,9 @@ bring-up and file access. **Four findings, two of them live poison** — see
 that is what this stamp has always meant. Previous advance: 2026-08-02, from `2b4bc38e`
 ([[2026-08-02 Sprint 02 Retrospective]]), which found no hub drift.
 
-**Re-checked 2026-08-22** at the Sprint 04 boundary: `origin/master` is still `32bc327c`, zero
-unreviewed commits, so the stamp stands without a new sweep. The boundary found only
+**Re-checked 2026-08-22** at the Sprint 04 boundary: `origin/master` was still `32bc327c`, zero
+unreviewed commits, so the stamp stood without a new sweep. **`a0d1d1b3` (#46) has landed since,
+on Aug 24**, so the stamp is one commit behind and the Aug 29-30 review owns the next sweep. The boundary found only
 vault-internal staleness (memory tracking still listed as an M1 carry after S3-T5 shipped it;
 a Current-focus order that was already done), fixed the same day.
 
