@@ -19,7 +19,6 @@ kanban-plugin: board
 
 ## 📋 C · serialization first slice *(T6 → T7)*
 
-- [ ] **S4-T6** · `Writer`/`Reader` primitives + bulk path + tests · P1 · 🟢 Deep
 - [ ] **S4-T7** · visit seam + non-POD round-trip demo · P1 · 🟢 Deep
 
 
@@ -38,15 +37,40 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S4-T2** · rename `TechEngine::detail` to `internal` · P3 · 🟡 Light · branch `S4-T2/detail-to-internal` pushed; the `ci.yml` guard half still needs a local push
-
 
 
 ## 👀 Review / Demo
 
 
+
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
 
+- [x] **S4-T6** · `Writer`/`Reader` primitives + bulk path + tests · P1 · 🟢 Deep · **Aug 27.**
+	  1ca9ae9c (#48). The design note's **error-surface** question is answered in code: `Reader`
+	  carries its own `ReadStatus` (`Ok`/`Truncated`/`BadMagic`/`BadVersion`), not `FileResult`,
+	  whose vocabulary is `platform`'s (`NoMount`, `IsADirectory`) and wrong for a memory decoder.
+	  The status is **sticky, not per-call**: the first failure latches and later reads no-op. That
+	  is what makes S4-T7's `visit` body usable, since it reads many fields and checks once.
+	  Length and count prefixes are pinned at **`u32`**, guarded by `TE_CHECK` with a defined path
+	  instead of a silent narrowing. That is v1's `writeString`/`readBuffer` width mismatch made structural.
+	  Pre-commit review changed the shipped design twice: `BlobHeader`'s defaults went to `0`, since
+	  seeding them with the real magic and version made a header that *failed* to read look valid;
+	  and `read(bool&)` stopped clobbering its out param on failure. Nothing logged not fixed.
+	  **Retro:** the branch was `S4-T2/writer-reader-serialization`, so #48 points at a card that
+	  merged as #47. Flagged before the commit, rename command given, shipped anyway. **Second card
+	  running** where the ADR-012 § *Consequences* link broke (S4-T5 was the first).
+	  Story C stays open (T7).
+- [x] **S4-T2** · rename `TechEngine::detail` to `internal` · P3 · 🟡 Light · **Aug 27.**
+	  4928447c (#47). The card sized the sweep at 13 files off a `namespace detail` grep. It was
+	  15. `LogInternal.hpp` declares the namespace qualified and on one line, so that grep never
+	  saw it. A rename estimate has to count the qualified spelling too.
+	  `ci.yml`'s private-plumbing gate greps a literal, so the rename would have emptied it:
+	  `\bdetail::log` matches nothing afterwards and the check then passes on an empty search
+	  rather than failing. The card's `done:` clause named the guard, so it was swept. **A grep
+	  gate fails open on a rename and nothing announces it.** Filed on [[Backlog]] § *etc*.
+	  `CONVENTIONS.md`'s *Nested impl namespace* row is respelled and dated; the Jul 30 rationale
+	  for having the namespace at all stands unchanged.
+	  No review comments and no findings logged. Story D stays open (T1, T3).
 - [x] **S4-P2** · CMake source-listing research · P3 · 🟡 Light · **Aug 24.**
 	  Vault-only, no code. The **No `GLOB`** rule stands. What was missing was the *reversal
 	  trigger*, and [[ADR-008 — v2 build & testing baseline]] §2 now carries a dated amendment

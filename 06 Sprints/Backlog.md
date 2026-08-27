@@ -106,6 +106,17 @@ groups are kept, because they show where future work will land.
   **Trigger:** the next `cmake/deps.cmake` change, or the first re-appearance of that MSBuild
   path error.
 
+- #prio/medium · **Guard the branch-name to card-ID link** — the branch prefix is the only path
+  from a squashed commit back to its board card (ADR-012 § *Consequences*), and it has now
+  broken on two consecutive cards: S4-T5 rode T4's branch, and S4-T6 kept the `S4-T2/` prefix
+  after the slip was called out. Nothing mechanical checks it, so the entry is only ever
+  written after the fact. Cheapest shape is probably a pre-push hook or a PR check comparing
+  the prefix against the open cards on [[Sprint Board]]. **Trigger:** a third occurrence, or
+  the next time a squashed commit cannot be traced back to its card.
+- #prio/medium · **Assert the private-plumbing gates still match something** — `ci.yml`'s
+  `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
+  search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
+  crosses one of the existing patterns.
 - #prio/low · **`.gitattributes` for committed test assets** — `engine/app/assets/demo.txt`
   gets CRLF on Windows checkout. Harmless while the demo only logs a byte count; silent the
   day a case asserts on a repo-committed file's *contents* and the two CI legs disagree

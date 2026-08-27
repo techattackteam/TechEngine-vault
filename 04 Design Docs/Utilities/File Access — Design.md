@@ -304,15 +304,20 @@ M2's threading ADR re-opens this the moment a job thread reads a file.
 
 ### Buffer type
 
-`read` fills a `std::vector<std::byte>` out-param. v1 read into a `Buffer` from
-`serialization/buffer.hpp`, and v2 has no serialization module yet.
+`read` fills a `std::vector<std::byte>` out-param, and that is the settled answer rather than
+a bridge to something else.
 
-**This is meant to be temporary, and the replacement is close.** Serialization moved to
-[[Roadmap]] M2 on 2026-08-02, so `Buffer` arrives in Sprint 04.
+**This section used to predict the opposite**, and S4-T6 settled it the other way
+(2026-08-27). It said serialization would land a `Buffer` type in Sprint 04 and that the
+out-param was temporary until it did. Serialization shipped with **no** buffer type at all:
+v1's `Buffer` was an owner and a non-owning view in one class, with no destructor and a
+shallow copy constructor, and the standard library already splits those two jobs into
+`std::vector` and `std::span`. So nothing here changes and no call site needs editing.
 
-Do not build a buffer abstraction here to bridge those few weeks. The out-param *is* the
-bridge. Changing the parameter type later is a mechanical edit at each call site, and there
-are few call sites.
+The two halves compose with no conversion, because `Reader` takes a
+`std::span<const std::byte>` and a vector converts to one. The worked example, including the
+two failure surfaces a caller has to check, is in [[Serialization — Design]] §
+*Composing with `FileAccess`*.
 
 ## Who uses it
 

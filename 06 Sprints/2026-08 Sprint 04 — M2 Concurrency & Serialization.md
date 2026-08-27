@@ -93,7 +93,12 @@
 > Accepted and [[Serialization — Design]] § *Surface* carries the pinned shape. No file I/O
 > anywhere here: the writer is M3's, so everything round-trips through memory.
 
-- [ ] **S4-T6** · `Writer`/`Reader` primitives + bulk path + tests · P1 · 🟢 Deep · done:
+- [x] **S4-T6** · `Writer`/`Reader` primitives + bulk path + tests · P1 · 🟢 Deep ·
+      **done 2026-08-27** (1ca9ae9c, #48). Entry on [[Sprint Board]]. The error-surface
+      question got its own `ReadStatus` enum and a **sticky** status, and the `u32` length
+      prefix is `TE_CHECK`-guarded; both are recorded in [[Serialization — Design]].
+      **Retro: the branch kept the `S4-T2/` prefix**, so the squashed commit links to the
+      wrong card for the second card running. Original acceptance:
       `core` carries the pinned surface (primitives · `{magic, version, flags}` header
       written and checked by the pair · bulk `span<const T>` path · fail-soft `Reader` with
       a status, whose shape answers the note's error-surface question in code); Catch2 pins:
@@ -113,9 +118,11 @@
       [[B3 — Build & Testing Notes]]; the call (drop `<format>`, keep the split, or fold back)
       is recorded in [[Math — Design]]; header changes are carded separately if the call wants
       them.
-- [ ] **S4-T2** · rename `TechEngine::detail` to `internal` · P3 · 🟡 Light · done: the 13
-      files and `ci.yml`'s `\bdetail::log` guard are swept, no `detail` namespace remains, CI
-      is green.
+- [x] **S4-T2** · rename `TechEngine::detail` to `internal` · P3 · 🟡 Light ·
+      **done 2026-08-27** (4928447c, #47). 15 files, not 13: a `namespace detail` grep misses
+      `LogInternal.hpp`, which spells it qualified. Entry on [[Sprint Board]]. Original
+      acceptance: the 13 files and `ci.yml`'s `\bdetail::log` guard are swept, no `detail`
+      namespace remains, CI is green.
 - [ ] **S4-T3** · `te-review`'s `base` findings · P3 · 🟡 Light · done: `Log.cpp`'s quoted
       includes fixed together with `.clang-format`'s category regex (fixing one alone moves
       the problem); `RingEntry` becomes `LogRingEntry`; the discarded `addLogSink` bool gets
@@ -154,8 +161,9 @@
       [[Concurrency — Design]], ADR-016 with [[Serialization — Design]].
 - [ ] M2's unlock is demonstrable: a Tracy capture with pool workers visible, and a headless
       binary round-trip through the trait seam. **Concurrency half met 2026-08-24**
-      (a0d1d1b3, #46): the capture shows named worker zones under the frame marks. The
-      serialization half waits on S4-T6 → S4-T7.
+      (a0d1d1b3, #46): the capture shows named worker zones under the frame marks. S4-T6 landed
+      the primitives (1ca9ae9c, #48); the serialization half now waits on S4-T7's seam
+      round-trip in the headless driver.
 - [ ] Every pulled backlog entry was deleted at planning (six were), and nothing was built
       without a consumer.
 - [ ] The checkpoint held: an ADR not Accepted by the Aug 29-30 review costs its story, not

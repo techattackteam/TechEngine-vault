@@ -40,6 +40,22 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
   bytes; the visited path is `visit(archive, value)` with the archive deciding direction.
 - The header is written and checked by the same pair, so no consumer hand-rolls it.
 
+### Error surface (decided at S4-T6, 2026-08-27)
+
+`Reader` carries its own `ReadStatus`: `Ok`, `Truncated`, `BadMagic`, `BadVersion`. It does
+not reuse `FileResult`. That enum's vocabulary belongs to `platform`'s mount layer
+(`NoMount`, `IsADirectory`) and says nothing useful about a memory buffer.
+
+The status is **sticky**. The first failure latches, every later read is a no-op, and out
+params keep whatever the caller left in them. Reads return `void`, so the caller checks
+`ok()` once at the end instead of per field. That is the shape a `visit` body needs, because
+it enumerates many fields in a row and cannot branch after each one.
+
+Length and count prefixes are `u32`, for strings and for the bulk path alike, so either caps
+at 4 GB. Exceeding the cap is a `TE_CHECK` with a defined path (an empty write), never a
+silent narrowing. v1 is the reason: `StreamWriter::writeString` wrote a `size_t` length that
+`StreamReader::readBuffer` read back as a `uint32_t`.
+
 ### The visit shape
 
 One function enumerates fields in a fixed order; both archives walk it. Field order **is**
@@ -53,6 +69,57 @@ A hand-made non-POD struct and a trivially-copyable one both round-trip through 
 write, read back, compare equal, and a corrupted or truncated buffer fails soft. No file
 I/O (M3), no schema, no compression.
 
+### Composing with `FileAccess`
+
+`FileAccess` moves bytes and `Reader` interprets them. Neither knows the other exists, and
+`platform` sits below `core` (ADR-006 §1) so it could not call into serialization anyway.
+They compose at the caller, with no glue, because they already speak the same types: `read`
+fills a `std::vector<std::byte>` and `Reader` takes a `std::span<const std::byte>`.
+
+```cpp
+std::vector<std::byte> bytes;
+if (engine.files.read("assets://level.bin", bytes) != FileResult::Ok) {
+    return;                            // the file never opened
+}
+
+Reader reader{bytes};                  // the vector converts to a span
+BlobHeader header;
+reader.readHeader(header);
+
+std::uint32_t entityCount = 0;
+reader.read(entityCount);
+// ... more reads, none of them checked individually
+
+if (!reader.ok()) {
+    return;                            // reader.status() names which of the four
+}
+```
+
+There are two failure surfaces and they stay separate on purpose. `FileResult` answers "did
+the file open", `ReadStatus` answers "did the bytes make sense". Checking the first is not
+optional. On `NoMount`, `NotFound` or `IsADirectory` the out-param is left untouched, so a
+reused buffer still holds the previous file's bytes. A read that *succeeds* replaces the
+vector's contents, so reusing one across loads needs no `clear()`.
+
+### The write path (M3)
+
+`Writer` **appends** to the caller's vector, where `read` replaces it. Reusing one buffer
+across saves means clearing it first. That asymmetry is the cost of letting the caller own
+the destination, and it is what lets M3 hand the finished vector straight to the file writer
+and lets N3 reuse one pooled vector every frame.
+
+```cpp
+std::vector<std::byte> bytes;          // reused across saves: bytes.clear() first
+Writer writer{bytes};
+writer.writeHeader();
+writer.write(entityCount);
+// ... more writes, then hand `bytes` to the M3 file writer
+```
+
+No file lands before M3 (ADR-016 §6), so the whole M2 slice round-trips through memory. The
+write call above is not built yet and its exact signature is M3's to pin, described in
+[[File Access — Design]] § *The write surface (M3)*.
+
 ## Open questions
 
 - **Visit drift guard.** A struct whose visit forgets a new field silently writes a stale
@@ -60,8 +127,6 @@ I/O (M3), no schema, no compression.
   or nothing honest? Owner: S4-T7.
 - **Binding mechanism for `visit`**: ADL free function vs trait specialization. Owner:
   S4-T7, decided in code review against `CONVENTIONS.md`.
-- **Error surface**: whether `Reader`'s status reuses `FileResult`'s shape or gets its own
-  enum. Owner: S4-T6.
 - **Compression layer** behind the header flags. Trigger: a measured bake-size or load-time
   problem (ADR-016 § *What would move*).
 - **Per-type versions + migration.** Trigger: the first non-regenerable content
@@ -75,5 +140,6 @@ I/O (M3), no schema, no compression.
 - [[StringId — Design]]: the frozen hash and `fromValue`
 - [[File Access — Design]] § *The write surface*: why no file lands before M3
 - [[v1 Code Audit]]: F1 (identity, the real v1 pain)
-- Code: `engine/core/include/TechEngine/core/events/EventRegistry.hpp:15` (`EventWire`, the
-  seam's first edge). Serialization files land with S4-T6.
+- Code: `engine/core/include/TechEngine/core/serialization/` (the pair and the header,
+  S4-T6) · `engine/core/include/TechEngine/core/events/EventRegistry.hpp:15` (`EventWire`,
+  the seam's first edge).
