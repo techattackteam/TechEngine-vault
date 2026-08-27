@@ -27,8 +27,7 @@
 - [ ]
 
 ## Capacity note
-Match task weight to the day's mode — weekly rhythm on the [[Dashboard]]
-(deep Mon/Thu + one weekend day · moderate Fri · light Tue · relaxed Wed · other weekend day off).
+Match task weight to the day's mode, and size against [[Dashboard]] § *Rhythm*.
 
 ## Sprint review (end)
 - What shipped:

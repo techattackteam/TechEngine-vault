@@ -44,6 +44,10 @@ a Current-focus order that was already done), fixed the same day.
 
 ## 🗓️ Rhythm
 
+> **The one home for cadence.** Sprint length, ceremony timing, the weekday fallback and the
+> weekly rhythm table live here. Everything else links to this section instead of restating
+> it, so there is one place to change when the cadence moves again.
+
 **Sprints: 2 weeks**, one headline goal (**changed from 4 on 2026-08-20**). A sprint **week
 runs Sat → Fri**, so a sprint starts on a **Saturday** and ends on the **Friday** 2 weeks
 later. Every sprint therefore contains **2 weekends**: the boundary weekend (`/sprint-plan` —

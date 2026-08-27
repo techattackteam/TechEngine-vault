@@ -33,7 +33,7 @@ flowchart TB
 | ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | **M0** | `base`                      | Logger · Assert · Clock · headless fixed-timestep loop                                                                                                            | [[ADR-011 — Diagnostics (Logger & Assert)]] 🟢                                                    |
 | **M1** | enablers                    | math · **file access** `IFileAccess` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · crash handler         | Profiler ADR · Events redesign                                                                    |
-| **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a minimal pool · **binary serialization + ADR-005's trait seam**                                | **threading ADR** — gated on M1's Profiler · **serialization ADR**                                |
+| **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a four-worker pool · **binary serialization + ADR-005's trait seam**                                | **threading ADR** — gated on M1's Profiler · **serialization ADR**                                |
 | **M3** | project ‖ M2                | root + `project.toml` (toml++) · path/mount resolution · **`IFileWriteAccess`** — M1 ships the read half only · shader + asset dirs · **`projects/dev/` testbed** | none: toml, not the binary format                                                                 |
 | **M4** | window                      | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                                              | M2's context-ownership call                                                                       |
 | **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping                            | **task-graph ADR** — the System interface ([[ADR-006 — v2 core architecture & module layout]] §5) |
@@ -45,7 +45,7 @@ Listed in a suggested default order. The only hard edges are shown in *needs*.
 
 | ID     | Rung                        | Contents                                                                                   | Needs / gate                                                                |
 | ------ | --------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| **P1** | parallel executor on        | workers > 1, levels running concurrently, **TSan leg green**                               | M5 · M2                                                                     |
+| **P1** | parallel executor on        | `publish` opened to workers · levels running concurrently · **TSan leg green**              | M5 · M2                                                                     |
 | **T1** | editor — panels             | dock · hierarchy · inspector · console/cvars · Profiler panel · scene save                 | M6 — ImGui only, no engine renderer                                         |
 | **T2** | export slice                | editor saves → `runtime` loads the project and runs it, **no importers linked**            | T1 · M6                                                                     |
 | **R1** | renderer v0                 | device seam (F22) · mesh + shader + material · camera · frustum culling · one forward pass | M6 · **renderer ADR**                                                       |
@@ -98,8 +98,9 @@ outranks its own implementation.
 
 The ADR settles: **thread topology** (main / sim / render / workers) · **who owns the GL
 context** and how work reaches it · **pool shape** · how [[Task Graph — Execution Flow]]'s
-levels map onto it. It ships a **minimal pool** so M5's executor is written against the real
-interface; **P1 turns real workers on** and **P2** tunes them.
+levels map onto it. It ships a **four-worker pool** (ADR-015 §3, amended 2026-08-24) so M5's
+executor is written against the real interface; **P1** opens `publish` to those workers and
+**P2** tunes them.
 
 ### M3 — the dev testbed
 

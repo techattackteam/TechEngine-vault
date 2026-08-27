@@ -2,13 +2,12 @@
 
 Weekly reviews and sprint retrospectives — one dated note (`YYYY-MM-DD`) per entry.
 
-- **Weekly review** — once per weekend (`/weekly-review`), 1× per sprint. If the weekend is
-  lost, it runs on the next Mon or Thu evening instead (weekday fallback, 2026-08-20).
-- **Sprint retro** — every 2nd weekend, the sprint boundary (`/sprint-plan`), with demo +
-  planning. It **replaces** that weekend's weekly review — one entry, not two.
+- **Weekly review** (`/weekly-review`) — the mid-sprint entry.
+- **Sprint retro** (`/sprint-plan`) — the boundary entry, with demo + planning. It
+  **replaces** that weekend's weekly review, so a boundary weekend writes one entry.
 
-Cadence + weekly rhythm live on [[Dashboard]]. Entries appear here as they're written,
-newest first.
+When each runs, and what happens when a weekend is lost, is [[Dashboard]] § *Rhythm* —
+the one home for cadence. Entries appear here as they're written, newest first.
 
 | Date | Entry |
 |---|---|

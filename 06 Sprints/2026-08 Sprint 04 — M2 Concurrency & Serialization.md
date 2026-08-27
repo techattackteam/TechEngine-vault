@@ -163,8 +163,7 @@
 
 ## Capacity note
 
-2-week capacity from the [[Dashboard]] cadence: **8-10 🟢 · 2 🟠 · 2-4 🟡** (Mon and Thu are
-one evening 🟢 each, the weekend deep day is 2-3 🟢, Fri is 🟠, Tue is 🟡, Wed is opt-in).
+2-week capacity, derived from [[Dashboard]] § *Rhythm*: **8-10 🟢 · 2 🟠 · 2-4 🟡**.
 
 Sized now: **2 🟢** (D1, D2) · **3 🟠** (T1, P3, P4) · **4 🟡** (T2, T3, P1, P2). The reserve
 for Stories B and C is **~4-6 🟢 plus whatever the deep days absorb**. Three 🟠 against two

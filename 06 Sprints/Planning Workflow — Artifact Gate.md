@@ -25,7 +25,7 @@ The note is the entry point at planning. An ADR is opened only when a decision's
 carries the argument (CLAUDE.md rule 2).
 
 This is not a style preference. An Accepted ADR can hold a clause that has since been
-partially superseded, and [[ADR Index]] currently tracks two of them.
+partially superseded, and [[ADR Index]] § *Partial supersessions* tracks every one of them.
 
 An ADR body changes only by dated amendment ([[ADR Index]] § *Amending an Accepted ADR*),
 and a partially superseded clause is not amended at all. So a § can be dead, or can have its
