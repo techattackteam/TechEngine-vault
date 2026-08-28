@@ -34,11 +34,29 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light
 
 
 ## 👀 Review / Demo
 
+- [ ] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light ·
+	  **merged 50ca9360 (#53), held here deliberately.** The key is now
+	  `v1-<leg>-<hash of deps.cmake>` with `append-timestamp: false`, so a run whose deps have
+	  not moved hits the primary key and skips the save. Same content-addressed shape as the
+	  `deps-*` cache beside it. **Creation is proven: 12 entries and 0.53 GB, down from 111 and
+	  3.62 GB**, being 8 `ccache-v1-*` plus 2 `deps-*` plus 2 toolchain, exactly one per leg.
+	  **What is NOT proven is the warm path, and no run has tested it yet.** Only one real
+	  matrix run has happened under these keys, the cold one that created the entries. The
+	  intended retrigger never ran: #54 merged first and put `.github/workflows/**` in the skip
+	  list, so #53's own three files were all excluded and only the stand-in reported. The push
+	  backstop skipped for the same reason. The count staying at 12 since is **not** evidence
+	  the save is skipped, because nothing has written to it.
+	  **Closes when a PR carrying engine C++ shows high ccache hits on the Linux legs.** That is
+	  also the only run that tests the design's actual trade: 140 dep compilations hit while the
+	  43 engine TUs miss and recompile. Watch the `ccache stats` step and re-count the caches.
+	  **Retro:** the sequencing was called out before #54 was cut and taken anyway, so the card
+	  merged its own verification out of reach. Same shape as S4-T5 riding T4's branch.
+	  Mechanism and the compiler-bump failure mode are in [[B3 — Build & Testing Notes]]
+	  § *ccache keys*; `ci.yml`'s header carries the `v1` bump instruction.
 - [ ] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate · **merged a8aee849 (#49), held here
 	  deliberately.** The gate has never been evaluated on real changed lines in CI: its own PR
 	  carried only CMake, YAML and Markdown, so `diff-cover` reported "no lines with coverage

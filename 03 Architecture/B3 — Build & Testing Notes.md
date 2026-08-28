@@ -248,6 +248,33 @@ That second row is the useful one: real work on this codebase clears the 85% bar
 being written for it. **The CI minute cost is still unmeasured**, because the job has not run
 yet. It belongs in this section once it has.
 
+## ccache keys (S4-P1, 2026-08-28)
+
+`hendrikmuhs/ccache-action` appends a timestamp to the key by default, so every run saved
+under a fresh name and nothing ever replaced anything. Restores were fine throughout, via the
+prefix match, at 100% hits. The growth was pure write-side: **111 entries and 3.62 GB in four
+days**, roughly 1.2 to 1.6 GB per active dev day, against GitHub's 10 GB repo cap.
+
+The key is now `v1-<leg>-<hash of cmake/deps.cmake>` with `append-timestamp: false`. GitHub
+cache entries are immutable, so a stable key means an unchanged-deps run hits the primary key
+and skips the save. A new entry appears only when a dependency actually moves. This is the
+same content-addressed shape the `deps-*` cache has used from the start, which is why that one
+has always sat at two entries per OS.
+
+**Why it is keyed on deps and not on sources.** 140 of the 183 cacheable compilations are
+dependencies (Jolt, glfw, spdlog, tomlplusplus, glm, Catch2), and those only change when
+`deps.cmake` does. The other 43 are engine TUs, which stop being cached across runs and
+recompile every time, worst case all 43 when a common header moves. **Revisit when engine TUs
+stop being a small minority of the total.** Today it is 43 against 140.
+
+### The failure mode it cannot recover from
+
+ccache hashes the compiler internally, so a runner image bumping clang or MSVC invalidates
+every entry. Because the save is skipped, nothing repopulates it, and every run then compiles
+cold under a key that still looks valid. **The symptom is the `ccache stats` step falling from
+high hits to near zero**, and the fix is bumping the `v1` segment in the key. That segment
+exists only so the recovery is a one-character edit rather than a redesign under pressure.
+
 ## Docs-only PRs (S4-P4, 2026-08-28)
 
 A change that cannot alter a build artifact does not get a build. `ci.yml` carries

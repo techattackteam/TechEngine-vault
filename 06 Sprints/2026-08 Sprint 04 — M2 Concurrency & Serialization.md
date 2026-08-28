@@ -132,10 +132,26 @@
 
 ### Story E — Process *(first thing cut; the mix is called out below)*
 
-- [ ] **S4-P1** · ccache: one warm entry per leg · P2 · 🟡 Light · done: a per-leg cache key
-      replaces the timestamped accumulation, storage sits under the 10 GB cap, and a later run
-      shows hits on the Linux legs. Rides along: `.claude/commands/sprint-plan.md` still says
-      4-week sprints; fix the wording in the same PR.
+- [ ] **S4-P1** · ccache: one warm entry per leg · P2 · 🟡 Light · done: a stable per-leg cache
+      key replaces the timestamped accumulation, **the entry count holds steady across runs**
+      rather than growing by one leg per run, and a later run shows hits on the Linux legs.
+      Rides along: `.claude/commands/sprint-plan.md` and `CLAUDE.md` both still say 4-week
+      sprints; fix the wording in the same PR.
+      **Merged 50ca9360 (#53) and held in Review, 2026-08-28.** The ride-along is done and the
+      key change is in, with the count down to 12 entries from 111. The middle clause is the
+      one still open: no warm run has happened yet, so nothing has tested that the save is
+      actually skipped. Entry on [[Sprint Board]] has the detail and the closing condition.
+      **Two clauses were rewritten 2026-08-28, because the originals argued from the wrong
+      thing.** "Storage sits under the 10 GB cap" was already true when the card was
+      grounded, at 3.62 GB across 111 entries, and hit rate was already 100%. Both of the
+      original measures said "do nothing". The real cost is that the list grows without
+      bound between **manual purges, of which there had already been two**, and 111 rows
+      cannot be read. Steady count, not total size, is what actually tests the fix.
+      **Reversal trigger, which the card never had:** revisit when engine TUs stop being a
+      small minority of the compilations. Today it is 43 engine TUs against 183 cacheable
+      calls, so 76% of the cache is dependency objects that only move when `deps.cmake` does.
+      That ratio is the whole reason a `deps.cmake`-keyed cache works, and it will not hold
+      forever.
 - [x] **S4-P2** · CMake source-listing research · P3 · 🟡 Light ·
       **done 2026-08-24** (vault-only, no code). Entry on [[Sprint Board]]. The card's last
       `done:` clause had no work behind it: the rule was **already** in `CONVENTIONS.md`, in
