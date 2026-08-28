@@ -113,6 +113,16 @@ groups are kept, because they show where future work will land.
   written after the fact. Cheapest shape is probably a pre-push hook or a PR check comparing
   the prefix against the open cards on [[Sprint Board]]. **Trigger:** a third occurrence, or
   the next time a squashed commit cannot be traced back to its card.
+- #prio/low · **`ci.yml`'s `build-test` gate comment is wrong about skipped checks** — it says
+  a required check skipped by an `if:` "never reports its context at all". Measured on #49's
+  push run, a skipped *plain* job does report it (`diff coverage` came back `skipped`); it is
+  the *matrix* job that collapses to a single check named `matrix.name` (S4-P4). The comment
+  is S4-P3's text and reasons about the `needs:` wiring, which is itself fine. **Trigger:** the
+  next PR touching that gate, or S4-P3's close.
+- #prio/low · **`delete_branch_on_merge` is off** — [[ADR-009 — Branching strategy & merge rules]]
+  §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
+  merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a
+  stale branch is mistaken for live work.
 - #prio/medium · **Assert the private-plumbing gates still match something** — `ci.yml`'s
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that

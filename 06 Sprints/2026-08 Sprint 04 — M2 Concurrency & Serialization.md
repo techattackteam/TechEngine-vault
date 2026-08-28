@@ -159,9 +159,13 @@
       serialization card's own diff measures 91%. The threshold is on **changed** lines rather
       than the project, because a project-wide number falls every time `client` grows on
       demo-scene verification, and a gate bypassed weekly teaches nothing.
-- [ ] **S4-P4** · skip CI on docs-only PRs · P3 · 🟠 Moderate · done: a stand-in workflow
-      reports all **9** required checks on docs-only PRs; the "no code" scope rule is
-      written; proven on one real docs PR.
+- [x] **S4-P4** · skip CI on docs-only PRs · P3 · 🟠 Moderate · **done 2026-08-28**,
+      fdca32c8 (#50) + 753a7c08 (#51). A stand-in workflow reports all **9** required checks
+      on docs-only PRs; the "no code" scope rule is written, in `ci.yml`'s own header rather
+      than the vault, since a fresh clone has no `docs/`; proven on #52, a mock docs-only PR
+      that drew no build and went `MERGEABLE`/`CLEAN` on the stand-in alone, then was closed
+      unmerged on purpose. Cost and the `if:` measurement are in
+      [[B3 — Build & Testing Notes]] § *Docs-only PRs*.
       **9, not the 8 this card was cut with.** `diff coverage` entered the `Master` ruleset
       once S4-P3's first run had reported it, which is after this card was written. GitHub
       only offers a context it has already seen report.

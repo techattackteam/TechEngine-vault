@@ -35,8 +35,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S4-P4** · skip CI on docs-only PRs · P3 · 🟠 Moderate · auto-merge cut from scope
-	  2026-08-28 after #50 self-merged a half-staged diff (see the card).
 
 
 ## 👀 Review / Demo
@@ -58,6 +56,28 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
 
+- [x] **S4-P4** · skip CI on docs-only PRs · P3 · 🟠 Moderate · **Aug 28.** fdca32c8 (#50) +
+	  753a7c08 (#51). `ci.yml` carries `paths-ignore` for `**.md` and `.claude/**`, and
+	  `ci-docs.yml` is a stand-in whose matrix spells the 9 required context names, so the merge
+	  gate still reports. **Measured: 9 billed minutes against 16.1**, because GitHub rounds
+	  every job up to the minute. The card was cut expecting a bigger win than that.
+	  **The clause said 8 checks and the ruleset carries 9** — `diff coverage` joined it once
+	  S4-P3's first run had reported. Fourth card running whose clauses did not match the tree.
+	  **`if:` gating was measured dead, not argued dead.** On #49's push run a skipped *plain*
+	  job still reports its context, but a skipped *matrix* job never expands: `sanitizers`
+	  reported one check literally named `matrix.name` and its three legs reported nothing.
+	  Seven of the nine contexts are matrix legs. That also makes `ci.yml`'s comment at the
+	  `build-test` gate wrong; filed on [[Backlog]] rather than edited inside another card's text.
+	  **Retro, and why auto-merge left scope:** #50 merged itself the moment its checks went
+	  green, carrying half the change. `ci-docs.yml` was untracked, so `git commit -a` never
+	  staged it, and master could not merge a docs-only PR at all until #51 landed. Green checks
+	  cannot see an unstaged file, and auto-merge removed the look that can.
+	  **Retro, second git slip in the same card:** a concurrent checkout put a commit on local
+	  `master` instead of the topic branch. Caught before any push, nothing reached the remote.
+	  **Proof was #52, closed on purpose and never merged.** `CI` did not fire, `CI (docs-only)`
+	  reported all 9 contexts green in 3-4s each, and the PR went `MERGEABLE`/`CLEAN` with no
+	  build. The clause is satisfied by that observation, not by a merge.
+	  Story E stays open (S4-P1).
 - [x] **S4-T6** · `Writer`/`Reader` primitives + bulk path + tests · P1 · 🟢 Deep · **Aug 27.**
 	  1ca9ae9c (#48). The design note's **error-surface** question is answered in code: `Reader`
 	  carries its own `ReadStatus` (`Ok`/`Truncated`/`BadMagic`/`BadVersion`), not `FileResult`,

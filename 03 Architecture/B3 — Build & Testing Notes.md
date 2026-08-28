@@ -248,6 +248,37 @@ That second row is the useful one: real work on this codebase clears the 85% bar
 being written for it. **The CI minute cost is still unmeasured**, because the job has not run
 yet. It belongs in this section once it has.
 
+## Docs-only PRs (S4-P4, 2026-08-28)
+
+A change that cannot alter a build artifact does not get a build. `ci.yml` carries
+`paths-ignore` for `**.md` and `.claude/**`; everything else, `.gitignore` and the workflow
+files included, still runs the full matrix. The rule itself lives in `ci.yml`'s header, not
+here, because a fresh clone has no `docs/` (ADR-012 §1).
+
+`ci-docs.yml` is the other half. A workflow skipped by a path filter never reports its
+contexts, and a required context that never reports leaves the PR pending rather than
+mergeable, so a stand-in has to report the same names. It is one matrix job spelling all nine.
+
+**Cost, measured on #52:** **9 billed minutes against 16.1** for a real run. The saving is
+about 44%, not the ~100% the card assumed, because GitHub rounds **every job up to the
+nearest minute** and nine trivial jobs are still nine jobs. The cheaper shape, if that stops
+being enough, is one job posting nine check runs through the Checks API for ~1 minute, at the
+price of a token permission and more moving parts.
+
+### Two things that bite
+
+- **A skipped matrix job does not expand.** Measured on #49's push run, where `sanitizers`
+  was skipped by its `if:`: it reported **one** check literally named `matrix.name`, and
+  `win ASan` / `linux UBSan` / `linux TSan` reported nothing at all. A skipped *plain* job is
+  different and does keep its context (`diff coverage` came back `skipped`). Seven of the nine
+  required contexts are matrix legs, so gating the real jobs with `if:` would hang every
+  docs-only PR. This is why the stand-in is a separate workflow.
+- **A mixed PR fires both workflows.** `paths` matches when *any* changed file matches, while
+  `paths-ignore` skips only when *all* of them do, and Actions has no "all changed files
+  match" filter. Both then report the same nine contexts and the merge box takes the most
+  recent per name, which is the real run. That is ordering, not a guarantee: it holds only
+  while the stand-in stays seconds long.
+
 ## Scaffold checklist
 
 Moved — this note fed the ADR, and the ADR is where the checklist landed:
