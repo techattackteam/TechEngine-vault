@@ -159,10 +159,21 @@
       serialization card's own diff measures 91%. The threshold is on **changed** lines rather
       than the project, because a project-wide number falls every time `client` grows on
       demo-scene verification, and a gate bypassed weekly teaches nothing.
-- [ ] **S4-P4** · skip CI on docs-only PRs, plus auto-merge · P3 · 🟠 Moderate · done: the
-      dummy-job pattern reports all 8 required checks on docs-only PRs; the "no code" scope
-      rule is written (as a dated ADR-009 amendment if it moves the self-review consequence);
-      proven on one real docs PR.
+- [ ] **S4-P4** · skip CI on docs-only PRs · P3 · 🟠 Moderate · done: a stand-in workflow
+      reports all **9** required checks on docs-only PRs; the "no code" scope rule is
+      written; proven on one real docs PR.
+      **9, not the 8 this card was cut with.** `diff coverage` entered the `Master` ruleset
+      once S4-P3's first run had reported it, which is after this card was written. GitHub
+      only offers a context it has already seen report.
+      **No ADR-009 amendment is owed:** a docs-only PR has no code, so the self-review
+      consequence does not move.
+      **Auto-merge dropped from scope 2026-08-28, after one use.** It was on, and #50 merged
+      itself the moment the checks went green. That PR carried half the change: `ci-docs.yml`
+      was a new untracked file, so `git commit -a` never staged it, and the squash landed the
+      `paths-ignore` that turns CI off without the stand-in that reports in its place. Master
+      could not merge a docs-only PR at all until the follow-up branch. Auto-merge removed the
+      last look at the diff, and that look is what catches an unstaged file. The repo setting
+      goes back off.
 
 ## Definition of Done
 

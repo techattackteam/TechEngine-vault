@@ -31,11 +31,12 @@ kanban-plugin: board
 ## 📋 E · process *(first thing cut)*
 
 - [ ] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light
-- [ ] **S4-P4** · skip CI on docs-only PRs + auto-merge · P3 · 🟠 Moderate
 
 
 ## 🔨 In Progress
 
+- [ ] **S4-P4** · skip CI on docs-only PRs · P3 · 🟠 Moderate · auto-merge cut from scope
+	  2026-08-28 after #50 self-merged a half-staged diff (see the card).
 
 
 ## 👀 Review / Demo
@@ -53,7 +54,6 @@ kanban-plugin: board
 	  coverage is 1.5 (Linux, 1x). Baseline was 14.6, so about **+10%**. A cold coverage cache
 	  costs far more, and that number is not captured. Local workflow is in
 	  [[B3 — Build & Testing Notes]] § *Code coverage*.
-
 
 
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
