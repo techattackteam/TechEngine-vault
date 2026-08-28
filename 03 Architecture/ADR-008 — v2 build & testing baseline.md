@@ -29,6 +29,20 @@
   trigger it never had (no old value; the rule itself is unchanged). Every other reversible
   call in this ADR names one and this one did not, so nothing said when to look again.
   S4-P2.
+- **Amended 2026-08-27 — decision:** two §9 changes that came in together. (1) The
+  required-check list gains a ninth entry, **`diff coverage`**. Old list: build+test on both
+  legs × {Debug, Release} + `clang-format`/`clang-tidy` + `te_sdk_smoke`. It blocks a merge
+  under **85% of the lines the PR changes**, bypassable with `[skip-coverage]` in the PR
+  description. (2) That retires §9's "affordable because matrix legs run **in parallel**"
+  rationale: `build-test` and `sanitizers` now both declare `needs: [format, coverage]`, so
+  the expensive legs sit behind two cheap gates and PR wall-clock is a sum, not a max. The
+  trade was deliberate, since a formatting slip or an under-covered diff should not pay for
+  seven more legs. S4-P3.
+- **Amended 2026-08-28 — decision:** §9's trigger gains a path exclusion. A PR touching only
+  `**.md` or `.claude/**` runs **no build at all**, and a stand-in workflow reports the nine
+  required contexts in place of the real jobs so the merge gate still resolves. Old trigger:
+  every `pull_request` targeting `master`, no exceptions. The mechanism and its two failure
+  modes are in [[B3 — Build & Testing Notes]] § *Docs-only PRs*. S4-P4.
 
 ## Context
 
@@ -270,9 +284,11 @@ merge. (ADR-005 chose GitHub Actions.)
 - **Trigger:** `pull_request` targeting `master` (+ `push` to `master` as a backstop).
   Fits the workflow — CLAUDE.md branches off `master`, never commits directly, so every
   change lands via a PR and CI runs there.
+  > **Amended 2026-08-28:** a docs-only PR is now excluded and runs no build. See the header.
 - **Required status checks** (branch protection — a red one blocks the merge button, the
   antidote to silent rot): build+test on **both legs** (Win-MSVC, Linux-Clang) ×
   {Debug, Release} + `clang-format`/`clang-tidy` + `te_sdk_smoke`.
+  > **Amended 2026-08-27:** `diff coverage` is a ninth required check. See the header.
 - **Sanitizers — Option A: all per-PR** (ASan/Win · UBSan/Linux · TSan/Linux). Affordable
   because matrix legs run **in parallel** (≈ one extra build's wall-clock, not the sum)
   and the deterministic core suite runs in seconds even under TSan's 5–15×. Three caveats
@@ -288,6 +304,8 @@ merge. (ADR-005 chose GitHub Actions.)
     A number, not a feeling.
   - **TSan false positives can block a clean merge:** TSan ships **required but with a
     checked-in suppressions file**; promote to zero-tolerance once it's proven stable.
+  > **Amended 2026-08-27:** the "in parallel" rationale opening this bullet no longer holds.
+  > The legs are chained behind `format` and `coverage`. See the header.
 - **Caching is mandatory** (§4) — each sanitizer is its own cache namespace; a cold leg
   rebuilds heavy deps (assimp) under instrumentation. ccache + `_deps` cache keyed on
   `deps.cmake` + compiler + `TE_SANITIZER`.

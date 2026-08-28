@@ -30,11 +30,11 @@ kanban-plugin: board
 
 ## 📋 E · process *(first thing cut)*
 
-- [ ] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light
 
 
 ## 🔨 In Progress
 
+- [ ] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light
 
 
 ## 👀 Review / Demo
@@ -43,11 +43,13 @@ kanban-plugin: board
 	  deliberately.** The gate has never been evaluated on real changed lines in CI: its own PR
 	  carried only CMake, YAML and Markdown, so `diff-cover` reported "no lines with coverage
 	  information" and passed without testing anything. **Closes when the first PR carrying C++
-	  produces a real percentage.** Until then, three things stay open: the `diff coverage`
-	  context is **not yet in the `Master` ruleset** (GitHub only lists contexts it has seen
-	  report, so it could not be added before the first run) · ADR-008 §9's required-check list
-	  and its "sanitizers are affordable because legs run in parallel" rationale both owe a
-	  dated amendment, since the jobs are now chained · the minute cost is measured and below.
+	  produces a real percentage.** Two of the three things that were open are now closed: the
+	  `diff coverage` context **is in the `Master` ruleset**, added once the first run had
+	  reported it (GitHub only lists contexts it has seen), so the gate is 9 checks not 8 ·
+	  ADR-008 §9 carries its dated `decision` amendment, covering both the ninth required check
+	  and the retired "affordable because legs run in parallel" rationale, since the jobs are
+	  now chained (filed 2026-08-28 alongside S4-P4's, not at this card's close) · the minute
+	  cost is measured and below.
 	  **Cost, from the merged PR run (warm caches):** 16.1 billed minutes total, of which
 	  coverage is 1.5 (Linux, 1x). Baseline was 14.6, so about **+10%**. A cold coverage cache
 	  costs far more, and that number is not captured. Local workflow is in
