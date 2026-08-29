@@ -22,10 +22,8 @@ kanban-plugin: board
 - [ ] **S4-T7** · visit seam + non-POD round-trip demo · P1 · 🟢 Deep
 
 
-## 📋 D · measurements & cleanups
+## 📋 D · measurements & cleanups · ✅ **complete** *(T1 · T3 Aug 29, T2 Aug 27)*
 
-- [ ] **S4-T1** · `<format>` weight: measure, then decide · P2 · 🟠 Moderate
-- [ ] **S4-T3** · `te-review`'s `base` findings · P3 · 🟡 Light
 
 
 ## 📋 E · process *(first thing cut)*
@@ -33,7 +31,6 @@ kanban-plugin: board
 
 
 ## 🔨 In Progress
-
 
 
 ## 👀 Review / Demo
@@ -76,6 +73,51 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
 
+- [x] **S4-T1** · `<format>` weight: measure, then decide · P2 · 🟠 Moderate · **Aug 29.**
+	  9e8d8f2a (#58), off `S4-T1/format-weight` — the card-ID link holds, after three cards
+	  running where it did not.
+	  **One of the three offered options had no referent.** The card asked for "drop `<format>`,
+	  keep the split, or fold back". Dropping is unreachable: `<chrono>` already contains the
+	  whole of `<format>`, and `Log.hpp` needs `<chrono>` for `LogRecord`'s timestamp. It was a
+	  two-way choice written as three.
+	  **The measurement reversed two design notes at once**, because both rested on one guess.
+	  [[Math — Design]] (S3-T2) and [[StringId — Design]] § *Placement* (S3-T7) each justified a
+	  separate formatter header by citing [[Logger — Design]]'s open, unmeasured `<format>`
+	  question. Measuring it closed that question and invalidated both splits: in a TU that
+	  already logs, the split was worth **+7 ms**. Numbers for both toolchains in
+	  [[B3 — Build & Testing Notes]] § *`<format>` header weight*.
+	  **Clause 4 was deliberately not honoured.** It said header changes get carded separately;
+	  the merge landed inside this card instead, on the call that a three-includer sweep did not
+	  justify a second card. So the card shipped an engine diff it was not scoped for.
+	  The measurement's larger finding is about `<chrono>`, not `<format>`, and is on [[Backlog]].
+	  Story D is **complete** (T1 · T2 · T3).
+- [x] **S4-T3** · `te-review`'s `base` findings · P3 · 🟡 Light · **Aug 29.**
+	  8f6ccb9e (#56), and that is finding one: **the card has no PR of its own.** Its branch
+	  `S4-T3/te-reviews` was named correctly, then the work merged inside the CI bug PR cut from
+	  `bug/docs-only-ci-and-diff-coverage`. Nothing carrying the `S4-T3/` prefix reached
+	  `origin/master`, so the ADR-012 § *Consequences* link is broken for the **third card
+	  running** (S4-T5 rode T4's branch, S4-T6 kept T2's prefix). [[Backlog]]'s *Guard the
+	  branch-name to card-ID link* entry set "a third occurrence" as its trigger. It has fired.
+	  **Clause 1's parenthetical was right and its scope was wrong.** `Log.cpp` was 1 of 9 sites:
+	  `Assert.cpp` carried the identical three, and five test files across `base`, `core` and
+	  `app` mixed a module-private header with catch2. `techengine_test()` also gained `tests/` as
+	  a second include root, which is what killed `"../events/AssertCapture.hpp"`. A card scoped
+	  to `base` ended in a shared cmake helper. The regex fix leaves a **deliberate hole**, spelled
+	  out in `.clang-format` and `CONVENTIONS.md` § *Includes*: third-party roots are enumerated
+	  now, so a dependency left off that row sorts as ours and the format gate stays green.
+	  **Clause 3 did not mean what it said.** It asked for the *Error handling* Open row to be
+	  decided; the finding under it was sharper. § *Attributes* claimed "`addLogSink` is a bool
+	  nobody ignores" and **two production callers ignored it**, `initLogging` and
+	  `shutdownLogging`, with only the tests checking. That false line was the evidence for the
+	  no-`[[nodiscard]]` rule. The row is engine-wide policy and the artifact gate had routed this
+	  card "reversible and local", so it split: the two discards fixed, the false line corrected,
+	  the row carded to [[Backlog]] § *etc* as an ADR. Its own "first fallible API" trigger had
+	  already fired **twice** without moving it (S2-T3's bool, S4-T6's `ReadStatus`).
+	  **Retro:** the format gate went red on four `app`/`core` files. The sweep covered `base`
+	  only, and clang-format 19.1.5 installs locally at CI's pinned version, so this was checkable
+	  before the push and was not checked.
+	  D1's ride-along was **not** taken. It stays open, with its three stale citations fixed.
+	  Story D stays open (S4-T1).
 - [x] **S4-P4** · skip CI on no-code PRs · P3 · 🟠 Moderate (**was a 🟢 in practice**) ·
 	  **Aug 28.** fdca32c8 (#50) + 753a7c08 (#51) + **e7562bf5 (#54)**. `ci.yml` carries
 	  `paths-ignore` for **three** paths, `**.md` · `.claude/**` · `.github/workflows/**`, and

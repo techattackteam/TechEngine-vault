@@ -37,7 +37,7 @@ across thirty headers later is a sweep. Adding a `lerp` later is a single commit
 | **Formatters live with math**, not with the Logger. | ADR-006 §6 |
 | **Alias, do not wrap.** `using Vec3 = glm::vec3;`, with no engine-owned wrapper type. | This note |
 | **`float` is the default precision.** Use `double` only where a domain argues for it. | This note |
-| Formatters ship in a **separate header** from the types. | This note, below |
+| Formatters ship **in `Math.hpp`**, not in a separate header. The S3-T2 split was reversed at S4-T1 on measured numbers. | This note, below |
 | Handedness and clip depth range are **not** decided here. | This note → *Open questions* |
 
 ## Design
@@ -83,18 +83,31 @@ Its real job is smaller and more useful: **something has to compile the header.*
 includes `Math.hpp` yet. Without that translation unit, a broken header would sit in a green
 CI run until S3-T2 stumbled on it.
 
-### Formatters get their own header
+### Formatters ship with the types
 
-`std::formatter<TechEngine::Vec3>` and its siblings live in **`Math/Format.hpp`**, not in
-`Math.hpp`.
+`std::formatter<TechEngine::Vec3>` and its siblings live in **`Math.hpp`**, alongside the
+aliases they print. There is no separate formatter header.
 
-Keeping them together would force `<format>` into every translation unit that wants a vector.
-[[Logger — Design]] already carries an open, unmeasured question about what `<format>` costs
-in a header that every TU includes. Math would be the second such header, and math is
-included far more widely than logging.
+**This reverses the original S3-T2 call**, which put them in `math/Format.hpp` to keep
+`<format>` out of every TU that wants a vector. That split rested on an unmeasured guess about
+what `<format>` costs. S4-T1 measured it on 2026-08-29 and the guess did not survive.
 
-Splitting makes that cost opt-in. The price is one extra `#include` at the handful of call
-sites that log a vector.
+`<chrono>` already contains the whole of `<format>`, on MSVC and on libstdc++ alike. Adding
+`<format>` after `<chrono>` changes the preprocessed line count by zero. `diagnostics/Log.hpp`
+includes `<chrono>` for its `LogRecord` timestamp, so any TU that logs has paid for `<format>`
+before math is even mentioned. In that TU the split saved **+7 ms on MSVC and +88 ms on
+Clang**, which is nothing. Full numbers in [[B3 — Build & Testing Notes]] §
+*`<format>` header weight*.
+
+One header is simpler than two, and a formatter that arrives with its type cannot be
+forgotten at the call site. That is what the split cost in exchange for the saving above.
+
+**What would reverse this again.** The split still buys a real **+531 ms (MSVC) / +817 ms
+(Clang)** per TU that includes `Math.hpp` and does *no* logging. Today that is at most three
+files, so the total is noise. If a renderer or a physics layer later brings in dozens of
+math-heavy TUs that never log, re-measure and consider splitting back.
+
+[[StringId — Design]] § *Placement* took the same call at the same time, for the same reason.
 
 **Shape**, decided at S3-T2 on 2026-08-03:
 
@@ -161,9 +174,10 @@ decision rather than an oversight.
 - [[ADR-005 — v2 tech stack & toolchain]]: where glm was chosen
 - [[ADR-006 — v2 core architecture & module layout]] §1 (base's dependencies) · §5 (the
   helper taxonomy) · §6 (formatters live with math)
-- [[Logger — Design]]: the `<format>`-in-a-wide-header cost this note splits around
+- [[Logger — Design]]: the `<format>`-in-a-wide-header cost this note used to split around,
+  measured at S4-T1 and found to be already paid by `<chrono>`
 - `CONVENTIONS.md` → *Names are spelled out*: the rule `Vec3` is an explicit exception to
-- Code: `engine/base/include/TechEngine/base/math/Math.hpp` (the alias set) ·
-  `engine/base/tests/math/MathTests.cpp` (`static_assert`s only, no `TEST_CASE`, see
-  *Surface*) · `engine/base/include/TechEngine/base/math/Format.hpp` ·
-  `engine/base/tests/math/MathFormatTests.cpp` (pins the rendered form, S3-T2)
+- Code: `engine/base/include/TechEngine/base/math/Math.hpp` (the alias set and the three
+  formatters, merged at S4-T1) · `engine/base/tests/math/MathTests.cpp` (`static_assert`s
+  only, no `TEST_CASE`, see *Surface*) · `engine/base/tests/math/MathFormatTests.cpp`
+  (pins the rendered form, S3-T2)

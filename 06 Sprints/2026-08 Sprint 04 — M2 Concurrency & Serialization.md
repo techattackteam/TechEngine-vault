@@ -113,22 +113,31 @@
 
 ### Story D — measurements & cleanups *(Dev)*
 
-- [ ] **S4-T1** · `<format>`'s header weight: measure, then decide · P2 · 🟠 Moderate · done:
-      the per-TU cost of the `<format>`-carrying headers is measured; numbers land in
-      [[B3 — Build & Testing Notes]]; the call (drop `<format>`, keep the split, or fold back)
-      is recorded in [[Math — Design]]; header changes are carded separately if the call wants
-      them.
+- [x] **S4-T1** · `<format>`'s header weight: measure, then decide · P2 · 🟠 Moderate ·
+      **done 2026-08-29** (9e8d8f2a, #58). Of the three options the acceptance offered, "drop
+      `<format>`" had no referent: `<chrono>` contains all of `<format>`, and `Log.hpp` needs
+      `<chrono>`. The call was **fold back**, and it reversed the splits in both
+      [[Math — Design]] and [[StringId — Design]], not just math. Clause 4 was deliberately
+      not honoured: the header merge landed in this card rather than a separate one. Entry on
+      [[Sprint Board]]. Original acceptance: the per-TU cost of the `<format>`-carrying headers
+      is measured; numbers land in [[B3 — Build & Testing Notes]]; the call (drop `<format>`,
+      keep the split, or fold back) is recorded in [[Math — Design]]; header changes are carded
+      separately if the call wants them.
 - [x] **S4-T2** · rename `TechEngine::detail` to `internal` · P3 · 🟡 Light ·
       **done 2026-08-27** (4928447c, #47). 15 files, not 13: a `namespace detail` grep misses
       `LogInternal.hpp`, which spells it qualified. Entry on [[Sprint Board]]. Original
       acceptance: the 13 files and `ci.yml`'s `\bdetail::log` guard are swept, no `detail`
       namespace remains, CI is green.
-- [ ] **S4-T3** · `te-review`'s `base` findings · P3 · 🟡 Light · done: `Log.cpp`'s quoted
-      includes fixed together with `.clang-format`'s category regex (fixing one alone moves
-      the problem); `RingEntry` becomes `LogRingEntry`; the discarded `addLogSink` bool gets
-      the `CONVENTIONS.md` *Error handling* Open row decided. Optional ride-along:
-      [[Known Issues]] D1's fallback fix is ~6 lines plus a test in the same area; delete D1
-      if taken.
+- [x] **S4-T3** · `te-review`'s `base` findings · P3 · 🟡 Light ·
+      **done 2026-08-29** (8f6ccb9e, #56). Merged inside the CI bug PR, so no branch carrying
+      the `S4-T3/` prefix reached `origin/master`. Clause 1 was 9 sites and not one file;
+      clause 3 asked for the *Error handling* row to be decided, and the finding under it was
+      a false line in `CONVENTIONS.md` § *Attributes*. D1 was **not** taken. Entry on
+      [[Sprint Board]]. Original acceptance: `Log.cpp`'s quoted includes fixed together with
+      `.clang-format`'s category regex (fixing one alone moves the problem); `RingEntry`
+      becomes `LogRingEntry`; the discarded `addLogSink` bool gets the `CONVENTIONS.md`
+      *Error handling* Open row decided. Optional ride-along: [[Known Issues]] D1's fallback
+      fix is ~6 lines plus a test in the same area; delete D1 if taken.
 
 ### Story E — Process *(first thing cut; the mix is called out below)*
 

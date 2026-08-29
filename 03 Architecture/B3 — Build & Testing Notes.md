@@ -199,14 +199,41 @@ no coverage edit.
 `client` grows, because rendering is proven by demo scenes rather than unit tests, and a gate
 bypassed weekly teaches nothing. `diff-cover` computes it against the merge base.
 
-**The bypass is `[skip-coverage]` in the pull request description.** The job still runs and
-still reports: a required check skipped by a workflow `if:` never reports its context at all,
-which leaves the pull request pending forever instead of mergeable.
+The run now prints that verdict and nothing else. A whole-project `llvm-cov report` table used
+to print beside it and read as the cause of the failure, which it never was: its exit code was
+ignored. Removed 2026-08-29. The lcov export and the browsable HTML stay whole-project, because
+`diff-cover` needs the full report to intersect against the diff.
+
+### The bypass and the floor
+
+**The bypass is `[skip-coverage]` in the pull request description.** It is the **first step of
+the job**, before a single apt package, and every later step carries a guard against its output.
+A bypassed run finishes in seconds instead of spending about two minutes on clang, `diff-cover`
+and an instrumented build to reach a conclusion it already had.
+
+**It skips steps, never the job.** A required check skipped by a job-level `if:` does not report
+its context as success, which leaves the pull request pending instead of mergeable. The job has
+to run and go green; only the work inside it is optional. The cost of that shape is that a
+bypassed run reports no percentage and uploads no HTML, which is the trade taken knowingly: the
+old shape built everything to print a figure it was about to ignore.
+
+**Below 10 changed measurable lines the gate stops scoring and passes.** Measurable means the
+changed lines that carry coverage mapping, which is the set the percentage is computed over. At
+four of them one line is worth 25 points, so a rename plus one unreachable error branch reads as
+a failure with nothing to fix. The floor is `TE_COVERAGE_MIN_LINES`, added 2026-08-29. Its count
+is `diff-cover`'s own `Total`, parsed rather than recomputed, so the floor and the percentage
+cannot disagree about what changed. A parse miss falls through to the normal verdict, never to a
+pass.
+
+`coverage_report.cmake` checks its own bypass before the floor. That path is local-only now,
+since CI bypasses by never reaching the step, but the order still holds there: an explicit signal
+should be what the log reports, not an automatic fallback that happened to fire first.
 
 ### Running it locally
 
-Two commands, and CI runs the identical target. Threshold, base branch and the bypass all
-come from the environment, so there is no second code path to drift.
+Two commands, and CI runs the identical target. Threshold, base branch, the floor and the
+bypass all reach it through the environment, so there is no second code path to drift. Only
+where CI *sources* the bypass is CI-specific, and that is the next section.
 
 ```bash
 cmake --preset linux-coverage
@@ -214,6 +241,24 @@ cmake --build --preset linux-coverage --target coverage
 ```
 
 The browsable per-file report lands at `build/linux-coverage/coverage/html/index.html`.
+
+### The bypass reads the API, not the event payload
+
+Found 2026-08-29, on a bypass that would not take. `github.event.pull_request.body` is the
+**event payload**, and the payload is frozen at the instant the event fired. Adding
+`[skip-coverage]` to an already-open pull request therefore changed nothing. Worse, **"Re-run
+all jobs" replays that same stale payload**, so no number of re-runs could ever see the edited
+description. The only thing that worked was a new commit.
+
+The Coverage step now asks the API for the live body with `gh pr view`, which is why the job
+carries `pull-requests: read` and pins `GH_REPO` (the PR checkout is a detached merge ref, so
+there is nothing to infer from). The flow is: edit the description, then **Re-run failed jobs**.
+No commit. That also re-runs the build and sanitizer legs, which were skipped when coverage
+failed, so the PR ends up fully green.
+
+`edited` was deliberately kept out of the `pull_request` trigger. It fires on **title** edits
+too, so fixing a typo would buy a full nine-leg matrix run, three of them Windows at 2×. One
+manual click is cheaper than that against a ~2k minute month.
 
 ### Setup, and the four things that bit
 
@@ -317,6 +362,78 @@ price of a token permission and more moving parts.
   match" filter. Both then report the same nine contexts and the merge box takes the most
   recent per name, which is the real run. That is ordering, not a guarantee: it holds only
   while the stand-in stays seconds long.
+
+## `<format>` header weight (S4-T1, 2026-08-29)
+
+One TU per header, holding that single `#include` and nothing else. Flags copied verbatim
+from `build/windows/compile_commands.json` (Debug), minus `/Zi`. Best of 7 on MSVC, best of 5
+on Clang, each after a warm-up pass. The preprocessed line count is the half that does not
+move with machine load, so trust it over the milliseconds.
+
+### The finding: `<chrono>` already contains `<format>`
+
+Adding `#include <format>` **after** `#include <chrono>` changes the preprocessed line count
+by exactly zero. That holds on both toolchains. It is the whole result, and the timings below
+only put a price on it.
+
+`diagnostics/Log.hpp` and `time/Clock.hpp` both include `<chrono>`. Every TU that logs, or
+that reads the clock, has therefore already paid for `<format>` in full.
+
+This also rules out one of the three options S4-T1 was written to weigh. "Drop `<format>`" is
+not reachable while `Log.hpp` carries a `std::chrono::system_clock::time_point` member.
+
+### MSVC 19.38, Debug, best of 7
+
+Baseline (empty TU) is 35 ms.
+
+| TU | ms | Δ | PP lines |
+|---|---|---|---|
+| `<format>` | 813 | +778 | 59,483 |
+| `<chrono>` | 1204 | +1169 | 73,297 |
+| `<chrono>` then `<format>` | 1214 | +1179 | **73,297** |
+| `math/Math.hpp` | 463 | +428 | 46,119 |
+| `math/Format.hpp` | 994 | +959 | 76,526 |
+| `stringid/StringId.hpp` | 468 | +433 | 44,274 |
+| `stringid/Format.hpp` | 1024 | +989 | 67,241 |
+| `diagnostics/Assert.hpp` | 868 | +833 | 59,623 |
+| `diagnostics/Log.hpp` | 1285 | +1250 | 73,491 |
+| `time/Clock.hpp` | 1239 | +1204 | 73,316 |
+| `Log.hpp` + `Math.hpp` | 1384 | — | 90,443 |
+| `Log.hpp` + `math/Format.hpp` | 1391 | — | 90,533 |
+
+### Clang 18 / libstdc++, best of 5
+
+Baseline is 36 ms. Same shape, larger numbers.
+
+| TU | ms | PP lines |
+|---|---|---|
+| `<format>` | 1572 | 55,403 |
+| `<chrono>` | 2059 | 82,213 |
+| `<chrono>` then `<format>` | 2075 | **82,213** |
+| `math/Math.hpp` | 1317 | 44,051 |
+| `math/Format.hpp` | 2134 | 83,256 |
+| `diagnostics/Log.hpp` | 2034 | 82,476 |
+| `time/Clock.hpp` | 2092 | 82,242 |
+| `Log.hpp` + `Math.hpp` | 3089 | 110,112 |
+| `Log.hpp` + `math/Format.hpp` | 3177 | 110,223 |
+
+### What a separate formatter header actually buys
+
+It only pays in a TU that includes the type and does no logging.
+
+| The TU already includes | Folding the formatter in costs, MSVC | Clang |
+|---|---|---|
+| `Math.hpp`, no logging | +531 ms | +817 ms |
+| `Math.hpp` and `Log.hpp` | +7 ms, +90 lines | +88 ms, +111 lines |
+
+The call went to **fold back**, and the merge landed inside S4-T1 rather than in a follow-up
+card (9e8d8f2a, #58, 2026-08-29). `math/Format.hpp` and `stringid/Format.hpp` are gone; their
+contents sit in `Math.hpp` and `StringId.hpp`. The reasoning and the condition that would
+reverse it live in [[Math — Design]] § *Formatters ship with the types*.
+
+**The bigger number in these tables is `<chrono>`, not `<format>`.** It costs ~1200 ms and
+73k preprocessed lines per TU on MSVC, and `Log.hpp` carries it into everything that logs.
+That is on [[Backlog]], not carded.
 
 ## Scaffold checklist
 

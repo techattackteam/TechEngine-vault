@@ -128,15 +128,23 @@ back into its tag is the tooling layer's job.
 
 ### Placement
 
-`base/stringid/StringId.hpp` and `base/stringid/Format.hpp`, decided 2026-08-04 with S3-T7.
+`base/stringid/StringId.hpp`, decided 2026-08-04 with S3-T7. The sibling
+`base/stringid/Format.hpp` was folded into it at S4-T1, for the reason below.
 
 This is **not** ADR-014 §1's `base/StringId.hpp`. `CONVENTIONS.md` → *Headers* says one
 folder per utility, named after its design note. That rule landed 2026-08-03, a day after the
 ADR, and it wins. S3-T4 reached the same resolution for `base/profiler/`. The ADR is not
 edited.
 
-The formatter gets its own header, following the Math split. `<format>` is a heavy include
-and this type is pulled in by everything that carries an id.
+**The formatter ships in `StringId.hpp`**, not in a header of its own. This reverses the
+S3-T7 call, which followed the Math split on the belief that `<format>` was too heavy to put
+in a header everything includes.
+
+S4-T1 measured that belief on 2026-08-29 and it did not hold. `<chrono>` already contains all
+of `<format>`, so any TU that logs has paid for it already. Splitting saved **+7 ms on MSVC**
+in such a TU. The reasoning and the condition that would reverse it live in
+[[Math — Design]] § *Formatters ship with the types*; the numbers are in
+[[B3 — Build & Testing Notes]] § *`<format>` header weight*.
 
 It does **not** ride on `diagnostics/FormatString.hpp`. That file is the positional
 format-string wrapper. It is not a home for formatters.

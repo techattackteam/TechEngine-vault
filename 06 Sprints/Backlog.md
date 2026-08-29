@@ -31,6 +31,10 @@ groups are kept, because they show where future work will land.
 
 ## base
 
+- #prio/medium · **Get `<chrono>` out of `Log.hpp`** — `LogRecord`'s `system_clock::time_point`
+  is the only reason it is there, and `<chrono>` costs ~1200 ms and 73k preprocessed lines per
+  TU on MSVC (S4-T1's numbers, [[B3 — Build & Testing Notes]]). It is the engine's most widely
+  included header. **Trigger:** a full-rebuild time that actually hurts, measured not guessed.
 - #prio/medium · **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
@@ -100,6 +104,15 @@ groups are kept, because they show where future work will land.
   `.github/workflows/` push — its OAuth token has no `workflow` scope), and the report it hands
   back. **Trigger:** fired — pull at the next `/sprint-plan`.
 
+- #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
+  fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool
+  (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:116`) and `Reader` carries a sticky
+  `ReadStatus` (`engine/core/include/TechEngine/core/serialization/Reader.hpp:14`, per ADR-016).
+  Nothing throws across an API boundary and nothing uses `std::expected`, so it ratifies two
+  existing shapes rather than opening a three-way choice. It also owns the `[[nodiscard]]`
+  revisit (`CONVENTIONS.md` § *Attributes*). **Trigger:** fired — pull at the next
+  `/sprint-plan`.
+
 - #prio/medium · **`FETCHCONTENT_UPDATES_DISCONNECTED` is OFF with a comment explaining why it
   is ON** — flipped as a ride-along in #46; the five lines above it still describe the old
   value and the Windows/MSBuild failure it avoided. Either restore it or rewrite the comment.
@@ -108,11 +121,12 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **Guard the branch-name to card-ID link** — the branch prefix is the only path
   from a squashed commit back to its board card (ADR-012 § *Consequences*), and it has now
-  broken on two consecutive cards: S4-T5 rode T4's branch, and S4-T6 kept the `S4-T2/` prefix
-  after the slip was called out. Nothing mechanical checks it, so the entry is only ever
-  written after the fact. Cheapest shape is probably a pre-push hook or a PR check comparing
-  the prefix against the open cards on [[Sprint Board]]. **Trigger:** a third occurrence, or
-  the next time a squashed commit cannot be traced back to its card.
+  broken on three consecutive cards: S4-T5 rode T4's branch, S4-T6 kept the `S4-T2/` prefix
+  after the slip was called out, and S4-T3's correctly-named branch was merged inside an
+  unrelated bug PR (#56). The third one changes the shape of the fix: a pre-push check on the
+  branch name would not have caught it, so the guard has to compare the **merged** commit
+  against the open cards on [[Sprint Board]]. Nothing mechanical checks it today, so the entry
+  is only ever written after the fact. **Trigger:** fired — pull at the next `/sprint-plan`.
 - #prio/medium · **ADR-009 owes an amendment: a workflow-only PR gets no CI** — § *Consequences*
   says correctness leans on strict CI plus self-review. Since #54 (2026-08-28) a PR touching only
   `.github/workflows/**` runs no build at all, so for that one class of change CI is not a

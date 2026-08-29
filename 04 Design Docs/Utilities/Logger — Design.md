@@ -8,7 +8,8 @@
 [[ADR-005 — v2 tech stack & toolchain]] (spdlog) ·
 [[ADR-006 — v2 core architecture & module layout]] §5 §6
 **Sprint:** [[2026-08 Sprint 02 — Base Foundation]], S2-T2 and S2-T3 ·
-[[2026-08 Sprint 03 — M1 Enablers]], S3-B1 (bring-up)
+[[2026-08 Sprint 03 — M1 Enablers]], S3-B1 (bring-up) ·
+[[2026-08 Sprint 04 — M2 Concurrency & Serialization]], S4-T3 (sink registration)
 
 ## Purpose
 
@@ -198,6 +199,12 @@ end of the table.
   Release only, and pre-authorizes RelWithDebInfo for that work later.
 - **Editor console.** Parked until an editor exists (ADR-011 §3). It would be a lock-free ring
   feeding an ImGui log panel, the twin of the [[Profiler — Design|Profiler]] panel.
+- **Registration is fallible and the boot path says so** (S4-T3). The table is a fixed 8 slots,
+  so `addLogSink` returns `false` on a full table or a null sink. `initLogging` checks it and
+  prints to stderr, because a `false` there means the console and file sink never registered and
+  nothing else would report it. `shutdownLogging` discards `removeLogSink`'s bool through an
+  explicit `(void)`: a sink already gone is the end state it wanted. What that `bool` should
+  have *been* is the open [[Backlog]] § *etc* entry on `CONVENTIONS.md`'s Error handling row.
 
 ### The rendered format (file and console)
 
@@ -260,11 +267,17 @@ standalone `fmt` fallback that ADR-011's *What would move this decision* held in
 never needed: nothing defines `SPDLOG_FMT_EXTERNAL`, and `cmake/deps.cmake` fetches no `fmt`.
 The exit trigger stays written in the ADR, unfired.
 
-One question is still live, and it is owned by the ADR's exit triggers rather than by this
-note.
+**`<format>`'s compile-time cost is measured, and it is not the Logger's to carry.** Closed at
+S4-T1 on 2026-08-29.
 
-- **`<format>`'s compile-time cost is unmeasured**, in a header that every translation unit
-  includes. Measure it once `Log.hpp` is included engine-wide.
+`Log.hpp` includes `<chrono>` for `LogRecord`'s timestamp, and `<chrono>` already contains the
+whole of `<format>`. Adding `<format>` after `<chrono>` changes the preprocessed line count by
+zero, on MSVC and on libstdc++ alike. So `FormatString.hpp` costs this header nothing that
+`<chrono>` was not already spending. Numbers in [[B3 — Build & Testing Notes]] §
+*`<format>` header weight*.
+
+The result reversed the formatter-header split in [[Math — Design]] and [[StringId — Design]],
+which had both been justified by this note's unmeasured question.
 
 ## References
 
