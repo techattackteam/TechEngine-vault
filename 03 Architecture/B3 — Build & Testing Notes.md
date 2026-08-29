@@ -278,9 +278,14 @@ exists only so the recovery is a one-character edit rather than a redesign under
 ## Docs-only PRs (S4-P4, 2026-08-28)
 
 A change that cannot alter a build artifact does not get a build. `ci.yml` carries
-`paths-ignore` for `**.md` and `.claude/**`; everything else, `.gitignore` and the workflow
-files included, still runs the full matrix. The rule itself lives in `ci.yml`'s header, not
-here, because a fresh clone has no `docs/` (ADR-012 §1).
+`paths-ignore` for **three** paths: `**.md`, `.claude/**` and `.github/workflows/**`.
+Everything else still runs the full matrix, `.gitignore` and `.githooks/` included. The rule
+itself lives in `ci.yml`'s header, not here, because a fresh clone has no `docs/` (ADR-012 §1).
+
+> **Corrected 2026-08-29.** This section shipped saying "the workflow files included, still
+> runs the full matrix". That was true when it was written and false hours later: the third
+> path landed the same day and nothing swept the note. Workflow files are now the one thing
+> that does **not** get a build.
 
 `ci-docs.yml` is the other half. A workflow skipped by a path filter never reports its
 contexts, and a required context that never reports leaves the PR pending rather than
@@ -292,8 +297,15 @@ nearest minute** and nine trivial jobs are still nine jobs. The cheaper shape, i
 being enough, is one job posting nine check runs through the Checks API for ~1 minute, at the
 price of a token permission and more moving parts.
 
-### Two things that bite
+### Three things that bite
 
+- **`ci.yml` is never tested by its own PR.** It excludes `.github/workflows/**`, so breaking
+  the YAML, renaming a leg or dropping a job still shows nine green checks from the stand-in
+  and merges clean. It is worse than it looks: `ci-docs.yml` hardcodes the nine context names,
+  so renaming a leg silently uncovers it and every later docs-only PR hangs unmergeable with
+  no clue why. **A workflow change is verified by watching the run it produces on `master`,
+  never by its own PR.** Land workflow edits alone and read the next run before building on
+  them. Same shape as S4-P1, whose fix merged its own verification out of reach.
 - **A skipped matrix job does not expand.** Measured on #49's push run, where `sanitizers`
   was skipped by its `if:`: it reported **one** check literally named `matrix.name`, and
   `win ASan` / `linux UBSan` / `linux TSan` reported nothing at all. A skipped *plain* job is

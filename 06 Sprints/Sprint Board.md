@@ -76,11 +76,23 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
 
-- [x] **S4-P4** · skip CI on docs-only PRs · P3 · 🟠 Moderate · **Aug 28.** fdca32c8 (#50) +
-	  753a7c08 (#51). `ci.yml` carries `paths-ignore` for `**.md` and `.claude/**`, and
+- [x] **S4-P4** · skip CI on no-code PRs · P3 · 🟠 Moderate (**was a 🟢 in practice**) ·
+	  **Aug 28.** fdca32c8 (#50) + 753a7c08 (#51) + **e7562bf5 (#54)**. `ci.yml` carries
+	  `paths-ignore` for **three** paths, `**.md` · `.claude/**` · `.github/workflows/**`, and
 	  `ci-docs.yml` is a stand-in whose matrix spells the 9 required context names, so the merge
-	  gate still reports. **Measured: 9 billed minutes against 16.1**, because GitHub rounds
-	  every job up to the minute. The card was cut expecting a bigger win than that.
+	  gate still reports.
+	  **#54 folded in here 2026-08-29** (weekly review). It landed hours after this card was
+	  marked done and widened the skip list to the third path, so it had no card of its own and
+	  its only record was a clause inside S4-P1's entry. Two things follow from it. **One:
+	  `ci.yml` is never tested by its own PR** — break the YAML or rename a leg and the PR still
+	  shows nine green from the stand-in, and since `ci-docs.yml` hardcodes those nine names, a
+	  rename silently uncovers it and later docs-only PRs hang unmergeable. The mitigation is in
+	  `ci.yml`'s header: land workflow edits alone, read the run they produce on `master`.
+	  **Two: the card's "no ADR-009 amendment owed" call was answered for docs and never re-asked
+	  for workflows.** § *Consequences* leans on strict CI, and for this one class of change there
+	  is none. Filed on [[Backlog]] as A3 from the 2026-08-29 drift check.
+	  **Measured: 9 billed minutes against 16.1**, because GitHub rounds every job up to the
+	  minute. The card was cut expecting a bigger win than that.
 	  **The clause said 8 checks and the ruleset carries 9** — `diff coverage` joined it once
 	  S4-P3's first run had reported. Fourth card running whose clauses did not match the tree.
 	  **`if:` gating was measured dead, not argued dead.** On #49's push run a skipped *plain*
@@ -97,6 +109,9 @@ kanban-plugin: board
 	  **Proof was #52, closed on purpose and never merged.** `CI` did not fire, `CI (docs-only)`
 	  reported all 9 contexts green in 3-4s each, and the PR went `MERGEABLE`/`CLEAN` with no
 	  build. The clause is satisfied by that observation, not by a merge.
+	  **Sizing retro, added 2026-08-29:** cut as 🟠, it ran a 🟢 day and spilled into a fourth
+	  PR. Every process card this sprint that touched the merge gate was under-sized the same
+	  way (S4-P1 was a 🟡 and did the same). See [[2026-08-29 Weekly Review]].
 	  Story E stays open (S4-P1).
 - [x] **S4-T6** · `Writer`/`Reader` primitives + bulk path + tests · P1 · 🟢 Deep · **Aug 27.**
 	  1ca9ae9c (#48). The design note's **error-surface** question is answered in code: `Reader`

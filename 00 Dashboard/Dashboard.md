@@ -9,11 +9,11 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 04 — M2 Concurrency & Serialization]] *(Aug 22 to Sep 4, the first 2-week sprint)* |
 | **Sprint goal** | **Decide M2: the threading and serialization ADRs both Accepted, each proven by first code against its real interface.** Both stories were sized and cut on day 1. |
-| **Current focus** | 🔨 **Story C — S4-T6 → S4-T7**, the serialization first slice, which carries the sprint's remaining 🟢 work. Story A closed Aug 22 (both ADRs) and Story B Aug 24 (the job system). S4-T2 is in flight. Side cards left — `<format>` measurement · ccache · coverage job · two cleanups · skip-CI — fill the light and moderate days and are still the cut-first list. |
-| **Top blocker** | None hard. Watch: CI-minute budget (ADR-008 §9; S4-P3 adds a per-PR coverage job, so its cost gets measured) · clang-tidy unproven on Windows · Tracy's Linux leg never built in CI |
-| **Next milestone** | **M2** ([[Roadmap]]): both ADRs Accepted (Aug 22) and the pool shipped (Aug 24) — **the headless binary round-trip is what is left**, at S4-T6 → S4-T7. **M3 waits for Sprint 05** (scope call recorded on the [[Roadmap]]). RNG · crash handler carry (memory tracking shipped at S3-T5) |
+| **Current focus** | 🔨 **S4-T7**, the visit seam and the non-POD round-trip. It is the sprint's last 🟢 card and the last piece of the Definition of Done. It also **closes both Review cards**: S4-P1 and S4-P3 each need a PR carrying engine C++, and T7 is that PR, so run it before either close. Story A closed Aug 22, Story B Aug 24, and S4-T2/T6/P2/P3/P4/P1 all landed in week 1. Left over: S4-T1 (🟠) and S4-T3 (🟡), still the cut-first list. |
+| **Top blocker** | None hard. Watch: CI-minute budget, now **measured at 16.1 billed minutes per PR** with coverage on (ADR-008 §9) · **a workflow-only PR draws no CI at all** since #54, so `ci.yml` is never tested by its own PR · clang-tidy unproven on Windows · Tracy's Linux leg never built in CI |
+| **Next milestone** | **M2** ([[Roadmap]]): both ADRs Accepted (Aug 22), the pool shipped (Aug 24) and the primitives Aug 27. **The headless binary round-trip is all that is left**, at S4-T7. **M3 waits for Sprint 05** (scope call recorded on the [[Roadmap]]). RNG · crash handler carry (memory tracking shipped at S3-T5) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
-| **Reconciled against** | engine `32bc327c` (2026-08-20) |
+| **Reconciled against** | engine `50ca9360` (2026-08-29) |
 
 **Reading that stamp** ([[ADR-012 — Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -21,26 +21,26 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline 32bc327c..origin/master
+git log --oneline 50ca9360..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
 you *which* note drifted, only that nobody has looked.
 
-**Latest advance: 2026-08-20**, from `5afb6d28` (2026-08-03), covering 15 commits and PRs
-#23 to #45. Two weekly reviews were missed, so this one check carried three weeks. It
-spot-checked every system Sprint 03 touched: math, profiler, `StringId`, events, diagnostics
-bring-up and file access. **Four findings, two of them live poison** — see
-[[2026-08-20 Weekly Review]] § *Artifact drift*. Spot-check depth, not a line-by-line audit;
-that is what this stamp has always meant. Previous advance: 2026-08-02, from `2b4bc38e`
-([[2026-08-02 Sprint 02 Retrospective]]), which found no hub drift.
+**Latest advance: 2026-08-29**, from `32bc327c` (2026-08-20), covering 8 commits and PRs
+#46 to #54. It spot-checked concurrency, serialization and the CI/build layer against the
+shipped code. **Three findings, all from #54 widening the CI skip list.** Two were reconciled
+the same day: ADR-008's 2026-08-28 amendment named two paths where `ci.yml` has three, and
+[[B3 — Build & Testing Notes]] § *Docs-only PRs* was **actively false**, claiming workflow
+files still run the full matrix when they are the one thing that no longer does. The third is
+carded on [[Backlog]], because it needs a decision on an Accepted ADR: § *Consequences* of
+[[ADR-009 — Branching strategy & merge rules]] leans on strict CI, and a workflow-only PR now
+gets none. The two M2 design notes are clean. See [[2026-08-29 Weekly Review]] § *Artifact
+drift*. Spot-check depth, not a line-by-line audit; that is what this stamp has always meant.
 
-**Re-checked 2026-08-22** at the Sprint 04 boundary: `origin/master` was still `32bc327c`, zero
-unreviewed commits, so the stamp stood without a new sweep. **`a0d1d1b3` (#46) has landed since,
-on Aug 24**, so the stamp is one commit behind and the Aug 29-30 review owns the next sweep. The boundary found only
-vault-internal staleness (memory tracking still listed as an M1 carry after S3-T5 shipped it;
-a Current-focus order that was already done), fixed the same day.
+Previous advance: 2026-08-20, from `5afb6d28`, covering 15 commits, four findings, all four
+reconciled the same day ([[2026-08-20 Weekly Review]]).
 
 ## 🗓️ Rhythm
 
@@ -65,11 +65,10 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **weekend of Aug 29-30 2026**: `/weekly-review`, which is also
-Sprint 04's mid-sprint checkpoint (an M2 ADR not Accepted by then costs its story, not
-compression). The next boundary is **Sep 5-6**: `/sprint-plan` opens Sprint 05.
-*(Sprint 04 ran its planning on Sat Aug 22, the moved-up boundary from Sprint 03's early
-close: [[2026-08-22 Sprint 03 Retrospective]].)*
+→ **Next ceremony:** **weekend of Sep 5-6 2026**: `/sprint-plan`, the Sprint 04 boundary. It
+opens Sprint 05 and absorbs that weekend's review, so do not run both.
+*(Sprint 04's mid-sprint checkpoint ran Sat Aug 29 and **passed**: both M2 ADRs were Accepted
+on day 1, so no story was cut. See [[2026-08-29 Weekly Review]].)*
 
 **An early close moves the boundary, not the cadence.** A sprint that meets its goal with weeks
 to spare is re-planned at the next weekend, and the new sprint's 2-week range is set from that
@@ -155,23 +154,24 @@ Recently locked — full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (update weekly · 2026-08-20)
+## Health check (update weekly · 2026-08-29)
 
-- **Build:** 🟢 — 25 PRs merged Aug 2 to 20, **no revert in the log**, `master` ruleset Active
-  (8 required checks). One build break, at S3-T13, caught and fixed before merge. Caveats
-  unchanged and now three: clang-tidy proven on Linux only · CI-minute budget live · Tracy's
-  Linux leg has never been built in CI. *(Read from merge subjects, not from CI runs.)*
-- **Momentum:** 🟡 — throughput is strong, continuity is not. Sprint 03 closed **8 days
-  early**, but **13 of its 17 cards landed in the first 9 days** and **Aug 14 to 19 produced
-  zero commits**. The stall was not rest: the board emptied, and the refill point is a weekend.
-  That is what the 2-week sprint and the weekday fallback are meant to fix.
-- **Sustainability:** 🟡 — weekday cadence mostly held (Tue light, both Wednesdays off), and
-  Aug 15-16 was a real full rest weekend. Two overruns: **Fri Aug 7 closed four PRs including a
-  🟢 Deep card** on a 🟠 day, and Mon Aug 3 and Mon Aug 10 each closed three on an evening
-  sized for one. Aug 7 is the **same failure the Jul 25 review already flagged**, so
-  bank-the-slack remains untested after two sprints.
-- **Artifact health:** 🟢 — the Aug 20 drift check found **four findings, two of them live
-  poison**, and **all four were reconciled the same day** ([[2026-08-20 Weekly Review]]). Both
-  poisonous ones came from process work amending an ADR without sweeping the design note that
-  indexes it, so that is the habit to watch. Coverage improved too: every M1 item that shipped
-  now has a design note.
+- **Build:** 🟢 — 8 PRs merged Aug 22 to 28, **no revert in the log**, `master` ruleset Active
+  and now at **9 required checks** (`diff coverage` joined at S4-P3). Caveats are now four:
+  clang-tidy proven on Linux only · CI-minute budget live and measured at 16.1 billed minutes
+  per PR · Tracy's Linux leg has never been built in CI · **a workflow-only PR draws no CI**,
+  so `ci.yml` is never tested by its own PR. *(Read from merge subjects, not from CI runs.)*
+- **Momentum:** 🟢 — upgraded from 🟡. The 2-week box is doing what it was adopted for:
+  **8 of 13 cards closed in week 1 with no empty stretch**, and the longest gap was the planned
+  Tue/Wed rest pair. Both M2 gates closed on day 1, so the mid-sprint checkpoint cost nothing.
+- **Sustainability:** 🟡 — rest days held cleanly (Sun off, Tue and Wed both zero commits),
+  but the overrun repeated for the **third review running**: two deep evenings each carried
+  1 🟢 + 1 🟠 + 1 🟡, and Fri Aug 28 closed four PRs on a 🟠 day. What is new is that
+  **every overrun was process work, not engine work** — so the fix on the table is sizing, not
+  discipline ([[2026-08-29 Weekly Review]]).
+- **Artifact health:** 🟢 — the Aug 29 check found **three findings, one of them actively
+  false rather than stale, and two were reconciled the same day**. The third is carded because
+  it needs an ADR-009 decision. All three trace to **#54, a merged PR that moved a required
+  check with no card behind it**, now folded into S4-P4. The habit to watch has shifted: last
+  month it was amending an ADR without sweeping its design note, this month it is shipping a
+  scope change with no card to hang the sweep on.

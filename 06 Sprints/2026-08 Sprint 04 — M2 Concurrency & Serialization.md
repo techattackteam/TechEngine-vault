@@ -185,8 +185,13 @@
       **9, not the 8 this card was cut with.** `diff coverage` entered the `Master` ruleset
       once S4-P3's first run had reported it, which is after this card was written. GitHub
       only offers a context it has already seen report.
-      **No ADR-009 amendment is owed:** a docs-only PR has no code, so the self-review
-      consequence does not move.
+      **"No ADR-009 amendment is owed" was answered for docs only, and it is now wrong.** A
+      docs-only PR has no code, so the self-review consequence does not move. **e7562bf5 (#54)
+      then widened the skip list to `.github/workflows/**` the same day**, and a workflow-only
+      PR gets no CI at all, so § *Consequences*' "correctness leans on strict CI" has an
+      exception nobody recorded. Folded into this card 2026-08-29 rather than given its own,
+      and filed on [[Backlog]] as A3. The card's scope also grew: **it was cut 🟠 and ran a
+      🟢**, four PRs, not two.
       **Auto-merge dropped from scope 2026-08-28, after one use.** It was on, and #50 merged
       itself the moment the checks went green. That PR carried half the change: `ci-docs.yml`
       was a new untracked file, so `git commit -a` never staged it, and the squash landed the

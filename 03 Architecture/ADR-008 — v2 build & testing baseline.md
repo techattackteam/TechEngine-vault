@@ -39,10 +39,16 @@
   trade was deliberate, since a formatting slip or an under-covered diff should not pay for
   seven more legs. S4-P3.
 - **Amended 2026-08-28 — decision:** §9's trigger gains a path exclusion. A PR touching only
-  `**.md` or `.claude/**` runs **no build at all**, and a stand-in workflow reports the nine
-  required contexts in place of the real jobs so the merge gate still resolves. Old trigger:
-  every `pull_request` targeting `master`, no exceptions. The mechanism and its two failure
-  modes are in [[B3 — Build & Testing Notes]] § *Docs-only PRs*. S4-P4.
+  `**.md`, `.claude/**` or `.github/workflows/**` runs **no build at all**, and a stand-in
+  workflow reports the nine required contexts in place of the real jobs so the merge gate still
+  resolves. Old trigger: every `pull_request` targeting `master`, no exceptions. The mechanism
+  and its failure modes are in [[B3 — Build & Testing Notes]] § *Docs-only PRs*. S4-P4.
+  > **Corrected 2026-08-29:** this amendment was written naming **two** paths and the list is
+  > **three**. `.github/workflows/**` was added hours later the same day, and the amendment was
+  > never swept. The third path is the consequential one: **a workflow-only PR is not built, so
+  > `ci.yml` is never tested by its own PR.** §9's "correctness leans on a red check" therefore
+  > has an exception it does not name, filed on [[Backlog]] against
+  > [[ADR-009 — Branching strategy & merge rules]].
 
 ## Context
 

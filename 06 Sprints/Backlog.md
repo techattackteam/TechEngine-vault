@@ -113,6 +113,14 @@ groups are kept, because they show where future work will land.
   written after the fact. Cheapest shape is probably a pre-push hook or a PR check comparing
   the prefix against the open cards on [[Sprint Board]]. **Trigger:** a third occurrence, or
   the next time a squashed commit cannot be traced back to its card.
+- #prio/medium · **ADR-009 owes an amendment: a workflow-only PR gets no CI** — § *Consequences*
+  says correctness leans on strict CI plus self-review. Since #54 (2026-08-28) a PR touching only
+  `.github/workflows/**` runs no build at all, so for that one class of change CI is not a
+  backstop and self-review is the whole gate. S4-P4 pre-named this exact test, answered it
+  correctly for docs-only PRs, and nobody re-asked it when the scope widened past docs. The
+  mitigation exists but lives only in `ci.yml`'s header: land workflow edits alone and read the
+  run they produce on `master`. Found at the 2026-08-29 drift check (A3). **Trigger:** Sprint 05
+  planning, or the first workflow break that reaches `master` green.
 - #prio/low · **`ci.yml`'s `build-test` gate comment is wrong about skipped checks** — it says
   a required check skipped by an `if:` "never reports its context at all". Measured on #49's
   push run, a skipped *plain* job does report it (`diff coverage` came back `skipped`); it is
