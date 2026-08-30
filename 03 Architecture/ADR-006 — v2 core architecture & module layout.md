@@ -38,6 +38,19 @@
   implementation is real. Found at S3-T12 (2026-08-10), declared at the 2026-08-20 weekly
   review, which caught the amendment above still naming a type that never shipped.
   Record: [[File Access — Design]] § *Why there is no interface*.
+- **Amended 2026-08-30 — decision:** **glad2 moves from `platform` to `client`, and §1's
+  window/input overlap resolves toward `platform`.** §1's contents table lists *window* and
+  *input* under **both** `platform` and `client`, and lists **glad2** in `platform`'s
+  third-party column. Read it now as: `platform` owns GLFW, the window and raw input, and
+  issues **no GL call ever**; `client` owns the GL context, **glad2** and every `gl*` call,
+  reaching the window through three methods on `platform`'s `Window` rather than through
+  `glfw*` directly. `client`'s row keeps *window binding*, which is that consumption, not
+  window ownership. Driver: a loader is only useful to whoever holds a current context, and
+  [[ADR-015 — Threading (sim on main, render thread owns GL)]] §2 puts that on the render
+  thread inside `client`; leaving glad2 in `platform` puts a GL loader on the link line of a
+  dedicated server that links no GL at all (§2). The module DAG, the client/server seam and
+  the F22 device seam are all unchanged. Decided at S5-D2 (2026-08-30), before M4's first
+  window code. Record: [[Window — Design]] § *The seam*.
 
 ## Context
 

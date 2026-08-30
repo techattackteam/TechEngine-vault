@@ -42,13 +42,6 @@ groups are kept, because they show where future work will land.
 
 ## platform
 
-- #prio/high · **`executablePath()`** — `GetModuleFileNameW` / `/proc/self/exe`, so a mount can
-  be anchored to the binary rather than to CWD or a baked source path. S3-T13 shipped its demo
-  mount as a configure-time `TE_DEMO_ASSETS_DIR` define precisely because this did not exist,
-  and that resolves to nothing in an installed build. v1's own call was Windows-only
-  (`ProjectManager.cpp:268` @ `v1-reference`) and everything else there used `current_path()`.
-  **Trigger:** fired — M3 needs it for the editor's real `assets://` mount, and the S3-T13
-  demo is thrown away in the same breath.
 - #prio/medium · **File watching** — v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
   [[ADR-014 — Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
@@ -72,9 +65,6 @@ groups are kept, because they show where future work will land.
 - #prio/high · **Frame pacing** — S2-T7's spin-to-deadline stand-in is not shippable; the
   Windows 15.6 ms timer evidence and the open questions live on [[Game Loop — Frame Flow]].
   **Trigger:** the first build that runs unattended.
-- #prio/medium · **Throw the S3-T13 demo mount away** — `App.cpp`'s `TODO(S3-T13)` block,
-  `engine/app/assets/`, and the `TE_DEMO_ASSETS_DIR` define in `engine/app/CMakeLists.txt`.
-  Goes with M3's real mount set. **Trigger:** M3 project creation.
 
 ## net
 
@@ -97,13 +87,6 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
-- #prio/xhigh · **Autonomous lane: create the recurring routine, then prove the PR path** — the
-  lane is designed, its artifacts are written and one full end-to-end run has landed a report
-  ([[Autonomous Lane — Design]] § *State*). What is left is the recurring routine itself, and a
-  first small 🤖 Auto **code** card, since every run so far was report-only and nothing has yet
-  branched, built and opened a PR unattended.
-  **Trigger:** fired — pull at the next `/sprint-plan`.
-
 - #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
   fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool
   (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:116`) and `Reader` carries a sticky
@@ -122,16 +105,6 @@ groups are kept, because they show where future work will land.
   reader trusting either artifact pairs the client with the wrong desktop app and gets a refused
   connection. It wants a dated amendment on an Accepted ADR, which is a decision rather than a
   sweep. **Trigger:** fired — found by the 2026-08-30 freshness check.
-
-- #prio/medium · **The vault's `file:line` citations rot silently, and 8 of 30 are wrong today**
-  — the 2026-08-30 freshness check resolved every `path:line` citation in the durable artifacts.
-  Every file exists and every line is within range, so nothing fails loudly, and 8 simply point
-  at the wrong line: three into `App.cpp`, which #59 moved by +88, two in [[Known Issues]] whose
-  named fix sites shifted, and two in [[Profiler — Design]] that land on a blank line. A citation
-  resolving to a plausible-looking wrong line is worse than one that obviously breaks. The check
-  itself is mechanical — extract the citation, grep for the symbol the sentence claims, compare —
-  so the question is whether it belongs in `/weekly-review` or in CI, not whether to re-do it by
-  hand each time. **Trigger:** fired — pull at the next `/sprint-plan`.
 
 - #prio/high · **The ccache key is write-once, so master's cache is frozen and hits are 21%** —
   S4-P1's key is `v1-<leg>-<hash of deps.cmake>`. GitHub caches are immutable per key and the

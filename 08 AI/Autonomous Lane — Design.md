@@ -61,8 +61,16 @@ Anthropic's cloud on a cron schedule, so the PC being off is irrelevant.
 only while the local REPL is idle. The `durable` flag has no effect. Neither survives the PC
 going to sleep, which is the whole requirement.
 
-**State as of 2026-08-30: zero routines configured.** The entire cloud path is unproven, so
-nothing below has been observed working.
+**State as of 2026-08-30, 18:00: the routine is live**, firing 05:07, 10:07, 15:07 and 00:07
+Lisbon on weekdays only. Weekends are Miguel's own dev time, and a run pushing to vault
+`master` mid-session would collide with him. **No fire has been observed yet**, because the
+routine went live on a Sunday and the first weekday fire is Monday 05:07.
+
+**Cron is UTC**, so this shifts an hour earlier on 25 October when Lisbon drops to UTC+0.
+
+So the flow below is designed and not yet watched running. What is still unproven is the
+**PR path**: every run so far was report-only, and nothing has branched, built and opened a
+PR unattended. That is S5-P2's job.
 
 ```mermaid
 flowchart LR

@@ -275,9 +275,38 @@ same rule Sprint 03 pre-named.
 Weekend days stay a swappable pair; nothing here is assigned to Sat or Sun. The sprint's
 first `/card-start` doubles as S3-P2's real acceptance test.
 
-## Sprint review (fill Sep 5-6)
+## Sprint review (2026-08-30)
 
-- What shipped:
-- Demo / artifact:
+**Closed on day 9 of 14, goal met in full.** 13 cards, all closed:
+**7 Dev · 2 Design · 4 Process · 0 Bug.** The boundary was pulled a week forward to
+Aug 29-30 rather than left at Sep 5-6, so Sprint 05 starts early.
 
-→ Retrospective in [[07 Journal]].
+**What shipped**
+
+- **S4-D1 / S4-D2** — ADR-015 (threading) and ADR-016 (serialization) both **Accepted on
+  day 1**, each with its design note cut as the hub alongside it.
+- **S4-T4 / S4-T5** — `JobSystem` in `core`, a real queue and **four** workers (ADR-015 §3
+  amended mid-card off T5's capture), wired through `EngineContext`. a0d1d1b3 (#46).
+- **S4-T6 / S4-T7** — `Writer`/`Reader` with a sticky `ReadStatus`, the bulk path, and the
+  describe-once `visit` seam as an ADL free function plus a `Visitable` concept.
+  1ca9ae9c (#48), 69f477da (#59). T7 also shipped `FileAccess::write`, reversing
+  [[File Access — Design]]'s three-type split a rung early.
+- **S4-T1 / T2 / T3** — `<format>` measured and folded back into `Math.hpp` and
+  `StringId.hpp`, reversing two notes at once; `detail` renamed to `internal` across 15 files;
+  `te-review`'s `base` findings swept across 9 sites. 9e8d8f2a (#58), 4928447c (#47),
+  8f6ccb9e (#56).
+- **S4-P1 / P2 / P3 / P4** — ccache cut from 111 entries to 12; the CMake source-listing rule
+  re-tested and upheld with a reversal trigger; a **required** `diff coverage` gate at 85% of
+  changed lines, taking the ruleset to 9 checks; CI skipped on no-code PRs behind a stand-in
+  workflow.
+
+**Demo / artifact:** the headless driver round-trips a non-POD struct through the visit seam
+and a real file on disk (69f477da, #59), and a `windows-profile` Tracy capture shows named
+worker zones under the frame marks (a0d1d1b3, #46). Together those are M2's unlock, and the
+file round-trip went further than the Definition of Done asked for.
+
+**Full per-card detail**, including every retro finding, the four-PR Friday and the three
+broken branch-name links, was folded out of [[Sprint Board]] into
+[[2026-08-30 Sprint 04 Retrospective]] when the board was reset for Sprint 05.
+
+→ Retrospective in [[2026-08-30 Sprint 04 Retrospective]].
