@@ -202,9 +202,27 @@ environment in [[Autonomous Lane — Routine Prompt]] § *The environment, as me
 | **`.gitignore`'s `/docs/` does not match a symlink.** A trailing slash matches directories only. | An auto PR could have committed the vault mount. Pattern is now `/docs`. |
 | **The one-shot fired twice**, 58 seconds apart. | Harmless for a probe. For a PR-opening lane it is two PRs per card. Step 3 is now an idempotency check. |
 
-**Still unproven:** nothing has actually been built in the sandbox. The toolchain is present
-and the presets exist, but no configure or compile has run, so `FetchContent`'s cold cost is
-still a guess.
+**Probe 2, same day**, `trig_01Gp38qRCui3rwoNHaXR6DK1`. It confirmed the `.gitignore` fix, and
+it closed the two remaining questions with real numbers.
+
+- **The vault push works.** After the re-anchor, `git push --dry-run origin master` returns
+  *Everything up-to-date*. Probe 1's rejection was a stale ref, never auth, as suspected.
+- **The engine builds and its tests pass**, in **85 seconds** cold: configure 20 s, build 64 s,
+  `ctest` 1 s. Build tree 479 MB. The lane's build carve-out costs about a minute and a half,
+  not the many minutes `FetchContent` had me worried about.
+- **But a cold sandbox cannot build at all until five apt packages are installed.** Configure
+  dies at 8 seconds on GLFW's X11 and Wayland headers, and the error names none of them. The
+  runner logs `No setup script configured`, so the environment supports a setup script and that
+  is the right home for it. The prompt does it meanwhile.
+- **`allowed_tools` is not a sandbox.** Probe 2 was created with four read-only tools and used
+  `Write`, `ToolSearch`, GitHub MCP tools and `PushNotification` regardless. The lane's safety
+  rests on the prompt and on branch protection, never on that field.
+
+**It also found a vault bug that has nothing to do with this lane.** The [[Dashboard]]'s
+`Reconciled against` sha, `50ca9360`, does not exist in the current history. The same commit is
+now `875991e2`, so `master` was rewritten after the Aug 29 check. The stamp is repointed with
+its date unchanged, because repointing is not re-earning. Every engine sha the vault records
+from before that rewrite is suspect.
 
 Two things left.
 

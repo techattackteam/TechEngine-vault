@@ -13,7 +13,7 @@
 | **Top blocker** | None hard. Watch: CI-minute budget, now **measured at 16.1 billed minutes per PR** with coverage on (ADR-008 §9) · **a workflow-only PR draws no CI at all** since #54, so `ci.yml` is never tested by its own PR · clang-tidy unproven on Windows · Tracy's Linux leg never built in CI |
 | **Next milestone** | **M2** ([[Roadmap]]): both ADRs Accepted (Aug 22), the pool shipped (Aug 24) and the primitives Aug 27. **The headless binary round-trip is all that is left**, at S4-T7. **M3 waits for Sprint 05** (scope call recorded on the [[Roadmap]]). RNG · crash handler carry (memory tracking shipped at S3-T5) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
-| **Reconciled against** | engine `50ca9360` (2026-08-29) |
+| **Reconciled against** | engine `875991e2` (2026-08-29) — *repointed 2026-08-30, see below* |
 
 **Reading that stamp** ([[ADR-012 — Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -21,8 +21,17 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline 50ca9360..origin/master
+git log --oneline 875991e2..origin/master
 ```
+
+**The stamp was broken and is repointed, not re-earned (2026-08-30).** It read `50ca9360`, and
+that object does not exist in the current history: `git cat-file -t 50ca9360` fails in a fresh
+clone and locally. The same logical commit, *Cache leak should be fixed (#53)*, is now
+`875991e2`, so `master` was rewritten at some point after the Aug 29 check. Found by the
+autonomous-lane probe run, whose freshness fallback is the one task that depends on this sha
+resolving. **The date is unchanged on purpose**: this repoints a stamp at the commit it always
+meant, and no new drift check has run. A rewrite invalidates every engine sha the vault
+records, so treat older `file:line` and commit citations with the same suspicion.
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
