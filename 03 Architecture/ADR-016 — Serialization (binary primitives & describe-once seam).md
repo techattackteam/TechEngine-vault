@@ -12,6 +12,13 @@
   [[Serialization — Design]]
 - **Task:** S4-D2 ([[2026-08 Sprint 04 — M2 Concurrency & Serialization]]). The seam M5's
   components, M6's resources, T4's bake and N3's snapshots all register against.
+- **Amended 2026-08-30 — decision:** §6's "The M2 slice is memory-buffer round-trip only;
+  files wait for M3's writer" → **the M2 slice writes a real file.** S4-T7's headless demo
+  round-trips a struct through disk, because `FileAccess::write` shipped at that card instead
+  of at M3 ([[File Access — Design]] § *Why the write split was dropped*). What moved is the
+  slice's scope, not the module boundary §6 draws: serialization still owns no file I/O, it
+  produces and consumes bytes and `platform` moves them. The rest of §6 stands, compression
+  included. S4-T7.
 
 ## Context
 
@@ -79,6 +86,9 @@ ADR-007's header. Registration keeps the tag string and collision `TE_CHECK`, th
 `EventRegistry` shape.
 
 ### 6. Scope: primitives and seam here, document schemas with their consumers
+
+> **Amended 2026-08-30:** the last sentence's file clause no longer holds. `FileAccess::write`
+> shipped at S4-T7 and the M2 demo writes a real file. See the header entry.
 
 This system lives in `core` (ADR-006 §1). It owns the encoding primitives (`Writer`/`Reader`
 over memory buffers), the seam, and the rules above. **Document schemas are not here**: the

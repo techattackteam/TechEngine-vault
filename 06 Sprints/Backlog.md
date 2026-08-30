@@ -113,6 +113,44 @@ groups are kept, because they show where future work will land.
   revisit (`CONVENTIONS.md` § *Attributes*). **Trigger:** fired — pull at the next
   `/sprint-plan`.
 
+- #prio/high · **The ccache key is write-once, so master's cache is frozen and hits are 21%** —
+  S4-P1's key is `v1-<leg>-<hash of deps.cmake>`. GitHub caches are immutable per key and the
+  action skips the save on an exact hit, so once master holds an entry **nothing can ever
+  update it** until `deps.cmake` moves. Master's entries are stuck at whatever the
+  2026-08-29 14:06 run happened to save, and they are a fraction of a full leg:
+  `linux-debug` is **3.6 MB against the 14.2 MB** PR #59 produced, `windows-debug` 16 MB
+  against 35 MB. Measured consequence on #59's `linux-clang Debug`: **39 hits out of 184
+  cacheable calls, 21.2%**, with 145 misses. S4-P1 predicted the inverse, roughly 140 dep
+  objects hitting while 43 engine TUs miss, and that premise is not holding. Two things to
+  work out: **why the master entry is so small** (a cancelled run under
+  `cancel-in-progress`, or something else), and whether the key needs a rotating component
+  so master can refresh. Note the tension: a rotating key reopens the unbounded-growth
+  problem S4-P1 was cut to fix, so this is a real trade and not a one-line change.
+  **Trigger:** fired at S4-T7's merge run; pull at the next `/sprint-plan`.
+
+- #prio/low · **Four CI legs can never restore a ccache, and it is scoping, not the key** —
+  a cache written on `refs/pull/N/merge` is readable only by that PR; only caches on
+  `refs/heads/master` are shared across branches. `sanitizers` and `coverage` are
+  `pull_request`-only by design (`ci.yml`, ADR-008 §9 Option A), so master never writes their
+  entries. Measured on #59: master holds ccache entries for exactly `linux-debug`,
+  `linux-release`, `windows-debug`, `windows-release`, and the ASan, UBSan, TSan and coverage
+  legs all logged "No cache found". **The likely answer is to leave it.** Adding the four to
+  the master push costs roughly 15 billed minutes per merge, Windows ASan at 2×, to save one
+  or two minutes per leg on the next PR. At one PR per merge that is a net loss against the
+  2k budget. What this needs is the reasoning written into
+  [[B3 — Build & Testing Notes]] § *ccache keys*, not a fix. **Trigger:** more than one open
+  PR per master merge becomes normal, or a sanitizer leg's cold build gets slow enough to
+  notice.
+
+- #prio/medium · **`App.cpp` is excluded from the coverage gate and only a cmake comment says
+  so** — S4-T7 added `engine/app/src/App.cpp` to `diff-cover`'s `--exclude` list
+  (`cmake/coverage_report.cmake`), because no CI job runs the runtime exe and the composition
+  root's demo blocks are uncoverable by construction. The reasoning is real, but it weakens a
+  **required** check and [[B3 — Build & Testing Notes]] § *Code coverage* does not mention it,
+  so the next person to read the gate's story will not know the exclusion exists. Write it
+  there, and decide at the same time whether the exclusion should be the file or only its demo
+  blocks. **Trigger:** fired at S4-T7; pull with the next coverage or B3 work.
+
 - #prio/medium · **`FETCHCONTENT_UPDATES_DISCONNECTED` is OFF with a comment explaining why it
   is ON** — flipped as a ride-along in #46; the five lines above it still describe the old
   value and the Windows/MSBuild failure it avoided. Either restore it or rewrite the comment.

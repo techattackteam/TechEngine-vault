@@ -104,7 +104,14 @@
       a status, whose shape answers the note's error-surface question in code); Catch2 pins:
       every primitive round-trips, a bulk span round-trips, truncated and corrupted buffers
       fail soft, wrong magic and wrong version are rejected; green on all legs.
-- [ ] **S4-T7** · visit seam + non-POD round-trip demo · P1 · 🟢 Deep · done: the
+- [x] **S4-T7** · visit seam + non-POD round-trip demo · P1 · 🟢 Deep ·
+      **done 2026-08-30** (69f477da, #59). Entry on [[Sprint Board]]. The binding is an ADL
+      free function plus a `Visitable` concept, and the drift guard's honest answer turned out
+      to be a **split**: `sizeof` is unportable for container-holding types, so only all-scalar
+      ones get the assert. Clause 4 grew past `core`: the demo writes a real file, so the card
+      shipped `FileAccess::write` and reversed [[File Access — Design]]'s three-type split,
+      with a dated `decision` amendment on ADR-016 §6. **Story C complete.** Original
+      acceptance: the
       describe-once `visit` binding is decided in code (ADL vs trait, recorded in the note)
       and a hand-made non-POD struct round-trips through both archives; the drift-guard
       question gets its honest answer recorded in the note (what a test can actually pin);
@@ -141,7 +148,13 @@
 
 ### Story E — Process *(first thing cut; the mix is called out below)*
 
-- [ ] **S4-P1** · ccache: one warm entry per leg · P2 · 🟡 Light · done: a stable per-leg cache
+- [x] **S4-P1** · ccache: one warm entry per leg · P2 · 🟡 Light ·
+      **done 2026-08-30** (50ca9360, #53; warm path measured on #59). Entry on
+      [[Sprint Board]]. The middle clause is answered and the answer is **21% hits**: the
+      stable key is write-once, so master's entries are frozen at a quarter of a full leg and
+      nothing refreshes them until `deps.cmake` moves. The growth fix holds, the hit-rate
+      premise does not. Both that and a second finding, four legs that can never restore
+      anything, are on [[Backlog]]. Original acceptance: a stable per-leg cache
       key replaces the timestamped accumulation, **the entry count holds steady across runs**
       rather than growing by one leg per run, and a later run shows hits on the Linux legs.
       Rides along: `.claude/commands/sprint-plan.md` and `CLAUDE.md` both still say 4-week
@@ -171,7 +184,7 @@
       Original acceptance: explicit lists, `CONFIGURE_DEPENDS` glob and a generator script
       compared with evidence in B3; the rule lands in `CONVENTIONS.md`, or is carded if it
       needs a sweep.
-- [ ] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate · done: one coverage job (Linux leg)
+- [x] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate · done: one coverage job (Linux leg)
       runs on each PR and surfaces a report; it is a **required check** that blocks the merge
       when under **85% of the lines the PR changes**, bypassable with `[skip-coverage]` in the
       PR description; the `diff coverage` context is added to the `Master` ruleset and
@@ -214,15 +227,23 @@
 - [x] Both M2 ADRs are Accepted, each with a design note as its hub, and Stories B and C were
       cut **after** their artifact, never before. **Met 2026-08-22, day 1**: ADR-015 with
       [[Concurrency — Design]], ADR-016 with [[Serialization — Design]].
-- [ ] M2's unlock is demonstrable: a Tracy capture with pool workers visible, and a headless
+- [x] M2's unlock is demonstrable: a Tracy capture with pool workers visible, and a headless
       binary round-trip through the trait seam. **Concurrency half met 2026-08-24**
       (a0d1d1b3, #46): the capture shows named worker zones under the frame marks. S4-T6 landed
-      the primitives (1ca9ae9c, #48); the serialization half now waits on S4-T7's seam
-      round-trip in the headless driver.
-- [ ] Every pulled backlog entry was deleted at planning (six were), and nothing was built
-      without a consumer.
-- [ ] The checkpoint held: an ADR not Accepted by the Aug 29-30 review costs its story, not
-      compression.
+      the primitives (1ca9ae9c, #48). **Serialization half met 2026-08-30** (69f477da, #59):
+      the headless driver round-trips a non-POD struct through the visit seam and a real file
+      on disk, which is further than this line asked for.
+- [x] Every pulled backlog entry was deleted at planning (six were), and nothing was built
+      without a consumer. **Both halves confirmed 2026-08-30.** The six deletions are one
+      commit, `e8a3c8e` in the vault, and they map one-to-one onto S4-T1 · T2 · T3 · P1 · P2 ·
+      P4. Everything built has tests plus a demo consuming it. **One caveat worth the sprint
+      review:** `FileAccess::write` was pulled a rung forward from M3 to serve S4-T7's demo.
+      ADR-016 § *Consequences* pre-authorised a seam whose only consumers are its tests and
+      demo; it did not pre-authorise that pull, and the demo is a thin consumer for a
+      `platform` API.
+- [x] The checkpoint held: an ADR not Accepted by the Aug 29-30 review costs its story, not
+      compression. **Never had to fire**: both ADRs were Accepted 2026-08-22, day 1, so no
+      story was ever under a week of runway. Recorded at [[2026-08-29 Weekly Review]].
 
 ## Capacity note
 

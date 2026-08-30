@@ -17,48 +17,39 @@ kanban-plugin: board
 
 
 
-## 📋 C · serialization first slice *(T6 → T7)*
+## 📋 C · serialization first slice · ✅ **complete** *(T6 Aug 27, T7 Aug 30)*
 
-- [ ] **S4-T7** · visit seam + non-POD round-trip demo · P1 · 🟢 Deep
 
 
 ## 📋 D · measurements & cleanups · ✅ **complete** *(T1 · T3 Aug 29, T2 Aug 27)*
 
 
 
-## 📋 E · process *(first thing cut)*
+## 📋 E · process · ✅ **complete** *(P2 Aug 24, P4 Aug 28, P1 · P3 Aug 30)*
 
 
 
 ## 🔨 In Progress
 
 
+
 ## 👀 Review / Demo
 
-- [ ] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light ·
-	  **merged 50ca9360 (#53), held here deliberately.** The key is now
-	  `v1-<leg>-<hash of deps.cmake>` with `append-timestamp: false`, so a run whose deps have
-	  not moved hits the primary key and skips the save. Same content-addressed shape as the
-	  `deps-*` cache beside it. **Creation is proven: 12 entries and 0.53 GB, down from 111 and
-	  3.62 GB**, being 8 `ccache-v1-*` plus 2 `deps-*` plus 2 toolchain, exactly one per leg.
-	  **What is NOT proven is the warm path, and no run has tested it yet.** Only one real
-	  matrix run has happened under these keys, the cold one that created the entries. The
-	  intended retrigger never ran: #54 merged first and put `.github/workflows/**` in the skip
-	  list, so #53's own three files were all excluded and only the stand-in reported. The push
-	  backstop skipped for the same reason. The count staying at 12 since is **not** evidence
-	  the save is skipped, because nothing has written to it.
-	  **Closes when a PR carrying engine C++ shows high ccache hits on the Linux legs.** That is
-	  also the only run that tests the design's actual trade: 140 dep compilations hit while the
-	  43 engine TUs miss and recompile. Watch the `ccache stats` step and re-count the caches.
-	  **Retro:** the sequencing was called out before #54 was cut and taken anyway, so the card
-	  merged its own verification out of reach. Same shape as S4-T5 riding T4's branch.
-	  Mechanism and the compiler-bump failure mode are in [[B3 — Build & Testing Notes]]
-	  § *ccache keys*; `ci.yml`'s header carries the `v1` bump instruction.
-- [ ] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate · **merged a8aee849 (#49), held here
-	  deliberately.** The gate has never been evaluated on real changed lines in CI: its own PR
-	  carried only CMake, YAML and Markdown, so `diff-cover` reported "no lines with coverage
-	  information" and passed without testing anything. **Closes when the first PR carrying C++
-	  produces a real percentage.** Two of the three things that were open are now closed: the
+
+
+## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
+
+- [x] **S4-P3** · coverage job per PR · P2 · 🟠 Moderate · **Aug 30**, merged a8aee849 (#49)
+	  and held in Review until a PR carrying C++ could produce a real percentage. #59 did:
+	  **59 changed lines, 2 missing, 96%** against the 85% floor, on `Reader.hpp` (100%),
+	  `Writer.hpp` (100%), `MountTable.cpp` (100%) and `FileAccess.cpp` (90%, the two lines
+	  being `write`'s stream-failure branch that no test provokes). The gate works as designed.
+	  **It also blocked first, and that is the finding.** #59 was the first demo-carrying card
+	  since the gate went required, and `App.cpp`'s 88 uncoverable lines would have put the diff
+	  near 55%. The fix was excluding the composition root in `cmake/coverage_report.cmake`, so
+	  the 96% above is measured **with** that exclusion in place. It is on [[Backlog]], because
+	  it weakens a required check somewhere [[B3 — Build & Testing Notes]] does not record.
+	  What was already closed before this run: the
 	  `diff coverage` context **is in the `Master` ruleset**, added once the first run had
 	  reported it (GitHub only lists contexts it has seen), so the gate is 9 checks not 8 ·
 	  ADR-008 §9 carries its dated `decision` amendment, covering both the ninth required check
@@ -69,10 +60,60 @@ kanban-plugin: board
 	  coverage is 1.5 (Linux, 1x). Baseline was 14.6, so about **+10%**. A cold coverage cache
 	  costs far more, and that number is not captured. Local workflow is in
 	  [[B3 — Build & Testing Notes]] § *Code coverage*.
-
-
-## ✅ Done — [[2026-08 Sprint 04 — M2 Concurrency & Serialization]]
-
+- [x] **S4-P1** · ccache: one warm entry per leg (+ sprint-plan skill wording) · P2 · 🟡 Light ·
+	  **Aug 30**, merged 50ca9360 (#53) and held in Review until a PR carrying engine C++ could
+	  test the warm path. #59 was that PR, and it **answered the question the other way**.
+	  **What the card set out to do, it did.** The key is `v1-<leg>-<hash of deps.cmake>` with
+	  `append-timestamp: false`, entry creation is proven, and the count held at 12 entries and
+	  0.53 GB across four more runs, down from 111 and 3.62 GB. The unbounded growth is gone.
+	  **The warm path works and the hit rate is 21%.** #59's `linux-clang Debug` restored from
+	  master and reported **39 hits of 184 cacheable calls, 145 misses**. The card predicted
+	  roughly the inverse, 140 dep objects hitting while the 43 engine TUs miss. That premise
+	  is not holding, and the reason is that **the stable key is write-once**: GitHub caches
+	  are immutable per key and the action skips the save on an exact hit, so master's entries
+	  are frozen at whatever the 2026-08-29 14:06 run saved and are a quarter the size of a
+	  full leg (`linux-debug` 3.6 MB against the 14.2 MB #59 itself produced). Nothing can
+	  refresh them until `deps.cmake` moves. **Carded on [[Backlog]] at `#prio/high`**, with the
+	  trade named: a rotating key reopens the growth problem this card was cut to fix.
+	  **A second finding, from reading the cache list to answer the first.** Four legs can
+	  never restore anything: caches written on a PR ref are private to that PR, and
+	  `sanitizers` and `coverage` are `pull_request`-only, so master never writes their
+	  entries. ASan, UBSan, TSan and coverage compile cold on every PR by construction. Not
+	  worth fixing at current volume; on [[Backlog]] at `#prio/low` with the reasoning.
+	  **Retro, unchanged and now doubly earned:** the sequencing was called out before #54 was
+	  cut and taken anyway, so the card merged its own verification out of reach and sat in
+	  Review for two days. Same shape as S4-T5 riding T4's branch.
+	  Mechanism and the compiler-bump failure mode are in [[B3 — Build & Testing Notes]]
+	  § *ccache keys*; `ci.yml`'s header carries the `v1` bump instruction.
+- [x] **S4-T7** · visit seam + non-POD round-trip demo · P1 · 🟢 Deep · **Aug 30.**
+	  69f477da (#59), off `S4-T7/visit-non-pod-demo`. The card-ID link holds, two cards running.
+	  Green on every leg, `diff coverage` and `clang-format` included. No PR review: the card was
+	  self-reviewed in session, so nothing below came from the PR conversation.
+	  **A `core` card shipped `platform`.** Clause 4 wanted the headless driver to round-trip
+	  "through the seam". It round-trips through a real **file**, which needed
+	  `FileAccess::write` plus a second resolution mode, `MountTable::resolveForCreate`. Both
+	  were M3's work under [[File Access — Design]], whose three-type split this reverses:
+	  § *Why the write split was dropped*.
+	  **The split's stated reason was never its real one.** It rested on binary size, never
+	  measured, and a static-lib linker drops an uncalled function anyway. The cost that
+	  actually mattered went unwritten: `EngineContext` carries `FileAccess& files`, so every
+	  context holder now has write authority and the SDK will inherit it. `write` being the
+	  class's one non-const method is the weaker thing that replaces a type boundary. The note
+	  carries the reversal trigger. ADR-016 §6 said the M2 slice writes no file, so the card
+	  filed the dated `decision` amendment; the module boundary itself did not move.
+	  **The drift guard's honest answer is that it does not work on half the types.** `sizeof`
+	  is not portable for anything holding `std::string` or `std::vector`, so the guard sits on
+	  all-scalar types and the container-holding ones fall back to the round-trip case. A
+	  portable aggregate-arity count was named with a trigger rather than built.
+	  **`field` was scope no clause named.** `Writer::write` and `Reader::read` share no name and
+	  the bulk path's types differ, so no visit body could call either archive as S4-T6 shipped
+	  them. The binding could not be decided before a unifying member existed on both.
+	  **Retro: the first demo-carrying card since `diff coverage` went required at #49.**
+	  `App.cpp` is uncoverable by construction, because no CI job runs the runtime exe, so its
+	  88 new lines put the diff near 55% against an 85% floor. Fixed by excluding the composition
+	  root in `cmake/coverage_report.cmake`. That weakens a required gate in a place
+	  [[B3 — Build & Testing Notes]] does not record. On [[Backlog]].
+	  **Story C is complete** (T6 · T7), and it was the sprint's last 🟢.
 - [x] **S4-T1** · `<format>` weight: measure, then decide · P2 · 🟠 Moderate · **Aug 29.**
 	  9e8d8f2a (#58), off `S4-T1/format-weight` — the card-ID link holds, after three cards
 	  running where it did not.

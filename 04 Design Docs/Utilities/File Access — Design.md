@@ -2,7 +2,7 @@
 
 > Living design doc. The ADR holds the decision that is hard to reverse. This doc holds the *how*.
 
-**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** read side shipped (Story F, S3-T11 to T13), write half is M3
+**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** read side shipped (Story F, S3-T11 to T13), `write` shipped at S4-T7 (2026-08-30), the rest of the mutating half is M3
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 ·
 **v1:** [[v1 Code Audit]] F30 · F16 · **Backlog:** [[Backlog]] → `platform`
 
@@ -49,40 +49,56 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **Errors** | A `FileResult` enum is the return value. Data comes back through an out-param. No exceptions. | See *Resolution* |
 | **Path validation** | A malformed path is rejected before it reaches a mount. | S3-T11 |
 | **Async** | None. Every call is synchronous. | See *Open questions* |
-| **Surface** | Split in two. The read side ships now, the write side ships at M3. | See *The write surface* |
+| **Surface** | One class. `read` and `write` both live on `FileAccess`. The other five mutating calls are M3. | See *The write surface* |
 | **Mount authority** | Only the composition root mounts. `mount()` lives on `MountTable`. | See *Wiring* |
 
 ## Design
 
-### The three types
+### The two types
 
-`MountTable` holds the mounts. `FileAccess` reads. `FileWriteAccess` writes, and arrives
-at M3.
+`MountTable` holds the mounts. `FileAccess` reads and writes. There is no third type; see
+*Why the write split was dropped*.
 
-The read and write halves are separate types for one reason. `runtime` should be able to
-build the read half and link nothing else. If both halves were one class, every shipped game
-would carry write code it never calls. The editor's asset pipeline composes both.
-
-`MountTable` is its own type rather than a private member, because the two halves read it
-under different rules. The read side walks every mount that matches. The write side takes
+`MountTable` is its own type rather than a private member, because the two paths read it
+under different rules. The read path walks every mount that matches. The write path takes
 only the top one. See *Resolution*.
 
 ```mermaid
 flowchart TB
-  root["composition root (app)<br/>owns all three by value"]
+  root["composition root (app)<br/>owns both by value"]
   mt["MountTable<br/>alias → physical roots + priority"]
-  fa["FileAccess<br/>resolve · read · status · list"]
-  fw["FileWriteAccess (M3)<br/>write · create · remove · copy · move"]
+  fa["FileAccess<br/>resolve · read · write · status · list"]
   ec["EngineContext.files : FileAccess&"]
   ed["editor asset pipeline"]
 
-  root --> mt & fa & fw
+  root --> mt & fa
   fa --> mt
-  fw --> mt
   ec -.-> fa
-  ed -.-> fw
+  ed -.-> fa
   %% solid = owns, dashed = holds a non-owning ref
 ```
+
+### Why the write split was dropped
+
+**This was a three-type split until 2026-08-30.** A separate `FileWriteAccess` was to arrive
+at M3, carrying the whole mutating half. S4-T7 dropped it and put `write` on `FileAccess`.
+
+The split rested on binary size. `runtime` would build the read half and link nothing else,
+so a shipped game would not carry write code it never calls. In a static library the linker
+drops an uncalled function anyway, and nobody ever measured the difference. That is the
+speculative optimization `CLAUDE.md` § *Performance* rules out.
+
+**The cost is real and it is not binary size.** `EngineContext` carries `FileAccess& files`,
+so every system holding the context can now write to disk. The script SDK inherits that the
+day file access is exposed through it. The split would have made read-only access provable by
+type. What replaces it is weaker: `write` is the class's one **non-const** method, so a
+caller that must not write can hold a `const FileAccess&`. That is a convention the compiler
+checks, not a boundary it enforces.
+
+**Reversal trigger:** the first consumer that must be handed file access it provably cannot
+write with. The SDK boundary (ADR-006 §3) is the likely one. Extraction stays mechanical,
+because `FileAccess::write` and `MountTable::resolveForCreate` are the only two functions
+that would move.
 
 ### Wiring
 
@@ -170,8 +186,9 @@ public:
 };
 ```
 
-**All four methods are `const`.** `FileAccess` owns no state of its own. It holds the table
-as a `const MountTable*` and only reads it.
+**All four read methods are `const`.** `FileAccess` owns no state of its own. It holds the
+table as a `const MountTable*` and only reads it. The class has a fifth method, `write`, and
+it is deliberately **not** const. The reason is in *The two types*, not const-correctness.
 
 **`read` on a directory returns `IsADirectory`.** The check has to be explicit, because
 `std::ifstream` opens a directory successfully on Linux and fails on Windows. Without it,
@@ -198,32 +215,53 @@ That is inconsistent, and it is deliberate. A union would need a dedupe pass, pl
 for the case where one name is a file in one mount and a directory in another. Nothing needs
 that today. Revisit at M6 if the resource scan does.
 
-### The write surface (M3)
+### The write surface
 
-`IFileWriteAccess` carries v1's mutating half: `write`, `createDirectory`, `remove`, `copy`,
-`move` and `rename`, over both files and directories. It uses the same `FileResult`
-convention as the read side.
+```cpp
+FileResult write(std::string_view virtualPath, std::span<const std::byte> bytes);
+```
 
-**It ships at [[Roadmap]] M3, and that is sequencing rather than a deferral.** M3 is the rung
-that creates the project root, writes `project.toml` and lays out the asset directories. It
-is the first code that writes anything at all. Shaping the write surface around M3's real
-writes beats guessing them a sprint early. M1 ships the read half because M1's own consumers
-read.
+**`write` shipped at S4-T7 (2026-08-30)**, ahead of the M3 plan this section used to carry.
+That card's demo round-trips a struct through disk, and reaching past `platform` to an
+`ofstream` to do it would have been worse than shipping the one method.
+
+Three calls it makes, each pinned by a Catch2 case:
+
+| Question | Call |
+|---|---|
+| The mount root, `assets://` | `InvalidPath`. The read side accepts it, because listing a root is meaningful. Nothing can create a file over a directory. |
+| A file that already exists | Truncated, never appended. Note the asymmetry with `Writer`, which appends to its buffer. |
+| A missing parent directory | **Not created.** The open fails, so the caller gets the generic `IoError`. |
+
+`close()` runs before the stream is checked, because a full disk fails on the flush rather
+than on `write()`.
+
+**The rest of the mutating half is still M3**: `createDirectory`, `remove`, `copy`, `move`
+and `rename`, over both files and directories, on the same `FileResult` convention. M3 is the
+rung that creates the project root, writes `project.toml` and lays out the asset directories,
+so shaping those five around its real writes still beats guessing them now.
 
 ### Resolution
 
-Both sides start by splitting `alias://rel` into an alias and a relative path. They differ
-after that.
+Both paths start by splitting `alias://rel` into an alias and a relative path. They differ
+after that, and they are two functions on `MountTable`: `resolveExisting` serves the read
+path, `resolveForCreate` the write path.
 
-| | Read side | Write side |
+| | Read path | Write path |
 |---|---|---|
 | Which mount wins | Walks every mount with that alias, in priority order. The first one where the file **exists** wins. | Takes the highest-priority mount with that alias. It never probes for existence. |
 | Nothing found | `NoMount` if the alias was never mounted. `NotFound` if it was, but no mount holds the file. | `NoMount` only. |
-| Missing parent dirs | Not applicable. | `create_directories` on the parent first. |
+| `alias://` with no relative | Resolves to the mount root, which `list` and `status` both want. | `InvalidPath`. |
+| Missing parent dirs | Not applicable. | **Not created**, as of 2026-08-30. See *The write surface*. |
 
-The read side probes because mounts overlay. A higher-priority mount shadows a lower one,
-and walking in priority order is what makes that work. The write side does not probe,
+The read path probes because mounts overlay. A higher-priority mount shadows a lower one,
+and walking in priority order is what makes that work. The write path does not probe,
 because a write goes to the top mount whether the file is already there or not.
+
+**`resolveForCreate` reads the top mount off `m_entries[0]` for that alias**, and that is
+correct only because `mount()` keeps the vector in descending priority order. Nothing in the
+function itself checks that, so the invariant lives in `mount()` and the ordering case in
+`MountTableTests.cpp` is what holds it up.
 
 **Telling `NoMount` and `NotFound` apart is why `FileResult` is an enum at all.** v1 returned
 a `bool` and logged through `TE_LOGGER_ERROR` on failure. Looking for an *optional* file
@@ -323,7 +361,7 @@ two failure surfaces a caller has to check, is in [[Serialization — Design]] �
 
 | Rung | Uses |
 |---|---|
-| **M3** project | The project root and `project.toml`. It **owns the mount set**, which is v1's `editorAssets://`, `projectResources://` and `projectCache://` (`ProjectManager.cpp:263-271`). It is also the first writer, so it brings the write half with it. |
+| **M3** project | The project root and `project.toml`. It **owns the mount set**, which is v1's `editorAssets://`, `projectResources://` and `projectCache://` (`ProjectManager.cpp:263-271`). It brings the other five mutating calls with it; `write` itself shipped at S4-T7. |
 | **M6** resources | Every asset load, by virtual path. |
 | editor | The asset pipeline's import and bake steps, which write. |
 
@@ -333,6 +371,9 @@ two failure surfaces a caller has to check, is in [[Serialization — Design]] �
   needs more than a port. It was built on callback subscriptions, which
   [[ADR-014 — Events (buffered streams) & StringId]] rules out. Re-read it against that ADR
   before designing a v2 one.
+- **Should `write` create missing parent directories?** Today it does not, and a missing one
+  gives the generic `IoError` rather than saying what was wrong. Owner: M3, decided together
+  with `createDirectory` rather than before it.
 - **Archive mounts.** Mounting a `.pak` file instead of a directory. `MountTable`'s shape
   allows it. No consumer needs it before shipping.
 - **Threading.** Goes to M2's threading ADR. See above.

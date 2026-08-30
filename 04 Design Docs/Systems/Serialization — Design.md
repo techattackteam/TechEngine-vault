@@ -60,14 +60,76 @@ silent narrowing. v1 is the reason: `StreamWriter::writeString` wrote a `size_t`
 
 One function enumerates fields in a fixed order; both archives walk it. Field order **is**
 the format, so reordering fields in a visit is a format change and rides the header version.
-A drift guard (a field-count or layout check a test can pin) is wanted; its shape is open
-below.
+A Catch2 case pins that mechanically: it compares a visit's bytes against a hand-written
+field-by-field write of the same value.
+
+### How `visit` binds (decided at S4-T7, 2026-08-30)
+
+**An ADL free function**, templated on the archive so one body serves both directions.
+
+```cpp
+template<typename Archive>
+void visit(Archive& archive, Mesh& value) {
+    archive.field(value.id);
+    archive.field(value.name);
+    archive.field(value.bounds);        // nested, visited too
+    archive.field(value.indices);       // std::vector, so the bulk path
+}
+```
+
+The alternative was a `Serializer<T>` trait specialization. It was rejected because a
+specialization has to be written inside the primary template's namespace, so every describing
+type pays a close-namespace and reopen dance, and script types would pay it worst. ADL costs
+nothing at the call site and is the shape a P2996 generator would emit (ADR-016 §2).
+
+**The trait's one real advantage was a clean error**, and a concept recovers it.
+`Visitable<T, Archive>` sits in `Visit.hpp`, and `field` falls through to `visit` behind a
+`static_assert` on it, so an undescribed type is named rather than dumped as overload
+resolution noise.
+
+### `field` is the unifying member
+
+`Writer::write` and `Reader::read` share no name, and the bulk path's types differ:
+`span<const T>` on one side, `vector<T>&` on the other. So one visit body could not call
+either archive as S4-T6 shipped them. `field` is the member added on both to fix that.
+
+It probes with `if constexpr` for a `write`/`read` overload and falls through to `visit`.
+**Probing the archive rather than the value is deliberate.** Testing for `visit` first would
+put `std::visit` into the ADL set for any `std::string` or `std::vector` field, and that only
+stays harmless while every `std::visit` overload happens to be SFINAE-friendly.
+
+`field` takes `T&`, never `const T&`, because one body has to serve the reading direction.
+The cost is that a `const` object cannot be written without a cast. That is inherent to
+describe-once, not a gap.
+
+### The drift guard, and what it cannot do
+
+**Answered at S4-T7 (2026-08-30): a `static_assert(sizeof(T) == N)` at the top of the visit,
+and only on types whose `sizeof` is stable.** Adding a field changes `sizeof`, so the build
+breaks at the visit and somebody has to look. It is a tripwire, not a test.
+
+| Limit | Consequence |
+|---|---|
+| It misses a reorder of two same-sized fields. | The struct and its visit disagree, the assert still passes, and the round-trip case is the only thing left that can catch it. |
+| `sizeof` is not portable for a type holding `std::string` or `std::vector`. | MSVC and libstdc++ differ, and MSVC differs again by iterator-debug level. A constant there goes red on a CI leg that was never wrong. |
+
+So the guard sits on the all-scalar types and the container-holding ones get the round-trip
+case instead. **That split is the honest answer the card asked for, not a workaround.**
+
+**Considered and not built:** an aggregate arity count through the brace-init trick. It is
+portable, would reach the container-holding types, and costs about 15 lines of template
+machinery. **Trigger:** the first visited type that holds a container and has no round-trip
+case covering every field.
 
 ### What the M2 slice proves
 
-A hand-made non-POD struct and a trivially-copyable one both round-trip through memory:
-write, read back, compare equal, and a corrupted or truncated buffer fails soft. No file
-I/O (M3), no schema, no compression.
+A hand-made non-POD struct and a trivially-copyable one both round-trip: write, read back,
+compare equal, and a corrupted or truncated buffer fails soft.
+
+The unit cases stay in memory, because `core` sits above `platform` and a disk-touching test
+would need a writable directory it does not otherwise want. **The headless demo goes further
+and round-trips through a real file** (`engine/app/src/App.cpp`), which S4-T7 made possible
+by shipping `FileAccess::write`. No schema and no compression.
 
 ### Composing with `FileAccess`
 
@@ -101,11 +163,11 @@ optional. On `NoMount`, `NotFound` or `IsADirectory` the out-param is left untou
 reused buffer still holds the previous file's bytes. A read that *succeeds* replaces the
 vector's contents, so reusing one across loads needs no `clear()`.
 
-### The write path (M3)
+### The write path
 
 `Writer` **appends** to the caller's vector, where `read` replaces it. Reusing one buffer
 across saves means clearing it first. That asymmetry is the cost of letting the caller own
-the destination, and it is what lets M3 hand the finished vector straight to the file writer
+the destination, and it is what lets the finished vector go straight to `FileAccess::write`
 and lets N3 reuse one pooled vector every frame.
 
 ```cpp
@@ -113,20 +175,19 @@ std::vector<std::byte> bytes;          // reused across saves: bytes.clear() fir
 Writer writer{bytes};
 writer.writeHeader();
 writer.write(entityCount);
-// ... more writes, then hand `bytes` to the M3 file writer
+// ... more writes
+
+engine.files.write("assets://level.bin", bytes);
 ```
 
-No file lands before M3 (ADR-016 §6), so the whole M2 slice round-trips through memory. The
-write call above is not built yet and its exact signature is M3's to pin, described in
-[[File Access — Design]] § *The write surface (M3)*.
+**This section read "No file lands before M3" until 2026-08-30**, and S4-T7 changed it:
+`FileAccess::write` shipped at that card ([[File Access — Design]] § *Why the write split was
+dropped*), so the M2 demo writes a real file. ADR-016 §6 carries the matching amendment. The
+module boundary did not move. Serialization still produces and consumes bytes, and `platform`
+moves them.
 
 ## Open questions
 
-- **Visit drift guard.** A struct whose visit forgets a new field silently writes a stale
-  shape. What can a test actually pin: `sizeof` assertions per visited type, a field count,
-  or nothing honest? Owner: S4-T7.
-- **Binding mechanism for `visit`**: ADL free function vs trait specialization. Owner:
-  S4-T7, decided in code review against `CONVENTIONS.md`.
 - **Compression layer** behind the header flags. Trigger: a measured bake-size or load-time
   problem (ADR-016 § *What would move*).
 - **Per-type versions + migration.** Trigger: the first non-regenerable content
@@ -140,6 +201,7 @@ write call above is not built yet and its exact signature is M3's to pin, descri
 - [[StringId — Design]]: the frozen hash and `fromValue`
 - [[File Access — Design]] § *The write surface*: why no file lands before M3
 - [[v1 Code Audit]]: F1 (identity, the real v1 pain)
-- Code: `engine/core/include/TechEngine/core/serialization/` (the pair and the header,
-  S4-T6) · `engine/core/include/TechEngine/core/events/EventRegistry.hpp:15` (`EventWire`,
-  the seam's first edge).
+- Code: `engine/core/include/TechEngine/core/serialization/` holds the pair and the header
+  (S4-T6) plus `Visit.hpp` and `field` on both archives (S4-T7) ·
+  `engine/core/include/TechEngine/core/events/EventRegistry.hpp:15` (`EventWire`, the seam's
+  first edge) · `engine/app/src/App.cpp` (the disk round-trip demo).
