@@ -15,7 +15,8 @@ there to answer one.
 | `environment_id` | `env_016JsaV5uNQ9FpqHm9WFaour` — **TechEngineLinux**, the purpose-built environment. Its setup script installs the build deps, re-anchors both repos and mounts the vault, so the prompt only verifies them. Not the `Default` environment. |
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | `claude-opus-5`. The lane's risk is judgment on bug fixes, not throughput. |
-| `cron_expression` | UTC, minimum interval 1 hour. Lisbon is UTC+1 in summer, so a 10:00 local weekday fire is `0 9 * * 1-5`. |
+| `cron_expression` | **`7 4,9,14,23 * * 1-5`** — four fires a weekday. Cron is UTC and Lisbon is UTC+1 in summer, so that is **05:07, 10:07, 15:07 and 00:07 local**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
+| **DST** | **Breaks on 2026-10-25**, when Lisbon drops to UTC+0. Cron stays UTC, so every fire shifts an hour earlier in local terms: 04:07, 09:07, 14:07, 23:07. Re-point the expression then, or accept the shift. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |
 
 ## The environment, as measured
@@ -123,9 +124,17 @@ Finally read docs/00 Dashboard/Dashboard.md. If it cannot be read, STOP, do no o
 report that the vault was unreachable. Every rule below assumes docs/ is present.
 Any repair is a finding about the environment and always goes in the report.
 
-STEP 2 — DO NOT REPEAT A RUN.
-If docs/07 Journal/<today's date> Auto Run.md already exists, this routine has already fired
-today. STOP and change nothing. A double fire has been observed.
+STEP 2 — TODAY'S REPORT IS ONE FILE THAT FOUR FIRES SHARE.
+This routine fires four times a weekday. There is ONE note per day,
+docs/07 Journal/<today's date> Auto Run.md, and each fire APPENDS a section headed with its
+local time. If the note exists, read it first: it records what today's earlier fires did, and
+you never redo their work or re-report their findings.
+STOP AND CHANGE NOTHING if the note's last section is under 30 minutes old. That is a double
+fire, which has been observed, and not a new slot.
+ONE PR PER DAY, ACROSS ALL FOUR FIRES. If today's note records a PR already opened, this fire
+takes report-only work instead: research, a freshness check, backlog grooming, or reading that
+PR's CI. A code card costs 16.1 billed CI minutes against a budget of about 2000 a month, so
+four code cards a day would spend it in a fortnight.
 
 STEP 3 — READ IN.
 Read, in order: CLAUDE.md, CONVENTIONS.md, docs/00 Dashboard/Dashboard.md,
@@ -161,7 +170,7 @@ You may build here. This is the carve-out in CLAUDE.md's "Miguel compiles" rule,
 applies only to this unattended lane and only to the Linux presets.
 
 STEP 7 — OPEN A PR, EARLY, AND NEVER MERGE.
-Branch from the freshly fetched origin/master of step 2, named <card ID>/<slug>, for example
+Branch from the freshly fetched origin/master of step 1, named <card ID>/<slug>, for example
 S5-P2/ccache-key. That branch name is the only link from a squashed commit back to its board
 card, so get it right. Open the PR as soon as the build is green, before writing the report.
 Stage explicit paths. NEVER use `git add -A` or `git commit -a`: the docs symlink lives in
@@ -172,19 +181,21 @@ in a commit message or PR body. Write in Miguel's voice: what changed and why.
 THE AUTHOR FIELD COUNTS AS ATTRIBUTION TOO. Before committing, confirm with
 `git log -1 --format='%an <%ae> / %cn <%ce>'` that both are Miguel Faria. Step 1 sets it; this
 is the check that it held.
-One PR-producing card per run, maximum.
+ONE PR-PRODUCING CARD PER DAY, not per fire. Step 2 is where you check that.
 
 STEP 8 — CHECK CI LAST.
 After the work is done, read the PR's checks. They have been running while you worked.
 If they have not settled, say so; the next run picks it up.
 
 STEP 9 — WRITE THE REPORT, UNLESS THERE IS NOTHING TO SAY.
-A run that changed nothing, opened no PR and found nothing worth filing writes NO note. Say so
-in your final message instead. A journal full of empty files is worse than a gap, because it
-buries the days that mattered.
-Otherwise create docs/07 Journal/<YYYY-MM-DD> Auto Run.md from
-docs/Templates/Autonomous Run Report Template.md. Commit it straight to the vault's master
-and push. The vault takes no branch, no PR and no CI. The engine repo is PR-only.
+A fire that changed nothing, opened no PR and found nothing worth filing writes NOTHING: no new
+note, and no section appended to an existing one. Say so in your final message instead. A
+journal padded with "nothing to report" buries the days that mattered.
+Otherwise append your section to today's note, or create it from
+docs/Templates/Autonomous Run Report Template.md if this is the day's first fire that had
+something to say. Head your section with the local time, so four fires stay legible.
+Commit straight to the vault's master and push. Pull first: an earlier fire may have pushed
+since your checkout. The vault takes no branch, no PR and no CI. The engine repo is PR-only.
 Lead with the "Needs you" section. Miguel reads this after a full work day, so it must be
 triageable in two minutes. Say plainly what is unverified. A false "green" is the worst
 thing this lane can produce.

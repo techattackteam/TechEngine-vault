@@ -181,8 +181,13 @@ An Auto card costs zero of Miguel's day capacity and is **not free**.
 | CI, code card | 16.1 billed min | Measured, ADR-008 §9. At one per weekday that is ~320 min/month against the ~2k budget, so about 16%. |
 | CI, vault or report card | 0 | Vault commits take no PR, and a docs-only or `.claude/**` PR draws no CI since #54. |
 
-The one-PR-per-day cap exists for the CI row. Prefer report-only and vault cards, which cost
-nothing and are also the lowest-risk half of the eligibility list.
+**The cap is one PR per day, not one per fire, and the routine fires four times.** Four code
+cards a day would be ~1300 CI minutes a month and would eat the budget in a fortnight. The
+day's report note is what carries that state between fires: a fire that reads a PR already
+recorded there takes report-only work instead.
+
+Prefer report-only and vault cards anyway. They cost nothing and they are the lowest-risk half
+of the eligibility list.
 
 ## State
 
