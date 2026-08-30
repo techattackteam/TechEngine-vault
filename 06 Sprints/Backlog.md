@@ -97,12 +97,11 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
-- #prio/xhigh · **Autonomous web-session cards** — research the shape, then adapt
-  `/sprint-plan`, [[Planning Workflow — Artifact Gate]], [[Technical Lead Charter]] and
-  [[Working with Claude — Operating Guide]] to carry it: which cards are eligible for an
-  unattended Claude Code on the web session, what that session cannot do (no compiling; no
-  `.github/workflows/` push — its OAuth token has no `workflow` scope), and the report it hands
-  back. **Trigger:** fired — pull at the next `/sprint-plan`.
+- #prio/xhigh · **Autonomous lane: probe run, then the first real routine** — the lane is
+  designed and every artifact is written ([[Autonomous Lane — Design]] § *State*). What is left
+  is a one-shot probe proving the two-source checkout and the `docs/` symlink, then the routine
+  itself, then filling the 🤖 Auto lane at planning.
+  **Trigger:** fired — pull at the next `/sprint-plan`.
 
 - #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
   fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool

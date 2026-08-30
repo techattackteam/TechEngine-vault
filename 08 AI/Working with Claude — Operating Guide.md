@@ -22,6 +22,15 @@ implementer**:
 Rule of thumb: bring Claude **decisions, designs, and finished code to review** —
 not "build this feature for me."
 
+**A second, unattended lane exists on paper** ([[Autonomous Lane — Design]], 2026-08-30). It
+runs 🤖 Auto cards in a weekday cloud routine while you are at the day job, and for that one
+narrow class it *does* write engine code, build it on Linux and open a PR. The boundary is the
+artifact gate's § *The 🤖 Auto gate* and the exception is spelled out in
+[[Technical Lead Charter]] § *The autonomous lane*.
+
+**The section above is still the whole rule for any session you are present in.** Nothing runs
+yet: no routine is configured.
+
 ## The core loop (every non-trivial task)
 
 > **Design (with Claude) → You implement → Claude reviews → iterate**
@@ -51,10 +60,10 @@ follow that calendar. Match the session type to the day's mode:
 | Relaxed | Optional light planning / docs, or rest | — |
 | Off | No engine work | — |
 
-Ceremonies: **each weekend** `/weekly-review`; **every 4th weekend** (the sprint boundary)
-`/sprint-plan` instead (demo + retro + next-sprint planning) — it **absorbs** the weekly
-review, so never run both on the same weekend. Run them on whichever weekend day you work —
-see the [[Dashboard]] weekend rule.
+Ceremonies: **every 2nd weekend** (the sprint boundary) `/sprint-plan` (demo + retro +
+next-sprint planning), and `/weekly-review` on the weekend in between. `/sprint-plan`
+**absorbs** the weekly review, so never run both on the same weekend. Run them on whichever
+weekend day you work — see the [[Dashboard]] weekend rule.
 
 ## One task per session
 
@@ -101,12 +110,12 @@ flowchart TD
   CR & TR --> PR["You open the PR"]
   PR --> CC["/card-close<br/>board · note · Known Issues"]
   SUN(["Weekend — non-boundary"]) --> WR["/weekly-review"]
-  LSUN(["Every 4th weekend — sprint boundary"]) --> SP["/sprint-plan<br/>demo + retro + plan<br/>(absorbs the weekly review)"]
+  LSUN(["Every 2nd weekend — sprint boundary"]) --> SP["/sprint-plan<br/>demo + retro + plan<br/>(absorbs the weekly review)"]
   SP --> FB
 ```
 
 - **Cadence commands fire on the calendar:** `/weekly-review` on non-boundary weekends;
-  `/sprint-plan` every 4th weekend — the sprint boundary, read off the sprint note's end
+  `/sprint-plan` every 2nd weekend — the sprint boundary, read off the sprint note's end
   date, not the month — which absorbs the review and then feeds `/feature-breakdown`.
 - **Work commands fire on a trigger, not the clock:** a load-bearing decision → `/adr`;
   decomposing a feature → `/feature-breakdown`; assessing existing code → `/arch-review`;

@@ -265,11 +265,38 @@ cadence).
 - 🟠 **Moderate** is solid but bounded work. It goes on Fri.
 - 🟡 **Light** is small and low cognitive load, such as docs, config or mechanical work. It
   goes on Tue or Wed.
+- 🤖 **Auto** costs Miguel no working time at all. It runs unattended in a weekday cloud
+  routine ([[Autonomous Lane — Design]]). See the eligibility gate below, which is narrower
+  than the other three weights and is the reason this one is not simply "🟡 Light, but a robot
+  does it".
 
 **The pick rule has an order.** Weight fits the day *first*, so never a 🟢 Deep task on a light
 Tuesday. Then take the highest **priority** among what fits.
 
 Every task line carries the tag format `· P1 · 🟢 Deep`.
+
+### The 🤖 Auto gate
+
+**Lane is not a kind.** A Process card run unattended is still a Process card, and the ID keeps
+carrying the kind. Lane rides the weight axis because weight already answers "which slot does
+this run in", and an Auto card's slot is a weekday morning while Miguel is at his day job.
+
+Ask these in order. A **no** anywhere means the card is not Auto.
+
+| # | Question | Why it disqualifies |
+|---|---|---|
+| 1 | Is it free of decisions the gate above would route to an ADR or a design note? | Decisions are Miguel's. This is the whole division of labor. |
+| 2 | Can its done-condition be proven on Linux, by `ctest` or by reading a file? | A Windows leg, a demo capture or a visual check needs him present. |
+| 3 | Is it off the sprint's critical path? | An unattended lane cannot be a dependency, because a run can fail silently. |
+| 4 | Does it avoid `.github/workflows/`? | The routine's token cannot push there. |
+
+**Typical passes:** research, vault freshness and drift checks, backlog trigger sweeps, CI
+failure diagnosis, mechanical code sweeps, test scaffolding, and small well-scoped bug fixes.
+S4-T2's `detail` to `internal` rename across 15 files is the model case.
+
+**An Auto card is not free.** It produces a PR to review, roughly 15 minutes, and a code card
+costs 16.1 billed CI minutes. Budget the review on a 🟡 day and cap code cards at one per
+weekday. Cost table in [[Autonomous Lane — Design]] § *Cost model*.
 
 ## Lean model this collapses to
 
