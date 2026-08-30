@@ -112,6 +112,26 @@ groups are kept, because they show where future work will land.
   revisit (`CONVENTIONS.md` § *Attributes*). **Trigger:** fired — pull at the next
   `/sprint-plan`.
 
+- #prio/high · **[[ADR-013 — Profiler (Tracy-backed instrumentation)]] and [[Profiler — Design]]
+  both pin Tracy `v0.13.1`, and the tree is on `v0.14.1`** — the bump rode along in #46
+  (S4-T4, 2026-08-24) and its only record is that card's Sprint Board entry. `cmake/deps.cmake`
+  is on `v0.14.1`, while ADR-013 names `v0.13.1` as its decision and Profiler — Design's wiring
+  table repeats it. `deps.cmake`'s own header says that tag is a **wire-protocol lock** rather
+  than a version preference, because Tracy compiles its ProtocolVersion into both sides, so a
+  reader trusting either artifact pairs the client with the wrong desktop app and gets a refused
+  connection. It wants a dated amendment on an Accepted ADR, which is a decision rather than a
+  sweep. **Trigger:** fired — found by the 2026-08-30 freshness check.
+
+- #prio/medium · **The vault's `file:line` citations rot silently, and 8 of 30 are wrong today**
+  — the 2026-08-30 freshness check resolved every `path:line` citation in the durable artifacts.
+  Every file exists and every line is within range, so nothing fails loudly, and 8 simply point
+  at the wrong line: three into `App.cpp`, which #59 moved by +88, two in [[Known Issues]] whose
+  named fix sites shifted, and two in [[Profiler — Design]] that land on a blank line. A citation
+  resolving to a plausible-looking wrong line is worse than one that obviously breaks. The check
+  itself is mechanical — extract the citation, grep for the symbol the sentence claims, compare —
+  so the question is whether it belongs in `/weekly-review` or in CI, not whether to re-do it by
+  hand each time. **Trigger:** fired — pull at the next `/sprint-plan`.
+
 - #prio/high · **The ccache key is write-once, so master's cache is frozen and hits are 21%** —
   S4-P1's key is `v1-<leg>-<hash of deps.cmake>`. GitHub caches are immutable per key and the
   action skips the save on an exact hit, so once master holds an entry **nothing can ever
