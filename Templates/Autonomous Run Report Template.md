@@ -5,6 +5,10 @@
 >
 > **Keep it triageable in two minutes.** It is read after a full work day. Delete any section
 > that has nothing in it rather than writing "none" in five of them.
+>
+> **A run with nothing to say writes no note at all.** Changed nothing, opened no PR, found
+> nothing worth filing means there is no file. A journal full of empty reports buries the days
+> that mattered.
 
 ## ⚠️ Needs you
 

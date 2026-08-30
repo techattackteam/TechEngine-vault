@@ -163,8 +163,12 @@ since an unattended lane cannot be a dependency.
   cannot see an unstaged file.
 - **It never commits to `master`**, in either repo, and it cuts branches as
   `<card ID>/<slug>` from a freshly fetched `origin/master` (CLAUDE.md rule 9).
-- **No AI attribution in any commit or PR body** (CLAUDE.md rule 10). This lane is the
-  obvious place for that rule to slip.
+- **No AI attribution in any commit or PR body** (CLAUDE.md rule 10), **and the author field
+  counts.** Rule 10 names the trailer and the `🤖 Generated with` line, which are things a
+  session *adds*. The sandbox ships a global git identity of `Claude <noreply@anthropic.com>`,
+  so the author field is the one place this lane breaks the rule **by default rather than by
+  slipping**. The environment's `GIT_AUTHOR_*` variables override it and step 1 of the prompt
+  sets it again per repo, belt and braces, because losing either would be silent.
 - **One PR-producing card per weekday, maximum.** See the cost model.
 
 ## Cost model
@@ -224,10 +228,48 @@ now `875991e2`, so `master` was rewritten after the Aug 29 check. The stamp is r
 its date unchanged, because repointing is not re-earning. Every engine sha the vault records
 from before that rewrite is suspect.
 
+**Probe 3, on the new `TechEngineLinux` environment**, `trig_014YiZDGZyMKqdMGp7DjiFkJ`. The
+environment's **setup script** does the three jobs the prompt used to, before Claude Code even
+starts, so they are structural now rather than instructions a run might skip.
+
+- **The build passes with the run touching no apt.** Configure 18 s, build 54 s, `ctest` 1 s,
+  **200 of 200 tests passing**. About 75 seconds end to end.
+- **The vault mount, the re-anchor and the deps were all already done** on arrival.
+- **One finding worth the whole probe.** The image ships `/root/.gitconfig` naming
+  `Claude <noreply@anthropic.com>`. Without the environment's `GIT_AUTHOR_*` and
+  `GIT_COMMITTER_*` variables, **every autonomous commit would have violated CLAUDE.md rule 10
+  by default.** Those variables override it, confirmed: `git var GIT_AUTHOR_IDENT` resolves to
+  `Miguel Faria <miguel.al.faria@gmail.com>`. They are load-bearing, not cosmetic.
+- **One cosmetic gap.** The vault checkout stays `SHALLOW` where the engine comes out
+  `COMPLETE`. It commits and pushes fine, so nothing is blocked.
+
+**First end-to-end run, 2026-08-30**, `trig_01YLjHhWfxnHepEgEyKDwoAo`, on the real 9-step
+prompt. It landed [[2026-08-30 Auto Run]] and two [[Backlog]] entries, committed and authored as
+`Miguel Faria`, no AI attribution. **The chain works end to end.**
+
+It also earned its keep as a critic. Four corrections came out of it, all now in the prompt.
+
+| Found | Why it mattered |
+|---|---|
+| **The setup script runs once and is then cached, but the repos are re-fetched every run.** The deps and the symlink survive; the git re-anchor does not. | Step 1 had been softened to "verify, do not redo". It is back to doing the work every time. |
+| **The engine repo arrives shallow too**, not just the vault. | Its task is `git log <stamp>..origin/master`. A shallow clone makes a valid old sha fail `cat-file`, which is **indistinguishable from a sha a rewrite removed**, and step 4 sends those to opposite answers. It would have reported a false finding. |
+| **Rule 10 names the trailer and the `Generated with` line, and never the author field.** | That is the one place an unattended lane breaks the rule by default rather than by slipping. Now in § *Hard stops* and in the prompt. |
+| **Step 4 never said whether to fix what it finds**, and the template's wording pulls toward filing. | It filed, correctly. The opposite reading would have quietly rewritten six Accepted artifacts. Now explicit: file, never fix. |
+
+**The work itself was real.** It confirmed no design note describes code the four commits moved
+past, then went further than asked: it resolved **all 30 `file:line` citations** in the durable
+artifacts and found **8 pointing at the wrong line**, none of which fail loudly. It also caught
+[[ADR-013 — Profiler (Tracy-backed instrumentation)]] and [[Profiler — Design]] both pinning
+Tracy `v0.13.1` against a tree on `v0.14.1`, where the tag is a wire-protocol lock. Both are
+carded and neither was touched.
+
 Two things left.
 
-1. **The real routine**, with `clear_mcp_connections: true`. The server attaches Google Drive
-   and Claude Code Remote by default, and the lane needs neither.
+1. **The real routine.** Create it, then immediately update with `clear_mcp_connections: true`:
+   the server attaches Google Drive and Claude Code Remote by default, `mcp_connections: []` on
+   create is ignored, and the lane needs neither. **The PR path is still unproven** — every run
+   so far was report-only, so nothing has yet branched, built and opened a PR unattended. The
+   first real 🤖 Auto code card is that test, and it should be a small one.
 2. **Sprint 05 fills the Auto lane** at its `/sprint-plan`. The [[Backlog]] is the obvious first
    population: the ccache key, the `App.cpp` coverage exclusion, the
    `FETCHCONTENT_UPDATES_DISCONNECTED` comment and the `<chrono>` measurement all pass the four

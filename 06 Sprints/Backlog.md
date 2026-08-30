@@ -97,10 +97,11 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
-- #prio/xhigh · **Autonomous lane: probe run, then the first real routine** — the lane is
-  designed and every artifact is written ([[Autonomous Lane — Design]] § *State*). What is left
-  is a one-shot probe proving the two-source checkout and the `docs/` symlink, then the routine
-  itself, then filling the 🤖 Auto lane at planning.
+- #prio/xhigh · **Autonomous lane: create the recurring routine, then prove the PR path** — the
+  lane is designed, its artifacts are written and one full end-to-end run has landed a report
+  ([[Autonomous Lane — Design]] § *State*). What is left is the recurring routine itself, and a
+  first small 🤖 Auto **code** card, since every run so far was report-only and nothing has yet
+  branched, built and opened a PR unattended.
   **Trigger:** fired — pull at the next `/sprint-plan`.
 
 - #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first

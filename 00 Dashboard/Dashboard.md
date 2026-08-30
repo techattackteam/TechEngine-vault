@@ -154,17 +154,19 @@ _Tasks → [[Sprint Board]]._
 Recently locked — full set in [[ADR Index]]:
 - [x] **Profiler** ([[ADR-013 — Profiler (Tracy-backed instrumentation)]]) + **Events/`StringId`** ([[ADR-014 — Events (buffered streams) & StringId]]) — **both Accepted 2026-08-02**, both M1 gates closed, and M2's threading ADR is unblocked
 - [x] **Threading** ([[ADR-015 — Threading (sim on main, render thread owns GL)]]) + **Serialization** ([[ADR-016 — Serialization (binary primitives & describe-once seam)]]) — **both Accepted 2026-08-22**, both M2 gates closed on day 1. ADR-015 §3 amended 2026-08-24: the pool ships four workers, not one
-- [x] **Autonomous lane — designed 2026-08-30, nothing running yet**
+- [x] **Autonomous lane — proven end to end 2026-08-30, no recurring routine yet**
   ([[Autonomous Lane — Design]]). A second, unattended execution lane in every sprint: 🤖 Auto
   cards run in a weekday cloud routine while Miguel is at the day job. Scope reaches small bug
   fixes · the run builds and tests on Linux before opening a PR (`CLAUDE.md` § *Build & run*
   carries the carve-out) · it checks out the vault as a second `sources` repo and symlinks it
   to `docs/` · it opens the PR early and reads CI last · it never merges · the daily report is
   a vault note in [[07 Journal]]. **Deliberately no ADR:** the lane is process, and disabling
-  one routine reverses it. **Probed 2026-08-30** and the plumbing works: both repos check out
-  as siblings, the symlink makes the vault readable, no credential is involved, and the Linux
-  toolchain is present. The probe also killed four wrong assumptions, listed in the note.
-  **Next: create the real routine**, then fill the 🤖 Auto lane at Sprint 05 planning.
+  one routine reverses it. **Three probes plus one full run on the real prompt**, all on the
+  `TechEngineLinux` cloud environment. The run landed [[2026-08-30 Auto Run]] authored as Miguel
+  with no AI attribution, and filed two [[Backlog]] entries of its own. The build carve-out
+  costs ~75 s and passes 200/200. **Still unproven: the PR path**, since every run so far was
+  report-only. **Next: create the recurring routine**, then give it a small code card at
+  Sprint 05 planning.
 - [ ] task-graph · renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20** — § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.
