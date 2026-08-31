@@ -7,7 +7,9 @@
   next boundary is **Sat Sep 12**. Weekly review on the Sep 5-6 weekend.
 - **Epic:** M3 · project **+** M4 · window ([[Roadmap]] → *The chain*) — **two rungs in one
   box**, decided 2026-08-30 with the capacity numbers on the table. See *Capacity note*.
-- **Decisions behind it:** [[File Access — Design]] § *The write surface* · § *Who uses it* ·
+- **Decisions behind it:** [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]]
+  (Accepted 2026-08-31, **written mid-sprint out of S5-D1** — see *Artifact gate*) ·
+  [[File Access — Design]] § *The write surface* · § *Who uses it* ·
   [[ADR-015 — Threading (sim on main, render thread owns GL)]] §2 (M4's gate, Accepted) ·
   [[ADR-006 — v2 core architecture & module layout]] §1 (`platform` owns window + input) ·
   [[ADR-008 — v2 build & testing baseline]] §4 case 3 (glad2 is the one vendored dep) ·
@@ -35,7 +37,7 @@
 
 | Item | ADR? | Design note? | Outcome |
 |---|---|---|---|
-| **Project / M3** — manifest schema · root resolution · the mount set · the five mutating calls | ❌ | ✅ | **Coverage gap, said out loud: no note exists.** [[File Access — Design]] covers the VFS and stops at the project. The decisions are largely settled, since [[Roadmap]] pins the manifest minimal and v1's mount set is documented prior art, so **Story B sizes normally**. → **S5-D1** |
+| **Project / M3** — manifest schema · root resolution · the mount set · the five mutating calls | ❌ → **✅ ADR-017** | ✅ | **Coverage gap, said out loud: no note exists.** [[File Access — Design]] covers the VFS and stops at the project. → **S5-D1**, done 2026-08-31. <br>**The `❌ ADR` call was wrong, and this is the sprint's main planning miss.** "The decisions are largely settled" held for the manifest and the mount set. It did not hold for *who bootstraps*: the runtime's relationship to the manifest was never decided anywhere, and settling it took [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]]. That ADR added **Story F**, and Story B did **not** size normally. |
 | **Window / M4**: glad2 vendoring · what `platform` owns · the M4-level context handoff · headless CI | ❌, ADR-015 §2 already decided the owner | ✅ | **Second coverage gap.** No ADR is owed: ADR-006 §1, ADR-008 §4 and ADR-015 §2 between them decide module, vendoring and ownership. What is open is **mechanism**, which is a note's job. Heavy, so Story D was held unsized. → **S5-D2**, done 2026-08-30, and it moved ADR-006 §1 by dated amendment |
 | `executablePath` · mount validation · the routine · the two Auto cards | ❌ | ❌ | Reversible and local, straight to cards. |
 
@@ -46,19 +48,51 @@
 
 ### Story A — M3's gate *(Design · ordered first; Story B waits on it)*
 
-- [ ] **S5-D1** · project design note via the Design Doc template · P1 · 🟢 Deep — done: a
-      `Project — Design` note exists in `docs/04 Design Docs/Systems/` with a filled *Decided*
-      table covering the `project.toml` schema (root · name · shader dir · asset dirs, and
-      nothing more, per [[Roadmap]] § *M3 — the dev testbed*), the mount set lifted from v1
+- [x] **S5-D1** · project design note via the Design Doc template · P1 · 🟢 Deep —
+      **done 2026-08-31.** [[Project — Design]] created with a filled *Decided* table: the
+      `project.toml` schema (name · shader dir · asset dirs, with the **root derived** from the
+      manifest's own location rather than stored in it), the mount set mapped off v1's
       (`ProjectManager.cpp:262-271` @ `v1-reference`), and the semantics of all five mutating
-      `FileAccess` calls on the `FileResult` convention; it answers
-      [[File Access — Design]] § *Open questions* → "should `write` create missing parent
-      directories?"; Story B's cards are cut against it.
+      `FileAccess` calls. It answers [[File Access — Design]] § *Open questions* →
+      **`write` does not create missing parents and returns `NotFound`; `createDirectory`
+      does create them.**
+      **It also produced an ADR the gate did not expect.** Three decisions had no artifact:
+      the manifest is editor-only, `Project` is exe-local editor code, and `app` owns the
+      lifecycle through a base class every executable subclasses. That is
+      [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]], Accepted 2026-08-31,
+      and it **partially supersedes ADR-006 §1**'s "editor out of the frame loop" clause.
+      **Story B was re-cut against it and Story F was added ahead of both.**
 
-### Story B — M3 build *(Dev · sized normally: the decisions are settled, only the shape needs writing)*
+### Story F — the bootstrap seam *(Build · ordered before Story B; cut 2026-08-31 off ADR-017)*
 
-> Ordering: **T2 → T1 → T3 → T4 → T5.** T2 is first because [[Known Issues]] **D2** names the
-> M3 mount port as its trigger and says to fix it *before* that port.
+> Ordering: **T10 → T11.** T10 gives every app a test target, and T11's cases need one.
+> Neither card existed at planning. Both are the price of the ADR the gate missed.
+
+- [ ] **S5-T10** · `techengine_app()` and apps as object libraries · P1 · 🟠 Moderate — done:
+      a `cmake/techengine_app.cmake` helper stamps out three targets per app — an **OBJECT**
+      library holding the app's sources, the exe that consumes its objects plus `main.cpp`, and
+      a Catch2 test exe consuming the same objects — and appends the test exe to
+      `TE_TEST_TARGETS` so coverage picks app tests up exactly like a module's; `apps/runtime`
+      and `apps/editor` both go through it; one placeholder Catch2 case per app proves the test
+      exe links and is discovered by CTest. **An object library, not a static one**: it
+      produces no archive and can be nobody's link dependency, so the exe stays the leaf
+      ADR-006 §1 calls it. Sharing the exe itself would need `ENABLE_EXPORTS`
+      (ADR-017 § *Consequences*).
+- [ ] **S5-T11** · the `App` base class and `EntryPoint.hpp` · P1 · 🟢 Deep — done: `App` in
+      `engine/app` owns `MountTable`, `FileAccess`, `Clock`, `JobSystem` and the `FrameLoop`,
+      and calls `init` · `fixedUpdate` · `update` · `shutdown`, where `init()` is the **only**
+      pure one and the two loop hooks take `const FrameContext&`; `main()` lives in
+      `<TechEngine/app/EntryPoint.hpp>` and **never in the `app` library**, so
+      `TechEngineAppTests` still links Catch2's own `main`; `run()`'s current demo body moves
+      into a `RuntimeApp` subclass unchanged, so this card changes shape and not behaviour;
+      `apps/editor` gains an `EditorApp` whose `init()` stays empty until S5-T5.
+      **No `std::function` member on `App`, and no second loop driver** — that is the v1 shape
+      ADR-017 § *Decision* 3 rules out by name. Needs S5-T10.
+
+### Story B — M3 build *(Dev · **re-cut 2026-08-31**; it did not size normally, see *Artifact gate*)*
+
+> Ordering: **T2 → T1 → T3 → T4 → T5**, after Story F. T2 is first because [[Known Issues]]
+> **D2** names the M3 mount port as its trigger and says to fix it *before* that port.
 
 - [ ] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light — done: `mount()` rejects an
       empty alias, one containing `/`, and one containing `:` via `TE_CHECK` with a defined
@@ -71,23 +105,37 @@
       on Windows and `/proc/self/exe` on Linux behind one signature in `platform`, with a
       Catch2 case asserting the returned path exists and names the running test binary; no
       `current_path()` fallback anywhere.
-- [ ] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep — done: `createDirectory`,
-      `remove`, `copy`, `move` and `rename` ship on `FileAccess` over both files and
-      directories, all returning `FileResult` and all resolving through
-      `MountTable::resolveForCreate`; Catch2 pins each against a scratch directory, including
-      the mount-root case (`InvalidPath`), the missing-parent case and the already-exists case;
-      green on all legs. Needs S5-D1.
-- [ ] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep — done: a `Project` type
-      loads and validates a `project.toml` through toml++, already pinned in
-      `cmake/deps.cmake`, carrying only root · name · shader dir · asset dirs; a malformed or
-      missing file returns a defined error rather than throwing; Catch2 pins a good file, a
-      malformed one and a missing one. Needs S5-D1.
-- [ ] **S5-T5** · the real mount set + `projects/dev/` testbed · P1 · 🟠 Moderate — done:
-      `App.cpp` mounts the project's directories relative to `executablePath()` instead of the
-      configure-time define; **the `TODO(S3-T13)` demo-mount block is deleted from both
-      `App.cpp` and `engine/app/CMakeLists.txt`**; `projects/dev/` exists at repo root as data,
-      not a CMake target, with a real `project.toml`, and the runtime loads it by default.
-      Needs S5-T1, S5-T4.
+- [ ] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep — **rewritten 2026-08-31
+      against [[Project — Design]] § *The five mutating calls*: the old clause named no results
+      and the enum had no value for two of the cases it asked to be pinned.** done:
+      `createDirectory`, `remove(path, recursive)`, `copy(from, to)`, `move(from, to)` and
+      `rename(path, newName)` ship on `FileAccess` over both files and directories, all
+      returning `FileResult` and all resolving through `MountTable::resolveForCreate`;
+      **`FileResult` gains `AlreadyExists` and `NotEmpty`**; **`write` stops returning the
+      generic `IoError` for a missing parent and returns `NotFound`**, while `createDirectory`
+      is the call that does create parents; Catch2 pins each against a scratch directory,
+      including the mount-root case (`InvalidPath`), the missing-parent case, the
+      already-exists case and the non-empty-directory case; green on all legs. Needs S5-D1.
+- [ ] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep — **rewritten 2026-08-31:
+      the type is editor-local, not engine code (ADR-017 § *Decision* 2), and the old clause
+      put `root` inside the manifest.** done: `Project` lives in `apps/editor/src/project/` and
+      loads `project.toml` through toml++ in its **non-throwing** form, carrying only
+      `name` · `shaderDir` · `assetDirs`, with the root **derived** from the manifest's own
+      location; load and save are both owned by `Project` and both go through `FileAccess`,
+      which is the v1 split this fixes; a malformed, unreadable or missing file returns a
+      `ProjectResult` rather than throwing; Catch2 cases live in `apps/editor/tests/` and pin a
+      good file, a malformed one, a missing one, and a manifest path that escapes the root.
+      Needs S5-D1, S5-T10.
+- [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate —
+      **rewritten 2026-08-31: the old clause read "the runtime loads it by default", which
+      ADR-017 § *Decision* 1 reverses outright.** done: `EditorApp::init()` mounts `project` at
+      the root from `argv` and `engine` off `executablePath()`, reads the manifest and mounts
+      the `assets` and `shaders` it names, all into the one `MountTable` the base class owns;
+      `RuntimeApp::init()` mounts a fixed layout off `executablePath()` and **reads no
+      manifest**; **the `TODO(S3-T13)` demo-mount block is deleted from both `App.cpp` and
+      `engine/app/CMakeLists.txt`**; `projects/dev/` exists at repo root as data, not a CMake
+      target, with a real `project.toml`, and **the editor** loads it by default.
+      Needs S5-T1, S5-T4, S5-T11.
 
 ### Story C — M4's gate *(Design · ordered before Story D)*
 
@@ -181,9 +229,11 @@
 
 **Tier 1 — the commitment. The sprint fails without these.**
 
-- [ ] M3's rung is closed: `projects/dev/` exists as data, the runtime loads it through a real
-      `project.toml`, and every mount resolves relative to the binary rather than to a
+- [ ] M3's rung is closed: `projects/dev/` exists as data, **the editor** loads it through a
+      real `project.toml`, **the runtime bootstraps a fixed layout without reading one**
+      (ADR-017 § *Decision* 1), and every mount resolves relative to the binary rather than to a
       configure-time source path.
+- [ ] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
 - [ ] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.
 - [ ] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
       each with a filled *Decided* table, and neither story was cut before its artifact.
@@ -211,23 +261,25 @@ Sprint 04 review, its last two merges and this planning session, so **only Sep 5
 | 🟠 Moderate | 2 | 2 |
 | 🟡 Light | 2-4 | 2 |
 
-**Re-counted 2026-08-30 once S5-D2 landed and Story D was cut. Remaining draw:
-5 🟢 · 4 🟠 · 3 🟡 · 2 🤖.**
+**Re-counted 2026-08-31, after S5-D1 landed and Story F was cut off ADR-017. Remaining draw:
+5 🟢 · 5 🟠 · 3 🟡 · 2 🤖.**
 
-- 🟢 — D1, T3, T4, T7, T8. **5 against 6-7, so 1-2 slots of slack**, better than the plan. S5-D2
-  was written on the boundary weekend and cost nothing from this table.
-- 🟠 — T1, T5, T6, T9. **Double capacity, unchanged.** Story D's estimate was exact.
-- 🟡 — T2, P1, P4. **Over by one.** S5-P4 (xvfb) did not exist at planning; it was cut at S5-D2
-  once CI was chosen as the verification route.
+- 🟢 — T11, T3, T4, T7, T8. **5 against 6-7.** D1 is banked and left the table; T11 took the
+  slot it freed, so the slack the 2026-08-30 recount found is gone rather than spent.
+- 🟠 — **T10**, T1, T5, T6, T9. **Five against two.** This was double capacity on 2026-08-30
+  and is now **two and a half times** it.
+- 🟡 — T2, P1, P4. **Over by one**, unchanged.
 
-**The 🟠 column is the honest overrun**, and it is where Sprint 04 also overran. It fits only
-if two 🟠 get absorbed by deep days, as Sprints 03 and 04 both did, and nothing goes wrong,
-and no bug arrives mid-sprint. That is a hope rather than a plan, so the cut order below is
-the actual mitigation.
+**The 🟠 column stopped being an overrun and became the plan's failure point.** At double it
+fit only if two got absorbed by deep days and nothing went wrong, which the 2026-08-30 note
+already called a hope rather than a plan. At 2.5× that hope needs three absorptions in a
+box that has **one weekend left**. It will not happen.
 
-**What sizing Story D changed:** the deep column got easier and the moderate column did not.
-The riskiest unknowns are now priced rather than guessed, and the one genuinely unverified
-thing left is whether CI's llvmpipe reaches GL 4.5 (S5-P4 carries its own fallback).
+**What Story F changed, said plainly.** The gate marked M3 as needing no ADR. Settling the
+bootstrap took one, and the ADR added a 🟢 and a 🟠 to the sprint's tightest column. Neither
+card is optional: T10 gates S5-T4's tests and T11 gates S5-T5, so Story F cannot be the thing
+that gets cut. **Story D is now the pre-named casualty, and the decision has moved earlier —
+see the cut order.**
 
 **Cut order if capacity tightens:**
 
@@ -235,19 +287,24 @@ thing left is whether CI's llvmpipe reaches GL 4.5 (S5-P4 carries its own fallba
    triangle on the render thread, and input is not part of it.
 2. **S5-P1** and the two 🤖 cards with it. Buys back 1 🟡 and about 30 minutes of PR review.
 3. **S5-T5's testbed half.** Keep the mount set, defer `projects/dev/`'s contents.
-4. **All of Story D**, meaning T6 → P4 → T7 → T8 together. This is the Tier 2 drop and it is
-   the Sep 5-6 checkpoint's decision, not an in-the-moment one. Cutting the story cuts S5-P4
-   with it, since nothing else needs xvfb.
-5. **Never** S5-D1 or M3's T3/T4. S5-D2 is already banked, so the sprint's durable design
-   output survives even if no M4 code ships.
+4. **All of Story D**, meaning T6 → P4 → T7 → T8 together. This is the Tier 2 drop. Cutting
+   the story cuts S5-P4 with it, since nothing else needs xvfb.
+   **Moved up 2026-08-31.** This was the Sep 5-6 checkpoint's decision. With the 🟠 column at
+   2.5× it is now the *expected* outcome, and the checkpoint's job is to confirm it rather
+   than to discover it.
+5. **Never** S5-D1, Story F, or M3's T3/T4. Story F is not optional: T10 gates S5-T4's tests
+   and T11 gates S5-T5. S5-D2 is already banked, so the sprint's durable design output
+   survives even if no M4 code ships.
 
 **Said out loud: 3 of 11 sized cards are Process (27%), and 2 of those 3 cost no day capacity**
 because they run in the 🤖 lane. That is the lane doing exactly what it was cut for
 ([[Autonomous Lane — Design]] § *Why*).
 
-**Checkpoint at the Sep 5-6 weekly review:** if Story B is not complete by then, **cut Story D
-to S5-D2 alone** and let M4's build be Sprint 06's. Compressing it instead is how the 🟠 column
-becomes another four-PR Friday. This checkpoint is a pre-named decision, not a suggestion.
+**Checkpoint at the Sep 5-6 weekly review:** if **Story F and Story B** are not complete by
+then, **cut Story D to S5-D2 alone** and let M4's build be Sprint 06's. Compressing it instead
+is how the 🟠 column becomes another four-PR Friday. This checkpoint is a pre-named decision,
+not a suggestion. **Widened 2026-08-31** from "Story B" to include Story F, which now sits
+ahead of it.
 
 Weekend days stay a swappable pair; nothing here is assigned to Sat or Sun.
 

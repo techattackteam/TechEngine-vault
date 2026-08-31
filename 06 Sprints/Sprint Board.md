@@ -9,17 +9,22 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## 📋 A · M3's gate *(ordered first)*
-
-- [ ] **S5-D1** · project design note · P1 · 🟢 Deep
-	  done: `Project — Design` exists with a filled *Decided* table — the `project.toml` schema
-	  (root · name · shader dir · asset dirs, nothing more), v1's mount set
-	  (`ProjectManager.cpp:262-271` @ `v1-reference`), and the semantics of all five mutating
-	  `FileAccess` calls; it answers [[File Access — Design]]'s "should `write` create missing
-	  parent directories?"; **Story B's cards are cut against it.**
+## 📋 A · M3's gate · ✅ **complete** *(S5-D1, Aug 31)*
 
 
-## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5)*
+
+## 📋 F · the bootstrap seam *(T10 → T11; before Story B)*
+
+- [ ] **S5-T11** · the `App` base class and `EntryPoint.hpp` · P1 · 🟢 Deep
+	  done: `App` owns `MountTable` · `FileAccess` · `Clock` · `JobSystem` · `FrameLoop` and
+	  calls `init` (the only pure one) · `fixedUpdate` · `update` · `shutdown`, the two loop
+	  hooks taking `const FrameContext&`; `main()` in `<TechEngine/app/EntryPoint.hpp>`, **never
+	  in the library**, so `TechEngineAppTests` keeps Catch2's `main`; `run()`'s demo body moves
+	  into `RuntimeApp` unchanged, so this is shape and not behaviour; `EditorApp` added with an
+	  empty `init()`. **No `std::function` member on `App`.** Needs S5-T10.
+
+
+## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5; after Story F)*
 
 - [ ] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light
 	  done: `mount()` rejects an empty alias, one with `/`, and one with `:` via `TE_CHECK` with
@@ -32,20 +37,28 @@ kanban-plugin: board
 	  case asserts the path exists and names the running test binary; no `current_path()`
 	  fallback anywhere.
 - [ ] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep
-	  done: `createDirectory` · `remove` · `copy` · `move` · `rename` over files and directories,
-	  all on `FileResult`, all through `resolveForCreate`; Catch2 pins each against a scratch
-	  directory including the mount-root, missing-parent and already-exists cases; green on all
-	  legs. Needs S5-D1.
+	  **Rewritten Aug 31.** done: `createDirectory` · `remove(path, recursive)` · `copy` ·
+	  `move` · `rename(path, newName)` over files and directories, all on `FileResult`, all
+	  through `resolveForCreate`; **`FileResult` gains `AlreadyExists` and `NotEmpty`**;
+	  **`write` returns `NotFound` for a missing parent instead of `IoError`**, and
+	  `createDirectory` is the call that creates parents; Catch2 pins each against a scratch
+	  directory including the mount-root, missing-parent, already-exists and non-empty cases;
+	  green on all legs. Needs S5-D1.
 - [ ] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep
-	  done: `Project` loads and validates a manifest through toml++ (already pinned in
-	  `deps.cmake`), carrying only root · name · shader dir · asset dirs; malformed or missing
-	  returns a defined error rather than throwing; Catch2 pins good, malformed and missing.
-	  Needs S5-D1.
-- [ ] **S5-T5** · the real mount set + `projects/dev/` testbed · P1 · 🟠 Moderate
-	  done: `App.cpp` mounts relative to `executablePath()`, not the configure-time define;
-	  **the `TODO(S3-T13)` demo-mount block is deleted from `App.cpp` and
-	  `engine/app/CMakeLists.txt`**; `projects/dev/` exists at repo root as data with a real
-	  `project.toml` and the runtime loads it by default. Needs S5-T1, S5-T4.
+	  **Rewritten Aug 31: editor-local, and `root` is derived not stored.** done: `Project` in
+	  `apps/editor/src/project/` loads `project.toml` through toml++ in its **non-throwing**
+	  form, carrying `name` · `shaderDir` · `assetDirs`, root derived from the manifest's own
+	  location; load and save both owned by `Project`, both through `FileAccess`; malformed,
+	  unreadable or missing returns a `ProjectResult`; Catch2 in `apps/editor/tests/` pins good,
+	  malformed, missing, and a path escaping the root. Needs S5-D1, S5-T10.
+- [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate
+	  **Rewritten Aug 31: the old "runtime loads it by default" is reversed by ADR-017.** done:
+	  `EditorApp::init()` mounts `project` from `argv` and `engine` off `executablePath()`,
+	  reads the manifest, mounts the `assets` and `shaders` it names; `RuntimeApp::init()`
+	  mounts a fixed layout and **reads no manifest**; **the `TODO(S3-T13)` demo-mount block is
+	  deleted from `App.cpp` and `engine/app/CMakeLists.txt`**; `projects/dev/` exists at repo
+	  root as data with a real `project.toml` and **the editor** loads it by default.
+	  Needs S5-T1, S5-T4, S5-T11.
 
 
 ## 📋 C · M4's gate · ✅ **complete** *(S5-D2, Aug 30)*
@@ -114,6 +127,13 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S5-T10** · `techengine_app()` and apps as object libraries · P1 · 🟠 Moderate
+	  done: `cmake/techengine_app.cmake` stamps out three targets per app — an **OBJECT** library
+	  of its sources, the exe consuming those objects plus `main.cpp`, and a Catch2 test exe
+	  consuming the same objects — appending the test exe to `TE_TEST_TARGETS` so coverage picks
+	  it up like a module's; both apps go through it; one placeholder case each proves the test
+	  exe links and CTest discovers it. Object, not static: no archive, nobody's link
+	  dependency, so the exe stays ADR-006 §1's leaf.
 
 
 ## 👀 Review / Demo
@@ -122,6 +142,28 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-D1** · project design note · P1 · 🟢 Deep · **Aug 31**. [[Project — Design]] created
+	  with a filled *Decided* table: the schema (`name` · `shaderDir` · `assetDirs`, with the
+	  **root derived** from the manifest's location, not stored in it), v1's mount set mapped
+	  across, and the semantics of all five mutating `FileAccess` calls. Vault-only, no branch,
+	  no PR. It answered [[File Access — Design]]'s open question: **`write` does not create
+	  missing parents and returns `NotFound`; `createDirectory` is the call that does.**
+	  **It produced an ADR the artifact gate said was not needed.** The gate marked M3 `❌ ADR`
+	  on the grounds that the decisions were largely settled. That held for the manifest and the
+	  mount set. It did not hold for *who bootstraps*: whether a shipped runtime reads a
+	  manifest at all had no artifact anywhere.
+	  [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] settles it. The
+	  manifest is **editor-only**, `Project` is exe-local editor code, and `app` owns the
+	  lifecycle through a base class every executable subclasses.
+	  **It partially supersedes ADR-006 §1**'s "editor out of the frame loop" clause, which was
+	  the F14 fix. Safe because §1 predates ADR-015: the render thread consumes the last
+	  complete command list, so a stalled main thread no longer freezes presentation. The cost
+	  is that keeping editor work off the sim frame becomes discipline, not structure.
+	  **Cost to the sprint:** three Story B cards rewritten and **Story F added ahead of them**,
+	  putting the 🟠 column at 2.5× capacity. Story D is now the expected casualty rather than a
+	  checkpoint decision.
+	  **Left unverified:** none of it is compiled. `techengine_app()` does not exist yet and the
+	  `App` base class is a design, so S5-T10 and S5-T11 carry the first real proof.
 - [x] **S5-D2** · window design note · P1 · 🟢 Deep · **Aug 30**, on the boundary weekend, so it
 	  cost nothing from the Aug 31 to Sep 11 capacity. [[Window — Design]] created as the hub,
 	  surface pinned ahead of the cards. Vault-only, no branch, no PR.
@@ -151,6 +193,7 @@ kanban-plugin: board
 	  fallback.
 	  **Cut Story D** into S5-T6 → S5-P4 → S5-T7 → S5-T8, with S5-T9 last, per this card's own
 	  done-condition.
+
 
 
 

@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 017 | [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] | Accepted | 2026-08 |
 | 016 | [[ADR-016 — Serialization (binary primitives & describe-once seam)]] | Accepted | 2026-08 |
 | 015 | [[ADR-015 — Threading (sim on main, render thread owns GL)]] | Accepted | 2026-08 |
 | 014 | [[ADR-014 — Events (buffered streams) & StringId]]  | Accepted | 2026-08 |
@@ -30,7 +31,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 — Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/` — history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **017** (numbers are never reused).
+> Next number is **018** (numbers are never reused).
 
 ### Partial supersessions
 
@@ -48,6 +49,7 @@ anyone noticed (2026-08-20).
 | [[ADR-006 — v2 core architecture & module layout]] §5 — the `Profiler` **classification row** (helper *service*, injected via `EngineContext`) | [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §9 | **That row only.** The Profiler is a helper *utility* — global macros, no injection. §5's two-bucket test, the System/helper split, "profiler wraps the executor" and the F19 fix all remain in force. |
 | [[ADR-006 — v2 core architecture & module layout]] §4 — the **`EventBus& events` field** of the `EngineContext` sketch | [[ADR-014 — Events (buffered streams) & StringId]] §5 | **That field only.** Event streams are per-`Scene` state. §4's DI rule, context immutability, "holds no systems", F13 ownership and the `app` composition root all remain in force. |
 | [[ADR-007 — v2 networking & ECS replication foundation]] §6 — the **"or the `EventBus` service"** phrase of the no-locator bullet | [[ADR-014 — Events (buffered streams) & StringId]] §5 | **That phrase only** — read "via components or event streams". "Never a sibling-system ref" remains in force, strengthened. |
+| [[ADR-006 — v2 core architecture & module layout]] §1 — the editor row's **"out of the frame loop"** clause | [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Decision* 3 | **That clause only.** The editor subclasses `App` like every other executable, so it is in the loop. §1's module table, the strict acyclic DAG, the editor's composition and the editor-owned asset pipeline all remain in force. |
 
 ## Statuses
 
