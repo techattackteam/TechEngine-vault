@@ -65,6 +65,11 @@ groups are kept, because they show where future work will land.
 - #prio/high · **Frame pacing** — S2-T7's spin-to-deadline stand-in is not shippable; the
   Windows 15.6 ms timer evidence and the open questions live on [[Game Loop — Frame Flow]].
   **Trigger:** the first build that runs unattended.
+- #prio/high · **`App::run()` is untestable** — it hardcodes 120 frames and spins to a 60 Hz
+  deadline, so any case asserting "`update` runs once per frame" costs ~2 s of a busy CPU.
+  S5-T11 shipped with its central bug (`run()` shadowing every member it owned) invisible to
+  the suite for exactly this reason. A frame budget on the constructor makes such a case cheap.
+  **Trigger:** the next `App::run()` change, or M4 replacing the count with `shouldClose`.
 
 ## net
 

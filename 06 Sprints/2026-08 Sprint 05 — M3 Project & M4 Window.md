@@ -68,8 +68,11 @@
 > Ordering: **T10 → T11.** T10 gives every app a test target, and T11's cases need one.
 > Neither card existed at planning. Both are the price of the ADR the gate missed.
 
-- [ ] **S5-T10** · `techengine_app()` and apps as object libraries · P1 · 🟠 Moderate — done:
-      a `cmake/techengine_app.cmake` helper stamps out three targets per app — an **OBJECT**
+- [x] **S5-T10** · `techengine_app()` and apps as object libraries · P1 · 🟠 Moderate —
+      **done 2026-08-31**, `76056402` (#62). `SOURCES` stayed **required**: rather than teach
+      the helper to tolerate an empty object library, each app got a placeholder `.hpp`/`.cpp`
+      carrying a `TODO(S5-T11)`. Entry on [[Sprint Board]].
+      **As cut:** a `cmake/techengine_app.cmake` helper stamps out three targets per app — an **OBJECT**
       library holding the app's sources, the exe that consumes its objects plus `main.cpp`, and
       a Catch2 test exe consuming the same objects — and appends the test exe to
       `TE_TEST_TARGETS` so coverage picks app tests up exactly like a module's; `apps/runtime`
@@ -78,7 +81,10 @@
       produces no archive and can be nobody's link dependency, so the exe stays the leaf
       ADR-006 §1 calls it. Sharing the exe itself would need `ENABLE_EXPORTS`
       (ADR-017 § *Consequences*).
-- [ ] **S5-T11** · the `App` base class and `EntryPoint.hpp` · P1 · 🟢 Deep — done: `App` in
+- [x] **S5-T11** · the `App` base class and `EntryPoint.hpp` · P1 · 🟢 Deep —
+      **done 2026-08-31**, `b6273327` (#63). Two clauses did not hold: the demo body was
+      **deleted** rather than moved, and **all four virtuals shipped pure** rather than only
+      `init()`. Entry on [[Sprint Board]]. **As cut:** done: `App` in
       `engine/app` owns `MountTable`, `FileAccess`, `Clock`, `JobSystem` and the `FrameLoop`,
       and calls `init` · `fixedUpdate` · `update` · `shutdown`, where `init()` is the **only**
       pure one and the two loop hooks take `const FrameContext&`; `main()` lives in
@@ -233,7 +239,8 @@
       real `project.toml`, **the runtime bootstraps a fixed layout without reading one**
       (ADR-017 § *Decision* 1), and every mount resolves relative to the binary rather than to a
       configure-time source path.
-- [ ] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
+- [x] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
+      **2026-08-31**, `76056402` (#62) and `b6273327` (#63).
 - [ ] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.
 - [ ] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
       each with a filled *Decided* table, and neither story was cut before its artifact.

@@ -86,8 +86,23 @@ The alternative is listing the sources in both executables and compiling them tw
 duplicates the source list in two places, which is the drift class ADR-008 §2 bans `GLOB` to
 prevent (F6).
 
-A `techengine_app(<name> SOURCES … TESTS …)` helper stamps out all three targets and appends
-to `TE_TEST_TARGETS` (`:41`), so app tests reach the coverage wiring like any module's.
+### `techengine_app()`, as shipped
+
+**S5-T10, 2026-08-31, `76056402`**, in `cmake/techengine_app.cmake`. Arguments: `MAIN` (the
+`.cpp` holding `main()`), `SOURCES`, `HEADERS`, `DEPS`, `LIBS` and `TESTS`. It stamps out all
+three targets and appends the suite to `TE_TEST_TARGETS`, so app tests reach the coverage
+wiring like any module's.
+
+Two calls differ from `techengine_module()`:
+
+- **The exe links the object library target** rather than splicing `$<TARGET_OBJECTS:>` in.
+  Linking is what carries the include directories and `DEPS` through as well as the objects.
+- **`src/` is PUBLIC** on the object library, where a module keeps it PRIVATE. An app has no
+  `include/`, and its only consumers are its own exe and its own suite.
+
+`SOURCES` is required, exactly as on `techengine_module()`. Both apps held nothing but
+`main.cpp` when the card was cut, so each was given a placeholder type rather than teaching
+the helper to tolerate an empty object library.
 
 **A third tier is the standing alternative.** ADR-006 §1's executable table already composes
 the editor as "app + client + core + **tooling**", and `apps/editor/CMakeLists.txt:2` repeats
@@ -140,6 +155,13 @@ flowchart TB
 ```
 
 ### The `App` base class
+
+> **Shipped at S5-T11** (2026-08-31, `b6273327`) with **all four virtuals pure**, not just
+> `init()`. That contradicts ADR-017 § *Decision* 3 and this section. It is recorded here as a
+> live divergence rather than reconciled: an Accepted ADR clause changed value in the code, so
+> it owes either a fix or a dated `decision` amendment ([[ADR Index]] § *What is not an
+> amendment*, the mirror case). The shape below is what the ADR still decides.
+
 
 ```cpp
 // engine/app/include/TechEngine/app/App.hpp

@@ -13,15 +13,8 @@ kanban-plugin: board
 
 
 
-## 📋 F · the bootstrap seam *(T10 → T11; before Story B)*
+## 📋 F · the bootstrap seam · ✅ **complete** *(S5-T10 + S5-T11, Aug 31)*
 
-- [ ] **S5-T11** · the `App` base class and `EntryPoint.hpp` · P1 · 🟢 Deep
-	  done: `App` owns `MountTable` · `FileAccess` · `Clock` · `JobSystem` · `FrameLoop` and
-	  calls `init` (the only pure one) · `fixedUpdate` · `update` · `shutdown`, the two loop
-	  hooks taking `const FrameContext&`; `main()` in `<TechEngine/app/EntryPoint.hpp>`, **never
-	  in the library**, so `TechEngineAppTests` keeps Catch2's `main`; `run()`'s demo body moves
-	  into `RuntimeApp` unchanged, so this is shape and not behaviour; `EditorApp` added with an
-	  empty `init()`. **No `std::function` member on `App`.** Needs S5-T10.
 
 
 ## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5; after Story F)*
@@ -127,13 +120,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S5-T10** · `techengine_app()` and apps as object libraries · P1 · 🟠 Moderate
-	  done: `cmake/techengine_app.cmake` stamps out three targets per app — an **OBJECT** library
-	  of its sources, the exe consuming those objects plus `main.cpp`, and a Catch2 test exe
-	  consuming the same objects — appending the test exe to `TE_TEST_TARGETS` so coverage picks
-	  it up like a module's; both apps go through it; one placeholder case each proves the test
-	  exe links and CTest discovers it. Object, not static: no archive, nobody's link
-	  dependency, so the exe stays ADR-006 §1's leaf.
 
 
 ## 👀 Review / Demo
@@ -142,6 +128,48 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T11** · the `App` base class and `EntryPoint.hpp` · P1 · 🟢 Deep · **Aug 31**,
+	  `b6273327` (#63). No review comments on the PR; the review happened in session. Merged
+	  with **`[skip-coverage]`** in the description, so the diff-coverage gate reported no
+	  number for a card that deleted ~200 lines and added a suite.
+	  **The demo body was deleted, not moved.** The clause said `run()`'s body "moves into a
+	  `RuntimeApp` subclass unchanged". Events, the S4-T7 serialization round-trip, the job
+	  batch and the math format lines are all gone instead. That leaves the `TODO(S3-T13)`
+	  block, `TE_DEMO_ASSETS_DIR`, `engine/app/assets/demo.txt` and `demo-material.bin`
+	  **orphaned**: S5-T5 was going to delete them with their consumer, and the consumer went
+	  first. S5-T5 should now sweep them.
+	  **All four virtuals shipped pure**, against both this card's clause and
+	  [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Decision* 3, which
+	  makes `init()` the only pure one. The cost the ADR predicted is already visible: four
+	  empty bodies across the two subclasses. **Live divergence — no amendment filed.**
+	  **The lifecycle went the wrong way and came back.** `EntryPoint.hpp` first called
+	  `init()`, `run()`, `shutdown()` itself and returned a literal `0`, discarding `run()`'s
+	  `int`. That is v1's `EntryPoint.cpp:6-11` shape by structure. Review pulled the sequence
+	  into `App::run()`, which now owns it and returns its own code; the hooks went `protected`.
+	  **The card's central bug shipped to review invisible to every test.** `App::run()`
+	  declared locals shadowing all six members it owned, so the subclass's role never reached
+	  the loop and anything `init()` mounted was unreachable from it. **Retro line:** the new
+	  `AppTests` mount case was claimed in review to catch this. It does not — it never touches
+	  `run()`. Fixed before merge, still untested, and [[Backlog]] carries why.
+	  **Logged not fixed: [[Known Issues]] D4** (`toString(Role)` allocating per frame).
+	  **Closes Story F.** Unblocks S5-T5.
+- [x] **S5-T10** · `techengine_app()` and apps as object libraries · P1 · 🟠 Moderate ·
+	  **Aug 31**, `76056402` (#62). No review comments, no findings logged.
+	  **The card's own `done:` clause had no referent when it was written.** It asked for an
+	  OBJECT library "of its sources", and both apps held nothing but `main.cpp`, which belongs
+	  to the exe. CMake rejects an object library with no sources. Grounding caught it, and
+	  Miguel's call was to give each app a placeholder `.hpp`/`.cpp` rather than make `SOURCES`
+	  optional in the helper. So `SOURCES` stayed required, matching `techengine_module()`, and
+	  the helper shipped with no special case in it. The placeholders are `runtimeRole()` and
+	  `editorRole()`, both `TODO(S5-T11)`, both returning `Role::Client`.
+	  **The helper's usage block was written and deleted before it shipped.**
+	  `cmake/techengine_app.cmake` now starts at `function(`, so it is the only helper in
+	  `cmake/` without the argument contract and rationale at the top that
+	  `techengine_module.cmake` and `techengine_test.cmake` both carry. Worth a retro line:
+	  either the block was cut deliberately and that convention has changed, or it went by
+	  accident and the next reader of the helper pays for it.
+	  **Unblocks S5-T11 and S5-T4**, both of which needed an app test target to exist. Does not
+	  close Story F.
 - [x] **S5-D1** · project design note · P1 · 🟢 Deep · **Aug 31**. [[Project — Design]] created
 	  with a filled *Decided* table: the schema (`name` · `shaderDir` · `assetDirs`, with the
 	  **root derived** from the manifest's location, not stored in it), v1's mount set mapped

@@ -124,3 +124,27 @@ component, which is why `canonical` was chosen first. Only `matchesOnDiskCase` c
 **Trigger:** the first symlinked or junctioned asset directory — a Linux/macOS dev layout, or
 `mklink /D` on Windows. Also revisit if M6's resource loading makes the per-component cost
 measurable, since that decides which way the trade goes.
+
+---
+
+### D4 — `toString(Role)` allocates a `std::string` per call, in a per-frame path
+
+`toString` is `inline std::string toString(Role)` at
+`engine/core/include/TechEngine/core/FrameContext.hpp:11`. It returns by value, so every call
+heap-allocates. Both `RuntimeApp` and `EditorApp` call it from `fixedUpdate` **and** `update`,
+and `fixedUpdate` runs once per catch-up tick, up to 15 of them under the 0.25 s clamp. That
+is up to 16 allocations a frame for a string that is one of three compile-time constants.
+
+It also pulls `<string>` into `FrameContext.hpp`, which nearly every translation unit above
+`core` includes.
+
+**Not urgent today, and that is the trap.** The only callers are the placeholder log lines
+S5-T11 left in both subclasses, so nothing measurable is happening yet. The function itself
+stays, and the next caller inherits the allocation without knowing.
+
+**Proposed fix** — `constexpr std::string_view toString(Role)`. The three returns are string
+literals, so nothing else changes and `<string>` leaves the header. Raised in review at S5-T11
+and deliberately not taken there.
+
+**Trigger:** any real per-frame consumer, or the first frame-time measurement. Also the moment
+a second enum in `core` wants the same treatment, since this one sets the pattern.
