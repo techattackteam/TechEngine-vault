@@ -15,8 +15,9 @@ there to answer one.
 | `environment_id` | `env_016JsaV5uNQ9FpqHm9WFaour` — **TechEngineLinux**, the purpose-built environment. Its setup script installs the build deps, re-anchors both repos and mounts the vault, so the prompt only verifies them. Not the `Default` environment. |
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | `claude-opus-5`. The lane's risk is judgment on bug fixes, not throughput. |
-| `cron_expression` | **`7 4,9,14,23 * * 1-5`** — four fires a weekday. Cron is UTC and Lisbon is UTC+1 in summer, so that is **05:07, 10:07, 15:07 and 00:07 local**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
-| **DST** | **Breaks on 2026-10-25**, when Lisbon drops to UTC+0. Cron stays UTC, so every fire shifts an hour earlier in local terms: 04:07, 09:07, 14:07, 23:07. Re-point the expression then, or accept the shift. |
+| `cron_expression` | **Two fires a weekday**, cut from four on **2026-08-31**. Cron is UTC and Lisbon is UTC+1 in summer. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. ⚠️ **The two hours are not recorded here yet** — the four were `7 4,9,14,23 * * 1-5`. Copy the live expression off the routine. |
+| **Why two and not four** | **Claude's weekly usage limit**, not the CI budget. Four fires a weekday spent enough of the weekly allowance to compete with Miguel's own attended sessions, which are the lane's whole point. See [[Autonomous Lane — Design]] § *Cost model*. |
+| **DST** | **Breaks on 2026-10-25**, when Lisbon drops to UTC+0. Cron stays UTC, so every fire shifts an hour earlier in local terms. Re-point the expression then, or accept the shift. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |
 
 ## The environment, as measured
@@ -124,17 +125,17 @@ Finally read docs/00 Dashboard/Dashboard.md. If it cannot be read, STOP, do no o
 report that the vault was unreachable. Every rule below assumes docs/ is present.
 Any repair is a finding about the environment and always goes in the report.
 
-STEP 2 — TODAY'S REPORT IS ONE FILE THAT FOUR FIRES SHARE.
-This routine fires four times a weekday. There is ONE note per day,
+STEP 2 — TODAY'S REPORT IS ONE FILE THAT BOTH OF THE DAY'S FIRES SHARE.
+This routine fires twice a weekday. There is ONE note per day,
 docs/07 Journal/<today's date> Auto Run.md, and each fire APPENDS a section headed with its
 local time. If the note exists, read it first: it records what today's earlier fires did, and
 you never redo their work or re-report their findings.
 STOP AND CHANGE NOTHING if the note's last section is under 30 minutes old. That is a double
 fire, which has been observed, and not a new slot.
-ONE PR PER DAY, ACROSS ALL FOUR FIRES. If today's note records a PR already opened, this fire
+ONE PR PER DAY, ACROSS BOTH FIRES. If today's note records a PR already opened, this fire
 takes report-only work instead: research, a freshness check, backlog grooming, or reading that
 PR's CI. A code card costs 16.1 billed CI minutes against a budget of about 2000 a month, so
-four code cards a day would spend it in a fortnight.
+two code cards a day would be about 650 a month, a third of it, for one lane.
 
 STEP 3 — READ IN.
 Read, in order: CLAUDE.md, CONVENTIONS.md, docs/00 Dashboard/Dashboard.md,
@@ -193,7 +194,7 @@ note, and no section appended to an existing one. Say so in your final message i
 journal padded with "nothing to report" buries the days that mattered.
 Otherwise append your section to today's note, or create it from
 docs/Templates/Autonomous Run Report Template.md if this is the day's first fire that had
-something to say. Head your section with the local time, so four fires stay legible.
+something to say. Head your section with the local time, so both fires stay legible.
 Commit straight to the vault's master and push. Pull first: an earlier fire may have pushed
 since your checkout. The vault takes no branch, no PR and no CI. The engine repo is PR-only.
 Lead with the "Needs you" section. Miguel reads this after a full work day, so it must be

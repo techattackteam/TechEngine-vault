@@ -170,12 +170,25 @@ groups are kept, because they show where future work will land.
   a required check skipped by an `if:` "never reports its context at all". Measured on #49's
   push run, a skipped *plain* job does report it (`diff coverage` came back `skipped`); it is
   the *matrix* job that collapses to a single check named `matrix.name` (S4-P4). The comment
-  is S4-P3's text and reasons about the `needs:` wiring, which is itself fine. **Trigger:** the
-  next PR touching that gate, or S4-P3's close.
+  is S4-P3's text and reasons about the `needs:` wiring, which is itself fine.
+  **Trigger:** fired — S4-P3 closed 2026-08-30, which was the second half of this entry's own
+  trigger. It stayed unmarked because a card's close does not sweep the entries that name it.
 - #prio/low · **`delete_branch_on_merge` is off** — [[ADR-009 — Branching strategy & merge rules]]
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a
   stale branch is mistaken for live work.
+- #prio/medium · **No CI job and no test carries a timeout, so one hang burns the runner's
+  6-hour ceiling** — `.github/workflows/ci.yml` sets `timeout-minutes` on no job,
+  `cmake/techengine_test.cmake`'s `catch_discover_tests()` passes no per-test timeout, and
+  nothing sets a CTest `TIMEOUT` property, so a deadlocked case runs until GitHub's 360-minute
+  default kills the job. On a Windows leg, billed at 2×, that is up to **720 billed minutes
+  from a single hang** against the ~2k monthly budget the [[Dashboard]] already watches as a
+  live constraint. The engine now ships a thread pool with `wait` and a join, which is the
+  class of code that hangs, and the *test for `wait()` called from a pool worker* entry above
+  names a CI timeout as the price of catching it. A ceiling is a few lines and does not need
+  the deadline-capable helper that entry is waiting for. **Trigger:** fired — found by the
+  2026-08-31 trigger sweep.
+
 - #prio/medium · **Assert the private-plumbing gates still match something** — `ci.yml`'s
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
