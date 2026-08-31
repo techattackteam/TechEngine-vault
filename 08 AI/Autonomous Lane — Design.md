@@ -61,8 +61,9 @@ Anthropic's cloud on a cron schedule, so the PC being off is irrelevant.
 only while the local REPL is idle. The `durable` flag has no effect. Neither survives the PC
 going to sleep, which is the whole requirement.
 
-**State as of 2026-08-30: zero routines configured.** The entire cloud path is unproven, so
-nothing below has been observed working.
+**The routine is live**, created 2026-08-30 and cut to two fires a weekday on 2026-08-31. Its
+configuration is in [[Autonomous Lane — Routine Prompt]] § *Routine configuration*. Everything
+below has been observed working except the PR path — see § *State*.
 
 ```mermaid
 flowchart LR
@@ -180,11 +181,17 @@ An Auto card costs zero of Miguel's day capacity and is **not free**.
 | PR review | ~15 min each | Real capacity. Budget it on a 🟡 day, not on top of a 🟢 evening. |
 | CI, code card | 16.1 billed min | Measured, ADR-008 §9. At one per weekday that is ~320 min/month against the ~2k budget, so about 16%. |
 | CI, vault or report card | 0 | Vault commits take no PR, and a docs-only or `.claude/**` PR draws no CI since #54. |
+| **Claude weekly usage** | the binding one | Every fire spends the weekly allowance whether or not it opens a PR, so a report-only day is **not** free here the way it is on the CI row. This is what cut the schedule from four fires to two on 2026-08-31. |
 
-**The cap is one PR per day, not one per fire, and the routine fires four times.** Four code
-cards a day would be ~1300 CI minutes a month and would eat the budget in a fortnight. The
-day's report note is what carries that state between fires: a fire that reads a PR already
-recorded there takes report-only work instead.
+**The cap is one PR per day, not one per fire, and the routine fires twice.** Two code cards a
+day would be ~650 CI minutes a month, a third of the budget for one lane. The day's report note
+is what carries that state between fires: a fire that reads a PR already recorded there takes
+report-only work instead.
+
+**Two fires, not four, since 2026-08-31, and the reason is the usage row rather than the CI
+row.** Four fires a weekday spent enough of the weekly Claude allowance to compete with
+Miguel's own attended sessions, which are the thing this lane exists to protect. The CI cap
+never bound, because it is per day and was already one.
 
 Prefer report-only and vault cards anyway. They cost nothing and they are the lowest-risk half
 of the eligibility list.
@@ -268,13 +275,18 @@ artifacts and found **8 pointing at the wrong line**, none of which fail loudly.
 Tracy `v0.13.1` against a tree on `v0.14.1`, where the tag is a wire-protocol lock. Both are
 carded and neither was touched.
 
+**The routine went live 2026-08-30** and ran unattended for the first time on 2026-08-31,
+filing a [[Backlog]] trigger sweep. It was cut from four fires a weekday to **two** the same
+day, on Claude's weekly usage limit rather than on CI — § *Cost model* carries the reasoning.
+Note when creating or recreating one: pass `clear_mcp_connections: true` immediately after, as
+the server attaches Google Drive and Claude Code Remote by default and `mcp_connections: []` on
+create is ignored.
+
 Two things left.
 
-1. **The real routine.** Create it, then immediately update with `clear_mcp_connections: true`:
-   the server attaches Google Drive and Claude Code Remote by default, `mcp_connections: []` on
-   create is ignored, and the lane needs neither. **The PR path is still unproven** — every run
-   so far was report-only, so nothing has yet branched, built and opened a PR unattended. The
-   first real 🤖 Auto code card is that test, and it should be a small one.
+1. **The PR path is still unproven.** Every run so far has been report-only, so nothing has yet
+   branched, built and opened a PR unattended. The first real 🤖 Auto code card is that test,
+   and it should be a small one.
 2. **Sprint 05 fills the Auto lane** at its `/sprint-plan`. The [[Backlog]] is the obvious first
    population: the ccache key, the `App.cpp` coverage exclusion, the
    `FETCHCONTENT_UPDATES_DISCONNECTED` comment and the `<chrono>` measurement all pass the four
