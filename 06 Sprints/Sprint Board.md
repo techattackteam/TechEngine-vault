@@ -19,12 +19,6 @@ kanban-plugin: board
 
 ## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5; after Story F)*
 
-- [ ] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light
-	  done: `mount()` rejects an empty alias, one with `/`, and one with `:` via `TE_CHECK` with
-	  a defined path; a Catch2 case pins each; **[[Known Issues]] D2 deleted in the same commit.**
-	  **First, because D2's own trigger says fix it before the M3 mount port.**
-	  Optional ride-along: D3 is in the same file, but its fix costs a directory scan per
-	  component, so taking it is a deliberate call.
 - [ ] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate
 	  done: `GetModuleFileNameW` / `/proc/self/exe` behind one signature in `platform`; a Catch2
 	  case asserts the path exists and names the running test binary; no `current_path()`
@@ -87,22 +81,16 @@ kanban-plugin: board
 
 ## 📋 E · Process *(first thing cut)*
 
-- [ ] **S5-P1** · watch the routine's first real fires · P2 · 🟡 Light
-	  **Re-scoped Aug 30:** the card said *create the routine*, and it went live at 18:00 the
-	  same day — four fires a weekday, 05:07 / 10:07 / 15:07 / 00:07 Lisbon. Watching it is what
-	  is left, and no fire has happened yet because it went live on a Sunday.
-	  done: the first weekday's fires are read and three things confirmed against
-	  [[Autonomous Lane — Design]] — **one** report note per day with a section appended per
-	  fire, each fire reading what the earlier ones did rather than redoing it, and the
-	  **one-PR-per-day** cap holding across four fires. Anything that misbehaves becomes a `B`
-	  card, not a note edit. **Ordered before P2**, the first fire allowed to open a PR.
-	  DST edge: cron is UTC, so every fire shifts an hour earlier on 25 October.
 - [ ] **S5-P2** · 🤖 [[Known Issues]] D1's fallback fix · P3 · 🤖 Auto
 	  done: `TE_LOG_ACTIVE_LEVEL`'s fallback matches CMake's per-config default (`INFO` under
 	  `NDEBUG`, else `TRACE`) per D1's written fix, plus a config-table Catch2 case mirroring
 	  `AssertTests.cpp`; **D1 deleted in the same commit**; the run builds Linux and passes
 	  `ctest` before opening the PR, and never merges it.
 	  **The lane's first code card — the PR path is unproven, so this tests the lane too.**
+	  **Unblocked Sep 1: S5-P1's "ordered before P2" clause is discharged and that card is
+	  closed.** Two fires declined this card on that ordering; the next one should take it.
+	  It also inherits S5-P1's dropped clause: **confirm the one-PR-per-day cap** across the
+	  day's fires, which only a PR-opening run can observe.
 - [ ] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light
 	  done: `ci.yml`'s Linux install step gains `xvfb` and `libgl1-mesa-dri` (the existing
 	  `libgl1-mesa-dev` is headers + `libGL`, not the llvmpipe driver); the test step runs
@@ -120,6 +108,12 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light
+	  done: `mount()` rejects an empty alias, one with `/`, and one with `:` via `TE_CHECK` with
+	  a defined path; a Catch2 case pins each; **[[Known Issues]] D2 deleted in the same commit.**
+	  **First, because D2's own trigger says fix it before the M3 mount port.**
+	  Optional ride-along: D3 is in the same file, but its fix costs a directory scan per
+	  component, so taking it is a deliberate call.
 
 
 ## 👀 Review / Demo
@@ -128,6 +122,26 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-P1** · watch the routine's first real fires · P2 · 🟡 Light · **Sep 1**. Attended
+	  and vault-only, so no branch and no PR. **Both surviving clauses confirmed across four
+	  fires**, two on Aug 31 and two on Sep 1: one report note per day with a section appended
+	  per fire, and each fire reading what the earlier ones did rather than redoing it. The
+	  Sep-1 second fire is the clearest case, declining to re-enter S5-P3 because the morning
+	  fire had left it open.
+	  **The third `done:` clause was unreachable, and dropping it is why this card closes.** It
+	  asked for the one-PR-per-day cap confirmed across the day's fires. The lane has never
+	  opened a PR, S5-P2 is the card that would, and this card was **ordered ahead of S5-P2**.
+	  So the clause could only be satisfied after the card it blocked. It moves to S5-P2, which
+	  proves the PR path anyway. Its "four fires" wording was stale on top of that: `1f4ebfb`
+	  cut the schedule to two on the morning of the first fires it was written to count.
+	  **Retro line: re-scoped twice, once on its own planning day.** Aug 30 turned *create the
+	  routine* into *watch it*, because the routine went live hours after it was planned. Sep 1
+	  dropped the PR clause. A card rewritten that often had a subject still moving under it.
+	  **Two misbehaviours found, neither reaching the `B` card the card's escape hatch names:**
+	  the live routine still ran the four-fire prompt text after `1f4ebfb` updated the vault's
+	  copy (a paste, not a card), and an empty Auto lane leaves a second fire with no work by
+	  construction (moot once Sprint 05 filled the lane).
+	  **Unblocks S5-P2.** Does not close Story E.
 - [x] **S5-T11** · the `App` base class and `EntryPoint.hpp` · P1 · 🟢 Deep · **Aug 31**,
 	  `b6273327` (#63). No review comments on the PR; the review happened in session. Merged
 	  with **`[skip-coverage]`** in the description, so the diff-coverage gate reported no

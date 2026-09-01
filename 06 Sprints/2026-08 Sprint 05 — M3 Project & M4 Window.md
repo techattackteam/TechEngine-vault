@@ -200,16 +200,17 @@
 
 ### Story E — Process *(first thing cut; the mix is called out below)*
 
-- [ ] **S5-P1** · watch the routine's first real fires · P2 · 🟡 Light — **re-scoped
-      2026-08-30**: the card was written as *create the routine*, and the routine went live at
-      18:00 that same day, four fires a weekday (05:07 / 10:07 / 15:07 / 00:07 Lisbon). What is
-      left is watching it. done: the first weekday's fires are read and three things confirmed
-      against [[Autonomous Lane — Design]] — **one** report note per day with a section
-      appended per fire, each fire reading what the earlier ones did rather than redoing it,
-      and the **one-PR-per-day** cap holding across four fires (per run it would be ~1300 CI
-      minutes a month against a 2000 budget). Anything that misbehaves becomes a `B` card, not
-      a note edit. **Ordered before S5-P2**, which is the first fire allowed to open a PR.
-      DST edge: cron is UTC, so every fire shifts an hour earlier on 25 October.
+- [x] **S5-P1** · watch the routine's first real fires · P2 · 🟡 Light — **done 2026-09-01**,
+      attended and vault-only. **Re-scoped twice.** 2026-08-30 turned *create the routine* into
+      *watch it*, because the routine went live hours after the card was planned. 2026-09-01
+      **dropped the third `done:` clause**, the one-PR-per-day cap, as unreachable: the lane has
+      never opened a PR, S5-P2 is the card that would, and this card was ordered ahead of it.
+      That clause now lives on S5-P2. What closed: **one report note per day with a section
+      appended per fire, and each fire reading what the earlier ones did**, both confirmed
+      across four fires on Aug 31 and Sep 1 ([[2026-08-31 Auto Run]], [[2026-09-01 Auto Run]]).
+      Two misbehaviours were found and neither warranted the `B` card the card allowed for.
+      **Unblocks S5-P2.** The DST edge it used to carry has its durable home in
+      [[Autonomous Lane — Routine Prompt]] § *Routine configuration*.
 - [ ] **S5-P2** · 🤖 [[Known Issues]] **D1's fallback fix** · P3 · 🤖 Auto — done: `Log.hpp`'s
       `TE_LOG_ACTIVE_LEVEL` fallback matches CMake's per-config default (`INFO` under `NDEBUG`,
       else `TRACE`) per D1's written fix, plus a config-table Catch2 case mirroring
@@ -292,7 +293,9 @@ see the cut order.**
 
 1. **S5-T9** (raw input). Named first inside Story D and buys back a whole 🟠. M4's proof is the
    triangle on the render thread, and input is not part of it.
-2. **S5-P1** and the two 🤖 cards with it. Buys back 1 🟡 and about 30 minutes of PR review.
+2. **The two 🤖 cards.** Buys back about 30 minutes of PR review and no day capacity, since they
+   run in the lane. **S5-P1 left this rung on 2026-09-01**, closed rather than cut, so the 🟡 it
+   used to buy back is already banked.
 3. **S5-T5's testbed half.** Keep the mount set, defer `projects/dev/`'s contents.
 4. **All of Story D**, meaning T6 → P4 → T7 → T8 together. This is the Tier 2 drop. Cutting
    the story cuts S5-P4 with it, since nothing else needs xvfb.

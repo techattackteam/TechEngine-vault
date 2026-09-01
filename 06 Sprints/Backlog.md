@@ -293,6 +293,17 @@ groups are kept, because they show where future work will land.
   rewording" was carried out on [[Sprint Board]] on Aug 31 — ADR-017 § *Consequences* carries
   the same now-satisfied bullet. **Trigger:** fired — pull with the next [[Project — Design]]
   edit.
+- #prio/medium · **A prompt edit in the vault does not reach the running routine, and nothing
+  catches the gap** — `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] § *The prompt* on
+  Aug 31 at 11:06 Lisbon, and the fire five hours later still received the old four-fire text.
+  Five sentences differed, all of them the fire count, and it was harmless only because the
+  one-PR-per-day cap is worded identically in both. The vault copy is supposed to be the one
+  you edit against, so every prompt change silently owes a manual paste into the routine and a
+  missed paste looks like nothing at all. It is not a card the lane can take: a fire can only
+  see the prompt it received, never the one it should have. Options: a version line at the top
+  of the prompt that each report echoes back, or a step in `/weekly-review` that diffs the two.
+  **Trigger:** fired — found by the 2026-08-31 second fire, carded at S5-P1's close.
+  Recorded as a permanent property in [[Autonomous Lane — Design]] § *State* meanwhile.
 
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.

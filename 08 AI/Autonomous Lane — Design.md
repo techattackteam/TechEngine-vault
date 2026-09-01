@@ -282,12 +282,21 @@ Note when creating or recreating one: pass `clear_mcp_connections: true` immedia
 the server attaches Google Drive and Claude Code Remote by default and `mcp_connections: []` on
 create is ignored.
 
-Two things left.
+**Observed across four fires, 2026-08-31 and 2026-09-01** (S5-P1). The report shape holds: one
+note per day, a section appended per fire, and each fire reading what the earlier ones did
+rather than redoing it. The sharpest evidence is the Sep-1 second fire declining to re-enter
+S5-P3, because the morning fire had taken it and left it open.
+
+**Two gaps the watching found.**
+
+| Found | Consequence |
+|---|---|
+| **A prompt edit in the vault does not reach the running routine.** `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] on Aug 31, and the fire five hours later still received the old four-fire text. | The vault is supposed to be the copy you edit against. Nothing propagates it, so every prompt change owes a manual paste into the routine. |
+| **An empty Auto lane leaves a second fire with no work by construction.** With no card takeable and a static `master`, both report-only fallbacks are exhausted by the first fire. | The fire still spends the weekly usage allowance, which is the cost the schedule was cut on. Pause the routine, or seed the lane, across a gap with no cards. |
+
+One thing left.
 
 1. **The PR path is still unproven.** Every run so far has been report-only, so nothing has yet
-   branched, built and opened a PR unattended. The first real 🤖 Auto code card is that test,
-   and it should be a small one.
-2. **Sprint 05 fills the Auto lane** at its `/sprint-plan`. The [[Backlog]] is the obvious first
-   population: the ccache key, the `App.cpp` coverage exclusion, the
-   `FETCHCONTENT_UPDATES_DISCONNECTED` comment and the `<chrono>` measurement all pass the four
-   questions.
+   branched, built and opened a PR unattended. **S5-P2 is that test**, unblocked on 2026-09-01
+   when S5-P1 closed and its ordering clause was discharged. It also inherits S5-P1's dropped
+   clause, the **one-PR-per-day cap**, which only a PR-opening run can observe.

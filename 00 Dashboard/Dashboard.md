@@ -192,11 +192,12 @@ Recently locked — full set in [[ADR Index]]:
   **Cut from four fires a weekday to two on 2026-08-31**: the binding cost is Claude's weekly
   usage limit, not CI minutes, which never bound because the cap was already one PR per day.
   **Four fires have now run**, two on Aug 31 and two on Sep 1, each appending to that day's
-  report note and reading what the earlier ones did. **Still unproven: the PR path**, because
-  every run so far was report-only. **S5-P1** closes the observation half; **S5-P2** is the
-  lane's first code card ([[Known Issues]] D1's fallback fix) and is what finally tests the PR
-  path. Both Sep-1 fires declined S5-P2 on [[Sprint Board]]'s "**ordered before P2**" clause, so
-  **closing S5-P1 is what unblocks it**.
+  report note and reading what the earlier ones did. **S5-P1 closed 2026-09-01** on exactly
+  that observation, re-scoped to drop a one-PR-per-day clause no report-only fire could ever
+  reach. **Still unproven: the PR path**, because every run so far was report-only. **S5-P2** is
+  the lane's first code card ([[Known Issues]] D1's fallback fix) and is what finally tests it.
+  Two Sep-1 fires declined S5-P2 on S5-P1's ordering clause; that clause is now discharged, so
+  **the next fire should take it**.
 - [ ] task-graph · renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20** — § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.
