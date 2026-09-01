@@ -237,9 +237,9 @@ with a mount set nobody could explain.
 ### Two v1 defects the port must not inherit
 
 - **The aliases are stored bare, with no `://`.** v1 wrote `mount("editorAssets://", ...)`,
-  which stores the separator as part of the key so no virtual path can ever match it. That is
-  [[Known Issues]] **D2**, still open, and S5-T2 fixes it with a `TE_CHECK` in `mount()`. The
-  fix has to land **before** this port, or the port writes the defect into the design.
+  which stores the separator as part of the key so no virtual path can ever match it. S5-T2
+  closed that on 2026-09-01: `mount()` now rejects an empty alias, a `/` and a `:` with three
+  fatal `TE_CHECK`s, so the v1 spelling cannot reach the table at all.
 - **`executablePath()`, never `current_path()`.** v1 built its runtime paths from
   `std::filesystem::current_path()` (`ProjectManager.hpp:51`), which breaks the moment the
   binary is launched from another working directory. S5-T1's clause bans the fallback outright.
@@ -361,7 +361,7 @@ pins to root, name, shader dir and asset dirs.
   loads it by default". With the manifest editor-only, `projects/dev/` is the **editor's**
   testbed, and the runtime's leg of that card is the fixed bootstrap instead.
 - **S5-T2 becomes a hard prerequisite of the mount port**, not just an ordering preference.
-  [[Known Issues]] D2 is the exact defect the v1 alias spelling carries in.
+  The v1 alias spelling carries the defect in. **Closed 2026-09-01.**
 - **`FileResult` gains two values**, so [[File Access — Design]] § *The read surface* needs its
   enum listing updated when S5-T3 lands.
 - **`run()` becomes the `App` base class**, so both `main()` files and the whole composition
@@ -382,7 +382,7 @@ pins to root, name, shader dir and asset dirs.
 - [[ADR-006 — v2 core architecture & module layout]] §1 (module and executable graph, and the
   undefined `tooling` tier) · §4 (composition root and `EngineContext`)
 - [[Roadmap]] § *M3 — the dev testbed* (`Roadmap.md:105-114`) for the minimal-manifest rule.
-- [[Known Issues]] **D2** (alias validation, blocks the mount port) · **D3** (symlinks)
+- [[Known Issues]] **D3** (symlinks)
 - v1 prior art at the `v1-reference` tag: `runtime/editor/src/project/Project.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp` ·
   `runtime/editor/src/scripting/ScriptsCompiler.cpp`

@@ -42,10 +42,12 @@ kanban-plugin: board
 	  **Rewritten Aug 31: the old "runtime loads it by default" is reversed by ADR-017.** done:
 	  `EditorApp::init()` mounts `project` from `argv` and `engine` off `executablePath()`,
 	  reads the manifest, mounts the `assets` and `shaders` it names; `RuntimeApp::init()`
-	  mounts a fixed layout and **reads no manifest**; **the `TODO(S3-T13)` demo-mount block is
-	  deleted from `App.cpp` and `engine/app/CMakeLists.txt`**; `projects/dev/` exists at repo
+	  mounts a fixed layout and **reads no manifest**; `projects/dev/` exists at repo
 	  root as data with a real `project.toml` and **the editor** loads it by default.
 	  Needs S5-T1, S5-T4, S5-T11.
+	  **Demo-mount clause struck Sep 1 — landed early, in two halves.** S5-T11 took the
+	  `App.cpp` half; the CMake half, the assets and a stale `.gitignore` rule went in their own
+	  PR ahead of this card.
 
 
 ## 📋 C · M4's gate · ✅ **complete** *(S5-D2, Aug 30)*
@@ -108,12 +110,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light
-	  done: `mount()` rejects an empty alias, one with `/`, and one with `:` via `TE_CHECK` with
-	  a defined path; a Catch2 case pins each; **[[Known Issues]] D2 deleted in the same commit.**
-	  **First, because D2's own trigger says fix it before the M3 mount port.**
-	  Optional ride-along: D3 is in the same file, but its fix costs a directory scan per
-	  component, so taking it is a deliberate call.
 
 
 ## 👀 Review / Demo
@@ -122,6 +118,35 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light **→ 🟠 Moderate** ·
+	  **Sep 1**, `4e3c6f7f` (#64). Empty PR body, no review comments; the review happened in
+	  session. **[[Known Issues]] D2 deleted.**
+	  **The `done:` clause named a shape that cannot work.** It asked for `TE_CHECK` "with a
+	  defined path, following the `EventRegistry::registerType` shape". That shape writes a
+	  recovery path after a **fatal** check, which no sanctioned handler ever reaches. Two
+	  versions were written and deleted proving it: an `if (!TE_VERIFY(...)) return;` form, wrong
+	  tier for composition-root config, then a bare-`TE_CHECK` form whose cases asserted a
+	  post-rejection state production cannot produce.
+	  **It produced an ADR amendment the gate did not expect** — the sprint's second gate miss,
+	  the same shape as the first. ADR-011 §5 never said whether a fatal check's abort was
+	  reachable-past, and the engine had shipped **both** readings. Settled by a dated `decision`
+	  amendment on Sep 1.
+	  **Ten mis-tiered sites moved `TE_CHECK` → `TE_ENSURE`**, pulled into the card mid-flight:
+	  five in `EventRegistry.cpp`, three in `JobSystem.cpp`, one each in `Writer.cpp` and
+	  `Writer.hpp`, all carrying graceful degradation after a fatal check. **Not re-tiered:**
+	  `EventStream.cpp:13-14` and `JobSystem.cpp:143-145`, which have no recovery path — the
+	  latter's continuation runs for every task, throwing or not, so it is normal flow.
+	  **`AssertCapture.hpp` moved to `tests/support/`** and gained a second, **throwing** guard,
+	  which ADR-011 §5 had already anticipated ("tests scope-swap a throw/flag policy"). It makes
+	  the stop observable rather than swallowed.
+	  **Report-once bit back.** Two `EventRegistryTests` cases hit one `TE_ENSURE` call site, so
+	  the later one's fire count survives only because `catch_discover_tests` gives each case its
+	  own process. The count was dropped from that case rather than left to break a direct exe
+	  run. On [[Backlog]].
+	  **Retro line: a 🟡 became a 🟠 mid-flight**, taking the 🟠 column to six against two.
+	  Nothing about the three alias rules was wrong. The sizing missed that writing them would
+	  ask a question ADR-011 had left open.
+	  **Unblocks S5-T1.** Does not close Story B.
 - [x] **S5-P1** · watch the routine's first real fires · P2 · 🟡 Light · **Sep 1**. Attended
 	  and vault-only, so no branch and no PR. **Both surviving clauses confirmed across four
 	  fires**, two on Aug 31 and two on Sep 1: one report note per day with a section appended
@@ -151,7 +176,8 @@ kanban-plugin: board
 	  batch and the math format lines are all gone instead. That leaves the `TODO(S3-T13)`
 	  block, `TE_DEMO_ASSETS_DIR`, `engine/app/assets/demo.txt` and `demo-material.bin`
 	  **orphaned**: S5-T5 was going to delete them with their consumer, and the consumer went
-	  first. S5-T5 should now sweep them.
+	  first. Swept Sep 1 in a PR of its own, which also found the `.gitignore` rule for
+	  `demo-material.bin` still standing with nothing left to write it.
 	  **All four virtuals shipped pure**, against both this card's clause and
 	  [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Decision* 3, which
 	  makes `init()` the only pure one. The cost the ADR predicted is already visible: four

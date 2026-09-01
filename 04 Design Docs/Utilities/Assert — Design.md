@@ -31,6 +31,7 @@ reference is given and the rationale is not copied. Go to the ADR for the *why*.
 | Decision | Where |
 |---|---|
 | **Four tiers**, in the table below, plus **one hookable handler**. | ADR-011 §5 |
+| A **fatal** tier does not return to the call site, so no recovery path is written after one. A handler that returns from a fatal failure is out of contract. | ADR-011 § *Amended 2026-09-01* |
 | `TE_VERIFY` always **evaluates** its condition, and aborts in dev builds only. This **supersedes ADR-006 §6's tier clause**. | ADR-011 §5 |
 | `TE_ASSERT` is **on** in RelWithDebInfo. | ADR-011 §5 |
 | `TE_ENSURE`'s report-once is **per call site**, through a function-local static. | ADR-011 §5 |
@@ -83,6 +84,17 @@ flowchart TD
 - **Prefer `ENSURE` over `CHECK` for anything survivable.** A hard abort in a player's session
   is a last resort. Reserve `CHECK` for genuinely unrecoverable state, such as a corrupt
   allocator or a lost device.
+- **Code after a fatal check is unreachable, so writing one is the tell that the tier is
+  wrong.** If there is something sensible to do when the condition fails, the tier is
+  `TE_ENSURE`, which returns `bool` for exactly that. S5-T2 re-tiered ten sites found this way,
+  every one of them a `TE_CHECK` with graceful degradation written underneath it. The two that
+  stayed fatal have nothing after them at all. **A continuation that runs whether or not the
+  check fired is not a recovery path** — `JobSystem.cpp:143-145` completes its batch either
+  way, and stays `TE_CHECK`.
+- **A test observes a fatal check by swapping in a throwing handler**, never by letting one
+  return. `TechEngineTests::FatalAssertGuard` does this, and a case reads `REQUIRE_THROWS_AS`.
+  The throw calls `std::terminate` across a `noexcept` boundary or a destructor, and any
+  `catch (...)` in between swallows it, so the counting `AssertHandlerGuard` still covers those.
 - **An assert is not an Error log.** An assert says "this is impossible, it is a programmer
   bug". An Error says "the world did something bad, and we handled it". See
   [[Logger — Design]]'s level rules. These rules may move to the root `CONVENTIONS.md` when B4

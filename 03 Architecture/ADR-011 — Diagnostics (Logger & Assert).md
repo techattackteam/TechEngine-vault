@@ -18,6 +18,15 @@
   **rotating** (5 MB × 3). Found in S2-T5: rotation keeps N stale runs on disk for no
   consumer and makes "which file is *this* run?" ambiguous. Nothing else changed — the sink
   is still synchronous, still degrades to console-only if unopenable.
+- **Amended 2026-09-01 — decision:** §5's **fatal tiers do not return to the call site**. The
+  statement after a failing `TE_CHECK` is unreachable, and the same holds for `TE_ASSERT` and
+  `TE_VERIFY` in a dev build. The clause was silent on this and both readings shipped:
+  `EventStream.cpp:13` relies on the abort, while `JobSystem.cpp:14` and `Writer.cpp:61` write a
+  recovery path after a fatal check. No sanctioned configuration reaches those paths. `base`'s
+  handler aborts, and §5 already has tests scope-swapping a **throw** policy, which unwinds. A
+  handler that *returns* from a fatal failure is out of contract. Code that must continue takes
+  `TE_ENSURE`, the tier that returns `bool` for exactly that. Found in S5-T2, where a
+  `MountTable::mount()` check had no correct behaviour under a returning handler.
 - **Supersedes:** **ADR-006 §6's assert-tier clause only** — the `TE_VERIFY`
   semantics in "`TE_CHECK/TE_VERIFY` always-on for shipped invariants" (ADR-006
   `:254-255`). ADR-006 §6's **logging bullet**, its **`TE_ASSERT`** semantics, the
@@ -167,6 +176,11 @@ shipping, and does failure abort in shipping.
 | `TE_VERIFY` | ✅ | ❌ (dev-only abort) | as ASSERT, but `cond` has a **side effect to keep**, or you branch on the result |
 | `TE_CHECK` | ✅ | ✅ **fatal** | continuing is unsafe / UB in **any** build |
 | `TE_ENSURE` | ✅ | ❌ **non-fatal** — log + continue, **report-once**; returns `bool` | recoverable-but-wrong; degrade gracefully |
+
+> **Amended 2026-09-01:** a **fatal** row does not return to the call site. The statement after
+> it is unreachable when it fires, in every sanctioned configuration: `base`'s handler aborts,
+> and a test handler throws. A handler that returns from a fatal failure is out of contract, so
+> no recovery path is written after one. Wanting to continue means the tier is `TE_ENSURE`.
 
 - **What changed vs ADR-006 §6:** §6 said two-tier, with `TE_CHECK`/`TE_VERIFY` both
   "always-on for shipped invariants". `TE_CHECK` is preserved and sharpened (always-on,

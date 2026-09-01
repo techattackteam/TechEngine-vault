@@ -102,6 +102,16 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
+- #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
+  directly** — report-once is per call site through a function-local static (ADR-011 §5), and
+  `catch_discover_tests` hides that by giving every Catch2 case its own process. Two
+  `EventRegistryTests` cases hit the duplicate-tag site, and S5-T2 dropped the fire count from
+  the second rather than leave the trap armed. That is a patch, not a fix: the next suite that
+  asserts a fire twice through one site inherits the same split behaviour, and it will look
+  like a flake. Options are a test-only reset hook on the report-once static, or a rule that a
+  fire count is asserted at exactly one case per site. **Trigger:** the next card that adds a
+  `TE_ENSURE` case, or the first developer confused by a green `ctest` and a red exe.
+
 - #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
   fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool
   (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:116`) and `Reader` carries a sticky

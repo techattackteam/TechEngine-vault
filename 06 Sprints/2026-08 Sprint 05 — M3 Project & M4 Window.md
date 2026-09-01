@@ -39,7 +39,7 @@
 |---|---|---|---|
 | **Project / M3** — manifest schema · root resolution · the mount set · the five mutating calls | ❌ → **✅ ADR-017** | ✅ | **Coverage gap, said out loud: no note exists.** [[File Access — Design]] covers the VFS and stops at the project. → **S5-D1**, done 2026-08-31. <br>**The `❌ ADR` call was wrong, and this is the sprint's main planning miss.** "The decisions are largely settled" held for the manifest and the mount set. It did not hold for *who bootstraps*: the runtime's relationship to the manifest was never decided anywhere, and settling it took [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]]. That ADR added **Story F**, and Story B did **not** size normally. |
 | **Window / M4**: glad2 vendoring · what `platform` owns · the M4-level context handoff · headless CI | ❌, ADR-015 §2 already decided the owner | ✅ | **Second coverage gap.** No ADR is owed: ADR-006 §1, ADR-008 §4 and ADR-015 §2 between them decide module, vendoring and ownership. What is open is **mechanism**, which is a note's job. Heavy, so Story D was held unsized. → **S5-D2**, done 2026-08-30, and it moved ADR-006 §1 by dated amendment |
-| `executablePath` · mount validation · the routine · the two Auto cards | ❌ | ❌ | Reversible and local, straight to cards. |
+| `executablePath` · mount validation · the routine · the two Auto cards | ❌ **→ mount validation needed an ADR amendment** | ❌ | Reversible and local, straight to cards. <br>**The second gate miss of the sprint, and the same shape as the first.** "Reversible and local" held for the three alias rules. It did not hold for *what a fatal check guarantees*: writing the card's `TE_CHECK` clause exposed that ADR-011 §5 never said whether the abort was reachable-past, and the engine had shipped both readings. Settled by a dated amendment on 2026-09-01, which then re-tiered ten call sites across `core`. See S5-T2. |
 
 ## Stories & tasks
 
@@ -100,13 +100,31 @@
 > Ordering: **T2 → T1 → T3 → T4 → T5**, after Story F. T2 is first because [[Known Issues]]
 > **D2** names the M3 mount port as its trigger and says to fix it *before* that port.
 
-- [ ] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light — done: `mount()` rejects an
-      empty alias, one containing `/`, and one containing `:` via `TE_CHECK` with a defined
-      path, following the `EventRegistry::registerType` shape; a Catch2 case pins each;
-      **[[Known Issues]] D2 is deleted in the same commit.** Optional ride-along: **D3** lives
-      in the same file (`MountTable.cpp`), so its per-component spelling check may ride this
-      PR. Its fix costs a directory scan per component, so taking it is a deliberate call
-      rather than automatic.
+- [x] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light **→ 🟠 Moderate** —
+      **done 2026-09-01**, `4e3c6f7f` (#64). Entry on [[Sprint Board]].
+      **rewritten 2026-09-01 mid-card. The original clause named the wrong mechanism, and
+      following it surfaced a contract the ADR never settled.** It read "via `TE_CHECK` with a
+      defined path, following the `EventRegistry::registerType` shape". That shape writes a
+      recovery path after a fatal check, which no sanctioned handler ever reaches, and building
+      it required a test that inspected a state production cannot produce. Settling it took
+      [[ADR-011 — Diagnostics (Logger & Assert)]] § *Amended 2026-09-01*, which the artifact
+      gate marked as needing no ADR work. **The re-tier below is the price of that amendment,
+      and it is what moved the weight.**
+      done: `mount()` rejects an empty alias, one containing `/`, and one containing `:` with
+      three bare `TE_CHECK`s and **no recovery path**, since a fatal tier does not return;
+      a `FatalAssertGuard` in `tests/support` swaps in a throwing handler so a Catch2 case reads
+      `REQUIRE_THROWS_AS` rather than inspecting a table after an abort; `AssertCapture.hpp`
+      moves from `engine/core/tests/events/` into `tests/support/` so a second module can reach
+      it; **the ten mis-tiered `TE_CHECK` sites move to `TE_ENSURE`** — five in
+      `EventRegistry.cpp`, three in `JobSystem.cpp`, one each in `Writer.cpp` and `Writer.hpp`,
+      all of which carried graceful degradation after a fatal check; their Catch2 cases assert
+      `AssertKind::Ensure`; **[[Known Issues]] D2 is deleted in the same commit.**
+      **Not re-tiered, and the distinction is the rule:** `EventStream.cpp:13-14` and
+      `JobSystem.cpp:143-145` have no recovery path. The job-worker pair sits inside a `catch`,
+      so the throwing guard cannot reach it and that suite keeps the counting guard.
+      Optional ride-along: **D3** lives in the same file (`MountTable.cpp`), so its
+      per-component spelling check may ride this PR. Its fix costs a directory scan per
+      component, so taking it is a deliberate call rather than automatic.
 - [ ] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate — done: `GetModuleFileNameW`
       on Windows and `/proc/self/exe` on Linux behind one signature in `platform`, with a
       Catch2 case asserting the returned path exists and names the running test binary; no
@@ -138,10 +156,17 @@
       the root from `argv` and `engine` off `executablePath()`, reads the manifest and mounts
       the `assets` and `shaders` it names, all into the one `MountTable` the base class owns;
       `RuntimeApp::init()` mounts a fixed layout off `executablePath()` and **reads no
-      manifest**; **the `TODO(S3-T13)` demo-mount block is deleted from both `App.cpp` and
-      `engine/app/CMakeLists.txt`**; `projects/dev/` exists at repo root as data, not a CMake
+      manifest**; `projects/dev/` exists at repo root as data, not a CMake
       target, with a real `project.toml`, and **the editor** loads it by default.
       Needs S5-T1, S5-T4, S5-T11.
+      **The demo-mount clause is struck, 2026-09-01: it landed early and in two halves.**
+      It read "the `TODO(S3-T13)` demo-mount block is deleted from both `App.cpp` and
+      `engine/app/CMakeLists.txt`". S5-T11 took the `App.cpp` half by deleting the demo body
+      rather than moving it, which left the define feeding nothing, and the CMake half went
+      with the assets in its own PR ahead of this card. **A fifth item came with it that no
+      card had named:** `.gitignore` still hid `engine/app/assets/demo-material.bin`, a blob
+      written by the S4-T7 demo, so the rule outlived its writer and would have masked a real
+      file at that path.
 
 ### Story C — M4's gate *(Design · ordered before Story D)*
 
@@ -243,6 +268,9 @@
 - [x] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
       **2026-08-31**, `76056402` (#62) and `b6273327` (#63).
 - [ ] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.
+      **D2 deleted 2026-09-01, `4e3c6f7f` (#64).** The demo mount's own removal is in a PR of
+      its own, cut off S5-T5's clause because both halves landed before that card starts.
+      Tick this line when that merges.
 - [ ] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
       each with a filled *Decided* table, and neither story was cut before its artifact.
 
@@ -269,14 +297,19 @@ Sprint 04 review, its last two merges and this planning session, so **only Sep 5
 | 🟠 Moderate | 2 | 2 |
 | 🟡 Light | 2-4 | 2 |
 
-**Re-counted 2026-08-31, after S5-D1 landed and Story F was cut off ADR-017. Remaining draw:
-5 🟢 · 5 🟠 · 3 🟡 · 2 🤖.**
+**Re-counted 2026-08-31, after S5-D1 landed and Story F was cut off ADR-017, then again
+2026-09-01 when S5-T2 changed weight. Remaining draw: 5 🟢 · 6 🟠 · 2 🟡 · 2 🤖.**
 
 - 🟢 — T11, T3, T4, T7, T8. **5 against 6-7.** D1 is banked and left the table; T11 took the
   slot it freed, so the slack the 2026-08-30 recount found is gone rather than spent.
-- 🟠 — **T10**, T1, T5, T6, T9. **Five against two.** This was double capacity on 2026-08-30
-  and is now **two and a half times** it.
-- 🟡 — T2, P1, P4. **Over by one**, unchanged.
+- 🟠 — **T10**, T1, T5, T6, T9, **T2**. **Six against two.** This was double capacity on
+  2026-08-30 and is now **three times** it.
+- 🟡 — P1, P4. **At capacity**, for the first time this sprint, and only because T2 left.
+
+**Re-counted again 2026-09-01: T2 moved 🟡 → 🟠 mid-card.** It was sized as a three-line
+`TE_CHECK` and turned into an ADR-011 amendment plus a ten-site re-tier across `core`. The 🟡
+column coming back to capacity is not slack: the same work moved into the column that was
+already the failure point.
 
 **The 🟠 column stopped being an overrun and became the plan's failure point.** At double it
 fit only if two got absorbed by deep days and nothing went wrong, which the 2026-08-30 note

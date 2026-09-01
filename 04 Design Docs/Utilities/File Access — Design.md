@@ -48,6 +48,7 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **Case** | Case-sensitive on every platform. The resolver never case-folds. | See *Case sensitivity* |
 | **Errors** | A `FileResult` enum is the return value. Data comes back through an out-param. No exceptions. | See *Resolution* |
 | **Path validation** | A malformed path is rejected before it reaches a mount. | S3-T11 |
+| **Alias validation** | `mount()` rejects an empty alias, a `/` and a `:` with fatal checks, so the two ends cannot disagree about what an alias is. The rules mirror `splitVirtualPath`'s. | S5-T2 |
 | **Async** | None. Every call is synchronous. | See *Open questions* |
 | **Surface** | One class. `read` and `write` both live on `FileAccess`. The other five mutating calls are M3. | See *The write surface* |
 | **Mount authority** | Only the composition root mounts. `mount()` lives on `MountTable`. | See *Wiring* |
@@ -377,10 +378,9 @@ two failure surfaces a caller has to check, is in [[Serialization â€” Design]] Â
 - **Archive mounts.** Mounting a `.pak` file instead of a directory. `MountTable`'s shape
   allows it. No consumer needs it before shipping.
 - **Threading.** Goes to M2's threading ADR. See above.
-- **Two live defects.** Both came out of S3-T11's review, and neither blocks T12.
-  [[Known Issues]] **D2**: `mount()` validates nothing, so fix it before M3 ports v1's mount
-  set. [[Known Issues]] **D3**: `canonical()` and symlinks, described under
-  *Case sensitivity*.
+- **One live defect.** [[Known Issues]] **D3**: `canonical()` and symlinks, described under
+  *Case sensitivity*. It came out of S3-T11's review alongside the `mount()` validation gap,
+  which S5-T2 closed on 2026-09-01.
 
 ## References
 

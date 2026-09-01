@@ -79,29 +79,6 @@ next card that touches the logging gate.
 
 ---
 
-### D2 — `MountTable::mount()` accepts an alias no virtual path can match
-
-`mount()` validates nothing. `mount("editorAssets://", root, 100)` stores the alias **with**
-the separator; `splitVirtualPath` yields `"editorAssets"`, `entry.alias != parts.alias`, and
-every read through that mount returns `NoMount`. Empty and `"a/b"` aliases are the same class.
-
-**Silent because both ends look fine.** The mount call succeeds, `mountCount()` counts it,
-`entries()` lists it — and every lookup misses. Nothing reports it at mount time, and
-`NoMount` at resolve time reads as "you asked for the wrong alias".
-
-`engine/platform/src/files/MountTable.cpp:31` (no validation) ·
-`engine/platform/src/files/VirtualPath.cpp:36` (the alias the split produces)
-
-**Proposed fix** — `TE_CHECK` in `mount()`: alias non-empty, no `/`, no `:`. `base` is already
-a `DEPS` of `platform`, and `EventRegistry::registerType` is the precedent for the shape
-(check, then a defined path). Plus a Catch2 case, which S3-T11 has no equivalent of.
-
-**Trigger: M3 project creation.** v1 spelled every mount `"editorAssets://"`
-(`runtime/editor/src/project/ProjectManager.cpp:262-271` @ `v1-reference`), and [[File Access — Design]]
-§ *Consumers* has M3 lifting that mount set. Fix it **before** that port, not after.
-
----
-
 ### D3 — the case check rejects any path through a symlink
 
 `matchesOnDiskCase` compares `canonical(candidate)` against `canonicalRoot / relative`.
