@@ -215,23 +215,6 @@ groups are kept, because they show where future work will land.
   day a case asserts on a repo-committed file's *contents* and the two CI legs disagree
   (scratch-directory assets are written by the test, so they are unaffected).
   **Trigger:** the first test that reads a committed asset rather than a scratch one.
-- #prio/high · **A vault merge silently reverted the whole Sprint 05 Dashboard update, and
-  nothing could have caught it** — `13cb3e0` (Sun Aug 30 19:27) rewrote
-  [[Dashboard]] for Sprint 05 and sat unpushed overnight. The two Aug-31 autonomous fires
-  branched from `cf37a5b`, correctly, because that was still `origin/master` when they ran.
-  Miguel's `git pull` that evening produced merge `9947c75`, and for the Dashboard it took the
-  auto-run side **wholesale**: `git diff e4a33e7 9947c75 -- "00 Dashboard/Dashboard.md"` is
-  empty, so **none** of the sprint-plan's 111 lines survived. Lost with it: the Sprint 05 row,
-  goal, focus and milestone; the `**Reconciled against**` advance to `01ed7a30`; the Aug-30
-  "no new drift" narrative; the corrected next-ceremony line; the 6-7 🟢 capacity note; and the
-  Aug-30 health check. The structural point is that **ADR-012 §2 gives the vault no PR and no
-  CI**, so a bad merge resolution there is the one change in this project nothing reviews — and
-  the autonomous lane now writes to that repo twice a weekday, so divergence is the normal
-  case rather than the rare one. Options worth a look: push the ceremony commit before the
-  next fire, have the lane touch only [[Backlog]] and [[07 Journal]] (never hub notes), or add
-  a cheap post-merge assertion that the Dashboard's sprint row still names the current sprint.
-  **Trigger:** fired — found by S5-P3, 2026-09-01. Recovery is in that day's report.
-
 - #prio/medium · **Snapshot citations in Accepted ADRs cannot be swept, and S5-P3 had to skip
   them** — [[ADR-011 — Diagnostics (Logger & Assert)]] § *Grounding* says
   `engine/base/CMakeLists.txt:4` "links `spdlog::spdlog` as **PUBLIC** today", and
