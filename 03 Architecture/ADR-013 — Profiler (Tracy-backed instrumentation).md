@@ -73,8 +73,8 @@ is for.
   `TRACY_ON_DEMAND`, `TRACY_ONLY_LOCALHOST`, `TRACY_NO_BROADCAST` as options (root
   `CMakeLists.txt`) — a normal ADR-008 §4 case-1 fetched dep.
 - Our side: `engine/base/CMakeLists.txt:1-4` is the module declaration this extends;
-  `cmake/deps.cmake:88` is the precedent for an **option-guarded** fetch (Catch2 behind
-  `TE_BUILD_TESTS`); `engine/app/src/App.cpp:20-42` is the loop that gets the frame mark.
+  `cmake/deps.cmake:115-120` is the precedent for an **option-guarded** fetch (Catch2 behind
+  `TE_BUILD_TESTS`); `engine/app/src/App.cpp:27-49` is the loop that gets the frame mark.
 
 ## Decision
 

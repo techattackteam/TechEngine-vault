@@ -156,7 +156,7 @@ Landed at S3-T3. `TE_PROFILE=OFF` is the default, and it fetches nothing.
 |---|---|
 | `option(TE_PROFILE … OFF)` | `CMakeLists.txt:16` |
 | Tracy `v0.13.1`, with the fetch guarded by `if(TE_PROFILE)` | `cmake/deps.cmake:91` |
-| `Tracy::TracyClient` PUBLIC, plus `TE_PROFILE_ENABLED`, on `TechEngineBase` | `engine/base/CMakeLists.txt:32` |
+| `Tracy::TracyClient` PUBLIC, plus `TE_PROFILE_ENABLED`, on `TechEngineBase` | `engine/base/CMakeLists.txt:36-37` |
 | The `windows-profile` and `linux-profile` presets (RelWithDebInfo) | `CMakePresets.json` |
 
 The S3-T3 card expected two pieces of work that the build did not need.
@@ -264,5 +264,5 @@ thousands of small tasks is a measurement, and Story D takes it against §6's bu
   `engine/app/src/diagnostics/MemoryTracking.cpp` and `.hpp` (the allocator replacement) ·
   `.github/workflows/ci.yml` (the Tracy-spelling grep) ·
   `engine/base/tests/diagnostics/ProfileTests.cpp` (the OFF-path case) ·
-  `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:32` · `CMakeLists.txt:16` ·
+  `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:36-37` · `CMakeLists.txt:16` ·
   `CMakePresets.json` (build wiring)

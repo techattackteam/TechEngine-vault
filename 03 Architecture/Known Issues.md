@@ -46,7 +46,7 @@ hold there.
 all* — noticed in a minute.
 
 `engine/base/include/TechEngine/base/diagnostics/Log.hpp:17` ·
-`engine/base/CMakeLists.txt:29` (the PUBLIC define that didn't arrive)
+`engine/base/CMakeLists.txt:27` (the PUBLIC define that didn't arrive)
 
 **Proposed fix** — match the CMake per-config default instead of assuming Trace:
 
@@ -66,7 +66,7 @@ compiled.**
 
 **+ a test**, mirroring `AssertTests.cpp`'s config-table case (it compares the library's
 compiled view against the test TU's) — the guard `TE_ASSERT_DEV` already has and this gate
-doesn't, despite being the identical PUBLIC-define shape (`engine/base/CMakeLists.txt:33`).
+doesn't, despite being the identical PUBLIC-define shape (`engine/base/CMakeLists.txt:30-31`).
 
 **Alternative considered:** `#error` when the define is absent — strictest, turns silent into
 unbuildable. Rejected for now: ADR-011 §10 leaves SDK exposure open, and if `te_sdk` ships
@@ -89,8 +89,8 @@ every read through that mount returns `NoMount`. Empty and `"a/b"` aliases are t
 `entries()` lists it — and every lookup misses. Nothing reports it at mount time, and
 `NoMount` at resolve time reads as "you asked for the wrong alias".
 
-`engine/platform/src/files/MountTable.cpp:27` (no validation) ·
-`engine/platform/src/files/VirtualPath.cpp:33` (the alias the split produces)
+`engine/platform/src/files/MountTable.cpp:31` (no validation) ·
+`engine/platform/src/files/VirtualPath.cpp:36` (the alias the split produces)
 
 **Proposed fix** — `TE_CHECK` in `mount()`: alias non-empty, no `/`, no `:`. `base` is already
 a `DEPS` of `platform`, and `EventRegistry::registerType` is the precedent for the shape
@@ -115,7 +115,7 @@ A symlinked *root* is fine — both sides get canonicalised. Only links inside t
 from "the resolver disqualified it", and the case rule that caused it is invisible from the
 call site.
 
-`engine/platform/src/files/MountTable.cpp:7`
+`engine/platform/src/files/MountTable.cpp:11`
 
 **Proposed fix** — per-component `directory_iterator` spelling check instead of `canonical`:
 it never leaves the logical path, so links are transparent. Costs a directory scan per

@@ -95,7 +95,7 @@ groups are kept, because they show where future work will land.
 - #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
   fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool
   (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:116`) and `Reader` carries a sticky
-  `ReadStatus` (`engine/core/include/TechEngine/core/serialization/Reader.hpp:14`, per ADR-016).
+  `ReadStatus` (`engine/core/include/TechEngine/core/serialization/Reader.hpp:15`, per ADR-016).
   Nothing throws across an API boundary and nothing uses `std::expected`, so it ratifies two
   existing shapes rather than opening a three-way choice. It also owns the `[[nodiscard]]`
   revisit (`CONVENTIONS.md` § *Attributes*). **Trigger:** fired — pull at the next
@@ -109,7 +109,9 @@ groups are kept, because they show where future work will land.
   than a version preference, because Tracy compiles its ProtocolVersion into both sides, so a
   reader trusting either artifact pairs the client with the wrong desktop app and gets a refused
   connection. It wants a dated amendment on an Accepted ADR, which is a decision rather than a
-  sweep. **Trigger:** fired — found by the 2026-08-30 freshness check.
+  sweep. **There is a third site:** [[B3 — Build & Testing Notes]] § *Profiling builds* also
+  names `v0.13.1`, so the amendment sweeps three artifacts, not two.
+  **Trigger:** fired — found by the 2026-08-30 freshness check; third site added by S5-P3.
 
 - #prio/high · **The ccache key is write-once, so master's cache is frozen and hits are 21%** —
   S4-P1's key is `v1-<leg>-<hash of deps.cmake>`. GitHub caches are immutable per key and the
@@ -203,6 +205,67 @@ groups are kept, because they show where future work will land.
   day a case asserts on a repo-committed file's *contents* and the two CI legs disagree
   (scratch-directory assets are written by the test, so they are unaffected).
   **Trigger:** the first test that reads a committed asset rather than a scratch one.
+- #prio/high · **A vault merge silently reverted the whole Sprint 05 Dashboard update, and
+  nothing could have caught it** — `13cb3e0` (Sun Aug 30 19:27) rewrote
+  [[Dashboard]] for Sprint 05 and sat unpushed overnight. The two Aug-31 autonomous fires
+  branched from `cf37a5b`, correctly, because that was still `origin/master` when they ran.
+  Miguel's `git pull` that evening produced merge `9947c75`, and for the Dashboard it took the
+  auto-run side **wholesale**: `git diff e4a33e7 9947c75 -- "00 Dashboard/Dashboard.md"` is
+  empty, so **none** of the sprint-plan's 111 lines survived. Lost with it: the Sprint 05 row,
+  goal, focus and milestone; the `**Reconciled against**` advance to `01ed7a30`; the Aug-30
+  "no new drift" narrative; the corrected next-ceremony line; the 6-7 🟢 capacity note; and the
+  Aug-30 health check. The structural point is that **ADR-012 §2 gives the vault no PR and no
+  CI**, so a bad merge resolution there is the one change in this project nothing reviews — and
+  the autonomous lane now writes to that repo twice a weekday, so divergence is the normal
+  case rather than the rare one. Options worth a look: push the ceremony commit before the
+  next fire, have the lane touch only [[Backlog]] and [[07 Journal]] (never hub notes), or add
+  a cheap post-merge assertion that the Dashboard's sprint row still names the current sprint.
+  **Trigger:** fired — found by S5-P3, 2026-09-01. Recovery is in that day's report.
+
+- #prio/medium · **Snapshot citations in Accepted ADRs cannot be swept, and S5-P3 had to skip
+  them** — [[ADR-011 — Diagnostics (Logger & Assert)]] § *Grounding* says
+  `engine/base/CMakeLists.txt:4` "links `spdlog::spdlog` as **PUBLIC** today", and
+  [[ADR-015 — Threading (sim on main, render thread owns GL)]] § *Context* says "no
+  `std::thread` exists outside a pacer `yield`". Both were true when written and **both were
+  made false by their own ADR's decision**: spdlog is now `LIBS_PRIVATE` on line 15, and
+  `JobSystem` ships four worker threads. Repointing the line numbers would leave a correct
+  pointer under a false present-tense claim, which is worse than the stale one. The fix is a
+  convention, not an edit: a citation inside a Context or Grounding section is a snapshot and
+  should carry the sha or tag it was taken at, the way [[Project — Design]] already writes
+  "v1 prior art at the `v1-reference` tag". Four sites across the two ADRs.
+  **Trigger:** fired — found by S5-P3, 2026-09-01. Pull with the next ADR amendment either
+  one needs anyway.
+
+- #prio/medium · **Three `App.cpp` citations now point past the end of the file** — #63 cut
+  `engine/app/src/App.cpp` from about 250 lines to 55, and the demo body went with it.
+  [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Context* cites
+  `App.cpp:95` for the `TE_DEMO_ASSETS_DIR` mount, and [[Project — Design]] § *Where this lands*
+  cites `App.cpp:82` as the composition root "and the demo mount it replaces is at line 95".
+  The mount is gone from `App.cpp` entirely; the define it used survives orphaned at
+  `engine/app/CMakeLists.txt:8-11`, still under its `TODO(S3-T13)`. S5-T5 is already scoped to
+  delete that block, so the artifacts want re-pointing **as part of that card** rather than
+  now — the composition root moves in the same commit. This is the one citation class a
+  mechanical in-range check would have caught.
+  **Trigger:** fired — pull with S5-T5.
+
+- #prio/medium · **[[Game Loop — Frame Flow]]'s dated callout is stale on both of its claims** —
+  the block reads "Not wired yet (checked 2026-08-20). The shipped `EngineContext` has exactly
+  one field, `FileAccess& files` … The loop still constructs its own `Clock` locally, at
+  `engine/app/src/App.cpp:49`." `EngineContext` now carries **two** fields, `files` and `jobs`
+  (`engine/core/include/TechEngine/core/EngineContext.hpp:8-9`), and the `Clock` is an `App`
+  member (`engine/app/include/TechEngine/app/App.hpp:20`), not a loop local. Re-dating the
+  block means re-deciding how much of the split is built, which is a design read rather than a
+  sweep. **Trigger:** fired — found by S5-P3, 2026-09-01. Pull with S5-T5 or the next Frame
+  Flow edit.
+
+- #prio/low · **[[Project — Design]] says `apps/editor/CMakeLists.txt:2` repeats ADR-006 §1's
+  `tooling` composition, and it no longer does** — the note's § *A third tier is the standing
+  alternative* leans on that file echoing "app + client + core + **tooling**". Line 2 now reads
+  "Composition = app + client + core (ADR-006 §1). ADR-017 decided no `tooling` tier is created
+  for now", so the file **contradicts** the sentence citing it. The argument still stands on
+  ADR-006 §1 alone; only the second witness is gone. **Trigger:** fired — found by S5-P3,
+  2026-09-01. Pull with the next [[Project — Design]] edit.
+
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
 - #prio/medium · **Point each dep's allocator hook at the profiler** — Jolt
