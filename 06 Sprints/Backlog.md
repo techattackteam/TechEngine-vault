@@ -70,6 +70,16 @@ groups are kept, because they show where future work will land.
   S5-T11 shipped with its central bug (`run()` shadowing every member it owned) invisible to
   the suite for exactly this reason. A frame budget on the constructor makes such a case cheap.
   **Trigger:** the next `App::run()` change, or M4 replacing the count with `shouldClose`.
+- #prio/low · **`engine/app` declares `platform` PRIVATE while its public header uses it** —
+  `engine/app/CMakeLists.txt:6` says `DEPS_PRIVATE platform`, but since #63 the public header
+  `engine/app/include/TechEngine/app/App.hpp` includes `FileAccess.hpp` and `MountTable.hpp`
+  (`:8-9`) and holds `MountTable m_mounts` and `FileAccess m_files` as members (`:16-17`).
+  ADR-008 §8 and `CONVENTIONS.md` § *CMake* both say `PUBLIC` when the dep appears in the
+  target's public headers. It compiles regardless, because `core` links `platform` PUBLIC
+  (`engine/core/CMakeLists.txt:21`) and `app` takes `core` PUBLIC, so every consumer and
+  `TechEngineAppTests` receive platform's include directories through that edge instead.
+  Nothing will ever go red over it, which is why it is worth writing down rather than waiting
+  for it to break. **Trigger:** the next `engine/app/CMakeLists.txt` change.
 
 ## net
 
@@ -265,6 +275,41 @@ groups are kept, because they show where future work will land.
   for now", so the file **contradicts** the sentence citing it. The argument still stands on
   ADR-006 §1 alone; only the second witness is gone. **Trigger:** fired — found by S5-P3,
   2026-09-01. Pull with the next [[Project — Design]] edit.
+
+- #prio/medium · **Every quoted `#include` in the tree arrived in #62 and #63, and the house
+  rule is angle brackets** — `CONVENTIONS.md` § *Includes* says "angle brackets throughout"
+  and "never `"FormatBuffer.hpp"`", and 372 of the 385 `#include` lines under `engine/`,
+  `apps/` and `sdk/` obey it. All 13 that do not sit in the two commits no drift check had
+  covered: `engine/app/src/App.cpp:3-5`, and the mirrored pairs under `apps/editor/` and
+  `apps/runtime/` — each app's own header, its `.cpp`, its `main.cpp` and its test file.
+  Nothing mechanical catches the delimiter: `.clang-format` regroups includes but never
+  rewrites them, and `misc-include-cleaner` is not in `.clang-tidy`'s conservative set. It
+  also costs the sort order the rule exists for — `apps/editor/src/EditorApp.hpp` puts
+  `<TechEngine/core/FrameContext.hpp>` at `:3` and `"TechEngine/app/App.hpp"` at `:5` in two
+  separate blocks, where one delimiter would sort `app` above `core` in a single group.
+  A 13-line mechanical sweep. **Trigger:** fired — found by the 2026-09-01 freshness check.
+
+- #prio/low · **ADR-017 § *Decision* 3's `main()` clause did not ship either, and this half is
+  recorded nowhere** — the clause reads "`main()` lives in a header included once per
+  executable, never in the `app` library", and [[Project — Design]] § *The entry point*
+  repeats it. What shipped at S5-T11 is a `runApp<AppType>()` function template
+  (`engine/app/include/TechEngine/app/EntryPoint.hpp:8-14`), with each executable keeping its
+  own `main()` (`apps/runtime/src/main.cpp:5`, `apps/editor/src/main.cpp:5`). The
+  § *Consequences* bullet built on that clause — `Catch2WithMain` handing `TechEngineAppTests`
+  a second `main()` — is moot as a result. The four-pure-virtuals divergence in the same clause
+  is already recorded in [[Project — Design]] § *The App base class* as owing either a fix or a
+  dated amendment; this half is not, so that amendment would be written without it.
+  **Trigger:** fired — pull with whatever amendment ADR-017 § *Decision* 3 gets.
+
+- #prio/low · **[[Project — Design]] still reads as pre-build in three places** — its header
+  says "**Status:** draft, nothing built" while two of its sections now describe merged code.
+  § *Testing an executable*'s cmake sketch splices `$<TARGET_OBJECTS:editor_obj>` into both
+  executables, and § *`techengine_app()`, as shipped* then records that linking the object
+  library was chosen instead, so a reader who reaches the sketch first gets the shape that did
+  not ship. And § *Consequences*' "S5-T5's `done:` clause contradicts this note and needs
+  rewording" was carried out on [[Sprint Board]] on Aug 31 — ADR-017 § *Consequences* carries
+  the same now-satisfied bullet. **Trigger:** fired — pull with the next [[Project — Design]]
+  edit.
 
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
