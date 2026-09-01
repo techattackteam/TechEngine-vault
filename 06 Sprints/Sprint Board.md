@@ -47,7 +47,7 @@ kanban-plugin: board
 	  Needs S5-T1, S5-T4, S5-T11.
 	  **Demo-mount clause struck Sep 1 — landed early, in two halves.** S5-T11 took the
 	  `App.cpp` half; the CMake half, the assets and a stale `.gitignore` rule went in their own
-	  PR ahead of this card.
+	  PR ahead of this card (`40f7171e`, #65).
 
 
 ## 📋 C · M4's gate · ✅ **complete** *(S5-D2, Aug 30)*
@@ -176,7 +176,7 @@ kanban-plugin: board
 	  batch and the math format lines are all gone instead. That leaves the `TODO(S3-T13)`
 	  block, `TE_DEMO_ASSETS_DIR`, `engine/app/assets/demo.txt` and `demo-material.bin`
 	  **orphaned**: S5-T5 was going to delete them with their consumer, and the consumer went
-	  first. Swept Sep 1 in a PR of its own, which also found the `.gitignore` rule for
+	  first. Swept Sep 1 in a PR of its own, `40f7171e` (#65), which also found the `.gitignore` rule for
 	  `demo-material.bin` still standing with nothing left to write it.
 	  **All four virtuals shipped pure**, against both this card's clause and
 	  [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Decision* 3, which

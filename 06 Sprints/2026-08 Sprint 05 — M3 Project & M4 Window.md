@@ -159,7 +159,8 @@
       manifest**; `projects/dev/` exists at repo root as data, not a CMake
       target, with a real `project.toml`, and **the editor** loads it by default.
       Needs S5-T1, S5-T4, S5-T11.
-      **The demo-mount clause is struck, 2026-09-01: it landed early and in two halves.**
+      **The demo-mount clause is struck, 2026-09-01, `40f7171e` (#65): it landed early and in
+      two halves.**
       It read "the `TODO(S3-T13)` demo-mount block is deleted from both `App.cpp` and
       `engine/app/CMakeLists.txt`". S5-T11 took the `App.cpp` half by deleting the demo body
       rather than moving it, which left the define feeding nothing, and the CMake half went
@@ -267,10 +268,11 @@
       configure-time source path.
 - [x] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
       **2026-08-31**, `76056402` (#62) and `b6273327` (#63).
-- [ ] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.
-      **D2 deleted 2026-09-01, `4e3c6f7f` (#64).** The demo mount's own removal is in a PR of
-      its own, cut off S5-T5's clause because both halves landed before that card starts.
-      Tick this line when that merges.
+- [x] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.
+      **2026-09-01, in two PRs.** D2 deleted in `4e3c6f7f` (#64). The demo mount removed in
+      `40f7171e` (#65), which was cut off S5-T5's clause because both halves landed before that
+      card starts. **This line closed ahead of the card that owned it**, which is why the
+      demo-mount clause is struck on S5-T5 rather than waiting there.
 - [ ] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
       each with a filled *Decided* table, and neither story was cut before its artifact.
 
