@@ -50,6 +50,7 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 | `08 AI` | Technical-lead charter + the day-to-day operating guide |
 | `09 References` | External links and resources |
 | `Templates` | Note templates (ADR, sprint, story, review, research) |
+| `Scripts` | Vault maintenance scripts (`Sync-Papers.ps1`) |
 
 ## Weekly rhythm
 
