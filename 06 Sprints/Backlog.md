@@ -53,6 +53,28 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **File watching** — v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
   [[ADR-014 — Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
+- #prio/medium · **[[File Access — Design]] § *The demo mount is throwaway* describes code that
+  no longer exists** — the section is written in the present tense about a mount of
+  `engine/app/assets/` through `TE_DEMO_ASSETS_DIR`, with a `TODO(S3-T13)` in both `App.cpp`
+  and `engine/app/CMakeLists.txt`. #63 deleted the demo body and #65 deleted the define, the
+  TODO and the assets directory; `TE_DEMO_ASSETS_DIR` and `S3-T13` now appear nowhere under
+  `engine/`, `apps/` or `cmake/`. **Nothing in the tree calls `mount()` outside tests**, so the
+  section's framing — a throwaway mount set that M3 will replace — is wrong in the other
+  direction: there is no mount set to replace. The `platform::executablePath()` fix it points
+  at is still a live [[Backlog]] entry and has to survive whatever replaces the section.
+  **Trigger:** S5-T3 or whichever M3 card first mounts through `project.toml` — that card's
+  author reads this section for the prior art.
+- #prio/low · **[[File Access — Design]] § *Wiring* has the composition root and the
+  `EngineContext` field count wrong** — it says `run()` in `engine/app/src/App.cpp` owns
+  `MountTable` and `FileAccess` by value. Since #63 the owner is the `App` class itself
+  (`engine/app/include/TechEngine/app/App.hpp:16-17`); by-value is still right, the owner is
+  not. The same section says "**`EngineContext` has one field today**, `FileAccess& files`" and
+  it has carried two since `jobs` landed (`EngineContext.hpp:8-9`). **The paragraph under it is
+  the reason this is more than a count:** it argues a service earns a field only when something
+  needs to reach it through the context "and nothing does yet", which `jobs` has already
+  falsified. The Catch2 case the section credits does still exist and still pins
+  reference-not-snapshot (`engine/app/tests/AppTests.cpp:55`). **Trigger:** the next edit to
+  that note, or a second service being proposed for `EngineContext`.
 
 ## core
 
