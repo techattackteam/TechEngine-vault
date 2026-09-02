@@ -35,6 +35,14 @@ groups are kept, because they show where future work will land.
   is the only reason it is there, and `<chrono>` costs ~1200 ms and 73k preprocessed lines per
   TU on MSVC (S4-T1's numbers, [[B3 — Build & Testing Notes]]). It is the engine's most widely
   included header. **Trigger:** a full-rebuild time that actually hurts, measured not guessed.
+- #prio/low · **Setting `TE_LOG_ACTIVE_LEVEL` above Info fails the build** — `TE_LOGGER_*`
+  expands to `TE_LOG_PRIVATE_DISCARD`, which drops its arguments unevaluated by design, so a
+  local that only a discarded call site reads becomes unused and `-Werror` kills the leg.
+  `engine/base/tests/math/MathFormatTests.cpp:47`'s `position` is the one site today, found at
+  S5-P2 with `cmake --preset linux-debug -DTE_LOG_ACTIVE_LEVEL=3`. The cache variable is
+  offered in `engine/base/CMakeLists.txt:18`, and no CI leg sets it, so nothing catches this.
+  **Trigger:** the first build that sets the gate explicitly — a shipping Release config is
+  the likely one.
 - #prio/medium · **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting

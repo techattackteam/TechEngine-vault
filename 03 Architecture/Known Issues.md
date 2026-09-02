@@ -34,51 +34,6 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
-### D1 — `TE_LOG_ACTIVE_LEVEL` fails open
-
-Include `Log.hpp` **without linking `TechEngine::base`** and the `-D` never arrives, so
-`Log.hpp:17` falls back to `TRACE`: every Trace/Debug call site in that TU compiles into
-**Release** — args evaluated and type-erased per call, then dropped by the runtime filter.
-[[ADR-011 — Diagnostics (Logger & Assert)]] §4's "compiled out" guarantee silently doesn't
-hold there.
-
-**Silent because it fails permissive.** Default to `OFF` and a missed link means *no logs at
-all* — noticed in a minute.
-
-`engine/base/include/TechEngine/base/diagnostics/Log.hpp:17` ·
-`engine/base/CMakeLists.txt:27` (the PUBLIC define that didn't arrive)
-
-**Proposed fix** — match the CMake per-config default instead of assuming Trace:
-
-```cpp
-#if !defined(TE_LOG_ACTIVE_LEVEL)
-#  if defined(NDEBUG)
-#    define TE_LOG_ACTIVE_LEVEL TE_LOG_LEVEL_INFO   // Release + RelWithDebInfo both set NDEBUG
-#  else
-#    define TE_LOG_ACTIVE_LEVEL TE_LOG_LEVEL_TRACE
-#  endif
-#endif
-```
-
-Conservative on purpose: an unlinked TU in RelWithDebInfo gets Info where CMake would give
-Debug — errs toward *less* logging, the safe direction for a fallback. **Unverified, not
-compiled.**
-
-**+ a test**, mirroring `AssertTests.cpp`'s config-table case (it compares the library's
-compiled view against the test TU's) — the guard `TE_ASSERT_DEV` already has and this gate
-doesn't, despite being the identical PUBLIC-define shape (`engine/base/CMakeLists.txt:30-31`).
-
-**Alternative considered:** `#error` when the define is absent — strictest, turns silent into
-unbuildable. Rejected for now: ADR-011 §10 leaves SDK exposure open, and if `te_sdk` ships
-`Log.hpp` without a `base` link edge, `#error` makes that impossible rather than merely wrong.
-Revisit when §10 is decided.
-
-**Trigger:** the first target that includes `Log.hpp` without linking `base` — `te_sdk` is
-the likely one (ADR-011 §10). Cheap enough (~6 lines + a test case) to ride along with the
-next card that touches the logging gate.
-
----
-
 ### D3 — the case check rejects any path through a symlink
 
 `matchesOnDiskCase` compares `canonical(candidate)` against `canonicalRoot / relative`.
