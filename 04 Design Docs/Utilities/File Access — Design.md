@@ -132,7 +132,8 @@ The problem is that a source-tree path means nothing in an installed build. The 
 resolves to a directory that is not there. This is acceptable only because M3 replaces the
 whole mount set anyway.
 
-The real fix is `platform::executablePath()`, on [[Backlog]] under `platform`. Mount
+The real fix is `platform::executablePath()`, **shipped at S5-T1 on 2026-09-03**
+(`engine/platform/src/ExecutablePath.cpp`). Mount
 relative to the binary, not to the source tree. v1 had that function on Windows only and
 fell back to `current_path()` elsewhere, which breaks as soon as the game is launched from
 a different working directory.
@@ -168,7 +169,8 @@ that would become the interface.
 
 ```cpp
 enum class FileResult : std::uint8_t { Ok, InvalidPath, NoMount, NotFound,
-                                       IsADirectory, NotADirectory, AccessDenied, IoError };
+                                       IsADirectory, NotADirectory, AlreadyExists, NotEmpty,
+                                       AccessDenied, IoError };
 
 struct FileStatus {
     std::filesystem::path physicalPath;
@@ -232,15 +234,15 @@ Three calls it makes, each pinned by a Catch2 case:
 |---|---|
 | The mount root, `assets://` | `InvalidPath`. The read side accepts it, because listing a root is meaningful. Nothing can create a file over a directory. |
 | A file that already exists | Truncated, never appended. Note the asymmetry with `Writer`, which appends to its buffer. |
-| A missing parent directory | **Not created.** The open fails, so the caller gets the generic `IoError`. |
+| A missing parent directory | **Not created**, and the caller gets `NotFound` as of S5-T3 (2026-09-03). `createDirectory` is the call whose job that is ([[Project — Design]] § *The five mutating calls*). |
 
 `close()` runs before the stream is checked, because a full disk fails on the flush rather
 than on `write()`.
 
-**The rest of the mutating half is still M3**: `createDirectory`, `remove`, `copy`, `move`
-and `rename`, over both files and directories, on the same `FileResult` convention. M3 is the
-rung that creates the project root, writes `project.toml` and lays out the asset directories,
-so shaping those five around its real writes still beats guessing them now.
+**The rest of the mutating half shipped at S5-T3 (2026-09-03)**: `createDirectory`, `remove`,
+`copy`, `move` and `rename`, over both files and directories, on the same `FileResult`
+convention. Their semantics live in [[Project — Design]] § *The five mutating calls*, which is
+where M3's real writes shaped them.
 
 ### Resolution
 
@@ -253,7 +255,7 @@ path, `resolveForCreate` the write path.
 | Which mount wins | Walks every mount with that alias, in priority order. The first one where the file **exists** wins. | Takes the highest-priority mount with that alias. It never probes for existence. |
 | Nothing found | `NoMount` if the alias was never mounted. `NotFound` if it was, but no mount holds the file. | `NoMount` only. |
 | `alias://` with no relative | Resolves to the mount root, which `list` and `status` both want. | `InvalidPath`. |
-| Missing parent dirs | Not applicable. | **Not created**, as of 2026-08-30. See *The write surface*. |
+| Missing parent dirs | Not applicable. | **Not created.** `write` and the mutating calls return `NotFound`; only `createDirectory` makes them. See *The write surface*. |
 
 The read path probes because mounts overlay. A higher-priority mount shadows a lower one,
 and walking in priority order is what makes that work. The write path does not probe,
@@ -372,9 +374,6 @@ two failure surfaces a caller has to check, is in [[Serialization — Design]] �
   needs more than a port. It was built on callback subscriptions, which
   [[ADR-014 — Events (buffered streams) & StringId]] rules out. Re-read it against that ADR
   before designing a v2 one.
-- **Should `write` create missing parent directories?** Today it does not, and a missing one
-  gives the generic `IoError` rather than saying what was wrong. Owner: M3, decided together
-  with `createDirectory` rather than before it.
 - **Archive mounts.** Mounting a `.pak` file instead of a directory. `MountTable`'s shape
   allows it. No consumer needs it before shipping.
 - **Threading.** Goes to M2's threading ADR. See above.

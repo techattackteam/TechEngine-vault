@@ -125,16 +125,24 @@
       Optional ride-along: **D3** lives in the same file (`MountTable.cpp`), so its
       per-component spelling check may ride this PR. Its fix costs a directory scan per
       component, so taking it is a deliberate call rather than automatic.
-- [ ] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate — done: `GetModuleFileNameW`
+- [x] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate **→ 🟡 Light** —
+      **done 2026-09-03**, `a7908904` (#67). Entry on [[Sprint Board]]. **As cut:** `GetModuleFileNameW`
       on Windows and `/proc/self/exe` on Linux behind one signature in `platform`, with a
       Catch2 case asserting the returned path exists and names the running test binary; no
       `current_path()` fallback anywhere.
-- [ ] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep — **rewritten 2026-08-31
+- [x] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep —
+      **done 2026-09-03**, `84181fae` (#68). Entry on [[Sprint Board]].
+      **rewritten 2026-08-31
       against [[Project — Design]] § *The five mutating calls*: the old clause named no results
       and the enum had no value for two of the cases it asked to be pinned.** done:
       `createDirectory`, `remove(path, recursive)`, `copy(from, to)`, `move(from, to)` and
       `rename(path, newName)` ship on `FileAccess` over both files and directories, all
-      returning `FileResult` and all resolving through `MountTable::resolveForCreate`;
+      returning `FileResult`; **the clause "all resolving through
+      `MountTable::resolveForCreate`" is corrected 2026-09-03: that holds for a destination
+      only.** `copy`, `move` and `rename` each take a source that must already exist, and
+      `resolveForCreate` never probes, so a source living in a lower-priority mount would come
+      back `NotFound`. Sources resolve through `resolveExisting`, destinations through
+      `resolveForCreate`;
       **`FileResult` gains `AlreadyExists` and `NotEmpty`**; **`write` stops returning the
       generic `IoError` for a missing parent and returns `NotFound`**, while `createDirectory`
       is the call that does create parents; Catch2 pins each against a scratch directory,

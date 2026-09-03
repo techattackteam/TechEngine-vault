@@ -242,21 +242,33 @@ with a mount set nobody could explain.
   fatal `TE_CHECK`s, so the v1 spelling cannot reach the table at all.
 - **`executablePath()`, never `current_path()`.** v1 built its runtime paths from
   `std::filesystem::current_path()` (`ProjectManager.hpp:51`), which breaks the moment the
-  binary is launched from another working directory. S5-T1's clause bans the fallback outright.
+  binary is launched from another working directory. S5-T1 shipped the replacement on
+  2026-09-03, and no `current_path()` remains under `engine/` or `apps/`.
 
 ### The five mutating calls
 
-All five land on `FileAccess`, all return `FileResult`, and all resolve through
+All five land on `FileAccess` and all return `FileResult`. **Destinations** resolve through
 `MountTable::resolveForCreate`. That is the write path, so the highest-priority mount for the
 alias wins and existence is never probed ([[File Access — Design]] § *Resolution*).
 
+**Sources resolve through `resolveExisting` instead, decided 2026-09-03 at S5-T3.** `copy`,
+`move` and `rename` each name a path that must already exist. `resolveForCreate` takes the top
+mount and stops, so a source held by a lower-priority mount in an overlay would resolve to a
+path that is not there and return `NotFound` for a file the caller can read. Probing is the
+whole reason the read path exists.
+
 | Call | Signature | Destination exists | Missing parent |
 |---|---|---|---|
-| `createDirectory` | `(virtualPath)` | `AlreadyExists` | Created. This is the call whose job that is. |
+| `createDirectory` | `(virtualPath)` | `AlreadyExists`, whether what is there is a directory or a file. | Created. This is the call whose job that is. |
 | `remove` | `(virtualPath, bool recursive)` | not applicable | `NotFound` |
 | `copy` | `(from, to)` | `AlreadyExists` | `NotFound` |
 | `move` | `(from, to)` | `AlreadyExists` | `NotFound` |
 | `rename` | `(virtualPath, newName)` | `AlreadyExists` | not applicable |
+
+**`newName` is one path component, never a path.** Empty, `.`, `..`, or anything carrying `/`
+or `\\` returns `InvalidPath`, checked before the source is resolved. Decided at S5-T3 on
+2026-09-03: accepting a separator would turn `rename` into a `move` that skips the
+destination's mount resolution.
 
 **`move` and `rename` are one syscall and two call sites.** `rename` takes a bare leaf name
 with no separator in it, and fails validation if it contains one. `move` takes a full

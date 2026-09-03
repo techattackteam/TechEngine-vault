@@ -19,18 +19,6 @@ kanban-plugin: board
 
 ## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5; after Story F)*
 
-- [ ] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate
-	  done: `GetModuleFileNameW` / `/proc/self/exe` behind one signature in `platform`; a Catch2
-	  case asserts the path exists and names the running test binary; no `current_path()`
-	  fallback anywhere.
-- [ ] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep
-	  **Rewritten Aug 31.** done: `createDirectory` · `remove(path, recursive)` · `copy` ·
-	  `move` · `rename(path, newName)` over files and directories, all on `FileResult`, all
-	  through `resolveForCreate`; **`FileResult` gains `AlreadyExists` and `NotEmpty`**;
-	  **`write` returns `NotFound` for a missing parent instead of `IoError`**, and
-	  `createDirectory` is the call that creates parents; Catch2 pins each against a scratch
-	  directory including the mount-root, missing-parent, already-exists and non-empty cases;
-	  green on all legs. Needs S5-D1.
 - [ ] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep
 	  **Rewritten Aug 31: editor-local, and `root` is derived not stored.** done: `Project` in
 	  `apps/editor/src/project/` loads `project.toml` through toml++ in its **non-throwing**
@@ -118,6 +106,55 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep ·
+	  **Sep 3**, `84181fae` (#68). Empty PR body, no review comments; the review happened in
+	  session, the third card running.
+	  **The clause "all resolving through `resolveForCreate`" was wrong, and writing it is what
+	  showed why.** `copy`, `move` and `rename` each name a **source that must already exist**,
+	  and `resolveForCreate` takes the top mount and never probes. A source held by a
+	  lower-priority mount would have come back `NotFound` for a file the caller can read.
+	  Corrected Sep 3 on the card and in [[Project — Design]] § *The five mutating calls*:
+	  destinations through `resolveForCreate`, sources through `resolveExisting`. A Catch2 case
+	  puts the source in the low mount and the destination in the high one, so the regression
+	  cannot come back quietly.
+	  **`write` was widened past its clause.** The clause asked for `NotFound` on a **missing
+	  parent**. What shipped returns `NotFound` for **any** failed stream open, so a permission
+	  error or a locked file now also reads as "no such file". Nothing misbehaves today; the
+	  first symptom would be a wrong diagnosis. Raised at close, not during review, so it is
+	  a report line rather than a [[Known Issues]] ID.
+	  **Two `MountTable.cpp` comments were deleted that no clause asked for**, including the one
+	  naming the invariant that `resolveForCreate`'s "first match wins" is correct **only**
+	  because `mount()` keeps `m_entries` in descending priority order. That invariant lives in
+	  another function, and the comment was its only in-code pointer.
+	  **Two of the card's own Catch2 cases were wrong, not the code.** Both put a destination
+	  under a parent that did not exist and expected `Ok`. `NotFound` was correct per the design
+	  table both times, which is the table doing its job.
+	  **Retro line: four bugs in one review pass, three of them inverted conditions** — a
+	  `NotEmpty` gate testing whether the *path string* was empty, an `exists` check reading the
+	  wrong way, and a `rename` block that could never pass. Same shape as S5-T1's inverted
+	  `TE_CHECK` earlier the same evening. Two cards in a row lost time to a condition written
+	  as the failure rather than as the invariant.
+	  **Unblocks S5-T4 and S5-T5.** Does not close Story B or a Definition of Done line.
+- [x] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate **→ 🟡 Light** ·
+	  **Sep 3**, `a7908904` (#67). Empty PR body, no review comments; the review happened in
+	  session, same as #64.
+	  **The clause said "one signature in `platform`" and named no home.** Header, return type
+	  and failure tier were all unwritten. Settled at card-start: `Platform.hpp` rather than a
+	  `system/` subdir for one function, `const std::filesystem::path&` off a function-local
+	  static, and a bare `TE_CHECK` with no recovery path — S5-T2's shape, for the same reason.
+	  **Three things changed in review before merge.** Both `TE_CHECK`s were written asserting
+	  the *failure* (`length == 0`), which fires on every success; `read_symlink`'s throwing
+	  overload made its own check unreachable, so a real failure escaped as an exception past the
+	  fatal handler; and only the Linux branch cached, leaving Windows to re-run the syscall per
+	  call.
+	  **`MAX_PATH` shipped as a fatal rather than a growing buffer**, deliberately and with the
+	  trade named. A Windows install path over 260 characters aborts. It is loud, not silent, so
+	  it is on [[Backlog]] rather than [[Known Issues]].
+	  **Retro line: sized 🟠, came in light**, the first card this sprint to move *down* a column.
+	  Two syscalls behind one signature is what the clause always said; the 🟠 came from the
+	  cross-platform framing rather than from the work. It buys back one 🟠 in the column the
+	  sprint's capacity note calls the plan's failure point.
+	  **Unblocks S5-T5.** Does not close Story B or a Definition of Done line.
 - [x] **S5-T2** · `MountTable::mount()` validation · P2 · 🟡 Light **→ 🟠 Moderate** ·
 	  **Sep 1**, `4e3c6f7f` (#64). Empty PR body, no review comments; the review happened in
 	  session. **[[Known Issues]] D2 deleted.**

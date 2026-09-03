@@ -61,7 +61,8 @@ groups are kept, because they show where future work will land.
   `engine/`, `apps/` or `cmake/`. **Nothing in the tree calls `mount()` outside tests**, so the
   section's framing — a throwaway mount set that M3 will replace — is wrong in the other
   direction: there is no mount set to replace. The `platform::executablePath()` fix it points
-  at is still a live [[Backlog]] entry and has to survive whatever replaces the section.
+  at **shipped at S5-T1** (`a7908904`, #67), so that sentence needs rewriting as history
+  rather than as a plan.
   **Trigger:** S5-T3 or whichever M3 card first mounts through `project.toml` — that card's
   author reads this section for the prior art.
 - #prio/low · **[[File Access — Design]] § *Wiring* has the composition root and the
@@ -75,6 +76,25 @@ groups are kept, because they show where future work will land.
   falsified. The Catch2 case the section credits does still exist and still pins
   reference-not-snapshot (`engine/app/tests/AppTests.cpp:55`). **Trigger:** the next edit to
   that note, or a second service being proposed for `EngineContext`.
+
+- #prio/low · **`executablePath()` aborts on a Windows path longer than `MAX_PATH`** —
+  `resolveExecutablePath` calls `GetModuleFileNameW` into a fixed `wchar_t[MAX_PATH]` and
+  `TE_CHECK`s that the result fit (`engine/platform/src/ExecutablePath.cpp:16-19`). 260
+  characters is not the Windows limit, so a deep install path is legal and kills the process.
+  The alternative is retrying into a growing buffer until the call stops truncating. Taken
+  deliberately at S5-T1 with the trade named: a fatal is honest, and nothing ships to a deep
+  path today. **Loud, not silent**, so it is here rather than in [[Known Issues]].
+  **Trigger:** the first install or CI checkout under a long path, or long-path support being
+  turned on.
+
+- #prio/low · **`FileAccess::move` cannot cross a filesystem boundary** —
+  `std::filesystem::rename` fails with `cross_device_link` when two mounts on one alias sit on
+  different drives, and `move` surfaces that as the generic `IoError`
+  (`engine/platform/src/files/FileAccess.cpp`). The alternative is falling back to
+  copy-then-remove, which is not atomic and needs its own decision about a partial copy. Left
+  undecided at S5-T3 and carrying a comment saying so. No test covers it.
+  **Trigger:** the first project mounted from a different drive than the engine, which the
+  editor's two-root bootstrap (S5-T5) makes reachable.
 
 ## core
 
@@ -131,6 +151,15 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
+- #prio/medium · **A project launcher, inside the editor exe** — the editor's first screen
+  lists known projects, opens one, and creates a new one. Decided 2026-09-03: **not a separate
+  executable.** How the known-project list is stored and loaded is deliberately left open.
+  It closes two of [[Project — Design]] § *Open questions* at once, *Creating a project* and
+  *Where per-user settings live*, since a recents list is per-user state that cannot live in
+  `project.toml`.
+  **It does not remove the `argv` seam.** The editor still has to accept a project root from
+  outside, because the launcher screen supplies one the same way a command line does.
+  **Trigger:** the first editor UI card. Nothing before that has a screen to put it on.
 
 ## etc — cross-cutting
 
