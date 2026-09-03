@@ -109,7 +109,9 @@ groups are kept, because they show where future work will land.
   (`engine/core/CMakeLists.txt:21`) and `app` takes `core` PUBLIC, so every consumer and
   `TechEngineAppTests` receive platform's include directories through that edge instead.
   Nothing will ever go red over it, which is why it is worth writing down rather than waiting
-  for it to break. **Trigger:** the next `engine/app/CMakeLists.txt` change.
+  for it to break. **Trigger:** fired — #65 changed that file on 2026-09-01, about five hours
+  after this entry was written, and the fix did not ride along. `DEPS_PRIVATE platform` is
+  still line 6, so the citation holds.
 
 ## net
 
@@ -221,8 +223,9 @@ groups are kept, because they show where future work will land.
   backstop and self-review is the whole gate. S4-P4 pre-named this exact test, answered it
   correctly for docs-only PRs, and nobody re-asked it when the scope widened past docs. The
   mitigation exists but lives only in `ci.yml`'s header: land workflow edits alone and read the
-  run they produce on `master`. Found at the 2026-08-29 drift check (A3). **Trigger:** Sprint 05
-  planning, or the first workflow break that reaches `master` green.
+  run they produce on `master`. Found at the 2026-08-29 drift check (A3). **Trigger:** fired —
+  Sprint 05 planning ran on 2026-08-30 and passed the entry over, deliberately or not. Pull at
+  the next `/sprint-plan`.
 - #prio/low · **`ci.yml`'s `build-test` gate comment is wrong about skipped checks** — it says
   a required check skipped by an `if:` "never reports its context at all". Measured on #49's
   push run, a skipped *plain* job does report it (`diff coverage` came back `skipped`); it is
@@ -250,10 +253,12 @@ groups are kept, because they show where future work will land.
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
   crosses one of the existing patterns.
-- #prio/low · **`.gitattributes` for committed test assets** — `engine/app/assets/demo.txt`
-  gets CRLF on Windows checkout. Harmless while the demo only logs a byte count; silent the
-  day a case asserts on a repo-committed file's *contents* and the two CI legs disagree
-  (scratch-directory assets are written by the test, so they are unaffected).
+- #prio/low · **`.gitattributes` for committed test assets** — a repo-committed text asset gets
+  CRLF on a Windows checkout, so the day a case asserts on such a file's *contents* the two CI
+  legs disagree. Scratch-directory assets are written by the test and are unaffected.
+  **The witness this was written against is gone:** #65 deleted `engine/app/assets/demo.txt`,
+  and the tree now carries no committed data asset of any kind, so the entry is entirely
+  prospective and further from firing than when it was filed.
   **Trigger:** the first test that reads a committed asset rather than a scratch one.
 - #prio/medium · **Snapshot citations in Accepted ADRs cannot be swept, and S5-P3 had to skip
   them** — [[ADR-011 — Diagnostics (Logger & Assert)]] § *Grounding* says
