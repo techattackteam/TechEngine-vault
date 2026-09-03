@@ -279,11 +279,13 @@ groups are kept, because they show where future work will land.
   [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Context* cites
   `App.cpp:95` for the `TE_DEMO_ASSETS_DIR` mount, and [[Project — Design]] § *Where this lands*
   cites `App.cpp:82` as the composition root "and the demo mount it replaces is at line 95".
-  The mount is gone from `App.cpp` entirely; the define it used survives orphaned at
-  `engine/app/CMakeLists.txt:8-11`, still under its `TODO(S3-T13)`. S5-T5 is already scoped to
-  delete that block, so the artifacts want re-pointing **as part of that card** rather than
-  now — the composition root moves in the same commit. This is the one citation class a
-  mechanical in-range check would have caught.
+  The mount is gone from `App.cpp` entirely.
+  **The block this entry deferred to has already gone:** #65 deleted `TE_DEMO_ASSETS_DIR`, its
+  `TODO(S3-T13)` and `engine/app/assets/` on 2026-09-01, hours after this was filed, so neither
+  symbol appears anywhere in the tree and the citations no longer wait on that deletion. The
+  deferral still holds on its other leg — S5-T5 moves the composition root, so the line the
+  artifacts should point at does not exist yet. This is the one citation class a mechanical
+  in-range check would have caught.
   **Trigger:** fired — pull with S5-T5.
 
 - #prio/medium · **[[Game Loop — Frame Flow]]'s dated callout is stale on both of its claims** —
@@ -349,6 +351,17 @@ groups are kept, because they show where future work will land.
   of the prompt that each report echoes back, or a step in `/weekly-review` that diffs the two.
   **Trigger:** fired — found by the 2026-08-31 second fire, carded at S5-P1's close.
   Recorded as a permanent property in [[Autonomous Lane — Design]] § *State* meanwhile.
+- #prio/low · **An entry whose trigger has already fired is re-checked by nothing, so its
+  witness rots unnoticed** — a trigger sweep reads the *unfired* triggers, because a fired one
+  has nothing left to decide, and grooming reads a fired entry only when it pulls it. Between
+  those two moments the code the entry cites keeps moving. Two entries in this file were
+  invalidated by #65 within hours of being filed: the `DEPS_PRIVATE platform` one, caught on
+  2026-09-03 because its trigger was still unfired, and the `App.cpp` citation one, which the
+  same sweep passed over because its trigger was marked fired and which was still describing a
+  deleted `TODO(S3-T13)` block five days later. The cost is bounded — grooming re-reads the
+  code before it acts — but it acts on a false premise until it does. Fix is one line of scope:
+  a sweep re-resolves a fired entry's citations too, and only skips re-deciding its trigger.
+  **Trigger:** the next [[Backlog]] trigger sweep, which is the run that would carry the change.
 
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
