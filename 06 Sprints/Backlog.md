@@ -90,11 +90,53 @@ groups are kept, because they show where future work will land.
 - #prio/low · **`FileAccess::move` cannot cross a filesystem boundary** —
   `std::filesystem::rename` fails with `cross_device_link` when two mounts on one alias sit on
   different drives, and `move` surfaces that as the generic `IoError`
-  (`engine/platform/src/files/FileAccess.cpp`). The alternative is falling back to
+  (`engine/platform/src/files/FileAccess.cpp:262`). The alternative is falling back to
   copy-then-remove, which is not atomic and needs its own decision about a partial copy. Left
-  undecided at S5-T3 and carrying a comment saying so. No test covers it.
+  undecided at S5-T3. No test covers it. **The comment this entry credited does not exist:**
+  it was filed saying `move` carries "a comment saying so", and `cross_device`, `cross-device`
+  and `filesystem boundary` return no hit anywhere under `engine/`, `apps/`, `sdk/` or
+  `cmake/`. Either it was dropped in review under `CLAUDE.md` § *Code conventions*' default-to-no-comment
+  rule or it was never written, so this entry is the only record of the decision.
   **Trigger:** the first project mounted from a different drive than the engine, which the
   editor's two-root bootstrap (S5-T5) makes reachable.
+
+- #prio/medium · **`FileAccess::remove` resolves a must-exist path through `resolveForCreate`** —
+  `remove` takes the highest-priority mount for the alias and never probes
+  (`engine/platform/src/files/FileAccess.cpp:190`), so a file held only by a lower-priority
+  mount in an overlay comes back `NotFound` while `read` and `list` both find it. That is the
+  same shape S5-T3's review corrected for `copy`, `move` and `rename`, whose sources moved to
+  `resolveExisting`; `remove`'s argument must already exist for exactly the same reason and did
+  not move with them. [[Project — Design]] § *The five mutating calls* names only those three in
+  its sources rule, so the note decides `remove` neither way. **Both readings are defensible**,
+  which is why this is a decision and not a one-line change: a delete that reaches through an
+  overlay into a lower and possibly read-only mount may be precisely what should not happen.
+  `copy` has an overlay case (`engine/platform/tests/files/FileAccessTests.cpp:526`) and
+  `remove` has none. **Silent**, because `NotFound` is a legitimate answer and the caller cannot
+  tell it from the resolver having taken the wrong mount. **Trigger:** the first overlay mount
+  set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
+  that section.
+
+- #prio/medium · **`copy`, `move` and `rename` shipped `const`, so `const FileAccess&` no longer
+  means read-only** — all three are declared `const` while writing to disk
+  (`engine/platform/include/TechEngine/platform/files/FileAccess.hpp:43-47`), and
+  `createDirectory` and `remove` are not, so the same card shipped the split both ways.
+  [[File Access — Design]] § *Why the write split was dropped* gives that convention as the
+  entire replacement for the `FileWriteAccess` type it dropped: `write` is "the class's one
+  **non-const** method, so a caller that must not write can hold a `const FileAccess&`". Three
+  methods that copy, relocate and rename files are now reachable through such a reference.
+  § *The read surface* repeats the claim, and [[Project — Design]]'s
+  `Project::load(const FileAccess&, …)` (`:308`) is built on it. So is the note's own reversal
+  trigger, which calls extraction mechanical because `write` and `resolveForCreate` are "the only
+  two functions that would move" — five more would move now. **Trigger:** the SDK boundary
+  (ADR-006 §3), which is the note's named reversal trigger, or the next edit to either note.
+
+- #prio/low · **[[File Access — Design]]'s header and Decided table still call the mutating half
+  future work** — § *The write surface* records the five calls shipping at S5-T3 (2026-09-03) and
+  § *The read surface*'s enum already carries `AlreadyExists` and `NotEmpty`, but the **Status:**
+  line still reads "the rest of the mutating half is M3" and the Decided table's *Surface* row
+  still says "The other five mutating calls are M3". The body was reconciled at that card's close
+  and the header and the summary were not, so a reader who stops at the table gets the pre-S5-T3
+  surface. **Trigger:** the next [[File Access — Design]] edit.
 
 ## core
 
