@@ -60,11 +60,14 @@ groups are kept, because they show where future work will land.
   TODO and the assets directory; `TE_DEMO_ASSETS_DIR` and `S3-T13` now appear nowhere under
   `engine/`, `apps/` or `cmake/`. **Nothing in the tree calls `mount()` outside tests**, so the
   section's framing — a throwaway mount set that M3 will replace — is wrong in the other
-  direction: there is no mount set to replace. The `platform::executablePath()` fix it points
-  at **shipped at S5-T1** (`a7908904`, #67), so that sentence needs rewriting as history
-  rather than as a plan.
-  **Trigger:** S5-T3 or whichever M3 card first mounts through `project.toml` — that card's
-  author reads this section for the prior art.
+  direction: there is no mount set to replace.
+  **Half of it was repaired on 2026-09-03 and the half this entry was filed for was not.**
+  S5-T3's close (`28f24eb`) rewrote the `platform::executablePath()` sentence into past tense,
+  so `:135` now correctly reads "shipped at S5-T1 on 2026-09-03". The two paragraphs above it
+  (`:128-133`) are untouched and still present-tense about `TE_DEMO_ASSETS_DIR`, the
+  `TODO(S3-T13)` in both `App.cpp` and `engine/app/CMakeLists.txt`, and the mount of
+  `engine/app/assets/` — none of which exist in the tree.
+  **Trigger:** fired — S5-T3 merged 2026-09-03 as `84181fae` (#68).
 - #prio/low · **[[File Access — Design]] § *Wiring* has the composition root and the
   `EngineContext` field count wrong** — it says `run()` in `engine/app/src/App.cpp` owns
   `MountTable` and `FileAccess` by value. Since #63 the owner is the `App` class itself
@@ -74,8 +77,9 @@ groups are kept, because they show where future work will land.
   the reason this is more than a count:** it argues a service earns a field only when something
   needs to reach it through the context "and nothing does yet", which `jobs` has already
   falsified. The Catch2 case the section credits does still exist and still pins
-  reference-not-snapshot (`engine/app/tests/AppTests.cpp:55`). **Trigger:** the next edit to
-  that note, or a second service being proposed for `EngineContext`.
+  reference-not-snapshot (`engine/app/tests/AppTests.cpp:55`).
+  **Trigger:** fired — S5-T3's close edited that note on 2026-09-03 (`28f24eb`) and left
+  § *Wiring* untouched, so both claims above still stand word for word.
 
 - #prio/low · **`executablePath()` aborts on a Windows path longer than `MAX_PATH`** —
   `resolveExecutablePath` calls `GetModuleFileNameW` into a fixed `wchar_t[MAX_PATH]` and
@@ -217,7 +221,7 @@ groups are kept, because they show where future work will land.
 
 - #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
   fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool
-  (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:116`) and `Reader` carries a sticky
+  (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:123`) and `Reader` carries a sticky
   `ReadStatus` (`engine/core/include/TechEngine/core/serialization/Reader.hpp:15`, per ADR-016).
   Nothing throws across an API boundary and nothing uses `std::expected`, so it ratifies two
   existing shapes rather than opening a three-way choice. It also owns the `[[nodiscard]]`
@@ -287,7 +291,13 @@ groups are kept, because they show where future work will land.
   unrelated bug PR (#56). The third one changes the shape of the fix: a pre-push check on the
   branch name would not have caught it, so the guard has to compare the **merged** commit
   against the open cards on [[Sprint Board]]. Nothing mechanical checks it today, so the entry
-  is only ever written after the fact. **Trigger:** fired — pull at the next `/sprint-plan`.
+  is only ever written after the fact.
+  **A merged commit naming a still-open card is legal, so that comparison cannot be an
+  equality test.** #65 merged on branch `S5-T5/demo-mount-removal` while S5-T5 is still in To Do,
+  because the card landed in halves. Four cards have been named correctly since the three
+  misses — #64, #66, #67 and #68 all carry their own prefix — so what the guard must catch is a
+  prefix matching **no** card, not one matching an open card.
+  **Trigger:** fired — pull at the next `/sprint-plan`.
 - #prio/medium · **ADR-009 owes an amendment: a workflow-only PR gets no CI** — § *Consequences*
   says correctness leans on strict CI plus self-review. Since #54 (2026-08-28) a PR touching only
   `.github/workflows/**` runs no build at all, so for that one class of change CI is not a
@@ -379,7 +389,7 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **Every quoted `#include` in the tree arrived in #62 and #63, and the house
   rule is angle brackets** — `CONVENTIONS.md` § *Includes* says "angle brackets throughout"
-  and "never `"FormatBuffer.hpp"`", and 372 of the 385 `#include` lines under `engine/`,
+  and "never `"FormatBuffer.hpp"`", and 382 of the 395 `#include` lines under `engine/`,
   `apps/` and `sdk/` obey it. All 13 that do not sit in the two commits no drift check had
   covered: `engine/app/src/App.cpp:3-5`, and the mirrored pairs under `apps/editor/` and
   `apps/runtime/` — each app's own header, its `.cpp`, its `main.cpp` and its test file.
@@ -432,7 +442,12 @@ groups are kept, because they show where future work will land.
   deleted `TODO(S3-T13)` block five days later. The cost is bounded — grooming re-reads the
   code before it acts — but it acts on a false premise until it does. Fix is one line of scope:
   a sweep re-resolves a fired entry's citations too, and only skips re-deciding its trigger.
-  **Trigger:** the next [[Backlog]] trigger sweep, which is the run that would carry the change.
+  **Trigger:** fired — the 2026-09-04 sweep adopted the widened scope and it paid immediately.
+  Re-resolving the fired entries caught the `#prio/high` Error-handling-row entry citing
+  `Log.hpp:116`, a blank line since #66 inserted seven lines above it; `addLogSink` is at `:123`
+  and the entry is corrected. That entry is pulled at the next `/sprint-plan`, so under the old
+  scope grooming would have opened a pointer to nothing. **Keep the widened scope.** What is
+  left to decide is whether it belongs in `/weekly-review` rather than in an ad-hoc sweep.
 
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
