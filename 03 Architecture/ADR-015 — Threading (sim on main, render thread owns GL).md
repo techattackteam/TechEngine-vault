@@ -23,6 +23,10 @@
   cross-thread rules are all unchanged: P1 still owns concurrent publishers and their lanes,
   P2 still owns stealing and Jolt. Taken at S4-T5 (2026-08-24).
   Record: [[Concurrency — Design]] § *Surface*.
+- **Amended 2026-09-04 — citations:** § *Context*'s "tree today" paragraph is anchored at
+  `5147c87f`, the engine tip when it was written. Its "no `std::thread` outside a pacer
+  `yield`" was made false by this ADR's own decision two days later (#46 shipped four
+  workers). No decision moved. Found by S5-P3.
 
 ## Context
 
@@ -38,9 +42,10 @@ v1 is the counterexample: little real threading and three ad-hoc models around i
 silently assumed single-threaded structural edits (F31). The v1 lesson list already names the
 fix: one owned pool that queries, resource load and physics all schedule onto.
 
-The tree today is single-threaded by construction: no `std::thread` exists outside a pacer
-`yield` (`engine/app/src/App.cpp:94`), the loop walks fixed steps serially
-(`engine/app/include/TechEngine/app/FrameLoop.hpp:36`), and the event streams stage into one
+The tree at `5147c87f`, when this was written, is single-threaded by construction: no
+`std::thread` exists outside a pacer `yield` (`engine/app/src/App.cpp:94` at that sha), the
+loop walks fixed steps serially (`engine/app/include/TechEngine/app/FrameLoop.hpp:36` at that
+sha), and the event streams stage into one
 buffer per stream because "the executor is serial until M2"
 ([[Events — Design]] § *Staging, at M1*). The instrument this ADR was gated on exists
 (ADR-013 Accepted; zones and the memory plot are live).

@@ -53,6 +53,9 @@ reference is given and the rationale is not copied. Go to the ADR for the *why*.
 - Every macro is wrapped in `do { … } while(0)`, so it cannot break a surrounding `if`/`else`.
   That is part of F10.
 - The per-level macros `TE_LOGGER_TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` and `CRITICAL`.
+- The header's fallback when `TE_LOG_ACTIVE_LEVEL` never arrives, which only a TU that includes
+  `Log.hpp` without linking `base` sees: Info under `NDEBUG`, else Trace. RelWithDebInfo lands
+  on Info there, one step quieter than the linked gate gives it. S5-P2, `0ac1a9b0` (#66).
 - The per-TU `TE_LOG_CHANNEL`, and the `_CH` escape hatch. Both are below.
 - Math formatters live with math, not here (ADR-006 §6).
 - The level-usage table below.

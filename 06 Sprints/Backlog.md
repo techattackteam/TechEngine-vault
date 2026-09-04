@@ -43,6 +43,12 @@ groups are kept, because they show where future work will land.
   offered in `engine/base/CMakeLists.txt:18`, and no CI leg sets it, so nothing catches this.
   **Trigger:** the first build that sets the gate explicitly — a shipping Release config is
   the likely one.
+- #prio/low · **`Log.hpp`'s `NDEBUG` fallback has no test.** No TU in the tree includes the
+  header without linking `base`, so the branch #66 (S5-P2) added is reached by nothing and is
+  correct by inspection only. The config-table case that shipped proves the linked gate.
+  Covering the fallback needs its own TU that `#undef`s `TE_LOG_ACTIVE_LEVEL` before the
+  include, plus a `CMakeLists` entry, for a branch nothing reaches today. **Trigger:** the
+  first TU that includes `Log.hpp` without linking `base`, or a bug traced to the fallback.
 - #prio/medium · **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
@@ -215,6 +221,9 @@ groups are kept, because they show where future work will land.
   `project.toml`.
   **It does not remove the `argv` seam.** The editor still has to accept a project root from
   outside, because the launcher screen supplies one the same way a command line does.
+  Until then, `apps/editor/src/main.cpp` opens `projects/dev` from the working directory when
+  `argv` is empty (S5-T5). That default is a development convenience, and the launcher is
+  what replaces it for real projects.
   **Trigger:** the first editor UI card. Nothing before that has a screen to put it on.
 
 ## etc — cross-cutting
@@ -351,19 +360,13 @@ groups are kept, because they show where future work will land.
   and the tree now carries no committed data asset of any kind, so the entry is entirely
   prospective and further from firing than when it was filed.
   **Trigger:** the first test that reads a committed asset rather than a scratch one.
-- #prio/medium · **Snapshot citations in Accepted ADRs cannot be swept, and S5-P3 had to skip
-  them** — [[ADR-011 — Diagnostics (Logger & Assert)]] § *Grounding* says
-  `engine/base/CMakeLists.txt:4` "links `spdlog::spdlog` as **PUBLIC** today", and
-  [[ADR-015 — Threading (sim on main, render thread owns GL)]] § *Context* says "no
-  `std::thread` exists outside a pacer `yield`". Both were true when written and **both were
-  made false by their own ADR's decision**: spdlog is now `LIBS_PRIVATE` on line 15, and
-  `JobSystem` ships four worker threads. Repointing the line numbers would leave a correct
-  pointer under a false present-tense claim, which is worse than the stale one. The fix is a
-  convention, not an edit: a citation inside a Context or Grounding section is a snapshot and
-  should carry the sha or tag it was taken at, the way [[Project — Design]] already writes
-  "v1 prior art at the `v1-reference` tag". Four sites across the two ADRs.
-  **Trigger:** fired — found by S5-P3, 2026-09-01. Pull with the next ADR amendment either
-  one needs anyway.
+- #prio/low · **A CI check that every vault `path:line` citation exists and is in range** —
+  S5-P3's answer to "`/weekly-review` or CI" was to split by failure mode. Exists-and-in-range
+  is mechanical and cheap, and would have caught 3 of the ~14 wrong sites the two sweeps
+  found. Points-at-the-right-thing is a read, and stays with `/weekly-review`. The vault has
+  its own HEAD, so the check resolves against the Dashboard's `Reconciled against` sha, not
+  `master`: it proves "nothing dangles as of the last reconciliation". Citations anchored
+  "at `<sha>`" resolve at that sha. **Trigger:** the next dangling citation found by hand.
 
 - #prio/medium · **Three `App.cpp` citations now point past the end of the file** — #63 cut
   `engine/app/src/App.cpp` from about 250 lines to 55, and the demo body went with it.

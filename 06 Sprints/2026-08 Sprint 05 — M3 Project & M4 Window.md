@@ -262,7 +262,7 @@
       Two misbehaviours were found and neither warranted the `B` card the card allowed for.
       **Unblocks S5-P2.** The DST edge it used to carry has its durable home in
       [[Autonomous Lane — Routine Prompt]] § *Routine configuration*.
-- [ ] **S5-P2** · 🤖 [[Known Issues]] **D1's fallback fix** · P3 · 🤖 Auto — done: `Log.hpp`'s
+- [x] **S5-P2** · 🤖 [[Known Issues]] **D1's fallback fix** · P3 · 🤖 Auto — done: `Log.hpp`'s
       `TE_LOG_ACTIVE_LEVEL` fallback matches CMake's per-config default (`INFO` under `NDEBUG`,
       else `TRACE`) per D1's written fix, plus a config-table Catch2 case mirroring
       `AssertTests.cpp`; **D1 is deleted in the same commit**; the run builds Linux and passes
@@ -277,7 +277,7 @@
       #54 (`ci.yml`'s own header carries that rule). **If llvmpipe caps below 4.5**, drop the
       CI leg's context version rather than the test: the window and thread seam is what it
       proves. Ordered before S5-T7.
-- [ ] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto — done: every `path:line`
+- [x] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto — done: every `path:line`
       citation in the durable artifacts is resolved against the tree and the 8 known-wrong ones
       are corrected (three in `App.cpp`, two in [[Known Issues]], two in [[Profiler — Design]]);
       the report says whether the check is cheap enough to belong in `/weekly-review` or in CI.
@@ -309,8 +309,10 @@
 
 **Tier 3 — process.**
 
-- [ ] The autonomous lane has opened, and Miguel has reviewed, **one** unattended code PR.
-      Nothing has yet proven that path.
+- [x] The autonomous lane has opened, and Miguel has reviewed, **one** unattended code PR.
+      **2026-09-03**, `0ac1a9b0` (#66), S5-P2. The review was a silent merge, a day after the
+      PR opened. Correctly prefixed branch, Linux build and `ctest` before the PR, never merged
+      by the lane.
 
 ## Capacity note
 

@@ -6,6 +6,8 @@
 
 ## Context
 What forces are at play? What problem or constraint triggers this decision?
+A `path:line` cited here is a snapshot: write the engine sha it was read at. The decision
+below is usually what makes it false, so a bare line number rots on acceptance.
 
 ## Decision
 The decision, stated plainly in the present tense ("We use…").

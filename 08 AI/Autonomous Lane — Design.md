@@ -46,6 +46,7 @@ capacity table does **not** change.
 | 4 | Does the run get the vault? | **Yes, and it does not clone it.** The routine checks it out as a second `sources` repo, and the session symlinks it to `docs/` as its first act. Proven by the probe; no credential of any kind is involved. | 2026-08-30 |
 | 5 | Does the run watch its own PR? | **Yes. It reports whether its PR is failing CI**, not just that it opened one. Mechanism is unsettled, see § *Watching the PR*. | 2026-08-30 |
 | 6 | Does the lane inherit the attended entry prompt? | **No. It gets its own.** The attended one assumes a human is present to compile, to decide and to answer a question mid-run. | 2026-08-30 |
+| 7 | Does the lane move its card on the [[Sprint Board]]? | **Yes, and the columns are its state.** Done when every clause is met, Review / Demo when a PR is open or what is left needs Miguel. Only the board line; the rest of `/card-close` stays his. | 2026-09-04 |
 
 **Decision 2 is the one to watch.** It is the first carve-out from a CLAUDE.md rule rather
 than an application of one, and it is what makes decision 1 safe. A small logic fix that
@@ -76,9 +77,10 @@ flowchart LR
     V -->|green| P["Open a PR.<br/>Never merge."]
     V -->|red| X["No PR.<br/>Say so in the report."]
     P --> CI["Watch the PR's CI"]
-    CI --> REP["Daily report"]
-    X --> REP
-    N --> REP
+    CI --> MV["Move the card:<br/>Done, or Review / Demo"]
+    X --> MV
+    N --> MV
+    MV --> REP["Daily report"]
     REP --> M(["Miguel reads it that evening"])
 ```
 
@@ -287,12 +289,13 @@ note per day, a section appended per fire, and each fire reading what the earlie
 rather than redoing it. The sharpest evidence is the Sep-1 second fire declining to re-enter
 S5-P3, because the morning fire had taken it and left it open.
 
-**Two gaps the watching found.**
+**Three gaps the watching found.**
 
 | Found | Consequence |
 |---|---|
 | **A prompt edit in the vault does not reach the running routine.** `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] on Aug 31, and the fire five hours later still received the old four-fire text. | The vault is supposed to be the copy you edit against. Nothing propagates it, so every prompt change owes a manual paste into the routine. |
 | **An empty Auto lane leaves a second fire with no work by construction.** With no card takeable and a static `master`, both report-only fallbacks are exhausted by the first fire. | The fire still spends the weekly usage allowance, which is the cost the schedule was cut on. Pause the routine, or seed the lane, across a gap with no cards. |
+| **The lane read the board and never wrote it.** S5-P2 sat in To Do a day after #66 merged, S5-P3 sat there needing a call, and the Sep 3 and Sep 4 fires all reported an empty lane while refusing both. | A finished or stalled card in To Do is indistinguishable from an untaken one. Decision 7: the lane moves its card, and Review / Demo means "needs Miguel". Prompt step 9. |
 
 One thing left.
 

@@ -19,20 +19,6 @@ kanban-plugin: board
 
 ## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5; after Story F)*
 
-- [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate
-	  **Rewritten Aug 31: the old "runtime loads it by default" is reversed by ADR-017.
-	  Rewritten again Sep 4: [[Project — Design]] § *The project layout* decided the on-disk
-	  shape, so the role selects the asset roots instead of the manifest naming them.** done:
-	  `EditorApp::init()` mounts `project` from `argv` and `engine` off `executablePath()`,
-	  reads the manifest, derives three roots from `project.root()` and mounts them
-	  (`shaders`, `assets/common` at 0, `assets/client` at 100); `RuntimeApp::init()`
-	  mounts a fixed layout and **reads no manifest**; `projects/dev/` exists at repo root as
-	  data with a real `project.toml` and the three-way `assets/` split beside `shaders/`, and
-	  **the editor** loads it by default.
-	  Needs S5-T1, S5-T4, S5-T11.
-	  **Demo-mount clause struck Sep 1 — landed early, in two halves.** S5-T11 took the
-	  `App.cpp` half; the CMake half, the assets and a stale `.gitignore` rule went in their own
-	  PR ahead of this card (`40f7171e`, #65).
 
 
 ## 📋 C · M4's gate · ✅ **complete** *(S5-D2, Aug 30)*
@@ -68,16 +54,6 @@ kanban-plugin: board
 
 ## 📋 E · Process *(first thing cut)*
 
-- [ ] **S5-P2** · 🤖 [[Known Issues]] D1's fallback fix · P3 · 🤖 Auto
-	  done: `TE_LOG_ACTIVE_LEVEL`'s fallback matches CMake's per-config default (`INFO` under
-	  `NDEBUG`, else `TRACE`) per D1's written fix, plus a config-table Catch2 case mirroring
-	  `AssertTests.cpp`; **D1 deleted in the same commit**; the run builds Linux and passes
-	  `ctest` before opening the PR, and never merges it.
-	  **The lane's first code card — the PR path is unproven, so this tests the lane too.**
-	  **Unblocked Sep 1: S5-P1's "ordered before P2" clause is discharged and that card is
-	  closed.** Two fires declined this card on that ordering; the next one should take it.
-	  It also inherits S5-P1's dropped clause: **confirm the one-PR-per-day cap** across the
-	  day's fires, which only a PR-opening run can observe.
 - [ ] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light
 	  done: `ci.yml`'s Linux install step gains `xvfb` and `libgl1-mesa-dri` (the existing
 	  `libgl1-mesa-dev` is headers + `libGL`, not the llvmpipe driver); the test step runs
@@ -86,15 +62,24 @@ kanban-plugin: board
 	  **Lands alone** and is read from the `master` run, since a workflow-only PR draws no CI
 	  since #54. If llvmpipe caps below 4.5, drop the CI leg's context version, not the test.
 	  Ordered before S5-T7.
-- [ ] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto
-	  done: every `path:line` citation in the durable artifacts is resolved against the tree and
-	  the 8 known-wrong ones corrected (three in `App.cpp`, two in [[Known Issues]], two in
-	  [[Profiler — Design]]); the report says whether the check belongs in `/weekly-review` or in
-	  CI. Vault-only, so no PR and no CI cost.
 
 
 ## 🔨 In Progress
 
+- [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate
+	  **Rewritten Aug 31: the old "runtime loads it by default" is reversed by ADR-017.
+	  Rewritten again Sep 4: [[Project — Design]] § *The project layout* decided the on-disk
+	  shape, so the role selects the asset roots instead of the manifest naming them.** done:
+	  `EditorApp::init()` mounts `project` from `argv` and `engine` off `executablePath()`,
+	  reads the manifest, derives three roots from `project.root()` and mounts them
+	  (`shaders`, `assets/common` at 0, `assets/client` at 100); `RuntimeApp::init()`
+	  mounts a fixed layout and **reads no manifest**; `projects/dev/` exists at repo root as
+	  data with a real `project.toml` and the three-way `assets/` split beside `shaders/`, and
+	  **the editor** loads it by default.
+	  Needs S5-T1, S5-T4, S5-T11.
+	  **Demo-mount clause struck Sep 1 — landed early, in two halves.** S5-T11 took the
+	  `App.cpp` half; the CMake half, the assets and a stale `.gitignore` rule went in their own
+	  PR ahead of this card (`40f7171e`, #65).
 
 
 ## 👀 Review / Demo
@@ -103,6 +88,42 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto ·
+	  **Sep 4**, vault-only, no PR. Run unattended 2026-09-01 ([[2026-09-01 Auto Run]]), closed
+	  attended three days later.
+	  **"The 8 known-wrong ones" were 10, and not of a kind.** The run resolved ~120 v2 and ~50
+	  v1 sites, corrected 10 across four artifacts, and refused three: two Accepted-ADR snapshots
+	  whose claims their own decision made false, and the `App.cpp` trio, which point past the
+	  end of a file S5-T5 moves again. Repointing a snapshot leaves a right number under a false
+	  sentence, so the fix was a convention. Landed at close: ADR-011 and ADR-015 § *Context* are
+	  anchored at the sha they were read at, each under a dated header entry, and the
+	  [[ADR Template]] now says a Context citation carries its sha. The `App.cpp` three stay on
+	  [[Backlog]], pulled by S5-T5.
+	  **The second clause answered "both, split by failure mode."** Exists-and-in-range is a
+	  cheap CI check and would have caught 3 of ~14. Points-at-the-right-thing is a read and stays
+	  with `/weekly-review`. The CI half is carded `#prio/low`, not built.
+	  **Retro line: a card that refuses part of its work had nowhere to go.** It sat in To Do
+	  from Sep 1 to Sep 4 while fires reported no takeable card. Decision 7 in
+	  [[Autonomous Lane — Design]] came out of this card and S5-P2 together.
+	  Story E stays open on S5-P4.
+- [x] **S5-P2** · 🤖 [[Known Issues]] D1's fallback fix · P3 · 🤖 Auto ·
+	  **Sep 3**, `0ac1a9b0` (#66). No review comments; a silent merge a day after the PR opened.
+	  **The lane's first code PR, and the path is proven end to end**: branched from a fresh
+	  `origin/master`, built and tested on `linux-debug`, opened under the right `S5-P2/` prefix,
+	  never merged by the lane. The inherited clause holds too: the Sep 2 second fire read the PR
+	  in the day's note and took report-only work, so the one-PR-per-day cap is observed.
+	  **The test clause was met and still does not cover the fix.** D1 asked for a config-table
+	  case mirroring `AssertTests.cpp`, and that case pins the library's compiled gate to the
+	  TU's. The fallback branch itself is reached by no TU in the tree, because nothing includes
+	  `Log.hpp` without linking `base`, which is D1's own trigger condition. The run stopped short
+	  of a dedicated `#undef` TU rather than widen an unattended diff. Correct by inspection of
+	  six preprocessor lines; [[Backlog]] § *base* carries the gap. [[Logger — Design]] records
+	  where the fallback lands RelWithDebInfo.
+	  **Found not fixed:** `-DTE_LOG_ACTIVE_LEVEL=3` breaks the Linux build. On [[Backlog]].
+	  **Retro line: merged Sep 3, closed Sep 4, and the card sat in To Do in between.** Four
+	  fires reported an empty lane while its own finished card looked untaken. That is decision 7
+	  in [[Autonomous Lane — Design]]: the lane now moves its card.
+	  Closes the Tier 3 DoD line. Story E stays open on S5-P4.
 - [x] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep ·
 	  **Sep 4**, `e0495146` (#70). Empty PR body, no review comments; the review happened in
 	  session, the fourth card running.

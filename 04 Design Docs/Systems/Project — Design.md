@@ -471,6 +471,9 @@ pins to root, name, shader dir and asset dirs.
   hand until then.
 - **Exporting a project.** v1's `exportProject` is what produces the fixed layout the runtime
   bootstrap assumes. Owner: M6, with baking.
+- **What the runtime mounts.** Deferred 2026-09-04 until the package format exists, because
+  the layout beside the exe is whatever export writes. Until then `RuntimeApp::init()` mounts
+  nothing, and the runtime row in § *The project layout* is a placeholder. Owner: M6.
 - **What a listen-server mounts.** ADR-006 §2 makes a listen-server the `runtime` client also
   running authoritative sim, so it may need `assets/server` as well as `assets/client`.
   `Role::ListenServer` ships in `FrameContext.hpp:9` and nothing maps it to roots yet. Owner:

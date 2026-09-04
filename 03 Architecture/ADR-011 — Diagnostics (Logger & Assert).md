@@ -27,6 +27,10 @@
   handler that *returns* from a fatal failure is out of contract. Code that must continue takes
   `TE_ENSURE`, the tier that returns `bool` for exactly that. Found in S5-T2, where a
   `MountTable::mount()` check had no correct behaviour under a returning handler.
+- **Amended 2026-09-04 — citations:** § *Context*'s grounding facts are anchored at
+  `49ee9a99`, the engine tip when they were checked. The first one was made false by this
+  ADR's own decision (spdlog has been `LIBS_PRIVATE` since #8) and read as present tense. No
+  decision moved. Found by S5-P3.
 - **Supersedes:** **ADR-006 §6's assert-tier clause only** — the `TE_VERIFY`
   semantics in "`TE_CHECK/TE_VERIFY` always-on for shipped invariants" (ADR-006
   `:254-255`). ADR-006 §6's **logging bullet**, its **`TE_ASSERT`** semantics, the
@@ -53,9 +57,10 @@ questions** parked for exactly this moment, plus one **contradiction with an Acc
 ADR** (the assert tiers), which is why this is a superseding record and not an
 amendment.
 
-**Grounding — three facts checked against the tree, not assumed:**
+**Grounding — three facts checked against the tree at `49ee9a99`, not assumed. Every
+`path:line` below is read at that sha, and the decision changes the first one:**
 
-- `engine/base/CMakeLists.txt:4` links `spdlog::spdlog` as **PUBLIC** today. Nothing in
+- `engine/base/CMakeLists.txt:4` links `spdlog::spdlog` as **PUBLIC**. Nothing in
   `base`'s public header uses it (`include/TechEngine/base/Base.hpp` is a stub), so this
   is already out of compliance with ADR-008 §8's visibility rule.
 - **spdlog's bundled fmt is not separately reachable.** The pinned spdlog v1.15.1
@@ -82,7 +87,7 @@ default bundled fmt (**no `deps.cmake` change, no second dep, no version-compat
 matrix**).
 
 - **`spdlog::spdlog` becomes `LIBS_PRIVATE`** on `te_base` — correcting
-  `engine/base/CMakeLists.txt:4` per ADR-008 §8. `glm::glm` stays PUBLIC (math *is* in
+  `engine/base/CMakeLists.txt:4` at `49ee9a99` per ADR-008 §8 (landed in #8). `glm::glm` stays PUBLIC (math *is* in
   the public surface).
 - **Compile-time-checked format strings are preserved.** `std::format_string<Args...>`
   in the macro's template makes a bad format string a **compile error**, not a runtime

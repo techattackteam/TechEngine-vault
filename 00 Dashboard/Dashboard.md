@@ -35,13 +35,13 @@ you *which* note drifted, only that nobody has looked.
 `Math.hpp` and `StringId.hpp` carry their formatters with no separate `Format.hpp`, matching
 the S4-T1 reversal recorded in [[Math — Design]] and [[StringId — Design]].
 
-**Two known drifts stay open and both are carded on [[Backlog]]:** ADR-013 and
+**One known drift stays open and is carded on [[Backlog]]:** ADR-013 and
 [[Profiler — Design]] still pin Tracy `v0.13.1` while the tree is on `v0.14.1`
 (`#prio/high` — a wire-protocol lock, so a reader trusting either artifact gets a refused
-connection), and `file:line` citations point at the wrong line. The second one is **S5-P3**,
-an 🤖 Auto card that ran 2026-09-01 and **is still open at 5 of 8**: 10 sites were corrected,
-and the remaining three are snapshot citations inside Accepted ADRs, where repointing the
-number would leave a right pointer under a false sentence. Carded, not touched.
+connection). The `file:line` drift was **S5-P3**, an 🤖 Auto card that ran 2026-09-01 and
+closed 2026-09-04: 10 sites corrected, the two Accepted-ADR snapshots anchored at the sha they
+were read at, and the three `App.cpp` sites left on [[Backlog]] for S5-T5, which moves the
+line they should point at.
 
 **#62 and #63 were checked 2026-09-01, outside a ceremony, so the stamp does not move for
 them.** That day's second autonomous fire ran the freshness fallback over `01ed7a3..b627332`
