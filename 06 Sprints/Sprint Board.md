@@ -19,19 +19,16 @@ kanban-plugin: board
 
 ## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5; after Story F)*
 
-- [ ] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep
-	  **Rewritten Aug 31: editor-local, and `root` is derived not stored.** done: `Project` in
-	  `apps/editor/src/project/` loads `project.toml` through toml++ in its **non-throwing**
-	  form, carrying `name` · `shaderDir` · `assetDirs`, root derived from the manifest's own
-	  location; load and save both owned by `Project`, both through `FileAccess`; malformed,
-	  unreadable or missing returns a `ProjectResult`; Catch2 in `apps/editor/tests/` pins good,
-	  malformed, missing, and a path escaping the root. Needs S5-D1, S5-T10.
 - [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate
-	  **Rewritten Aug 31: the old "runtime loads it by default" is reversed by ADR-017.** done:
+	  **Rewritten Aug 31: the old "runtime loads it by default" is reversed by ADR-017.
+	  Rewritten again Sep 4: [[Project — Design]] § *The project layout* decided the on-disk
+	  shape, so the role selects the asset roots instead of the manifest naming them.** done:
 	  `EditorApp::init()` mounts `project` from `argv` and `engine` off `executablePath()`,
-	  reads the manifest, mounts the `assets` and `shaders` it names; `RuntimeApp::init()`
-	  mounts a fixed layout and **reads no manifest**; `projects/dev/` exists at repo
-	  root as data with a real `project.toml` and **the editor** loads it by default.
+	  reads the manifest, derives three roots from `project.root()` and mounts them
+	  (`shaders`, `assets/common` at 0, `assets/client` at 100); `RuntimeApp::init()`
+	  mounts a fixed layout and **reads no manifest**; `projects/dev/` exists at repo root as
+	  data with a real `project.toml` and the three-way `assets/` split beside `shaders/`, and
+	  **the editor** loads it by default.
 	  Needs S5-T1, S5-T4, S5-T11.
 	  **Demo-mount clause struck Sep 1 — landed early, in two halves.** S5-T11 took the
 	  `App.cpp` half; the CMake half, the assets and a stale `.gitignore` rule went in their own
@@ -106,6 +103,29 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep ·
+	  **Sep 4**, `e0495146` (#70). Empty PR body, no review comments; the review happened in
+	  session, the fourth card running.
+	  **The toml++ trap cost a debugging round, and a test caught it rather than review.**
+	  `TOML_EXCEPTIONS` defaults to 1 whenever the compiler has exceptions, and in that mode
+	  `toml::parse_result` is a plain alias for `toml::table` — so the first failure check
+	  compiled, could never fire, and `parse()` threw instead. `cmake/deps.cmake` now wraps the
+	  dep as `TechEngine::tomlplusplus` carrying `TOML_EXCEPTIONS=0`, so no consumer can pick up
+	  the throwing mode by forgetting a define.
+	  **`mounts()` was written and deleted before it shipped**, twice over: scaffolded, given a
+	  `Role` parameter, then removed once the one-key schema left it deriving from convention for
+	  a single caller. [[Project — Design]] § *Why `Project` does not mount* records it, and
+	  corrects a wrong reason on the way — the composition-root rule is **legibility**, not
+	  thread safety.
+	  **`ProjectResult` had no value for a failed write.** Raised at card-start, left unsettled,
+	  and it blocked `save` at implementation time. `WriteFailed` added mid-card.
+	  **Retro line: the design settled under the card, not before it.** The clause was rewritten
+	  twice on the build day, for the three-way `assets/` split and then the one-key schema.
+	  S5-D1 exists to prevent that and did not, because the layout question it parked in
+	  § *Open questions* turned out to gate the type's whole surface.
+	  **Retro line: `.claude/output-styles/techengine.md` rode along** — 93 lines, no clause
+	  named it, flagged pre-PR as not belonging, merged anyway.
+	  **Unblocks S5-T5**, the last card in Story B. Closes neither the story nor a DoD line.
 - [x] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep ·
 	  **Sep 3**, `84181fae` (#68). Empty PR body, no review comments; the review happened in
 	  session, the third card running.

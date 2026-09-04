@@ -148,24 +148,41 @@
       is the call that does create parents; Catch2 pins each against a scratch directory,
       including the mount-root case (`InvalidPath`), the missing-parent case, the
       already-exists case and the non-empty-directory case; green on all legs. Needs S5-D1.
-- [ ] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep — **rewritten 2026-08-31:
+- [x] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep —
+      **done 2026-09-04**, `e0495146` (#70). Entry on [[Sprint Board]].
+      **rewritten 2026-08-31:
       the type is editor-local, not engine code (ADR-017 § *Decision* 2), and the old clause
-      put `root` inside the manifest.** done: `Project` lives in `apps/editor/src/project/` and
-      loads `project.toml` through toml++ in its **non-throwing** form, carrying only
-      `name` · `shaderDir` · `assetDirs`, with the root **derived** from the manifest's own
-      location; load and save are both owned by `Project` and both go through `FileAccess`,
-      which is the v1 split this fixes; a malformed, unreadable or missing file returns a
-      `ProjectResult` rather than throwing; Catch2 cases live in `apps/editor/tests/` and pin a
-      good file, a malformed one, a missing one, and a manifest path that escapes the root.
-      Needs S5-D1, S5-T10.
+      put `root` inside the manifest. Rewritten again 2026-09-04: [[Project — Design]]
+      § *The manifest* cut the schema to one key, so `shaderDir` and `assetDirs` no longer
+      exist and the mount roots are derived by convention.** done: `Project` lives in
+      `apps/editor/src/project/` and loads `project.toml` through toml++ in its
+      **non-throwing** form, carrying only `name`, with the root **derived** from the
+      manifest's own location and **no mount knowledge on the type at all**; load and save are
+      both owned by `Project` and both go through `FileAccess`, which is the v1 split this
+      fixes; a malformed, unreadable or missing file returns a `ProjectResult` rather than
+      throwing; Catch2 cases live in `apps/editor/tests/project/` and pin a good file, a
+      malformed one, a missing one, a `manifestPath` that escapes the root, a missing `name`
+      and a `name` of the wrong type. Needs S5-D1, S5-T10.
+      **Three things landed that the clause did not name.** `ProjectResult` gained
+      **`WriteFailed`**, because the four values it was written with had none for a failed
+      write and `save` would otherwise have reported a read error. `cmake/deps.cmake` gained a
+      **`TechEngine::tomlplusplus` wrapper carrying `TOML_EXCEPTIONS=0`**: the upstream default
+      makes `toml::parse_result` an alias for `toml::table`, so the non-throwing form the
+      clause asks for is a build setting rather than a call choice. And the
+      `.claude/output-styles/techengine.md` change **rode along uninvited**, 93 lines of it.
 - [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate —
       **rewritten 2026-08-31: the old clause read "the runtime loads it by default", which
-      ADR-017 § *Decision* 1 reverses outright.** done: `EditorApp::init()` mounts `project` at
-      the root from `argv` and `engine` off `executablePath()`, reads the manifest and mounts
-      the `assets` and `shaders` it names, all into the one `MountTable` the base class owns;
+      ADR-017 § *Decision* 1 reverses outright. Rewritten again 2026-09-04, when
+      [[Project — Design]] § *The project layout* decided the on-disk shape: the old mount
+      clause had the manifest naming the asset roots, and the role selects them now.** done:
+      `EditorApp::init()` mounts `project` at the root from `argv` and `engine` off
+      `executablePath()`, reads the manifest, and **derives three roots from `project.root()`**
+      — `shaders`, plus `assets` at `assets/common` (priority 0) and `assets/client` (100) —
+      mounting all of them into the one `MountTable` the base owns;
       `RuntimeApp::init()` mounts a fixed layout off `executablePath()` and **reads no
-      manifest**; `projects/dev/` exists at repo root as data, not a CMake
-      target, with a real `project.toml`, and **the editor** loads it by default.
+      manifest**; `projects/dev/` exists at repo root as data, not a CMake target, with a real
+      `project.toml` and the **three-way `assets/` split** (`common` · `client` · `server`)
+      beside `shaders/`, and **the editor** loads it by default.
       Needs S5-T1, S5-T4, S5-T11.
       **The demo-mount clause is struck, 2026-09-01, `40f7171e` (#65): it landed early and in
       two halves.**

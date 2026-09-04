@@ -337,6 +337,11 @@ directory. Resolution then canonicalises on the spot instead.
 **There is none, and none is needed.** All mounting happens at the composition root, before
 the loop starts. The table is frozen after that, so concurrent readers see a constant.
 
+**This rule is about *when*, not *who*.** Code called from `init()` on the one thread, such as
+the editor's project bootstrap, could mount without breaking anything here. The Decided table's
+"only the composition root mounts" is a **legibility** rule on top of this one, so that the
+whole mount set reads in one place. Do not cite threading as its reason.
+
 This is worth stating because v1 took a `shared_mutex` on every single read. The difference
 is not that v2 is braver. It follows from moving `mount()` off the interface that every
 consumer held. When anyone can mount at any time, every read needs a lock.

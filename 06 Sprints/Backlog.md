@@ -195,6 +195,16 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/low · **`techengine_app()` has no `LIBS_PRIVATE`, so every third-party dep an app links
+  is PUBLIC on its object library** — `cmake/techengine_app.cmake:36` puts `LIBS` on the PUBLIC
+  side with the `DEPS`, and its sibling `techengine_module()` carries both `LIBS` and
+  `LIBS_PRIVATE` (`cmake/techengine_module.cmake:58-59`). Found at S5-T4, where toml++ is an
+  implementation detail of one `.cpp` and now reaches the editor exe and `TechEngineEditorTests`
+  as well. Nothing misbehaves: it widens an include path and a link line, and the acid test for
+  a leaking private type is `sdk-smoke`, which does not cover apps. **Trigger:** the second
+  third-party dep an app links, or the next edit to that helper — the asymmetry between two
+  sibling helpers is the part that will confuse someone.
+
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **A project launcher, inside the editor exe** — the editor's first screen
@@ -379,14 +389,6 @@ groups are kept, because they show where future work will land.
   sweep. **Trigger:** fired — found by S5-P3, 2026-09-01. Pull with S5-T5 or the next Frame
   Flow edit.
 
-- #prio/low · **[[Project — Design]] says `apps/editor/CMakeLists.txt:2` repeats ADR-006 §1's
-  `tooling` composition, and it no longer does** — the note's § *A third tier is the standing
-  alternative* leans on that file echoing "app + client + core + **tooling**". Line 2 now reads
-  "Composition = app + client + core (ADR-006 §1). ADR-017 decided no `tooling` tier is created
-  for now", so the file **contradicts** the sentence citing it. The argument still stands on
-  ADR-006 §1 alone; only the second witness is gone. **Trigger:** fired — found by S5-P3,
-  2026-09-01. Pull with the next [[Project — Design]] edit.
-
 - #prio/medium · **Every quoted `#include` in the tree arrived in #62 and #63, and the house
   rule is angle brackets** — `CONVENTIONS.md` § *Includes* says "angle brackets throughout"
   and "never `"FormatBuffer.hpp"`", and 382 of the 395 `#include` lines under `engine/`,
@@ -412,15 +414,12 @@ groups are kept, because they show where future work will land.
   dated amendment; this half is not, so that amendment would be written without it.
   **Trigger:** fired — pull with whatever amendment ADR-017 § *Decision* 3 gets.
 
-- #prio/low · **[[Project — Design]] still reads as pre-build in three places** — its header
-  says "**Status:** draft, nothing built" while two of its sections now describe merged code.
-  § *Testing an executable*'s cmake sketch splices `$<TARGET_OBJECTS:editor_obj>` into both
-  executables, and § *`techengine_app()`, as shipped* then records that linking the object
-  library was chosen instead, so a reader who reaches the sketch first gets the shape that did
-  not ship. And § *Consequences*' "S5-T5's `done:` clause contradicts this note and needs
-  rewording" was carried out on [[Sprint Board]] on Aug 31 — ADR-017 § *Consequences* carries
-  the same now-satisfied bullet. **Trigger:** fired — pull with the next [[Project — Design]]
-  edit.
+- #prio/low · **ADR-017 § *Consequences* still says S5-T5's `done:` clause needs rewording** —
+  the rewording happened on [[Sprint Board]] and in the sprint note on 2026-08-31, and
+  [[Project — Design]] § *Consequences* was corrected on 2026-09-04. The ADR is Accepted, so
+  this is a dated amendment and not an edit ([[ADR Index]] § *Amending an Accepted ADR*).
+  **Trigger:** pull with whatever other amendment ADR-017 gets, since it already owes one for
+  § *Decision* 3.
 - #prio/medium · **A prompt edit in the vault does not reach the running routine, and nothing
   catches the gap** — `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] § *The prompt* on
   Aug 31 at 11:06 Lisbon, and the fire five hours later still received the old four-fire text.
