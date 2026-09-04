@@ -41,6 +41,8 @@
 | **Window / M4**: glad2 vendoring · what `platform` owns · the M4-level context handoff · headless CI | ❌, ADR-015 §2 already decided the owner | ✅ | **Second coverage gap.** No ADR is owed: ADR-006 §1, ADR-008 §4 and ADR-015 §2 between them decide module, vendoring and ownership. What is open is **mechanism**, which is a note's job. Heavy, so Story D was held unsized. → **S5-D2**, done 2026-08-30, and it moved ADR-006 §1 by dated amendment |
 | `executablePath` · mount validation · the routine · the two Auto cards | ❌ **→ mount validation needed an ADR amendment** | ❌ | Reversible and local, straight to cards. <br>**The second gate miss of the sprint, and the same shape as the first.** "Reversible and local" held for the three alias rules. It did not hold for *what a fatal check guarantees*: writing the card's `TE_CHECK` clause exposed that ADR-011 §5 never said whether the abort was reachable-past, and the engine had shipped both readings. Settled by a dated amendment on 2026-09-01, which then re-tiered ten call sites across `core`. See S5-T2. |
 
+| **S5-B1** · the editor's default project root | ❌ | ❌ | Bug, reversible and local. If the fix is a configure-time path, the note says why the editor may keep one when M3 just removed the runtime's. |
+
 ## Stories & tasks
 
 > Every task carries `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light / 🤖 Auto`. Weight fits the
@@ -193,6 +195,21 @@
       card had named:** `.gitignore` still hid `engine/app/assets/demo-material.bin`, a blob
       written by the S4-T7 demo, so the rule outlived its writer and would have masked a real
       file at that path.
+- [ ] **S5-B1** · 🐛 the editor's default project root depends on the working directory ·
+      **P1** · 🟡 Light — **found 2026-09-04, running the testbed after #71.**
+      `apps/editor/src/main.cpp:8` falls back to `"projects/dev"` when `argv` is empty, and
+      that resolves against the working directory. Only Visual Studio gets one that works,
+      through `VS_DEBUGGER_WORKING_DIRECTORY` (`cmake/techengine_app.cmake:52`). CLion runs the
+      exe from its build directory, so `init()`'s `TE_CHECK` fires on a manifest that is not
+      there. done: with no argument the editor opens the repo's `projects/dev/` from **any**
+      working directory, CLion's default run configuration included; an explicit `argv` still
+      wins; and the mechanism is written into [[Project — Design]] § *The mount set* beside the
+      `argv` rule, with one sentence on the option not taken. **Investigate first, then pick
+      one:** a configure-time define on the editor target only, so the runtime stays free of
+      source paths (ADR-017 § *Decision* 1), or a default resolved off `executablePath()` that
+      walks up until it finds `projects/dev/project.toml`. Not a third mechanism. Mid-sprint
+      bug per [[Planning Workflow — Artifact Gate]] § *Bug*: it displaces nothing yet, and the
+      capacity call is open.
 
 ### Story C — M4's gate *(Design · ordered before Story D)*
 

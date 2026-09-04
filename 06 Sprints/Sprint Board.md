@@ -17,8 +17,19 @@ kanban-plugin: board
 
 
 
-## 📋 B · M3 build · ✅ **complete** *(S5-T5, Sep 4)*
+## 📋 B · M3 build · ✅ **complete** *(S5-T5, Sep 4)* · 🐛 S5-B1 follows it
 
+- [ ] **S5-B1** · 🐛 the editor's default project root depends on the working directory · P1 · 🟡 Light
+	  found Sep 4 running the testbed after #71: `apps/editor/src/main.cpp:8` falls back to
+	  `"projects/dev"` against the working directory, so CLion's default run configuration
+	  fails `init()`'s `TE_CHECK` on a manifest that is not there. Only Visual Studio is covered,
+	  by `VS_DEBUGGER_WORKING_DIRECTORY`.
+	  done: with no argument the editor opens the repo's `projects/dev/` from any working
+	  directory; an explicit `argv` still wins; the mechanism is in [[Project — Design]] § *The
+	  mount set* with one sentence on the option not taken. **Investigate, then pick one:** a
+	  configure-time define on the editor target only (the runtime stays free of source paths,
+	  ADR-017 § *Decision* 1), or a default off `executablePath()` that walks up to
+	  `projects/dev/project.toml`. Displaces nothing yet; the capacity call is open.
 
 
 ## 📋 C · M4's gate · ✅ **complete** *(S5-D2, Aug 30)*
