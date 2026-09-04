@@ -222,14 +222,15 @@ engine's own content and could then drift from it.
 
 ### Two bootstraps
 
-The editor learns its mounts from a manifest. The runtime is told them at compile time. Both
-paths still end at one composition root, so `run()` keeps owning `MountTable` and `FileAccess`.
+The editor learns its mounts from a manifest. The runtime will be told them by the export
+layout, which M6 decides, and mounts nothing until then (§ *Open questions*). Both paths still
+end at one composition root, so `run()` keeps owning `MountTable` and `FileAccess`.
 
 ```mermaid
 flowchart TB
   base["App (in app)<br/>owns MountTable · FileAccess · Clock<br/>JobSystem · FrameLoop"]
   ed["EditorApp::init()<br/>mounts project, reads the manifest,<br/>mounts what it names"]
-  rt["RuntimeApp::init()<br/>mounts a fixed layout<br/>off executablePath()"]
+  rt["RuntimeApp::init()<br/>empty until M6 decides<br/>the export layout"]
   loop["FrameLoop<br/>fixedUpdate · update"]
 
   base --> ed & rt
@@ -296,6 +297,8 @@ read through the VFS.
 
 1. **Bootstrap.** Mount alias `project` at the root taken from `argv`, and `engine` off
    `executablePath()`. The root is known before anything is parsed, so this needs no manifest.
+   With no argument the editor opens `projects/dev` from the working directory, a development
+   default the launcher replaces ([[Backlog]] → *editor & tooling*).
 2. **Read.** `Project::load` reads `project://project.toml` through the base class's
    `FileAccess`. No disk path leaves `platform`.
 3. **Project mounts.** Derive the three roots from `project.root()` and add them to the same
@@ -404,7 +407,7 @@ enum class ProjectResult : std::uint8_t { Ok, ReadFailed, WriteFailed, ParseFail
 
 class Project {
 public:
-    static ProjectResult load(const FileAccess& files, std::string_view manifestPath, Project& out);
+    ProjectResult load(const FileAccess& files, std::string_view manifestPath);
     ProjectResult save(FileAccess& files, std::string_view manifestPath) const;
 
     const std::filesystem::path& root() const;
@@ -415,9 +418,9 @@ public:
 `Project` owns both halves. Neither hands a half-parsed document back to a caller, which is
 the v1 shape this replaces.
 
-`load` is `static` and fills an out-param, so a failed load cannot leave a half-populated
-`Project` behind. The pattern matches `FileAccess`, which returns a result and fills an
-out-param rather than returning a value that has to encode failure.
+`load` writes `m_root` and `m_name` last, on the success path only, so a failed load leaves
+the object as it was. It was a `static` with an out-param, matching `FileAccess`'s shape,
+until S5-T5 (#71) made it a member so `EditorApp` can hold the loaded `Project` directly.
 
 **toml++ must be used in its non-throwing form**, and that is a build setting rather than a
 call choice. `TOML_EXCEPTIONS` defaults to 1 whenever the compiler has exceptions, and in that
@@ -527,5 +530,6 @@ pins to root, name, shader dir and asset dirs.
 - v1 prior art at the `v1-reference` tag: `runtime/editor/src/project/Project.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp` ·
   `runtime/editor/src/scripting/ScriptsCompiler.cpp`
-- Code, once it exists: `apps/editor/src/project/`. The composition root is
-  `engine/app/src/App.cpp:82`, and the demo mount it replaces is at line 95.
+- Code: `apps/editor/src/project/` for the type, `apps/editor/src/EditorApp.cpp:18-31` for
+  the mount set. The composition root is `App::run()` at `engine/app/src/App.cpp:15`. The
+  demo mount it replaced is gone since #65.

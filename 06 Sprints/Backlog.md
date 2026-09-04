@@ -368,20 +368,6 @@ groups are kept, because they show where future work will land.
   `master`: it proves "nothing dangles as of the last reconciliation". Citations anchored
   "at `<sha>`" resolve at that sha. **Trigger:** the next dangling citation found by hand.
 
-- #prio/medium · **Three `App.cpp` citations now point past the end of the file** — #63 cut
-  `engine/app/src/App.cpp` from about 250 lines to 55, and the demo body went with it.
-  [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Context* cites
-  `App.cpp:95` for the `TE_DEMO_ASSETS_DIR` mount, and [[Project — Design]] § *Where this lands*
-  cites `App.cpp:82` as the composition root "and the demo mount it replaces is at line 95".
-  The mount is gone from `App.cpp` entirely.
-  **The block this entry deferred to has already gone:** #65 deleted `TE_DEMO_ASSETS_DIR`, its
-  `TODO(S3-T13)` and `engine/app/assets/` on 2026-09-01, hours after this was filed, so neither
-  symbol appears anywhere in the tree and the citations no longer wait on that deletion. The
-  deferral still holds on its other leg — S5-T5 moves the composition root, so the line the
-  artifacts should point at does not exist yet. This is the one citation class a mechanical
-  in-range check would have caught.
-  **Trigger:** fired — pull with S5-T5.
-
 - #prio/medium · **[[Game Loop — Frame Flow]]'s dated callout is stale on both of its claims** —
   the block reads "Not wired yet (checked 2026-08-20). The shipped `EngineContext` has exactly
   one field, `FileAccess& files` … The loop still constructs its own `Clock` locally, at
@@ -389,8 +375,8 @@ groups are kept, because they show where future work will land.
   (`engine/core/include/TechEngine/core/EngineContext.hpp:8-9`), and the `Clock` is an `App`
   member (`engine/app/include/TechEngine/app/App.hpp:20`), not a loop local. Re-dating the
   block means re-deciding how much of the split is built, which is a design read rather than a
-  sweep. **Trigger:** fired — found by S5-P3, 2026-09-01. Pull with S5-T5 or the next Frame
-  Flow edit.
+  sweep. **Trigger:** fired — found by S5-P3, 2026-09-01. S5-T5 closed 2026-09-04 without
+  it, so pull with the next Frame Flow edit.
 
 - #prio/medium · **Every quoted `#include` in the tree arrived in #62 and #63, and the house
   rule is angle brackets** — `CONVENTIONS.md` § *Includes* says "angle brackets throughout"
@@ -417,12 +403,6 @@ groups are kept, because they show where future work will land.
   dated amendment; this half is not, so that amendment would be written without it.
   **Trigger:** fired — pull with whatever amendment ADR-017 § *Decision* 3 gets.
 
-- #prio/low · **ADR-017 § *Consequences* still says S5-T5's `done:` clause needs rewording** —
-  the rewording happened on [[Sprint Board]] and in the sprint note on 2026-08-31, and
-  [[Project — Design]] § *Consequences* was corrected on 2026-09-04. The ADR is Accepted, so
-  this is a dated amendment and not an edit ([[ADR Index]] § *Amending an Accepted ADR*).
-  **Trigger:** pull with whatever other amendment ADR-017 gets, since it already owes one for
-  § *Decision* 3.
 - #prio/medium · **A prompt edit in the vault does not reach the running routine, and nothing
   catches the gap** — `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] § *The prompt* on
   Aug 31 at 11:06 Lisbon, and the fire five hours later still received the old four-fire text.

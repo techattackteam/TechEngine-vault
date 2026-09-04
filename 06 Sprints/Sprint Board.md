@@ -17,7 +17,7 @@ kanban-plugin: board
 
 
 
-## 📋 B · M3 build *(T2 → T1 → T3 → T4 → T5; after Story F)*
+## 📋 B · M3 build · ✅ **complete** *(S5-T5, Sep 4)*
 
 
 
@@ -66,21 +66,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate
-	  **Rewritten Aug 31: the old "runtime loads it by default" is reversed by ADR-017.
-	  Rewritten again Sep 4: [[Project — Design]] § *The project layout* decided the on-disk
-	  shape, so the role selects the asset roots instead of the manifest naming them.** done:
-	  `EditorApp::init()` mounts `project` from `argv` and `engine` off `executablePath()`,
-	  reads the manifest, derives three roots from `project.root()` and mounts them
-	  (`shaders`, `assets/common` at 0, `assets/client` at 100); `RuntimeApp::init()`
-	  mounts a fixed layout and **reads no manifest**; `projects/dev/` exists at repo root as
-	  data with a real `project.toml` and the three-way `assets/` split beside `shaders/`, and
-	  **the editor** loads it by default.
-	  Needs S5-T1, S5-T4, S5-T11.
-	  **Demo-mount clause struck Sep 1 — landed early, in two halves.** S5-T11 took the
-	  `App.cpp` half; the CMake half, the assets and a stale `.gitignore` rule went in their own
-	  PR ahead of this card (`40f7171e`, #65).
-
 
 ## 👀 Review / Demo
 
@@ -88,6 +73,24 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate ·
+	  **Sep 4**, `934cf999` (#71). Empty PR body, no review comments; the fifth card reviewed in
+	  session. **Closes Story B.**
+	  **The runtime clause had no referent when the card shipped.** The clause said
+	  `RuntimeApp::init()` mounts a fixed layout. [[Project — Design]] § *Open questions* deferred
+	  that to M6 the same morning, because the layout beside the exe is whatever export writes,
+	  and nobody rewrote the clause a third time. What merged mounts nothing there. The Tier 1 DoD
+	  line stays open on that half and on "relative to the binary": the editor's default root is
+	  `projects/dev` **from the working directory**, and the launcher entry on [[Backlog]] owns
+	  replacing it.
+	  **`Project::load` stopped being static.** The note had a static with an out-param so a
+	  failed load could not half-populate. It is a member now and the guarantee survives, because
+	  the two writes are the last thing on the success path. § *Load and save* records it.
+	  **The three `App.cpp` citations were repointed at this close**, as their entry said: ADR-017
+	  § *Context* anchored at `76056402`, the note's reference line now names `App::run()` and
+	  `EditorApp::init()`.
+	  **Retro line: rewritten three times, the last one silently.** Aug 31 for ADR-017, Sep 4 for
+	  the layout, and Sep 4 again by a deferral that reached the design note and not the card.
 - [x] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto ·
 	  **Sep 4**, vault-only, no PR. Run unattended 2026-09-01 ([[2026-09-01 Auto Run]]), closed
 	  attended three days later.

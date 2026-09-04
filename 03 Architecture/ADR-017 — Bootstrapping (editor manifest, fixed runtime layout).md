@@ -11,10 +11,15 @@
 - **Partially supersedes:** [[ADR-006 — v2 core architecture & module layout]] §1, the editor
   row's "out of the frame loop" clause. Rowed in [[ADR Index]].
 - **Task:** S5-D1 ([[2026-08 Sprint 05 — M3 Project & M4 Window]]). Gates S5-T4 and S5-T5.
+- **Amended 2026-09-04 — citations and a stale consequence:** § *Context*'s `App.cpp:95` is
+  anchored at `76056402`, the engine tip when it was written; #63 cut the file to 55 lines and
+  #65 deleted the mount. § *Consequences*' last bullet said S5-T5's `done:` clause "needs
+  rewording before that card starts"; it was reworded on 2026-08-31 and 2026-09-04, and the
+  card closed on 2026-09-04 (#71). No decision moved.
 
 ## Context
 
-M3 exists to delete the demo mount. `App.cpp:95` mounts one alias from `TE_DEMO_ASSETS_DIR`, a
+M3 exists to delete the demo mount. `App.cpp:95` at `76056402` mounts one alias from `TE_DEMO_ASSETS_DIR`, a
 source-tree path baked in at configure time under a `TODO(S3-T13)`, which resolves to nothing
 in an installed build. The real mount set has to come from somewhere.
 
@@ -99,8 +104,9 @@ The signatures, the `init()` sequence and the manifest schema are [[Project — 
   to `TE_TEST_TARGETS`. Mechanism in [[Project — Design]] § *Where the type lives*.
 - **Two bootstrap paths diverge.** A mount bug that reproduces in the editor may not reproduce
   in the runtime, and the reverse. Nothing tests the runtime path until `projects/dev/` ships.
-- **S5-T5's `done:` clause contradicts clause 1.** It reads "the runtime loads it by default".
-  It needs rewording before that card starts.
+- **S5-T5's `done:` clause contradicted clause 1** when this was accepted: it read "the
+  runtime loads it by default". Reworded 2026-08-31. The card closed 2026-09-04 (#71) with
+  the runtime half deferred to M6 by [[Project — Design]] § *Open questions*.
 
 ## Alternatives considered
 

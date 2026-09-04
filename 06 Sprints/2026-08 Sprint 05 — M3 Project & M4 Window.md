@@ -170,7 +170,7 @@
       makes `toml::parse_result` an alias for `toml::table`, so the non-throwing form the
       clause asks for is a build setting rather than a call choice. And the
       `.claude/output-styles/techengine.md` change **rode along uninvited**, 93 lines of it.
-- [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate —
+- [x] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate —
       **rewritten 2026-08-31: the old clause read "the runtime loads it by default", which
       ADR-017 § *Decision* 1 reverses outright. Rewritten again 2026-09-04, when
       [[Project — Design]] § *The project layout* decided the on-disk shape: the old mount
@@ -287,10 +287,13 @@
 
 **Tier 1 — the commitment. The sprint fails without these.**
 
-- [ ] M3's rung is closed: `projects/dev/` exists as data, **the editor** loads it through a
-      real `project.toml`, **the runtime bootstraps a fixed layout without reading one**
-      (ADR-017 § *Decision* 1), and every mount resolves relative to the binary rather than to a
-      configure-time source path.
+- [x] M3's editor half is closed: `projects/dev/` exists as data, **the editor** loads it
+      through a real `project.toml`, and the `engine` alias resolves relative to the binary
+      rather than to a configure-time source path. **2026-09-04**, `934cf999` (#71).
+      **Rewritten at that close.** The line used to also ask for the runtime's fixed layout
+      and for every mount to be binary-relative. The runtime half is deferred to M6 by
+      [[Project — Design]] § *Open questions*, and the editor's default project root is read
+      from the working directory until the launcher replaces it ([[Backlog]]).
 - [x] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
       **2026-08-31**, `76056402` (#62) and `b6273327` (#63).
 - [x] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.
