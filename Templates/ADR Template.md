@@ -4,22 +4,28 @@
 - **Date:** YYYY-MM
 - **Deciders:** Miguel (Lead Engineer)
 
+<!-- Replace prompts with the decision record. Keep the required sections below.
+Explain the choice in plain sentences; link background already recorded elsewhere. -->
+
 ## Context
-What forces are at play? What problem or constraint triggers this decision?
-A `path:line` cited here is a snapshot: write the engine sha it was read at. The decision
-below is usually what makes it false, so a bare line number rots on acceptance.
+
+State the problem and the constraint that makes a decision necessary.
+For code evidence, include `path:line` and the engine revision inspected.
 
 ## Decision
-The decision, stated plainly in the present tense ("We use…").
+
+State what we will use and why. Keep implementation detail in the design note.
 
 ## Consequences
-**Positive**
--
 
-**Negative / open**
--
+- **Benefit:** Explain the main benefit.
+- **Cost or risk:** Explain what we accept in return.
+- **Revisit when:** Name the evidence that would change this decision.
 
 ## Alternatives considered
-- **<option>** — why rejected/deferred.
 
-> Add to [[ADR Index]]. Once Accepted, change it only per [[ADR Index]] § *Amending an Accepted ADR*: a dated header entry for what fits one, a superseding ADR for what needs its own argument.
+Briefly explain each credible alternative and why it was rejected or deferred.
+Use a table only if it makes the comparison easier to read.
+
+<!-- Add the record to [[ADR Index]]. After acceptance, follow its
+"Amending an Accepted ADR" policy for changes. -->

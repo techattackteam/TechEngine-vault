@@ -1,22 +1,33 @@
 # <Name> — Design
 
-> Living design doc for a v2 utility/system. Terse (CLAUDE.md token economy).
-> **ADR = the irreversible decision; this doc = the _how_.** Link, don't duplicate.
+**Module:** <base | platform | core | client | app>
+**Kind:** <utility | system>
+**Status:** <draft | building | done>
+**ADRs:** [[Relevant ADR]]
+**Backlog:** [[Backlog]]
 
-**Module:** `<base|platform|core|client|app|…>` · **Kind:** utility | system · **Status:** draft | building | done
-**ADRs:** [[…]] · **Backlog:** [[Backlog]] → `<module>`
+<!-- Describe the current design in plain sentences. Link decisions and their
+rationale rather than repeating them. Remove unused optional fields and prompts. -->
 
 ## Purpose
-One paragraph — what it is, why it exists, which v1 findings it fixes (F-refs).
+
+Explain what this system does and why it is needed in a few sentences.
+Mention v1 audit findings only when they help explain the work.
 
 ## Decided
-Settled decisions with ADR/§ refs. Don't re-argue them here.
+
+- State a settled decision and link its ADR section. Keep one decision per bullet.
 
 ## Design
-The _how_: mechanism, data shapes, seams. Author any diagram in **Mermaid** (never ASCII).
 
-## Open questions (→ ADR)
-Deferred / build-time decisions. One line each.
+Explain the mechanism, data, and seams needed to understand the system.
+Use short subsections if needed. Add a Mermaid diagram only when it clarifies the flow.
+
+## Open questions
+
+- Name an unresolved question and what it blocks. Route it through the artifact gate
+  when a decision is needed; an open question does not automatically require an ADR.
 
 ## References
-Code (`path:line` once it exists), ADRs, [[v1 Code Audit]] findings.
+
+- Link useful code locations, research, or audit findings that are not already linked above.

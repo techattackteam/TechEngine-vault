@@ -9,9 +9,9 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 05 — M3 Project & M4 Window]] *(Aug 29 to Sep 11 — the boundary was pulled **one week early**)* |
 | **Sprint goal** | **Ship M3 and open the window: `projects/dev/` loads through a real `project.toml`, and a triangle draws on the render thread.** M3 is the commitment; M4 is the reach, and it is the half at risk. |
-| **Current focus** | 🔨 **S5-T2**, `MountTable::mount()` validation, first of Story B. **Both Design cards are closed**: S5-D2 on Aug 30 ([[Window — Design]]) and S5-D1 on Aug 31 ([[Project — Design]] plus [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]]). **Story F closed Aug 31** with S5-T10 and S5-T11 (#62, #63). Remaining order is T2 → T1 → T3 → T4 → T5 for M3, and Story D (T6 → P4 → T7 → T8, T9 last) interleaves behind S5-T6. |
-| **Top blocker** | None hard. Watch: **the 🟠 column is at 2.5× capacity**, five cards against two, after ADR-017 cut Story F into the sprint. **Story D is the expected casualty** now, not a checkpoint decision · **whether CI's llvmpipe advertises GL 4.5** is unverified and S5-P4 owns it, with a fallback written · `external/glad/` is **empty** until S5-T6 · CI-minute budget at 16.1 billed min/PR · a workflow-only PR draws no CI since #54, so S5-P4 must land alone · clang-tidy unproven on Windows |
-| **Next milestone** | **M2 ✅ closed 2026-08-30** — both ADRs Accepted day 1, the four-worker pool Aug 24, the primitives Aug 27, the non-POD file round-trip Aug 30. Next is **M3 + M4 together** ([[Roadmap]]). M4's gate is already Accepted (ADR-015 §2), so only M3 stands between here and the window. RNG · crash handler carry a third sprint |
+| **Current focus** | S5-B1 closed Sep 5 (#73). Stories F and B are complete; M4 follows T6 → P4 → T7 → T8, with T9 optional. [[2026-09-05 Weekly Review]] records the checkpoint. |
+| **Top blocker** | M4 has no implementation yet; GL 4.5 support in CI remains unverified until P4. Preserve the cut order if capacity tightens. |
+| **Next milestone** | M3 editor testbed shipped (#71), with its default-path fix merged (#73); runtime packaging is deferred to M6. M4 is the remaining stretch this sprint. |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `01ed7a30` (2026-08-30) |
 
@@ -28,35 +28,14 @@ git log --oneline 01ed7a30..origin/master
 so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
 you *which* note drifted, only that nobody has looked.
 
-**Latest advance: 2026-08-30** (Sprint 05 planning), from `875991e2`, covering PRs #56, #58,
-#59 and #60. **No new drift.** The shipped `JobSystem` matches [[Concurrency — Design]]
-§ *Surface* (`DEFAULT_WORKER_COUNT = 4`, `submit`/`wait`/`workerCount`), `FileAccess` matches
-[[File Access — Design]]'s five-method surface with `write` the only non-const one, and both
-`Math.hpp` and `StringId.hpp` carry their formatters with no separate `Format.hpp`, matching
-the S4-T1 reversal recorded in [[Math — Design]] and [[StringId — Design]].
+**Latest check: 2026-09-05**, against local HEAD and cached `origin/master` at `934cf999`.
+The Project/App/FileAccess spot-check confirmed unresolved drift, including the const
+mutators contradicting the read-only claim and ADR-017 lifecycle differences.
+See [[2026-09-05 Weekly Review]] for scope, evidence and remaining editorial fixes.
 
-**One known drift stays open and is carded on [[Backlog]]:** ADR-013 and
-[[Profiler — Design]] still pin Tracy `v0.13.1` while the tree is on `v0.14.1`
-(`#prio/high` — a wire-protocol lock, so a reader trusting either artifact gets a refused
-connection). The `file:line` drift was **S5-P3**, an 🤖 Auto card that ran 2026-09-01 and
-closed 2026-09-04: 10 sites corrected, the two Accepted-ADR snapshots anchored at the sha they
-were read at, and the three `App.cpp` sites left on [[Backlog]] for S5-T5, which moves the
-line they should point at.
-
-**#62 and #63 were checked 2026-09-01, outside a ceremony, so the stamp does not move for
-them.** That day's second autonomous fire ran the freshness fallback over `01ed7a3..b627332`
-(#61 is `CLAUDE.md`-only; #62 and #63 are the real subject) and filed **four findings**, none
-fixed. Only `/weekly-review` or `/sprint-plan` advances this stamp, so read those two commits
-as checked but unstamped rather than as unreviewed drift. See [[2026-09-01 Auto Run]].
-
-**The stamp was repointed 2026-08-30 before this advance.** It read `50ca9360`, an object that
-no longer exists: `master` was rewritten after the Aug 29 check and the same commit became
-`875991e2`. Found by the autonomous-lane probe. A rewrite invalidates every engine sha the
-vault records, so treat commit citations older than that with suspicion.
-
-Previous advance: 2026-08-29, from `32bc327c`, covering 8 commits, three findings, two
-reconciled the same day ([[2026-08-29 Weekly Review]]).
-
+**Stamp unchanged:** reconciliation is deferred and the check did not cover every touched
+system. The last advance remains Aug 30 at `01ed7a30`; no remote fetch, build, demo or live
+CI verification ran today. Known Tracy-version drift remains on [[Backlog]].
 ## 🗓️ Rhythm
 
 > **The one home for cadence.** Sprint length, ceremony timing, the weekday fallback and the
@@ -80,9 +59,9 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **weekend of Sep 5-6 2026**: `/weekly-review`, Sprint 05's mid-sprint
-checkpoint. It is **not** a boundary. The Sprint 05 → 06 boundary is the **Sep 12-13** weekend,
-and `/sprint-plan` runs there.
+→ **Next ceremony:** **weekend of Sep 12–13, 2026**: `$sprint-plan`, the Sprint 05 → 06
+boundary. It absorbs the final-week review. The Sep 5 mid-sprint checkpoint is recorded in
+[[2026-09-05 Weekly Review]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
 
@@ -176,28 +155,10 @@ Recently locked — full set in [[ADR Index]]:
   Story B cards, which is where the 🟠 overload came from. **Two clauses of § *Decision* 3 did
   not ship as written:** all four virtuals are pure, and `main()` stayed per-exe behind a
   `runApp<>()` template. Both are logged and neither is amended yet ([[Backlog]])
-- [x] **Autonomous lane — live 2026-08-30, two fires a weekday; the PR path still unproven**
-  ([[Autonomous Lane — Design]]). A second, unattended execution lane in every sprint: 🤖 Auto
-  cards run in a weekday cloud routine while Miguel is at the day job. Scope reaches small bug
-  fixes · the run builds and tests on Linux before opening a PR (`CLAUDE.md` § *Build & run*
-  carries the carve-out) · it checks out the vault as a second `sources` repo and symlinks it
-  to `docs/` · it opens the PR early and reads CI last · it never merges · the daily report is
-  a vault note in [[07 Journal]]. **Deliberately no ADR:** the lane is process, and disabling
-  one routine reverses it. **Three probes plus one full run on the real prompt**, all on the
-  `TechEngineLinux` cloud environment. The run landed [[2026-08-30 Auto Run]] authored as Miguel
-  with no AI attribution, and filed two [[Backlog]] entries of its own. The build carve-out
-  costs ~75 s and passes 200/200. **The routine went live 2026-08-30 at 18:00**, on **weekdays
-  only** — the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session
-  would collide with him. Cron is UTC, so every fire shifts an hour earlier on 25 October.
-  **Cut from four fires a weekday to two on 2026-08-31**: the binding cost is Claude's weekly
-  usage limit, not CI minutes, which never bound because the cap was already one PR per day.
-  **Four fires have now run**, two on Aug 31 and two on Sep 1, each appending to that day's
-  report note and reading what the earlier ones did. **S5-P1 closed 2026-09-01** on exactly
-  that observation, re-scoped to drop a one-PR-per-day clause no report-only fire could ever
-  reach. **Still unproven: the PR path**, because every run so far was report-only. **S5-P2** is
-  the lane's first code card ([[Known Issues]] D1's fallback fix) and is what finally tests it.
-  Two Sep-1 fires declined S5-P2 on S5-P1's ordering clause; that clause is now discharged, so
-  **the next fire should take it**.
+- [x] **Autonomous lane:** S5-P1, P2 and P3 are closed. The first code PR (#66) merged
+  Sep 3; [[Sprint Board]] records Linux validation and the one-PR-per-day observation.
+  [[Autonomous Lane — Design]] now requires completed cards to move to Done and human
+  follow-up to Review/Demo. The live scheduler was not inspected during this review.
 - [ ] task-graph · renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20** — § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.
@@ -207,27 +168,14 @@ Recently locked — full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (update weekly · 2026-08-30)
+## Health check (2026-09-05)
 
-- **Build:** 🟢 — 12 PRs merged Aug 22 to 30, **no revert in the log**, `master` ruleset Active
-  at **9 required checks** (`diff coverage` joined at S4-P3). Caveats are still four:
-  clang-tidy proven on Linux only · CI-minute budget live and measured at 16.1 billed minutes
-  per PR · Tracy's Linux leg has never been built in CI · **a workflow-only PR draws no CI**,
-  so `ci.yml` is never tested by its own PR. *(Read from merge subjects, not from CI runs.)*
-- **Momentum:** 🟢 — Sprint 04 closed its goal **on day 9 of 14**, 13 of 13 cards, with no
-  empty stretch. The 2-week box is doing what it was adopted for, and its overshoot shrank from
-  Sprint 03's 8 days to 5.
-- **Sustainability:** 🟡, and now with a second cause. The overrun repeated for the **third
-  review running**: two deep evenings each carried 1 🟢 + 1 🟠 + 1 🟡, and Fri Aug 28 closed
-  four PRs on a 🟠 day. **Every overrun was process work, not engine work**, which is what the
-  🤖 Auto lane was cut to move (S5-P1 makes it real). New this weekend: **zero rest days** —
-  Sat Aug 29 ran the review plus two merges, Sun Aug 30 two merges plus planning, and the
-  boundary was then pulled forward so nothing sits behind it. Sprint 05 is **deliberately sized
-  over capacity** on the 🟠 column with a pre-named cut order; if week 1 slips, cut rather than
-  compress.
-- **Artifact health:** 🟢 — the Aug 30 check found **no new drift**. `JobSystem`, `FileAccess`
-  and both formatter merges all match their notes against the shipped code. Two known drifts
-  stay carded: the Tracy `v0.13.1` pin in ADR-013 and [[Profiler — Design]], and 8 of 30
-  `file:line` citations pointing at the wrong line (now S5-P2's sibling, **S5-P3**). The habit
-  to watch is unchanged from last month: **a scope change shipping with no card to hang the
-  sweep on** (#54, then #56 absorbing S4-T3).
+- **Delivery:** M3's editor half and both design gates are complete. S5-B1 closed Sep 5 (#73);
+  M4 is a stretch. The checkpoint's automatic cut does not trigger because F and B closed.
+- **Build:** unverified this session. Local history records 11 merges Aug 31–Sep 4;
+  no builds, tests, demos or live CI checks ran. Prior validation is recorded on [[Sprint Board]].
+- **Sustainability:** Miguel reports good energy and room for more programming. Recalibrate
+  light/moderate estimates in both directions before increasing scope; S5-T2 and S5-T1 are
+  the concrete examples. Specific rest days and job/karting balance were not reported.
+- **Artifact health:** needs reconciliation. [[2026-09-05 Weekly Review]] records the
+  confirmed differences and check limits; the reconciliation stamp has not advanced.

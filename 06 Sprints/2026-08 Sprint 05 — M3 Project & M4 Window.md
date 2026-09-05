@@ -195,21 +195,14 @@
       card had named:** `.gitignore` still hid `engine/app/assets/demo-material.bin`, a blob
       written by the S4-T7 demo, so the rule outlived its writer and would have masked a real
       file at that path.
-- [ ] **S5-B1** · 🐛 the editor's default project root depends on the working directory ·
-      **P1** · 🟡 Light — **found 2026-09-04, running the testbed after #71.**
-      `apps/editor/src/main.cpp:8` falls back to `"projects/dev"` when `argv` is empty, and
-      that resolves against the working directory. Only Visual Studio gets one that works,
-      through `VS_DEBUGGER_WORKING_DIRECTORY` (`cmake/techengine_app.cmake:52`). CLion runs the
-      exe from its build directory, so `init()`'s `TE_CHECK` fires on a manifest that is not
-      there. done: with no argument the editor opens the repo's `projects/dev/` from **any**
-      working directory, CLion's default run configuration included; an explicit `argv` still
-      wins; and the mechanism is written into [[Project — Design]] § *The mount set* beside the
-      `argv` rule, with one sentence on the option not taken. **Investigate first, then pick
-      one:** a configure-time define on the editor target only, so the runtime stays free of
-      source paths (ADR-017 § *Decision* 1), or a default resolved off `executablePath()` that
-      walks up until it finds `projects/dev/project.toml`. Not a third mechanism. Mid-sprint
-      bug per [[Planning Workflow — Artifact Gate]] § *Bug*: it displaces nothing yet, and the
-      capacity call is open.
+- [x] **S5-B1** · editor default project root · P1 · 🟡 Light —
+      **done 2026-09-05**, `4512024d` (#73). Found Sep 4 after #71: the relative fallback
+      failed when the editor launched outside the repo root.
+      Acceptance: no argument selects the repo's `projects/dev/` independently of the working
+      directory, and an explicit argument still wins. The editor-only configure-time path
+      shipped; [[Project — Design]] § *The mount set* records the mechanism and rejected option.
+      CLion launch and explicit-argument checks were not recorded. No capacity displacement
+      call was recorded before merge; retained as a retro point on [[Sprint Board]].
 
 ### Story C — M4's gate *(Design · ordered before Story D)*
 
@@ -309,8 +302,8 @@
       rather than to a configure-time source path. **2026-09-04**, `934cf999` (#71).
       **Rewritten at that close.** The line used to also ask for the runtime's fixed layout
       and for every mount to be binary-relative. The runtime half is deferred to M6 by
-      [[Project — Design]] § *Open questions*, and the editor's default project root is read
-      from the working directory until the launcher replaces it ([[Backlog]]).
+      [[Project — Design]] § *Open questions*. S5-B1 made the editor default independent of
+      the working directory on **2026-09-05**, `4512024d` (#73); see that note's *The mount set*.
 - [x] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
       **2026-08-31**, `76056402` (#62) and `b6273327` (#63).
 - [x] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.

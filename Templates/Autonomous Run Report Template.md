@@ -1,52 +1,39 @@
-# 🤖 Auto Run — YYYY-MM-DD
+# Auto Run — YYYY-MM-DD
 
-> Written by an unattended cloud routine ([[Autonomous Lane — Design]]). Filed in
-> `docs/07 Journal/` as `<YYYY-MM-DD> Auto Run.md`.
->
-> **Keep it triageable in two minutes.** It is read after a full work day. Delete any section
-> that has nothing in it rather than writing "none" in five of them.
->
-> **A run with nothing to say writes no note at all.** Changed nothing, opened no PR, found
-> nothing worth filing means there is no file. A journal full of empty reports buries the days
-> that mattered.
+<!-- File in docs/07 Journal/ as YYYY-MM-DD Auto Run.md.
+Follow [[Autonomous Lane — Design]]. If nothing changed, no PR opened, and no useful
+finding emerged, write no note. Keep the report readable after a working day. -->
 
-## ⚠️ Needs you
+## Needs you
 
-*The only section that is always read. One line per item, each one an action. Empty is a
-perfectly good answer, and say so in one line if it is.*
-
-- PR #NN is red on `<leg>`: `<the actual error>`. Not fixable inside the gate.
-- Card `S5-XN` was mis-scoped: it needs `<a decision / Windows / a capture>`. Re-plan it attended.
+State the action Miguel needs to take and why, or say no action is needed.
+Link the PR or card. Include the relevant error when a run is blocked.
 
 ## What ran
 
-| | |
-|---|---|
-| **Card** | `S5-XN` — title, or *no Auto card open, ran a freshness check* |
-| **Outcome** | shipped a PR · stopped, and why · report only |
-| **PR** | #NN, branch `S5-XN/slug`, or *none* |
-| **CI** | green · red on `<leg>` · **not settled**, next run picks it up |
-| **Local build** | `linux-debug` green, `ctest` N/N · or the failure, verbatim |
+- **Card:** <card ID and title, or the fallback check performed>
+- **Outcome:** <PR opened, report only, or stopped with a reason>
+- **PR:** <link and branch, if one exists>
+- **CI:** <observed result, or still pending>
+- **Local verification:** <preset, test result, or exact failure>
 
 ## What changed
 
-*One line per file or per decision. Link, do not restate. Nothing here means nothing changed,
-and that is a normal result for a research or freshness run.*
+Describe the useful outcome and link the affected artifact.
+Omit this section when nothing changed. Do not list every file touched.
 
 ## Findings
 
-*Things noticed that are not this card's work. Each one is either a [[Backlog]] entry with a
-`#prio` and a `Trigger:`, or it is noise and does not belong here. Say which entries were
-added, and add them.*
+Link relevant [[Backlog]] entries created during the run, with their priority and
+trigger. Omit this section when there were no findings outside the card's work.
 
 ## Unverified
 
-*Explicit, always. What was assumed, what was not run, what the Linux-only build cannot prove.
-Windows and the sanitizer legs are never exercised by this lane.*
+State what was not run or remains uncertain. Keep this section explicit.
+Local execution in this lane does not verify Windows or the sanitizer legs;
+report any observed CI evidence separately.
 
 ## Cost
 
-| | |
-|---|---|
-| **CI** | ~16.1 billed minutes if a PR was opened, 0 otherwise |
-| **Review owed** | ~15 min, on a 🟡 day |
+State observed CI cost and estimated review time when available.
+Label estimates and use [[Autonomous Lane — Design]] for the current cost model.

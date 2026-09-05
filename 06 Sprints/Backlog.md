@@ -221,9 +221,8 @@ groups are kept, because they show where future work will land.
   `project.toml`.
   **It does not remove the `argv` seam.** The editor still has to accept a project root from
   outside, because the launcher screen supplies one the same way a command line does.
-  Until then, `apps/editor/src/main.cpp` opens `projects/dev` from the working directory when
-  `argv` is empty (S5-T5). That default is a development convenience, and the launcher is
-  what replaces it for real projects.
+  Until then, the editor uses the development default recorded in [[Project — Design]]
+  § *The mount set* (S5-B1, #73). The launcher replaces it for real projects.
   **Trigger:** the first editor UI card. Nothing before that has a screen to put it on.
 
 ## etc — cross-cutting

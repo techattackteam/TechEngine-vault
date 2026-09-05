@@ -158,14 +158,10 @@ key.
 **A created project is a manifest, a three-way `assets/` split and `shaders/`. Nothing is
 copied into it.**
 
-```
-MyGame/
-  project.toml
-  assets/
-    common/
-    client/
-    server/
-  shaders/
+```mermaid
+flowchart TD
+  project["MyGame/"] --> manifest["project.toml"] & assets["assets/"] & shaders["shaders/"]
+  assets --> common["common/"] & client["client/"] & server["server/"]
 ```
 
 Creation writes those directories and the manifest, then stops. Decided 2026-09-04.
@@ -297,13 +293,22 @@ read through the VFS.
 
 1. **Bootstrap.** Mount alias `project` at the root taken from `argv`, and `engine` off
    `executablePath()`. The root is known before anything is parsed, so this needs no manifest.
-   With no argument the editor opens `projects/dev` from the working directory, a development
-   default the launcher replaces ([[Backlog]] → *editor & tooling*).
+   With no argument the editor opens the absolute `${PROJECT_SOURCE_DIR}/projects/dev` path
+   supplied by CMake through `TE_EDITOR_DEFAULT_PROJECT_ROOT`, private to the `editor` target
+   (`apps/editor/CMakeLists.txt:15`, `apps/editor/src/main.cpp:8`). An explicit argument still
+   wins; relative arguments resolve from the working directory.
 2. **Read.** `Project::load` reads `project://project.toml` through the base class's
    `FileAccess`. No disk path leaves `platform`.
 3. **Project mounts.** Derive the three roots from `project.root()` and add them to the same
    table (§ *The project layout*). A mount added after the `EngineContext` is built is still
    visible through it, which [[File Access — Design]] § *Wiring* pins with a Catch2 case.
+
+S5-B1 uses a configure-time path because this is a development testbed default, which the
+launcher replaces ([[Backlog]] → *editor & tooling*); the runtime receives no source path.
+Walking upward from `executablePath()` was rejected because an out-of-tree build need not
+have the checkout among its ancestors. Moving the checkout requires reconfiguring and
+rebuilding the editor. Merged 2026-09-05 as `4512024d` (#73). The PR's Windows/Linux build
+and sanitizer checks succeeded; CLion launch and explicit-argument checks were not recorded.
 
 The v1 set, at `ProjectManager.cpp:262-271` @ `v1-reference`, maps onto this as follows.
 
