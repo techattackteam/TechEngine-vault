@@ -27,24 +27,13 @@ kanban-plugin: board
 
 ## 📋 D · M4 build *(T6 → P4 → T7 → T8; T9 last)*
 
-- [ ] **S5-T6** · glad2 generated, vendored and wired · P1 · 🟠 Moderate
-	  done: `external/glad/` holds `include/glad/gl.h` + `src/gl.c` from
-	  `glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c`, that
-	  command in a comment above the target; wrapped in `cmake/deps.cmake`, **not** linking
-	  `te_warnings`, include dir `SYSTEM` (ADR-008 §5); `client` links it, `platform` does not.
-	  Ride-along: `deps.cmake`'s `FETCHCONTENT_UPDATES_DISCONNECTED` comment is backwards.
-- [ ] **S5-T7** · `platform::Window` + the context on the render thread · P1 · 🟢 Deep
-	  done: `Window` owns the `GLFWwindow*`; `initialize`/`open`/`pollEvents`/`close` are
-	  main-thread-only, `makeContextCurrent`/`releaseContext`/`swapBuffers`/`procLoader` serve the
-	  render thread; `client` spawns that thread, claims the context once and calls
-	  `gladLoadGL(window.procLoader())` **there, not at startup**; joined before `close()`;
-	  `platform/CMakeLists.txt`'s glad comment corrected; `linux-tsan` green.
-	  Needs S5-T6, S5-P4.
 - [ ] **S5-T8** · clear + triangle through the frame mailbox · P1 · 🟢 Deep
 	  done: main publishes a `FramePacket` per frame, the render thread consumes the newest and
 	  re-draws the last when none is new; a triangle renders; **the main thread issues no GL
 	  call**, and a Tracy capture shows GL zones on the render thread only — that capture is the
 	  real proof, not the triangle. `linux-tsan` green. **Tier 2 demo.** Needs S5-T7.
+	  **Clarified Sep 6:** continue drawing during moves/resizes, reuse the latest packet,
+	  and transfer framebuffer dimensions to the render thread for viewport updates.
 - [ ] **S5-T9** · raw input through `Window` · P2 · 🟠 Moderate
 	  done: keyboard and mouse arrive through GLFW callbacks into a `platform` input buffer that
 	  main drains inside `pollEvents`; no callback touches the render thread or issues a GL call;
@@ -52,26 +41,50 @@ kanban-plugin: board
 	  **First cut inside this story.**
 
 
-## 📋 E · Process *(first thing cut)*
+## 📋 E · Process · ✅ **complete** *(S5-P4, Sep 6)*
 
-- [ ] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light
-	  done: `ci.yml`'s Linux install step gains `xvfb` and `libgl1-mesa-dri` (the existing
-	  `libgl1-mesa-dev` is headers + `libGL`, not the llvmpipe driver); the test step runs
-	  `xvfb-run -a ctest` with `LIBGL_ALWAYS_SOFTWARE=1`; a run on `master` confirms llvmpipe
-	  advertises **GL 4.5 core**. **Cut at S5-D2, not in the original sizing.**
-	  **Lands alone** and is read from the `master` run, since a workflow-only PR draws no CI
-	  since #54. If llvmpipe caps below 4.5, drop the CI leg's context version, not the test.
-	  Ordered before S5-T7.
 
 
 ## 🔨 In Progress
-
-
 
 ## 👀 Review / Demo
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T7** · `platform::Window` + the context on the render thread · P1 · 🟢 Deep ·
+	  **Sep 6**, `a053486c` ([#76](https://github.com/techattackteam/TechEngine/pull/76)).
+	  Empty PR body and no review comments; corrections were discussed in session.
+	  `ClientSession` was introduced and then folded into `Client`: one owner was enough.
+	  Explicit GLFW termination and blocking startup reporting were settled during the card;
+	  [[Window — Design]] records the lifetime order and `std::jthread` stop/join contract.
+	  **Retro:** a desktop runner did not imply GL 4.5 support. Windows window tests failed,
+	  and Debug/ASan stalled in the test step; their exact blocking point was not captured.
+	  Pinned Mesa, GLFW diagnostics and timeouts shipped in this PR. Linux also caught two
+	  stop-token copies and an empty catch via tidy.
+	  FPS/TPS moved into FrameLoop; the editor gained a close-driven loop while runtime kept
+	  its 120-frame demo. Ccache refresh and Mesa caching also landed during the CI repair.
+	  **Unblocks S5-T8.** The thread currently waits after GL startup; drawing and resize
+	  presentation are T8. Story D and the triangle DoD remain open.
+- [x] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light ·
+	  **Sep 6**, `1482e927` ([#75](https://github.com/techattackteam/TechEngine/pull/75)).
+	  Empty PR body and no review comments. **Closes Story E.**
+	  The original master-run gate missed that workflow-only pushes are filtered too.
+	  Miguel instead kept P4 in Review until T7 exercised real windows. The final
+	  [T7 CI run](https://github.com/techattackteam/TechEngine/actions/runs/34063333725)
+	  confirmed llvmpipe GL 4.5 core and window tests under Xvfb, including Linux TSan.
+	  Coverage needed Xvfb around its CMake target because that target invokes CTest internally.
+
+- [x] **S5-T6** · glad2 generated, vendored and wired · P1 · 🟠 Moderate **→ 🟡 Light** ·
+	  **Sep 6**, `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)).
+	  Empty PR body, no review comments or deferred findings.
+	  **Sizing correction, Sep 6:** Miguel reports light work: generation and CMake dependency
+	  wiring. With the design already settled, the moderate estimate overstated the work.
+	  The root project also needed C enabled for `gl.c`; the generator version is pinned at
+	  2.0.8 alongside the command. [[Window — Design]] § *glad2: generation and vendoring*
+	  records the shipped wiring. S5-T7's stale platform comment was corrected early here.
+	  The FetchContent comment ride-along shipped; its resolved [[Backlog]] entry is removed.
+	  Closes the loader's Tier 2 DoD line. **S5-P4 is next**; S5-T7 still needs it.
+	  Story D remains open.
 - [x] **S5-B1** · editor default project root · P1 · 🟡 Light ·
 	  **Sep 5**, `4512024d` ([#73](https://github.com/techattackteam/TechEngine/pull/73)).
 	  The configure-time option shipped; [[Project — Design]] § *The mount set* records why

@@ -2,7 +2,7 @@
 
 > Living design doc. The decision that is hard to reverse is [[ADR-015 — Threading (sim on main, render thread owns GL)]] §2. This doc holds the *how*.
 
-**Module:** `platform` (the window and input) · `client` (the context, glad2, the render thread) · **Kind:** system · **Status:** draft, nothing built
+**Module:** `platform` (the window and input) · `client` (the context, glad2, the render thread) · **Kind:** system · **Status:** window/context lifecycle shipped (S5-T7, #76); drawing and input pending
 **ADRs:** [[ADR-015 — Threading (sim on main, render thread owns GL)]] §1 §2 ·
 [[ADR-006 — v2 core architecture & module layout]] §1 ·
 [[ADR-008 — v2 build & testing baseline]] §4 case 3 · §5 ·
@@ -35,7 +35,7 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **`gladLoadGL` runs on the render thread** | It needs a current context, so it cannot run at startup on main. | See *Startup and shutdown order* |
 | **Frame handoff at M4** | A single-slot **mailbox** carrying a `FramePacket`. Newest complete wins; main may overwrite an unconsumed packet, and the render thread may re-consume the last one. | See *The frame mailbox* |
 | **The packet's contents are M4's, not R1's** | Clear colour plus a draw flag. The real command-list format belongs to R1's renderer ADR. | ADR-015 §2 |
-| **CI opens a real window** | `xvfb-run` wraps `ctest` on the Linux legs, with Mesa's llvmpipe providing software GL 4.5. | See *How CI proves this*, 2026-08-30 |
+| **CI opens a real window** | Linux uses Xvfb and Mesa llvmpipe; Windows uses pinned Mesa DLLs beside the binaries. | See *How CI proves this*, verified 2026-09-06 |
 | **No `IWindow` interface** | One implementation, and no carded work needs a second. Same reasoning as [[File Access — Design]] § *Why there is no interface*. | 2026-08-30 |
 
 ## The seam
@@ -61,22 +61,24 @@ namespace TechEngine {
     public:
         // --- main thread only (GLFW pins these) ---
         static bool  initialize();       // glfwInit + the 4.5 core hints
+        static void  terminate();        // after every window closes
         bool         open(int width, int height, std::string_view title);
         void         pollEvents();
+        void         setTitle(std::string_view title);
         void         close();
 
         bool         shouldClose() const;
 
         // --- callable from the render thread ---
-        void         makeContextCurrent();      // and (nullptr) to release
+        void         makeContextCurrent() const;
         void         releaseContext();
         void         swapBuffers();
-        GlProcLoader  procLoader() const;       // feeds gladLoadGL, never a GL call itself
+        GlProcLoader  processLoader() const;    // feeds gladLoadGL, never a GL call itself
     };
 }
 ```
 
-`procLoader()` returns `glfwGetProcAddress` behind a typedef. That is the one place the two
+`processLoader()` returns `glfwGetProcAddress` behind a typedef. That is the one place the two
 modules touch, and it moves a function pointer rather than a GL call.
 
 ## Why glad2 moved out of `platform`
@@ -92,8 +94,9 @@ row would wire it the other way and only find out at link time, or not at all.
 
 ## glad2: generation and vendoring
 
-Generated once with the `glad2` Python package, not the web service, so the command is a
-recorded fact rather than a set of clicked checkboxes:
+Generated with the `glad2` **2.0.8** Python package and shipped **2026-09-06** at
+`f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)). The version and
+command are recorded above the target in `cmake/deps.cmake`:
 
 ```bash
 glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c
@@ -103,11 +106,13 @@ glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c
 |---|---|---|
 | Profile | `gl:core=4.5` | ADR-005's row. DSA is core in 4.5, so the renderer never needs the ARB spelling. |
 | Extensions | **none** | 4.5 core already contains DSA and `glDebugMessageCallback` (`KHR_debug` became core at 4.3). An empty list keeps the generated file small and the loader honest. |
-| `--reproducible` | on | Byte-identical output across regenerations, so a regenerate produces an empty diff unless the API selection actually moved. |
+| `--reproducible` | on | Uses the generator's bundled specifications; keep the generator version pinned when regenerating the same output. |
 | Output | committed | ADR-008 §4 case 3. It is not a fetchable CMake project, so it is the one vendored dep. |
 
-It produces `external/glad/include/glad/gl.h` and `external/glad/src/gl.c`, wrapped in
-`cmake/deps.cmake` beside the other declares.
+The committed output is `external/glad/include/glad/gl.h`, `include/KHR/khrplatform.h`
+under the same root, and `external/glad/src/gl.c`. `TechEngine::glad` aliases the static
+`TechEngineGlad` target; `client` links it privately and `platform` does not link it
+(ADR-006 §1 amendment). The root project enables C for `gl.c`.
 
 **Two gotchas that will bite.** `gl.c` is third-party, so the target must **not** link
 `te_warnings` and must declare its include directory `SYSTEM`. Otherwise `-Werror` fails the
@@ -116,6 +121,16 @@ the target, because a vendored file with no recorded provenance cannot be regene
 4.6 or a new extension is wanted.
 
 ## Startup and shutdown order
+
+**Shipped Sep 6, `a053486c` (#76):** `EditorApp` owns `Client`, whose private state owns
+`Window` before `RenderThread`. The temporary `ClientSession` type was folded into `Client`.
+`start()` opens the window and waits for the worker's startup promise; failure joins before
+returning false. `stop()` requests cancellation and joins the `std::jthread`, then closes
+the window and calls `Window::terminate()`. The current client owns one GLFW lifetime.
+
+The thread currently waits for cancellation after GL loading. The drawing loop below is
+S5-T8. Main may pause during native move/resize event processing; T8 must keep redrawing the
+last packet and receive framebuffer-size changes without issuing GL calls on main.
 
 This is the part that is easy to get backwards, because GLFW pins some calls to the main thread
 and the context to exactly one thread, and those two rules point in opposite directions.
@@ -130,7 +145,7 @@ sequenceDiagram
     Note over M,W: context exists, current on NO thread
     M->>R: spawn, hand over Window&
     R->>W: makeContextCurrent()
-    R->>R: gladLoadGL(window.procLoader())
+    R->>R: gladLoadGL(window.processLoader())
     loop every frame
         M->>W: pollEvents()
         M->>M: FrameLoop: Input .. PostUpdate
@@ -201,11 +216,17 @@ Running the code is the option that keeps both the gate and the Linux window pat
 | Invocation | `xvfb-run -a ctest --preset <leg>` on the Linux legs only. Windows runners have a real desktop session. |
 | Forcing software GL | `LIBGL_ALWAYS_SOFTWARE=1` in the test step's environment, so a runner never silently picks a different driver. |
 
-**Unverified, and it is the note's biggest risk.** Nothing here has been run. Two things could
-break it. Mesa's llvmpipe must advertise **GL 4.5 core**, which it has done since Mesa 20 but
-which depends on the runner image's Mesa build. And `ci.yml` edits draw no CI on their own PR
-since #54, so this change has to land alone and be read from the run it produces on `master`
-(`ci.yml`'s own header carries that instruction).
+**Verified Sep 6:** S5-P4 merged as `1482e927` (#75). Miguel changed the verification gate
+to T7's real window tests, rather than a separate master run. The final
+[PR #76 CI run](https://github.com/techattackteam/TechEngine/actions/runs/34063333725)
+reports llvmpipe **GL 4.5 core**, 250 passing Linux tests and 94% diff coverage. Linux TSan
+and UBSan and all Windows checks succeeded.
+
+**Windows needed software GL too.** The initial run could not create the requested context;
+the desktop-session assumption was insufficient. #76 deploys pinned, hash-verified Mesa
+26.2.0 DLLs beside the binaries and selects llvmpipe. GLFW failures now log their description.
+Tests have 60-second limits, test steps five minutes, and build jobs twenty minutes.
+Workflow-only pushes are also filtered; manual dispatch remains available.
 
 If llvmpipe turns out to cap below 4.5, the fallback is to keep the window test and drop the
 context to whatever llvmpipe offers for the CI leg only, since the window and thread seam is
@@ -235,7 +256,8 @@ what the test is really proving.
   §5 (`te_warnings` never reaches third-party code)
 - [[Concurrency — Design]] § *Topology* (the thread picture this sits inside) ·
   § *Open questions* (the render-thread handoff detail is R1's)
-- Code, once it exists: `engine/platform/include/TechEngine/platform/window/` ·
-  `engine/client/src/render/` · `external/glad/` · `cmake/deps.cmake`
-- Today: `engine/platform/CMakeLists.txt` already links `glfw`; `external/` exists and is
-  empty; `.github/workflows/ci.yml` already installs GLFW's Linux build dependencies.
+- Shipped loader: `external/glad/` · `cmake/deps.cmake` · `engine/client/CMakeLists.txt`.
+- Shipped window and render-thread lifecycle: `engine/platform/include/TechEngine/platform/window/` ·
+  `engine/client/src/render/`.
+- `engine/platform/CMakeLists.txt` links `glfw`; `.github/workflows/ci.yml` installs GLFW's
+  Linux build dependencies and Xvfb. `.github/scripts/Setup-Mesa.ps1` supplies Windows software GL.

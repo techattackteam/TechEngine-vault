@@ -9,8 +9,8 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 05 — M3 Project & M4 Window]] *(Aug 29 to Sep 11 — the boundary was pulled **one week early**)* |
 | **Sprint goal** | **Ship M3 and open the window: `projects/dev/` loads through a real `project.toml`, and a triangle draws on the render thread.** M3 is the commitment; M4 is the reach, and it is the half at risk. |
-| **Current focus** | S5-B1 closed Sep 5 (#73). Stories F and B are complete; M4 follows T6 → P4 → T7 → T8, with T9 optional. [[2026-09-05 Weekly Review]] records the checkpoint. |
-| **Top blocker** | M4 has no implementation yet; GL 4.5 support in CI remains unverified until P4. Preserve the cut order if capacity tightens. |
+| **Current focus** | S5-P4 and S5-T7 closed Sep 6 (#75, #76). Stories F, B and E are complete. Session finished; next is S5-T8's drawing loop and mailbox, with T9 optional. |
+| **Top blocker** | No blocker for T8. Window/context startup is verified in CI; drawing, resize presentation and the triangle proof remain. Preserve the cut order if capacity tightens. |
 | **Next milestone** | M3 editor testbed shipped (#71), with its default-path fix merged (#73); runtime packaging is deferred to M6. M4 is the remaining stretch this sprint. |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `01ed7a30` (2026-08-30) |

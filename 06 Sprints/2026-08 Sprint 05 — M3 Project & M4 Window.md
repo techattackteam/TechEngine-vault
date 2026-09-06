@@ -233,26 +233,42 @@
 > the first line. A main-thread clear "for now" is the retrofit M2 exists to prevent, and that
 > ADR's § *Alternatives considered* rejected it by name.
 
-- [ ] **S5-T6** · glad2 generated, vendored and wired · P1 · 🟠 Moderate — done:
+- [x] **S5-T6** · glad2 generated, vendored and wired · P1 · 🟠 Moderate **→ 🟡 Light** —
+      **done 2026-09-06**, `f71b128d` (#74). Entry on [[Sprint Board]]. **As cut:** done:
       `external/glad/` holds `include/glad/gl.h` and `src/gl.c` from
       `glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c`, with
       that command in a comment above the target; the target is wrapped in `cmake/deps.cmake`,
       **does not link `te_warnings`**, and declares its include dir `SYSTEM` (ADR-008 §5), so
       `-Werror` never reaches it; `client` links it and `platform` does not; green on all legs.
-      Ride-along: `deps.cmake`'s `FETCHCONTENT_UPDATES_DISCONNECTED` comment describes the
-      opposite of its value ([[Backlog]] → `etc`).
-- [ ] **S5-T7** · `platform::Window` + the context on the render thread · P1 · 🟢 Deep — done:
+      The `FETCHCONTENT_UPDATES_DISCONNECTED` comment ride-along shipped; its resolved
+      backlog entry is removed. C was enabled in the root project for the generated source.
+      **Sizing correction, Sep 6:** Miguel reports light work; generation and dependency
+      wiring against a settled design did not warrant the moderate estimate.
+- [x] **S5-T7** · `platform::Window` + the context on the render thread · P1 · 🟢 Deep —
+      **done 2026-09-06**, `a053486c` ([#76](https://github.com/techattackteam/TechEngine/pull/76)).
+      Entry on [[Sprint Board]]. Final PR CI, including Linux TSan, succeeded;
+      [run 34063333725](https://github.com/techattackteam/TechEngine/actions/runs/34063333725)
+      reports 94% diff coverage. **As cut:** done:
       `Window` owns the `GLFWwindow*` and exposes `initialize`/`open`/`pollEvents`/`close` as
       main-thread-only, plus `makeContextCurrent`/`releaseContext`/`swapBuffers`/`procLoader`
       for the render thread; `client` spawns the render thread, claims the context once and
       calls `gladLoadGL(window.procLoader())` **there, not at startup**; the thread is joined
       before `close()`; `platform/CMakeLists.txt`'s glad comment is corrected to match the
-      ADR-006 amendment; `linux-tsan` is green. Needs S5-T6, S5-P4.
+      ADR-006 amendment (**landed early in S5-T6, #74**); `linux-tsan` is green. Needs S5-T6, S5-P4.
+      **Sequence revised by Miguel, Sep 6:** start T7 while P4 remains in Review; use T7's
+      implemented window/context tests to validate P4. Scaffolding alone is not that proof.
+      **Lifecycle agreed:** explicit `Window::terminate()` after all windows close;
+      `RenderThread::start(Window&)` waits for GL startup and returns bool. A `std::jthread`
+      uses its stop token for cancellation; `stop()` requests stop and joins. Failed startup
+      joins before returning false. No shared `m_running` flag.
 - [ ] **S5-T8** · clear + triangle through the frame mailbox · P1 · 🟢 Deep — done: main
       publishes a `FramePacket` per frame and the render thread consumes the newest, re-drawing
       the last when none is new; a triangle renders; **the main thread issues no GL call**, and
       a Tracy capture shows the GL zones on the render thread only, which is M4's real proof;
       `linux-tsan` green. **This is the sprint's Tier 2 demo.** Needs S5-T7.
+      **Clarified Sep 6:** drawing continues during window moves and resizes, reusing the
+      latest packet; framebuffer-size changes reach the render thread for viewport updates.
+      Simulation still runs on main and may pause inside event processing.
 - [ ] **S5-T9** · raw input through `Window` · P2 · 🟠 Moderate — done: keyboard and mouse
       arrive through GLFW callbacks into a `platform` input buffer that main reads inside
       `pollEvents`; no callback touches the render thread or issues a GL call; a Catch2 case
@@ -278,7 +294,10 @@
       `AssertTests.cpp`; **D1 is deleted in the same commit**; the run builds Linux and passes
       `ctest` before opening the PR, and never merges it. **This is the lane's first code
       card** — the PR path is unproven, so the card tests the lane as much as the fix.
-- [ ] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light — done: `ci.yml`'s Linux install step
+- [x] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light —
+      **done 2026-09-06**, `1482e927` ([#75](https://github.com/techattackteam/TechEngine/pull/75)),
+      validated by T7's final PR CI at Miguel's revised gate. Linux reports llvmpipe GL 4.5
+      core and runs the real window tests under Xvfb. **As cut:** done: `ci.yml`'s Linux install step
       gains `xvfb` and `libgl1-mesa-dri` (the existing `libgl1-mesa-dev` is headers plus
       `libGL`, not the llvmpipe driver), the test step runs `xvfb-run -a ctest` with
       `LIBGL_ALWAYS_SOFTWARE=1`, and a run on `master` confirms llvmpipe advertises **GL 4.5
@@ -287,6 +306,10 @@
       #54 (`ci.yml`'s own header carries that rule). **If llvmpipe caps below 4.5**, drop the
       CI leg's context version rather than the test: the window and thread seam is what it
       proves. Ordered before S5-T7.
+      **Grounded 2026-09-06:** the push filter also skips a workflow-only merge. The scaffold
+      adds `workflow_dispatch` so the required `master` run can be started after merge;
+      `glxinfo -B` records the renderer and core version. Coverage runs CTest internally,
+      so its target also needs Xvfb. **Verified through #76**, rather than a separate manual run.
 - [x] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto — done: every `path:line`
       citation in the durable artifacts is resolved against the tree and the 8 known-wrong ones
       are corrected (three in `App.cpp`, two in [[Known Issues]], two in [[Profiler — Design]]);
@@ -318,7 +341,10 @@
 
 - [ ] M4's unlock is demonstrable: a window opens, its GL 4.5 context is current on the render
       thread, and a triangle draws there. The main thread issues no GL call (ADR-015 §2).
-- [ ] `external/glad/` holds the generated loader and CI builds it on both legs.
+- [x] `external/glad/` holds the generated loader and CI builds it on both legs.
+      **2026-09-06**, `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)).
+      Windows/MSVC and Linux/Clang Debug and Release checks succeeded in
+      [the PR CI run](https://github.com/techattackteam/TechEngine/actions/runs/34045573278).
 
 **Tier 3 — process.**
 

@@ -258,21 +258,11 @@ groups are kept, because they show where future work will land.
   names `v0.13.1`, so the amendment sweeps three artifacts, not two.
   **Trigger:** fired — found by the 2026-08-30 freshness check; third site added by S5-P3.
 
-- #prio/high · **The ccache key is write-once, so master's cache is frozen and hits are 21%** —
-  S4-P1's key is `v1-<leg>-<hash of deps.cmake>`. GitHub caches are immutable per key and the
-  action skips the save on an exact hit, so once master holds an entry **nothing can ever
-  update it** until `deps.cmake` moves. Master's entries are stuck at whatever the
-  2026-08-29 14:06 run happened to save, and they are a fraction of a full leg:
-  `linux-debug` is **3.6 MB against the 14.2 MB** PR #59 produced, `windows-debug` 16 MB
-  against 35 MB. Measured consequence on #59's `linux-clang Debug`: **39 hits out of 184
-  cacheable calls, 21.2%**, with 145 misses. S4-P1 predicted the inverse, roughly 140 dep
-  objects hitting while 43 engine TUs miss, and that premise is not holding. Two things to
-  work out: **why the master entry is so small** (a cancelled run under
-  `cancel-in-progress`, or something else), and whether the key needs a rotating component
-  so master can refresh. Note the tension: a rotating key reopens the unbounded-growth
-  problem S4-P1 was cut to fix, so this is a real trade and not a one-line change.
-  **Trigger:** fired at S4-T7's merge run; pull at the next `/sprint-plan`.
-
+- #prio/medium · **Measure cache refresh and storage after #76** — ccache now saves once per
+  commit and restores compatible older snapshots; Mesa archives are cached separately.
+  The frozen-key mechanism is fixed, but the hit-rate improvement and snapshot growth need
+  observations from successive master runs. **Trigger:** the next weekly review after
+  multiple source revisions have populated the new keys.
 - #prio/low · **Four CI legs can never restore a ccache, and it is scoping, not the key** —
   a cache written on `refs/pull/N/merge` is readable only by that PR; only caches on
   `refs/heads/master` are shared across branches. `sanitizers` and `coverage` are
@@ -295,12 +285,6 @@ groups are kept, because they show where future work will land.
   so the next person to read the gate's story will not know the exclusion exists. Write it
   there, and decide at the same time whether the exclusion should be the file or only its demo
   blocks. **Trigger:** fired at S4-T7; pull with the next coverage or B3 work.
-
-- #prio/medium · **`FETCHCONTENT_UPDATES_DISCONNECTED` is OFF with a comment explaining why it
-  is ON** — flipped as a ride-along in #46; the five lines above it still describe the old
-  value and the Windows/MSBuild failure it avoided. Either restore it or rewrite the comment.
-  **Trigger:** the next `cmake/deps.cmake` change, or the first re-appearance of that MSBuild
-  path error.
 
 - #prio/medium · **Guard the branch-name to card-ID link** — the branch prefix is the only path
   from a squashed commit back to its board card (ADR-012 § *Consequences*), and it has now
@@ -336,18 +320,6 @@ groups are kept, because they show where future work will land.
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a
   stale branch is mistaken for live work.
-- #prio/medium · **No CI job and no test carries a timeout, so one hang burns the runner's
-  6-hour ceiling** — `.github/workflows/ci.yml` sets `timeout-minutes` on no job,
-  `cmake/techengine_test.cmake`'s `catch_discover_tests()` passes no per-test timeout, and
-  nothing sets a CTest `TIMEOUT` property, so a deadlocked case runs until GitHub's 360-minute
-  default kills the job. On a Windows leg, billed at 2×, that is up to **720 billed minutes
-  from a single hang** against the ~2k monthly budget the [[Dashboard]] already watches as a
-  live constraint. The engine now ships a thread pool with `wait` and a join, which is the
-  class of code that hangs, and the *test for `wait()` called from a pool worker* entry above
-  names a CI timeout as the price of catching it. A ceiling is a few lines and does not need
-  the deadline-capable helper that entry is waiting for. **Trigger:** fired — found by the
-  2026-08-31 trigger sweep.
-
 - #prio/medium · **Assert the private-plumbing gates still match something** — `ci.yml`'s
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
