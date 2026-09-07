@@ -25,20 +25,14 @@ kanban-plugin: board
 
 
 
-## 📋 D · M4 build *(T6 → P4 → T7 → T8; T9 last)*
+## 📋 D · M4 build *(T6 → P4 → T7 → T8 → D3 → T9)*
 
-- [ ] **S5-T8** · clear + triangle through the frame mailbox · P1 · 🟢 Deep
-	  done: main publishes a `FramePacket` per frame, the render thread consumes the newest and
-	  re-draws the last when none is new; a triangle renders; **the main thread issues no GL
-	  call**, and a Tracy capture shows GL zones on the render thread only — that capture is the
-	  real proof, not the triangle. `linux-tsan` green. **Tier 2 demo.** Needs S5-T7.
-	  **Clarified Sep 6:** continue drawing during moves/resizes, reuse the latest packet,
-	  and transfer framebuffer dimensions to the render thread for viewport updates.
 - [ ] **S5-T9** · raw input through `Window` · P2 · 🟠 Moderate
 	  done: keyboard and mouse arrive through GLFW callbacks into a `platform` input buffer that
 	  main drains inside `pollEvents`; no callback touches the render thread or issues a GL call;
 	  a Catch2 case pins the drain semantics. Gamepad and text input explicitly out.
-	  **First cut inside this story.**
+	  **Held for S5-D3:** the main-drain clause and estimate above are provisional until the
+	  input handoff is decided. Re-cut before implementation. **First cut inside this story.**
 
 
 ## 📋 E · Process · ✅ **complete** *(S5-P4, Sep 6)*
@@ -47,10 +41,38 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S5-D3** · simulation independence during window moves/resizes · P1 · 🟢 Deep
+	  Design card added Sep 7 at Miguel's request. After T8, before T9.
+	  **Progress Sep 7:** [[ADR-018 — Host and simulation threads, render-owned GL]] accepted.
+	  Input/lifecycle details and implementation breakdown remain in [[Simulation Thread — Design]].
+	  done: agree a superseding ADR for ADR-015's main-thread simulation decision; define
+	  window, simulation and render ownership, input handoff and startup/stop/join order;
+	  specify how ticks continue during a blocked event pump and how input resumes afterward;
+	  update the affected design hubs and re-cut T9 plus session-sized implementation cards
+	  with resize, shutdown, headless and TSan verification. Implementation stays unsized
+	  until this decision is accepted. Full acceptance in [[2026-08 Sprint 05 — M3 Project & M4 Window]].
+
+
 ## 👀 Review / Demo
+
+
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T8** · clear + triangle through the frame command buffer · P1 · 🟢 Deep ·
+	  **Sep 7**, `681ddf6b` ([#77](https://github.com/techattackteam/TechEngine/pull/77)).
+	  PR body and discussion were empty; review and demo confirmation happened in session.
+	  **The first triangle did not prove the command path:** drawing initially ignored the
+	  clear colour and draw flag. Review fixed those, an unlocked framebuffer read, a
+	  cross-thread GLFW close-flag read, the wrong resize callback and startup failure paths.
+	  The final review found no remaining actionable findings.
+	  **Retro:** independent rendering does not keep simulation ticking while main is in
+	  native event processing. Miguel rejected that limitation for future work; S5-D3 now
+	  owns the topology revision. T8 still closes against ADR-015's current contract.
+	  Miguel confirmed Tracy and continued drawing during resize on Sep 7. Evidence and
+	  the private Buffer/VertexArray seam are recorded in [[Window — Design]].
+	  **Completes the Tier 2 triangle proof and unblocks S5-D3.** Story D remains open on
+	  D3 and T9; T9 waits for D3's input handoff decision.
 - [x] **S5-T7** · `platform::Window` + the context on the render thread · P1 · 🟢 Deep ·
 	  **Sep 6**, `a053486c` ([#76](https://github.com/techattackteam/TechEngine/pull/76)).
 	  Empty PR body and no review comments; corrections were discussed in session.
@@ -73,7 +95,6 @@ kanban-plugin: board
 	  [T7 CI run](https://github.com/techattackteam/TechEngine/actions/runs/34063333725)
 	  confirmed llvmpipe GL 4.5 core and window tests under Xvfb, including Linux TSan.
 	  Coverage needed Xvfb around its CMake target because that target invokes CTest internally.
-
 - [x] **S5-T6** · glad2 generated, vendored and wired · P1 · 🟠 Moderate **→ 🟡 Light** ·
 	  **Sep 6**, `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)).
 	  Empty PR body, no review comments or deferred findings.
@@ -342,7 +363,7 @@ kanban-plugin: board
 	  committed under `external/glad/` · `platform` owns GLFW, the window and raw input and
 	  issues **no GL call ever**, while `client` owns the context, glad2 and every `gl*` call,
 	  reaching the window through three methods rather than through `glfw*` · the frame handoff
-	  is a single-slot **mailbox**, newest-complete-wins, with the real list format left to R1 ·
+	  is a single-slot **frame command buffer**, newest-complete-wins, with the real list format left to R1 ·
 	  CI runs `xvfb-run`.
 	  **It moved an Accepted ADR.** ADR-006 §1 listed window and input under **both** `platform`
 	  and `client` and put glad2 in `platform`. That row could not be followed as written, so a

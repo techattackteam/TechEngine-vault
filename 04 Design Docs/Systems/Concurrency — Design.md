@@ -1,6 +1,7 @@
 # Concurrency — Design
 
 > Living design doc. **Status: active.** The decisions live in
+> [[ADR-018 — Host and simulation threads, render-owned GL]] and the remaining clauses of
 > [[ADR-015 — Threading (sim on main, render thread owns GL)]]; this note is the working
 > shape. Created with the ADR at S4-D1 (2026-08-22), mechanism pinned ahead of the
 > implementation cards.
@@ -16,19 +17,23 @@
 
 | Fact | Where |
 |---|---|
-| Client topology: main thread pumps and runs the loop, a render thread owns GL, pool workers run levels. | ADR-015 §1 |
-| Dedicated server: the same loop on main, headless, no render thread. | ADR-015 §1, ADR-006 §2 |
+| Client target: main hosts window/editor input, a dedicated simulation thread drives the loop, and rendering owns GL. Not yet implemented. | ADR-018 §1–3 |
+| Dedicated-server target: main hosts CLI/control input, simulation has its own thread, and there is no render thread. | ADR-018 §1; ADR-006 §2 |
 | The GL context is current on the render thread once, forever; main issues no GL call after handoff. Work arrives as complete per-frame command lists, newest complete list wins. | ADR-015 §2 |
 | `JobSystem` lives in `core`, engine-lifetime, injected via `EngineContext`. | ADR-006 §1 §4, ADR-015 §3 |
-| Interface at M2: submit a batch, wait for that batch. Nothing else. | ADR-015 §3 |
+| Shipped M2 interface: batch submit/wait. The accepted extension adds dedicated-thread creation, registration and diagnostics; dedicated handles stay with subsystem owners. | ADR-018 §4; [[Simulation Thread — Design]] |
 | The pool ships with four workers and a real queue, watched by `linux-tsan`. | ADR-015 §3 + its 2026-08-24 amendment |
 | One task-graph level submits as one batch; join before the next level; barriers never run on workers. | ADR-015 §4, ADR-007 §6 |
 | Event `publish` is sim-thread-only until P1; lane layout is designed at P1. | ADR-015 §5, [[Events — Design]] § *Open* |
-| The drag-stall wart is accepted; the reversal (sim thread) is bounded and trigger-named. | ADR-015 § *What would move* |
+| Host stalls must not suspend simulation. This accepted requirement is not implemented yet. | ADR-018 §1 |
 
 ## Design
 
-### Topology
+The accepted target and diagram live in [[Simulation Thread — Design]], backed by
+[[ADR-018 — Host and simulation threads, render-owned GL]] (Accepted Sep 7). The topology
+below records the shipped M4 baseline, which still awaits that implementation.
+
+### Shipped topology at M4
 
 ```mermaid
 flowchart LR
@@ -45,7 +50,8 @@ flowchart LR
   LOOP -->|"submit level, wait"| W
 ```
 
-On the dedicated server only `main` exists, plus the pool.
+The older dedicated-server baseline likewise places simulation on main plus the pool;
+ADR-018 replaces that target with a CLI/control host and separate simulation thread.
 
 ### Surface (pinned 2026-08-22)
 

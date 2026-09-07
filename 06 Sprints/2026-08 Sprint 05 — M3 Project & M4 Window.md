@@ -45,6 +45,11 @@
 
 ## Stories & tasks
 
+**Added Sep 7:** S5-D3 revisits simulation ownership after the resize demo exposed the
+accepted event-pump stall. It requires a superseding ADR because "sim on main" is part of
+ADR-015's headline decision ([[ADR Index]]). The implementation stays unsized; T9 waits
+for the input handoff decision. See S5-D3 and the current capacity update below.
+
 > Every task carries `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light / 🤖 Auto`. Weight fits the
 > day first, then priority ([[Planning Workflow — Artifact Gate]]).
 
@@ -213,8 +218,8 @@
       `--reproducible`, committed under `external/glad/` and wrapped in `deps.cmake`;
       **(b)** `platform` owns GLFW, the window and raw input and issues **no GL call ever**,
       `client` owns the context, glad2 and every `gl*` call, reaching the window through three
-      methods rather than through `glfw*`; **(c)** a single-slot **mailbox** carrying a trivial
-      `FramePacket`, newest-complete-wins, with the real list format left to R1;
+      methods rather than through `glfw*`; **(c)** a single-slot **frame command buffer** carrying a trivial
+      `FrameCommand`, newest-complete-wins, with the real list format left to R1;
       **(d)** **`xvfb-run` on the Linux legs**, chosen over compile-only because the required
       `diff coverage` gate would otherwise force excluding all of `client`.
       **It moved an Accepted ADR.** ADR-006 §1 listed window and input under *both* modules and
@@ -228,6 +233,8 @@
 
 > Ordering: **T6 → P4 → T7 → T8**, with T9 last because it is the pre-named first cut inside
 > this story. P4 comes before T7 because a window test cannot pass CI until xvfb is in place.
+> **Updated Sep 7:** after T8, take **D3 → T9**. D3 settles simulation ownership before
+> T9 is re-cut around its input consumer.
 >
 > **ADR-015 §2 forbids the cheap version.** The context is current on the render thread from
 > the first line. A main-thread clear "for now" is the retrofit M2 exists to prevent, and that
@@ -261,19 +268,45 @@
       `RenderThread::start(Window&)` waits for GL startup and returns bool. A `std::jthread`
       uses its stop token for cancellation; `stop()` requests stop and joins. Failed startup
       joins before returning false. No shared `m_running` flag.
-- [ ] **S5-T8** · clear + triangle through the frame mailbox · P1 · 🟢 Deep — done: main
-      publishes a `FramePacket` per frame and the render thread consumes the newest, re-drawing
+- [x] **S5-T8** · clear + triangle through the frame command buffer · P1 · 🟢 Deep —
+      **done Sep 7**, `681ddf6b` ([#77](https://github.com/techattackteam/TechEngine/pull/77)).
+      Miguel confirmed Tracy and continuous resize drawing in session. Final PR CI at
+      `c5bb116c`, including Linux TSan, was verified green; [[Window — Design]] records evidence.
+      **As cut:** done: main
+      publishes a `FrameCommand` per frame and the render thread consumes the newest, re-drawing
       the last when none is new; a triangle renders; **the main thread issues no GL call**, and
       a Tracy capture shows the GL zones on the render thread only, which is M4's real proof;
       `linux-tsan` green. **This is the sprint's Tier 2 demo.** Needs S5-T7.
       **Clarified Sep 6:** drawing continues during window moves and resizes, reusing the
-      latest packet; framebuffer-size changes reach the render thread for viewport updates.
+      latest command; framebuffer-size changes reach the render thread for viewport updates.
       Simulation still runs on main and may pause inside event processing.
+- [ ] **S5-D3** · simulation independence during window moves/resizes · P1 · 🟢 Deep —
+      **Design, added 2026-09-07 at Miguel's request.**
+      **Progress Sep 7:** [[ADR-018 — Host and simulation threads, render-owned GL]] accepted;
+      mechanism and implementation breakdown remain open in [[Simulation Thread — Design]].
+      The requirement is that window moves/resizes must not suspend simulation ticks; T8's independent presentation alone
+      does not satisfy it. Needs T8; ordered before T9.
+      done: Miguel accepts a superseding ADR for [[ADR-015 — Threading (sim on main, render thread owns GL)]]'s
+      main-thread simulation decision, with the superseded scope recorded in [[ADR Index]].
+      It assigns window/event, simulation and render ownership; defines the main-to-simulation
+      input handoff, including ordering, buffering and stale input while the event pump is
+      blocked; retains complete frame-command publication and render-thread GL ownership;
+      and settles startup, failure, stop/join order and the headless path against ADR-017.
+      The affected *Decided* rows in [[Window — Design]], [[Concurrency — Design]] and
+      [[Game Loop — Frame Flow]] point to the accepted decision. T9 is re-cut for its input
+      consumer, and the simulation change is split into session-sized implementation cards.
+      Their verification must cover continued ticks during a deliberately blocked event
+      pump, native Windows move/resize with simultaneous tick/render evidence, input delivery
+      after the stall, shutdown during activity, headless operation and Linux TSan.
+      **This card delivers the design and breakdown.** Implementation remains unsized until
+      that decision, and entry into this sprint requires a fresh remaining-capacity check.
 - [ ] **S5-T9** · raw input through `Window` · P2 · 🟠 Moderate — done: keyboard and mouse
       arrive through GLFW callbacks into a `platform` input buffer that main reads inside
       `pollEvents`; no callback touches the render thread or issues a GL call; a Catch2 case
       pins the buffer's drain semantics. Gamepad and text input are explicitly out
       ([[Window — Design]] § *Open questions*). **First cut inside this story.**
+      **Held Sep 7 for S5-D3:** the main-reader clause and moderate estimate are provisional;
+      re-cut them against the accepted input handoff before starting implementation.
 
 ### Story E — Process *(first thing cut; the mix is called out below)*
 
@@ -334,13 +367,16 @@
       `40f7171e` (#65), which was cut off S5-T5's clause because both halves landed before that
       card starts. **This line closed ahead of the card that owned it**, which is why the
       demo-mount clause is struck on S5-T5 rather than waiting there.
-- [ ] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
+- [x] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
       each with a filled *Decided* table, and neither story was cut before its artifact.
+      Confirmed Sep 7 with M3 shipped and the M4 proof merged as `681ddf6b` (#77).
 
 **Tier 2 — the reach. Named separately because it is the half at risk.**
 
-- [ ] M4's unlock is demonstrable: a window opens, its GL 4.5 context is current on the render
+- [x] M4's unlock is demonstrable: a window opens, its GL 4.5 context is current on the render
       thread, and a triangle draws there. The main thread issues no GL call (ADR-015 §2).
+      **Sep 7**, `681ddf6b` (#77). Miguel confirmed the Tracy and continuous resize-drawing
+      checks; final PR CI including Linux TSan was verified. See [[Window — Design]].
 - [x] `external/glad/` holds the generated loader and CI builds it on both legs.
       **2026-09-06**, `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)).
       Windows/MSVC and Linux/Clang Debug and Release checks succeeded in
@@ -354,6 +390,15 @@
       by the lane.
 
 ## Capacity note
+
+**Current update, Sep 7:** Miguel added S5-D3 with only T8 and T9 still open. Remaining
+work after T8's close (#77) is one new 🟢 design session and T9 provisionally 🟠.
+The sprint ends **Fri Sep 11**. This week has Mon/Thu deep slots (Monday is already in use),
+Tuesday light work and Friday moderate work; Wednesday remains optional recovery time.
+T9 remains the first cut if T8 or D3 overruns. This addition commits the design review,
+not an unsized simulation implementation squeezed into the same week.
+
+The earlier capacity estimates below are planning history, not today's remaining load.
 
 **This box is smaller than a normal 2-week box, and that is the price of starting early.**
 A 2-week sprint contains two weekends. This one's first weekend, Aug 29-30, was spent on the
