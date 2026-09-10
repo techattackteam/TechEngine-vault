@@ -6,10 +6,10 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://graphics.stanford.edu/courses/cs468-03-winter/Papers/ibsrb.pdf (Physics)
-- [ ] https://www.cs.toronto.edu/~jacobson/seminar/mueller-et-al-2007.pdf (Physics)
 - [ ] https://github.com/awesome-physics/awesome-neural-physics
 	GitHub CHEIO de Papers
+- [ ] https://graphics.stanford.edu/courses/cs468-03-winter/Papers/ibsrb.pdf (Physics)
+- [ ] https://www.cs.toronto.edu/~jacobson/seminar/mueller-et-al-2007.pdf (Physics)
 - [ ] **MuJoCo: A physics engine for model-based control** | IROS 2012 (Physics)
 - [ ] https://arxiv.org/abs/2103.16021 (Physics)
 - [ ] https://arxiv.org/abs/2106.13281 (Physics)
@@ -24,6 +24,18 @@ kanban-plugin: board
 - [ ] https://gpuopen.com/download/lightweight_attention-based_indirect_illumination.pdf (Rendering)
 - [ ] https://gpuopen.com/advanced-rendering-research/ (Vários papers da AMD)
 - [ ] https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques (Rendering)
+- [ ] http://mmacklin.com/smallsteps.pdf (Physics)
+- [ ] https://graphics.stanford.edu/papers/rigid_bodies-sig03/rigid_bodies.pdf (Physics)
+- [ ] https://gamma.cs.unc.edu/BVH/ (Physics)
+- [ ] https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf (Rendering)
+- [ ] http://www.cse.chalmers.se/~uffe/clustered_shading_preprint.pdf (Rendering)
+- [ ] https://research.nvidia.com/labs/rtr/publication/bitterli2020spatiotemporal/ (Rendering)
+- [ ] https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf (Rendering)
+- [ ] https://arxiv.org/abs/2004.10908 (ECS)
+- [ ] https://www.di.ens.fr/~zappa/readings/ppopp13.pdf (ECS)
+- [ ] https://dl.acm.org/doi/10.1145/301618.301633 (ECS)
+- [ ] https://www.cs.ubc.ca/~pai/papers/KrySound01.pdf (Audio)
+- [ ] http://graphics.cs.cmu.edu/projects/pat/ (Audio)
 
 
 ## Rendering 👽
@@ -51,6 +63,6 @@ kanban-plugin: board
 
 %% kanban:settings
 ```
-{"kanban-plugin":"board","list-collapse":[false]}
+{"kanban-plugin":"board","list-collapse":[false,null,false,false,false,false]}
 ```
 %%
