@@ -109,9 +109,13 @@ executor is written against the real interface; **P1** opens `publish` to those 
 and throwaway assets. From M3 on, "does this work" is answered by running the testbed rather
 than by a throwaway `main.cpp`.
 
-**Keep the M3 manifest minimal** — root, name, shader dir, asset dirs. Scene binding and the
-asset registry are M6 work; writing the full schema at M3 designs it against a `Scene` and a
-resource model that do not exist yet, which is the mistake M3 exists to avoid.
+**Keep the M3 manifest minimal.** This line read "root, name, shader dir, asset dirs" until
+2026-09-04. Three of those four are gone: the root is **derived** from the manifest's own
+location, and the shader and asset directories are a **convention** the bootstrap derives from
+the root, so naming them was configuration nothing varied. **The M3 schema is `name`, and
+nothing else** ([[Project — Design]] § *The manifest*). Scene binding and the asset registry
+are M6 work; writing the full schema at M3 designs it against a `Scene` and a resource model
+that do not exist yet, which is the mistake M3 exists to avoid.
 
 ## Deliberately absent
 

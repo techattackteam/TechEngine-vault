@@ -41,7 +41,14 @@
 | **Window / M4**: glad2 vendoring · what `platform` owns · the M4-level context handoff · headless CI | ❌, ADR-015 §2 already decided the owner | ✅ | **Second coverage gap.** No ADR is owed: ADR-006 §1, ADR-008 §4 and ADR-015 §2 between them decide module, vendoring and ownership. What is open is **mechanism**, which is a note's job. Heavy, so Story D was held unsized. → **S5-D2**, done 2026-08-30, and it moved ADR-006 §1 by dated amendment |
 | `executablePath` · mount validation · the routine · the two Auto cards | ❌ **→ mount validation needed an ADR amendment** | ❌ | Reversible and local, straight to cards. <br>**The second gate miss of the sprint, and the same shape as the first.** "Reversible and local" held for the three alias rules. It did not hold for *what a fatal check guarantees*: writing the card's `TE_CHECK` clause exposed that ADR-011 §5 never said whether the abort was reachable-past, and the engine had shipped both readings. Settled by a dated amendment on 2026-09-01, which then re-tiered ten call sites across `core`. See S5-T2. |
 
+| **S5-B1** · the editor's default project root | ❌ | ❌ | Bug, reversible and local. If the fix is a configure-time path, the note says why the editor may keep one when M3 just removed the runtime's. |
+
 ## Stories & tasks
+
+**Added Sep 7:** S5-D3 revisits simulation ownership after the resize demo exposed the
+accepted event-pump stall. It requires a superseding ADR because "sim on main" is part of
+ADR-015's headline decision ([[ADR Index]]). The implementation stays unsized; T9 waits
+for the input handoff decision. See S5-D3 and the current capacity update below.
 
 > Every task carries `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light / 🤖 Auto`. Weight fits the
 > day first, then priority ([[Planning Workflow — Artifact Gate]]).
@@ -125,39 +132,64 @@
       Optional ride-along: **D3** lives in the same file (`MountTable.cpp`), so its
       per-component spelling check may ride this PR. Its fix costs a directory scan per
       component, so taking it is a deliberate call rather than automatic.
-- [ ] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate — done: `GetModuleFileNameW`
+- [x] **S5-T1** · `platform::executablePath()` · P1 · 🟠 Moderate **→ 🟡 Light** —
+      **done 2026-09-03**, `a7908904` (#67). Entry on [[Sprint Board]]. **As cut:** `GetModuleFileNameW`
       on Windows and `/proc/self/exe` on Linux behind one signature in `platform`, with a
       Catch2 case asserting the returned path exists and names the running test binary; no
       `current_path()` fallback anywhere.
-- [ ] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep — **rewritten 2026-08-31
+- [x] **S5-T3** · the five mutating `FileAccess` calls · P1 · 🟢 Deep —
+      **done 2026-09-03**, `84181fae` (#68). Entry on [[Sprint Board]].
+      **rewritten 2026-08-31
       against [[Project — Design]] § *The five mutating calls*: the old clause named no results
       and the enum had no value for two of the cases it asked to be pinned.** done:
       `createDirectory`, `remove(path, recursive)`, `copy(from, to)`, `move(from, to)` and
       `rename(path, newName)` ship on `FileAccess` over both files and directories, all
-      returning `FileResult` and all resolving through `MountTable::resolveForCreate`;
+      returning `FileResult`; **the clause "all resolving through
+      `MountTable::resolveForCreate`" is corrected 2026-09-03: that holds for a destination
+      only.** `copy`, `move` and `rename` each take a source that must already exist, and
+      `resolveForCreate` never probes, so a source living in a lower-priority mount would come
+      back `NotFound`. Sources resolve through `resolveExisting`, destinations through
+      `resolveForCreate`;
       **`FileResult` gains `AlreadyExists` and `NotEmpty`**; **`write` stops returning the
       generic `IoError` for a missing parent and returns `NotFound`**, while `createDirectory`
       is the call that does create parents; Catch2 pins each against a scratch directory,
       including the mount-root case (`InvalidPath`), the missing-parent case, the
       already-exists case and the non-empty-directory case; green on all legs. Needs S5-D1.
-- [ ] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep — **rewritten 2026-08-31:
+- [x] **S5-T4** · `project.toml` + the `Project` type · P1 · 🟢 Deep —
+      **done 2026-09-04**, `e0495146` (#70). Entry on [[Sprint Board]].
+      **rewritten 2026-08-31:
       the type is editor-local, not engine code (ADR-017 § *Decision* 2), and the old clause
-      put `root` inside the manifest.** done: `Project` lives in `apps/editor/src/project/` and
-      loads `project.toml` through toml++ in its **non-throwing** form, carrying only
-      `name` · `shaderDir` · `assetDirs`, with the root **derived** from the manifest's own
-      location; load and save are both owned by `Project` and both go through `FileAccess`,
-      which is the v1 split this fixes; a malformed, unreadable or missing file returns a
-      `ProjectResult` rather than throwing; Catch2 cases live in `apps/editor/tests/` and pin a
-      good file, a malformed one, a missing one, and a manifest path that escapes the root.
-      Needs S5-D1, S5-T10.
-- [ ] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate —
+      put `root` inside the manifest. Rewritten again 2026-09-04: [[Project — Design]]
+      § *The manifest* cut the schema to one key, so `shaderDir` and `assetDirs` no longer
+      exist and the mount roots are derived by convention.** done: `Project` lives in
+      `apps/editor/src/project/` and loads `project.toml` through toml++ in its
+      **non-throwing** form, carrying only `name`, with the root **derived** from the
+      manifest's own location and **no mount knowledge on the type at all**; load and save are
+      both owned by `Project` and both go through `FileAccess`, which is the v1 split this
+      fixes; a malformed, unreadable or missing file returns a `ProjectResult` rather than
+      throwing; Catch2 cases live in `apps/editor/tests/project/` and pin a good file, a
+      malformed one, a missing one, a `manifestPath` that escapes the root, a missing `name`
+      and a `name` of the wrong type. Needs S5-D1, S5-T10.
+      **Three things landed that the clause did not name.** `ProjectResult` gained
+      **`WriteFailed`**, because the four values it was written with had none for a failed
+      write and `save` would otherwise have reported a read error. `cmake/deps.cmake` gained a
+      **`TechEngine::tomlplusplus` wrapper carrying `TOML_EXCEPTIONS=0`**: the upstream default
+      makes `toml::parse_result` an alias for `toml::table`, so the non-throwing form the
+      clause asks for is a build setting rather than a call choice. And the
+      `.claude/output-styles/techengine.md` change **rode along uninvited**, 93 lines of it.
+- [x] **S5-T5** · the two bootstraps + `projects/dev/` testbed · P1 · 🟠 Moderate —
       **rewritten 2026-08-31: the old clause read "the runtime loads it by default", which
-      ADR-017 § *Decision* 1 reverses outright.** done: `EditorApp::init()` mounts `project` at
-      the root from `argv` and `engine` off `executablePath()`, reads the manifest and mounts
-      the `assets` and `shaders` it names, all into the one `MountTable` the base class owns;
+      ADR-017 § *Decision* 1 reverses outright. Rewritten again 2026-09-04, when
+      [[Project — Design]] § *The project layout* decided the on-disk shape: the old mount
+      clause had the manifest naming the asset roots, and the role selects them now.** done:
+      `EditorApp::init()` mounts `project` at the root from `argv` and `engine` off
+      `executablePath()`, reads the manifest, and **derives three roots from `project.root()`**
+      — `shaders`, plus `assets` at `assets/common` (priority 0) and `assets/client` (100) —
+      mounting all of them into the one `MountTable` the base owns;
       `RuntimeApp::init()` mounts a fixed layout off `executablePath()` and **reads no
-      manifest**; `projects/dev/` exists at repo root as data, not a CMake
-      target, with a real `project.toml`, and **the editor** loads it by default.
+      manifest**; `projects/dev/` exists at repo root as data, not a CMake target, with a real
+      `project.toml` and the **three-way `assets/` split** (`common` · `client` · `server`)
+      beside `shaders/`, and **the editor** loads it by default.
       Needs S5-T1, S5-T4, S5-T11.
       **The demo-mount clause is struck, 2026-09-01, `40f7171e` (#65): it landed early and in
       two halves.**
@@ -168,6 +200,14 @@
       card had named:** `.gitignore` still hid `engine/app/assets/demo-material.bin`, a blob
       written by the S4-T7 demo, so the rule outlived its writer and would have masked a real
       file at that path.
+- [x] **S5-B1** · editor default project root · P1 · 🟡 Light —
+      **done 2026-09-05**, `4512024d` (#73). Found Sep 4 after #71: the relative fallback
+      failed when the editor launched outside the repo root.
+      Acceptance: no argument selects the repo's `projects/dev/` independently of the working
+      directory, and an explicit argument still wins. The editor-only configure-time path
+      shipped; [[Project — Design]] § *The mount set* records the mechanism and rejected option.
+      CLion launch and explicit-argument checks were not recorded. No capacity displacement
+      call was recorded before merge; retained as a retro point on [[Sprint Board]].
 
 ### Story C — M4's gate *(Design · ordered before Story D)*
 
@@ -178,8 +218,8 @@
       `--reproducible`, committed under `external/glad/` and wrapped in `deps.cmake`;
       **(b)** `platform` owns GLFW, the window and raw input and issues **no GL call ever**,
       `client` owns the context, glad2 and every `gl*` call, reaching the window through three
-      methods rather than through `glfw*`; **(c)** a single-slot **mailbox** carrying a trivial
-      `FramePacket`, newest-complete-wins, with the real list format left to R1;
+      methods rather than through `glfw*`; **(c)** a single-slot **frame command buffer** carrying a trivial
+      `FrameCommand`, newest-complete-wins, with the real list format left to R1;
       **(d)** **`xvfb-run` on the Linux legs**, chosen over compile-only because the required
       `diff coverage` gate would otherwise force excluding all of `client`.
       **It moved an Accepted ADR.** ADR-006 §1 listed window and input under *both* modules and
@@ -193,36 +233,80 @@
 
 > Ordering: **T6 → P4 → T7 → T8**, with T9 last because it is the pre-named first cut inside
 > this story. P4 comes before T7 because a window test cannot pass CI until xvfb is in place.
+> **Updated Sep 7:** after T8, take **D3 → T9**. D3 settles simulation ownership before
+> T9 is re-cut around its input consumer.
 >
 > **ADR-015 §2 forbids the cheap version.** The context is current on the render thread from
 > the first line. A main-thread clear "for now" is the retrofit M2 exists to prevent, and that
 > ADR's § *Alternatives considered* rejected it by name.
 
-- [ ] **S5-T6** · glad2 generated, vendored and wired · P1 · 🟠 Moderate — done:
+- [x] **S5-T6** · glad2 generated, vendored and wired · P1 · 🟠 Moderate **→ 🟡 Light** —
+      **done 2026-09-06**, `f71b128d` (#74). Entry on [[Sprint Board]]. **As cut:** done:
       `external/glad/` holds `include/glad/gl.h` and `src/gl.c` from
       `glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c`, with
       that command in a comment above the target; the target is wrapped in `cmake/deps.cmake`,
       **does not link `te_warnings`**, and declares its include dir `SYSTEM` (ADR-008 §5), so
       `-Werror` never reaches it; `client` links it and `platform` does not; green on all legs.
-      Ride-along: `deps.cmake`'s `FETCHCONTENT_UPDATES_DISCONNECTED` comment describes the
-      opposite of its value ([[Backlog]] → `etc`).
-- [ ] **S5-T7** · `platform::Window` + the context on the render thread · P1 · 🟢 Deep — done:
+      The `FETCHCONTENT_UPDATES_DISCONNECTED` comment ride-along shipped; its resolved
+      backlog entry is removed. C was enabled in the root project for the generated source.
+      **Sizing correction, Sep 6:** Miguel reports light work; generation and dependency
+      wiring against a settled design did not warrant the moderate estimate.
+- [x] **S5-T7** · `platform::Window` + the context on the render thread · P1 · 🟢 Deep —
+      **done 2026-09-06**, `a053486c` ([#76](https://github.com/techattackteam/TechEngine/pull/76)).
+      Entry on [[Sprint Board]]. Final PR CI, including Linux TSan, succeeded;
+      [run 34063333725](https://github.com/techattackteam/TechEngine/actions/runs/34063333725)
+      reports 94% diff coverage. **As cut:** done:
       `Window` owns the `GLFWwindow*` and exposes `initialize`/`open`/`pollEvents`/`close` as
       main-thread-only, plus `makeContextCurrent`/`releaseContext`/`swapBuffers`/`procLoader`
       for the render thread; `client` spawns the render thread, claims the context once and
       calls `gladLoadGL(window.procLoader())` **there, not at startup**; the thread is joined
       before `close()`; `platform/CMakeLists.txt`'s glad comment is corrected to match the
-      ADR-006 amendment; `linux-tsan` is green. Needs S5-T6, S5-P4.
-- [ ] **S5-T8** · clear + triangle through the frame mailbox · P1 · 🟢 Deep — done: main
-      publishes a `FramePacket` per frame and the render thread consumes the newest, re-drawing
+      ADR-006 amendment (**landed early in S5-T6, #74**); `linux-tsan` is green. Needs S5-T6, S5-P4.
+      **Sequence revised by Miguel, Sep 6:** start T7 while P4 remains in Review; use T7's
+      implemented window/context tests to validate P4. Scaffolding alone is not that proof.
+      **Lifecycle agreed:** explicit `Window::terminate()` after all windows close;
+      `RenderThread::start(Window&)` waits for GL startup and returns bool. A `std::jthread`
+      uses its stop token for cancellation; `stop()` requests stop and joins. Failed startup
+      joins before returning false. No shared `m_running` flag.
+- [x] **S5-T8** · clear + triangle through the frame command buffer · P1 · 🟢 Deep —
+      **done Sep 7**, `681ddf6b` ([#77](https://github.com/techattackteam/TechEngine/pull/77)).
+      Miguel confirmed Tracy and continuous resize drawing in session. Final PR CI at
+      `c5bb116c`, including Linux TSan, was verified green; [[Window — Design]] records evidence.
+      **As cut:** done: main
+      publishes a `FrameCommand` per frame and the render thread consumes the newest, re-drawing
       the last when none is new; a triangle renders; **the main thread issues no GL call**, and
       a Tracy capture shows the GL zones on the render thread only, which is M4's real proof;
       `linux-tsan` green. **This is the sprint's Tier 2 demo.** Needs S5-T7.
+      **Clarified Sep 6:** drawing continues during window moves and resizes, reusing the
+      latest command; framebuffer-size changes reach the render thread for viewport updates.
+      Simulation still runs on main and may pause inside event processing.
+- [ ] **S5-D3** · simulation independence during window moves/resizes · P1 · 🟢 Deep —
+      **Design, added 2026-09-07 at Miguel's request.**
+      **Progress Sep 7:** [[ADR-018 — Host and simulation threads, render-owned GL]] accepted;
+      mechanism and implementation breakdown remain open in [[Simulation Thread — Design]].
+      The requirement is that window moves/resizes must not suspend simulation ticks; T8's independent presentation alone
+      does not satisfy it. Needs T8; ordered before T9.
+      done: Miguel accepts a superseding ADR for [[ADR-015 — Threading (sim on main, render thread owns GL)]]'s
+      main-thread simulation decision, with the superseded scope recorded in [[ADR Index]].
+      It assigns window/event, simulation and render ownership; defines the main-to-simulation
+      input handoff, including ordering, buffering and stale input while the event pump is
+      blocked; retains complete frame-command publication and render-thread GL ownership;
+      and settles startup, failure, stop/join order and the headless path against ADR-017.
+      The affected *Decided* rows in [[Window — Design]], [[Concurrency — Design]] and
+      [[Game Loop — Frame Flow]] point to the accepted decision. T9 is re-cut for its input
+      consumer, and the simulation change is split into session-sized implementation cards.
+      Their verification must cover continued ticks during a deliberately blocked event
+      pump, native Windows move/resize with simultaneous tick/render evidence, input delivery
+      after the stall, shutdown during activity, headless operation and Linux TSan.
+      **This card delivers the design and breakdown.** Implementation remains unsized until
+      that decision, and entry into this sprint requires a fresh remaining-capacity check.
 - [ ] **S5-T9** · raw input through `Window` · P2 · 🟠 Moderate — done: keyboard and mouse
       arrive through GLFW callbacks into a `platform` input buffer that main reads inside
       `pollEvents`; no callback touches the render thread or issues a GL call; a Catch2 case
       pins the buffer's drain semantics. Gamepad and text input are explicitly out
       ([[Window — Design]] § *Open questions*). **First cut inside this story.**
+      **Held Sep 7 for S5-D3:** the main-reader clause and moderate estimate are provisional;
+      re-cut them against the accepted input handoff before starting implementation.
 
 ### Story E — Process *(first thing cut; the mix is called out below)*
 
@@ -237,13 +321,16 @@
       Two misbehaviours were found and neither warranted the `B` card the card allowed for.
       **Unblocks S5-P2.** The DST edge it used to carry has its durable home in
       [[Autonomous Lane — Routine Prompt]] § *Routine configuration*.
-- [ ] **S5-P2** · 🤖 [[Known Issues]] **D1's fallback fix** · P3 · 🤖 Auto — done: `Log.hpp`'s
+- [x] **S5-P2** · 🤖 [[Known Issues]] **D1's fallback fix** · P3 · 🤖 Auto — done: `Log.hpp`'s
       `TE_LOG_ACTIVE_LEVEL` fallback matches CMake's per-config default (`INFO` under `NDEBUG`,
       else `TRACE`) per D1's written fix, plus a config-table Catch2 case mirroring
       `AssertTests.cpp`; **D1 is deleted in the same commit**; the run builds Linux and passes
       `ctest` before opening the PR, and never merges it. **This is the lane's first code
       card** — the PR path is unproven, so the card tests the lane as much as the fix.
-- [ ] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light — done: `ci.yml`'s Linux install step
+- [x] **S5-P4** · xvfb on the Linux legs · P2 · 🟡 Light —
+      **done 2026-09-06**, `1482e927` ([#75](https://github.com/techattackteam/TechEngine/pull/75)),
+      validated by T7's final PR CI at Miguel's revised gate. Linux reports llvmpipe GL 4.5
+      core and runs the real window tests under Xvfb. **As cut:** done: `ci.yml`'s Linux install step
       gains `xvfb` and `libgl1-mesa-dri` (the existing `libgl1-mesa-dev` is headers plus
       `libGL`, not the llvmpipe driver), the test step runs `xvfb-run -a ctest` with
       `LIBGL_ALWAYS_SOFTWARE=1`, and a run on `master` confirms llvmpipe advertises **GL 4.5
@@ -252,7 +339,11 @@
       #54 (`ci.yml`'s own header carries that rule). **If llvmpipe caps below 4.5**, drop the
       CI leg's context version rather than the test: the window and thread seam is what it
       proves. Ordered before S5-T7.
-- [ ] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto — done: every `path:line`
+      **Grounded 2026-09-06:** the push filter also skips a workflow-only merge. The scaffold
+      adds `workflow_dispatch` so the required `master` run can be started after merge;
+      `glxinfo -B` records the renderer and core version. Coverage runs CTest internally,
+      so its target also needs Xvfb. **Verified through #76**, rather than a separate manual run.
+- [x] **S5-P3** · 🤖 vault `file:line` citation sweep · P3 · 🤖 Auto — done: every `path:line`
       citation in the durable artifacts is resolved against the tree and the 8 known-wrong ones
       are corrected (three in `App.cpp`, two in [[Known Issues]], two in [[Profiler — Design]]);
       the report says whether the check is cheap enough to belong in `/weekly-review` or in CI.
@@ -262,10 +353,13 @@
 
 **Tier 1 — the commitment. The sprint fails without these.**
 
-- [ ] M3's rung is closed: `projects/dev/` exists as data, **the editor** loads it through a
-      real `project.toml`, **the runtime bootstraps a fixed layout without reading one**
-      (ADR-017 § *Decision* 1), and every mount resolves relative to the binary rather than to a
-      configure-time source path.
+- [x] M3's editor half is closed: `projects/dev/` exists as data, **the editor** loads it
+      through a real `project.toml`, and the `engine` alias resolves relative to the binary
+      rather than to a configure-time source path. **2026-09-04**, `934cf999` (#71).
+      **Rewritten at that close.** The line used to also ask for the runtime's fixed layout
+      and for every mount to be binary-relative. The runtime half is deferred to M6 by
+      [[Project — Design]] § *Open questions*. S5-B1 made the editor default independent of
+      the working directory on **2026-09-05**, `4512024d` (#73); see that note's *The mount set*.
 - [x] Every executable subclasses `App`, and both apps have a test exe that CTest discovers.
       **2026-08-31**, `76056402` (#62) and `b6273327` (#63).
 - [x] The `TODO(S3-T13)` demo mount is gone from the tree, and [[Known Issues]] D2 is deleted.
@@ -273,21 +367,38 @@
       `40f7171e` (#65), which was cut off S5-T5's clause because both halves landed before that
       card starts. **This line closed ahead of the card that owned it**, which is why the
       demo-mount clause is struck on S5-T5 rather than waiting there.
-- [ ] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
+- [x] Both coverage gaps are closed: a `Project — Design` and a `Window — Design` note exist,
       each with a filled *Decided* table, and neither story was cut before its artifact.
+      Confirmed Sep 7 with M3 shipped and the M4 proof merged as `681ddf6b` (#77).
 
 **Tier 2 — the reach. Named separately because it is the half at risk.**
 
-- [ ] M4's unlock is demonstrable: a window opens, its GL 4.5 context is current on the render
+- [x] M4's unlock is demonstrable: a window opens, its GL 4.5 context is current on the render
       thread, and a triangle draws there. The main thread issues no GL call (ADR-015 §2).
-- [ ] `external/glad/` holds the generated loader and CI builds it on both legs.
+      **Sep 7**, `681ddf6b` (#77). Miguel confirmed the Tracy and continuous resize-drawing
+      checks; final PR CI including Linux TSan was verified. See [[Window — Design]].
+- [x] `external/glad/` holds the generated loader and CI builds it on both legs.
+      **2026-09-06**, `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)).
+      Windows/MSVC and Linux/Clang Debug and Release checks succeeded in
+      [the PR CI run](https://github.com/techattackteam/TechEngine/actions/runs/34045573278).
 
 **Tier 3 — process.**
 
-- [ ] The autonomous lane has opened, and Miguel has reviewed, **one** unattended code PR.
-      Nothing has yet proven that path.
+- [x] The autonomous lane has opened, and Miguel has reviewed, **one** unattended code PR.
+      **2026-09-03**, `0ac1a9b0` (#66), S5-P2. The review was a silent merge, a day after the
+      PR opened. Correctly prefixed branch, Linux build and `ctest` before the PR, never merged
+      by the lane.
 
 ## Capacity note
+
+**Current update, Sep 7:** Miguel added S5-D3 with only T8 and T9 still open. Remaining
+work after T8's close (#77) is one new 🟢 design session and T9 provisionally 🟠.
+The sprint ends **Fri Sep 11**. This week has Mon/Thu deep slots (Monday is already in use),
+Tuesday light work and Friday moderate work; Wednesday remains optional recovery time.
+T9 remains the first cut if T8 or D3 overruns. This addition commits the design review,
+not an unsized simulation implementation squeezed into the same week.
+
+The earlier capacity estimates below are planning history, not today's remaining load.
 
 **This box is smaller than a normal 2-week box, and that is the price of starting early.**
 A 2-week sprint contains two weekends. This one's first weekend, Aug 29-30, was spent on the

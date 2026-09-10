@@ -43,6 +43,12 @@ groups are kept, because they show where future work will land.
   offered in `engine/base/CMakeLists.txt:18`, and no CI leg sets it, so nothing catches this.
   **Trigger:** the first build that sets the gate explicitly — a shipping Release config is
   the likely one.
+- #prio/low · **`Log.hpp`'s `NDEBUG` fallback has no test.** No TU in the tree includes the
+  header without linking `base`, so the branch #66 (S5-P2) added is reached by nothing and is
+  correct by inspection only. The config-table case that shipped proves the linked gate.
+  Covering the fallback needs its own TU that `#undef`s `TE_LOG_ACTIVE_LEVEL` before the
+  include, plus a `CMakeLists` entry, for a branch nothing reaches today. **Trigger:** the
+  first TU that includes `Log.hpp` without linking `base`, or a bug traced to the fallback.
 - #prio/medium · **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
@@ -60,10 +66,14 @@ groups are kept, because they show where future work will land.
   TODO and the assets directory; `TE_DEMO_ASSETS_DIR` and `S3-T13` now appear nowhere under
   `engine/`, `apps/` or `cmake/`. **Nothing in the tree calls `mount()` outside tests**, so the
   section's framing — a throwaway mount set that M3 will replace — is wrong in the other
-  direction: there is no mount set to replace. The `platform::executablePath()` fix it points
-  at is still a live [[Backlog]] entry and has to survive whatever replaces the section.
-  **Trigger:** S5-T3 or whichever M3 card first mounts through `project.toml` — that card's
-  author reads this section for the prior art.
+  direction: there is no mount set to replace.
+  **Half of it was repaired on 2026-09-03 and the half this entry was filed for was not.**
+  S5-T3's close (`28f24eb`) rewrote the `platform::executablePath()` sentence into past tense,
+  so `:135` now correctly reads "shipped at S5-T1 on 2026-09-03". The two paragraphs above it
+  (`:128-133`) are untouched and still present-tense about `TE_DEMO_ASSETS_DIR`, the
+  `TODO(S3-T13)` in both `App.cpp` and `engine/app/CMakeLists.txt`, and the mount of
+  `engine/app/assets/` — none of which exist in the tree.
+  **Trigger:** fired — S5-T3 merged 2026-09-03 as `84181fae` (#68).
 - #prio/low · **[[File Access — Design]] § *Wiring* has the composition root and the
   `EngineContext` field count wrong** — it says `run()` in `engine/app/src/App.cpp` owns
   `MountTable` and `FileAccess` by value. Since #63 the owner is the `App` class itself
@@ -73,8 +83,70 @@ groups are kept, because they show where future work will land.
   the reason this is more than a count:** it argues a service earns a field only when something
   needs to reach it through the context "and nothing does yet", which `jobs` has already
   falsified. The Catch2 case the section credits does still exist and still pins
-  reference-not-snapshot (`engine/app/tests/AppTests.cpp:55`). **Trigger:** the next edit to
-  that note, or a second service being proposed for `EngineContext`.
+  reference-not-snapshot (`engine/app/tests/AppTests.cpp:55`).
+  **Trigger:** fired — S5-T3's close edited that note on 2026-09-03 (`28f24eb`) and left
+  § *Wiring* untouched, so both claims above still stand word for word.
+
+- #prio/low · **`executablePath()` aborts on a Windows path longer than `MAX_PATH`** —
+  `resolveExecutablePath` calls `GetModuleFileNameW` into a fixed `wchar_t[MAX_PATH]` and
+  `TE_CHECK`s that the result fit (`engine/platform/src/ExecutablePath.cpp:16-19`). 260
+  characters is not the Windows limit, so a deep install path is legal and kills the process.
+  The alternative is retrying into a growing buffer until the call stops truncating. Taken
+  deliberately at S5-T1 with the trade named: a fatal is honest, and nothing ships to a deep
+  path today. **Loud, not silent**, so it is here rather than in [[Known Issues]].
+  **Trigger:** the first install or CI checkout under a long path, or long-path support being
+  turned on.
+
+- #prio/low · **`FileAccess::move` cannot cross a filesystem boundary** —
+  `std::filesystem::rename` fails with `cross_device_link` when two mounts on one alias sit on
+  different drives, and `move` surfaces that as the generic `IoError`
+  (`engine/platform/src/files/FileAccess.cpp:262`). The alternative is falling back to
+  copy-then-remove, which is not atomic and needs its own decision about a partial copy. Left
+  undecided at S5-T3. No test covers it. **The comment this entry credited does not exist:**
+  it was filed saying `move` carries "a comment saying so", and `cross_device`, `cross-device`
+  and `filesystem boundary` return no hit anywhere under `engine/`, `apps/`, `sdk/` or
+  `cmake/`. Either it was dropped in review under `CLAUDE.md` § *Code conventions*' default-to-no-comment
+  rule or it was never written, so this entry is the only record of the decision.
+  **Trigger:** the first project mounted from a different drive than the engine, which the
+  editor's two-root bootstrap (S5-T5) makes reachable.
+
+- #prio/medium · **`FileAccess::remove` resolves a must-exist path through `resolveForCreate`** —
+  `remove` takes the highest-priority mount for the alias and never probes
+  (`engine/platform/src/files/FileAccess.cpp:190`), so a file held only by a lower-priority
+  mount in an overlay comes back `NotFound` while `read` and `list` both find it. That is the
+  same shape S5-T3's review corrected for `copy`, `move` and `rename`, whose sources moved to
+  `resolveExisting`; `remove`'s argument must already exist for exactly the same reason and did
+  not move with them. [[Project — Design]] § *The five mutating calls* names only those three in
+  its sources rule, so the note decides `remove` neither way. **Both readings are defensible**,
+  which is why this is a decision and not a one-line change: a delete that reaches through an
+  overlay into a lower and possibly read-only mount may be precisely what should not happen.
+  `copy` has an overlay case (`engine/platform/tests/files/FileAccessTests.cpp:526`) and
+  `remove` has none. **Silent**, because `NotFound` is a legitimate answer and the caller cannot
+  tell it from the resolver having taken the wrong mount. **Trigger:** the first overlay mount
+  set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
+  that section.
+
+- #prio/medium · **`copy`, `move` and `rename` shipped `const`, so `const FileAccess&` no longer
+  means read-only** — all three are declared `const` while writing to disk
+  (`engine/platform/include/TechEngine/platform/files/FileAccess.hpp:43-47`), and
+  `createDirectory` and `remove` are not, so the same card shipped the split both ways.
+  [[File Access — Design]] § *Why the write split was dropped* gives that convention as the
+  entire replacement for the `FileWriteAccess` type it dropped: `write` is "the class's one
+  **non-const** method, so a caller that must not write can hold a `const FileAccess&`". Three
+  methods that copy, relocate and rename files are now reachable through such a reference.
+  § *The read surface* repeats the claim, and [[Project — Design]]'s
+  `Project::load(const FileAccess&, …)` (`:308`) is built on it. So is the note's own reversal
+  trigger, which calls extraction mechanical because `write` and `resolveForCreate` are "the only
+  two functions that would move" — five more would move now. **Trigger:** the SDK boundary
+  (ADR-006 §3), which is the note's named reversal trigger, or the next edit to either note.
+
+- #prio/low · **[[File Access — Design]]'s header and Decided table still call the mutating half
+  future work** — § *The write surface* records the five calls shipping at S5-T3 (2026-09-03) and
+  § *The read surface*'s enum already carries `AlreadyExists` and `NotEmpty`, but the **Status:**
+  line still reads "the rest of the mutating half is M3" and the Decided table's *Surface* row
+  still says "The other five mutating calls are M3". The body was reconciled at that card's close
+  and the header and the summary were not, so a reader who stops at the table gets the pre-S5-T3
+  surface. **Trigger:** the next [[File Access — Design]] edit.
 
 ## core
 
@@ -109,7 +181,9 @@ groups are kept, because they show where future work will land.
   (`engine/core/CMakeLists.txt:21`) and `app` takes `core` PUBLIC, so every consumer and
   `TechEngineAppTests` receive platform's include directories through that edge instead.
   Nothing will ever go red over it, which is why it is worth writing down rather than waiting
-  for it to break. **Trigger:** the next `engine/app/CMakeLists.txt` change.
+  for it to break. **Trigger:** fired — #65 changed that file on 2026-09-01, about five hours
+  after this entry was written, and the fix did not ride along. `DEPS_PRIVATE platform` is
+  still line 6, so the citation holds.
 
 ## net
 
@@ -127,8 +201,29 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/low · **`techengine_app()` has no `LIBS_PRIVATE`, so every third-party dep an app links
+  is PUBLIC on its object library** — `cmake/techengine_app.cmake:36` puts `LIBS` on the PUBLIC
+  side with the `DEPS`, and its sibling `techengine_module()` carries both `LIBS` and
+  `LIBS_PRIVATE` (`cmake/techengine_module.cmake:58-59`). Found at S5-T4, where toml++ is an
+  implementation detail of one `.cpp` and now reaches the editor exe and `TechEngineEditorTests`
+  as well. Nothing misbehaves: it widens an include path and a link line, and the acid test for
+  a leaking private type is `sdk-smoke`, which does not cover apps. **Trigger:** the second
+  third-party dep an app links, or the next edit to that helper — the asymmetry between two
+  sibling helpers is the part that will confuse someone.
+
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
+- #prio/medium · **A project launcher, inside the editor exe** — the editor's first screen
+  lists known projects, opens one, and creates a new one. Decided 2026-09-03: **not a separate
+  executable.** How the known-project list is stored and loaded is deliberately left open.
+  It closes two of [[Project — Design]] § *Open questions* at once, *Creating a project* and
+  *Where per-user settings live*, since a recents list is per-user state that cannot live in
+  `project.toml`.
+  **It does not remove the `argv` seam.** The editor still has to accept a project root from
+  outside, because the launcher screen supplies one the same way a command line does.
+  Until then, the editor uses the development default recorded in [[Project — Design]]
+  § *The mount set* (S5-B1, #73). The launcher replaces it for real projects.
+  **Trigger:** the first editor UI card. Nothing before that has a screen to put it on.
 
 ## etc — cross-cutting
 
@@ -144,7 +239,7 @@ groups are kept, because they show where future work will land.
 
 - #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
   fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool
-  (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:116`) and `Reader` carries a sticky
+  (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:123`) and `Reader` carries a sticky
   `ReadStatus` (`engine/core/include/TechEngine/core/serialization/Reader.hpp:15`, per ADR-016).
   Nothing throws across an API boundary and nothing uses `std::expected`, so it ratifies two
   existing shapes rather than opening a three-way choice. It also owns the `[[nodiscard]]`
@@ -163,21 +258,11 @@ groups are kept, because they show where future work will land.
   names `v0.13.1`, so the amendment sweeps three artifacts, not two.
   **Trigger:** fired — found by the 2026-08-30 freshness check; third site added by S5-P3.
 
-- #prio/high · **The ccache key is write-once, so master's cache is frozen and hits are 21%** —
-  S4-P1's key is `v1-<leg>-<hash of deps.cmake>`. GitHub caches are immutable per key and the
-  action skips the save on an exact hit, so once master holds an entry **nothing can ever
-  update it** until `deps.cmake` moves. Master's entries are stuck at whatever the
-  2026-08-29 14:06 run happened to save, and they are a fraction of a full leg:
-  `linux-debug` is **3.6 MB against the 14.2 MB** PR #59 produced, `windows-debug` 16 MB
-  against 35 MB. Measured consequence on #59's `linux-clang Debug`: **39 hits out of 184
-  cacheable calls, 21.2%**, with 145 misses. S4-P1 predicted the inverse, roughly 140 dep
-  objects hitting while 43 engine TUs miss, and that premise is not holding. Two things to
-  work out: **why the master entry is so small** (a cancelled run under
-  `cancel-in-progress`, or something else), and whether the key needs a rotating component
-  so master can refresh. Note the tension: a rotating key reopens the unbounded-growth
-  problem S4-P1 was cut to fix, so this is a real trade and not a one-line change.
-  **Trigger:** fired at S4-T7's merge run; pull at the next `/sprint-plan`.
-
+- #prio/medium · **Measure cache refresh and storage after #76** — ccache now saves once per
+  commit and restores compatible older snapshots; Mesa archives are cached separately.
+  The frozen-key mechanism is fixed, but the hit-rate improvement and snapshot growth need
+  observations from successive master runs. **Trigger:** the next weekly review after
+  multiple source revisions have populated the new keys.
 - #prio/low · **Four CI legs can never restore a ccache, and it is scoping, not the key** —
   a cache written on `refs/pull/N/merge` is readable only by that PR; only caches on
   `refs/heads/master` are shared across branches. `sanitizers` and `coverage` are
@@ -201,12 +286,6 @@ groups are kept, because they show where future work will land.
   there, and decide at the same time whether the exclusion should be the file or only its demo
   blocks. **Trigger:** fired at S4-T7; pull with the next coverage or B3 work.
 
-- #prio/medium · **`FETCHCONTENT_UPDATES_DISCONNECTED` is OFF with a comment explaining why it
-  is ON** — flipped as a ride-along in #46; the five lines above it still describe the old
-  value and the Windows/MSBuild failure it avoided. Either restore it or rewrite the comment.
-  **Trigger:** the next `cmake/deps.cmake` change, or the first re-appearance of that MSBuild
-  path error.
-
 - #prio/medium · **Guard the branch-name to card-ID link** — the branch prefix is the only path
   from a squashed commit back to its board card (ADR-012 § *Consequences*), and it has now
   broken on three consecutive cards: S4-T5 rode T4's branch, S4-T6 kept the `S4-T2/` prefix
@@ -214,15 +293,22 @@ groups are kept, because they show where future work will land.
   unrelated bug PR (#56). The third one changes the shape of the fix: a pre-push check on the
   branch name would not have caught it, so the guard has to compare the **merged** commit
   against the open cards on [[Sprint Board]]. Nothing mechanical checks it today, so the entry
-  is only ever written after the fact. **Trigger:** fired — pull at the next `/sprint-plan`.
+  is only ever written after the fact.
+  **A merged commit naming a still-open card is legal, so that comparison cannot be an
+  equality test.** #65 merged on branch `S5-T5/demo-mount-removal` while S5-T5 is still in To Do,
+  because the card landed in halves. Four cards have been named correctly since the three
+  misses — #64, #66, #67 and #68 all carry their own prefix — so what the guard must catch is a
+  prefix matching **no** card, not one matching an open card.
+  **Trigger:** fired — pull at the next `/sprint-plan`.
 - #prio/medium · **ADR-009 owes an amendment: a workflow-only PR gets no CI** — § *Consequences*
   says correctness leans on strict CI plus self-review. Since #54 (2026-08-28) a PR touching only
   `.github/workflows/**` runs no build at all, so for that one class of change CI is not a
   backstop and self-review is the whole gate. S4-P4 pre-named this exact test, answered it
   correctly for docs-only PRs, and nobody re-asked it when the scope widened past docs. The
   mitigation exists but lives only in `ci.yml`'s header: land workflow edits alone and read the
-  run they produce on `master`. Found at the 2026-08-29 drift check (A3). **Trigger:** Sprint 05
-  planning, or the first workflow break that reaches `master` green.
+  run they produce on `master`. Found at the 2026-08-29 drift check (A3). **Trigger:** fired —
+  Sprint 05 planning ran on 2026-08-30 and passed the entry over, deliberately or not. Pull at
+  the next `/sprint-plan`.
 - #prio/low · **`ci.yml`'s `build-test` gate comment is wrong about skipped checks** — it says
   a required check skipped by an `if:` "never reports its context at all". Measured on #49's
   push run, a skipped *plain* job does report it (`diff coverage` came back `skipped`); it is
@@ -234,52 +320,24 @@ groups are kept, because they show where future work will land.
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a
   stale branch is mistaken for live work.
-- #prio/medium · **No CI job and no test carries a timeout, so one hang burns the runner's
-  6-hour ceiling** — `.github/workflows/ci.yml` sets `timeout-minutes` on no job,
-  `cmake/techengine_test.cmake`'s `catch_discover_tests()` passes no per-test timeout, and
-  nothing sets a CTest `TIMEOUT` property, so a deadlocked case runs until GitHub's 360-minute
-  default kills the job. On a Windows leg, billed at 2×, that is up to **720 billed minutes
-  from a single hang** against the ~2k monthly budget the [[Dashboard]] already watches as a
-  live constraint. The engine now ships a thread pool with `wait` and a join, which is the
-  class of code that hangs, and the *test for `wait()` called from a pool worker* entry above
-  names a CI timeout as the price of catching it. A ceiling is a few lines and does not need
-  the deadline-capable helper that entry is waiting for. **Trigger:** fired — found by the
-  2026-08-31 trigger sweep.
-
 - #prio/medium · **Assert the private-plumbing gates still match something** — `ci.yml`'s
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
   crosses one of the existing patterns.
-- #prio/low · **`.gitattributes` for committed test assets** — `engine/app/assets/demo.txt`
-  gets CRLF on Windows checkout. Harmless while the demo only logs a byte count; silent the
-  day a case asserts on a repo-committed file's *contents* and the two CI legs disagree
-  (scratch-directory assets are written by the test, so they are unaffected).
+- #prio/low · **`.gitattributes` for committed test assets** — a repo-committed text asset gets
+  CRLF on a Windows checkout, so the day a case asserts on such a file's *contents* the two CI
+  legs disagree. Scratch-directory assets are written by the test and are unaffected.
+  **The witness this was written against is gone:** #65 deleted `engine/app/assets/demo.txt`,
+  and the tree now carries no committed data asset of any kind, so the entry is entirely
+  prospective and further from firing than when it was filed.
   **Trigger:** the first test that reads a committed asset rather than a scratch one.
-- #prio/medium · **Snapshot citations in Accepted ADRs cannot be swept, and S5-P3 had to skip
-  them** — [[ADR-011 — Diagnostics (Logger & Assert)]] § *Grounding* says
-  `engine/base/CMakeLists.txt:4` "links `spdlog::spdlog` as **PUBLIC** today", and
-  [[ADR-015 — Threading (sim on main, render thread owns GL)]] § *Context* says "no
-  `std::thread` exists outside a pacer `yield`". Both were true when written and **both were
-  made false by their own ADR's decision**: spdlog is now `LIBS_PRIVATE` on line 15, and
-  `JobSystem` ships four worker threads. Repointing the line numbers would leave a correct
-  pointer under a false present-tense claim, which is worse than the stale one. The fix is a
-  convention, not an edit: a citation inside a Context or Grounding section is a snapshot and
-  should carry the sha or tag it was taken at, the way [[Project — Design]] already writes
-  "v1 prior art at the `v1-reference` tag". Four sites across the two ADRs.
-  **Trigger:** fired — found by S5-P3, 2026-09-01. Pull with the next ADR amendment either
-  one needs anyway.
-
-- #prio/medium · **Three `App.cpp` citations now point past the end of the file** — #63 cut
-  `engine/app/src/App.cpp` from about 250 lines to 55, and the demo body went with it.
-  [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Context* cites
-  `App.cpp:95` for the `TE_DEMO_ASSETS_DIR` mount, and [[Project — Design]] § *Where this lands*
-  cites `App.cpp:82` as the composition root "and the demo mount it replaces is at line 95".
-  The mount is gone from `App.cpp` entirely; the define it used survives orphaned at
-  `engine/app/CMakeLists.txt:8-11`, still under its `TODO(S3-T13)`. S5-T5 is already scoped to
-  delete that block, so the artifacts want re-pointing **as part of that card** rather than
-  now — the composition root moves in the same commit. This is the one citation class a
-  mechanical in-range check would have caught.
-  **Trigger:** fired — pull with S5-T5.
+- #prio/low · **A CI check that every vault `path:line` citation exists and is in range** —
+  S5-P3's answer to "`/weekly-review` or CI" was to split by failure mode. Exists-and-in-range
+  is mechanical and cheap, and would have caught 3 of the ~14 wrong sites the two sweeps
+  found. Points-at-the-right-thing is a read, and stays with `/weekly-review`. The vault has
+  its own HEAD, so the check resolves against the Dashboard's `Reconciled against` sha, not
+  `master`: it proves "nothing dangles as of the last reconciliation". Citations anchored
+  "at `<sha>`" resolve at that sha. **Trigger:** the next dangling citation found by hand.
 
 - #prio/medium · **[[Game Loop — Frame Flow]]'s dated callout is stale on both of its claims** —
   the block reads "Not wired yet (checked 2026-08-20). The shipped `EngineContext` has exactly
@@ -288,20 +346,12 @@ groups are kept, because they show where future work will land.
   (`engine/core/include/TechEngine/core/EngineContext.hpp:8-9`), and the `Clock` is an `App`
   member (`engine/app/include/TechEngine/app/App.hpp:20`), not a loop local. Re-dating the
   block means re-deciding how much of the split is built, which is a design read rather than a
-  sweep. **Trigger:** fired — found by S5-P3, 2026-09-01. Pull with S5-T5 or the next Frame
-  Flow edit.
-
-- #prio/low · **[[Project — Design]] says `apps/editor/CMakeLists.txt:2` repeats ADR-006 §1's
-  `tooling` composition, and it no longer does** — the note's § *A third tier is the standing
-  alternative* leans on that file echoing "app + client + core + **tooling**". Line 2 now reads
-  "Composition = app + client + core (ADR-006 §1). ADR-017 decided no `tooling` tier is created
-  for now", so the file **contradicts** the sentence citing it. The argument still stands on
-  ADR-006 §1 alone; only the second witness is gone. **Trigger:** fired — found by S5-P3,
-  2026-09-01. Pull with the next [[Project — Design]] edit.
+  sweep. **Trigger:** fired — found by S5-P3, 2026-09-01. S5-T5 closed 2026-09-04 without
+  it, so pull with the next Frame Flow edit.
 
 - #prio/medium · **Every quoted `#include` in the tree arrived in #62 and #63, and the house
   rule is angle brackets** — `CONVENTIONS.md` § *Includes* says "angle brackets throughout"
-  and "never `"FormatBuffer.hpp"`", and 372 of the 385 `#include` lines under `engine/`,
+  and "never `"FormatBuffer.hpp"`", and 382 of the 395 `#include` lines under `engine/`,
   `apps/` and `sdk/` obey it. All 13 that do not sit in the two commits no drift check had
   covered: `engine/app/src/App.cpp:3-5`, and the mirrored pairs under `apps/editor/` and
   `apps/runtime/` — each app's own header, its `.cpp`, its `main.cpp` and its test file.
@@ -324,15 +374,6 @@ groups are kept, because they show where future work will land.
   dated amendment; this half is not, so that amendment would be written without it.
   **Trigger:** fired — pull with whatever amendment ADR-017 § *Decision* 3 gets.
 
-- #prio/low · **[[Project — Design]] still reads as pre-build in three places** — its header
-  says "**Status:** draft, nothing built" while two of its sections now describe merged code.
-  § *Testing an executable*'s cmake sketch splices `$<TARGET_OBJECTS:editor_obj>` into both
-  executables, and § *`techengine_app()`, as shipped* then records that linking the object
-  library was chosen instead, so a reader who reaches the sketch first gets the shape that did
-  not ship. And § *Consequences*' "S5-T5's `done:` clause contradicts this note and needs
-  rewording" was carried out on [[Sprint Board]] on Aug 31 — ADR-017 § *Consequences* carries
-  the same now-satisfied bullet. **Trigger:** fired — pull with the next [[Project — Design]]
-  edit.
 - #prio/medium · **A prompt edit in the vault does not reach the running routine, and nothing
   catches the gap** — `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] § *The prompt* on
   Aug 31 at 11:06 Lisbon, and the fire five hours later still received the old four-fire text.
@@ -344,6 +385,22 @@ groups are kept, because they show where future work will land.
   of the prompt that each report echoes back, or a step in `/weekly-review` that diffs the two.
   **Trigger:** fired — found by the 2026-08-31 second fire, carded at S5-P1's close.
   Recorded as a permanent property in [[Autonomous Lane — Design]] § *State* meanwhile.
+- #prio/low · **An entry whose trigger has already fired is re-checked by nothing, so its
+  witness rots unnoticed** — a trigger sweep reads the *unfired* triggers, because a fired one
+  has nothing left to decide, and grooming reads a fired entry only when it pulls it. Between
+  those two moments the code the entry cites keeps moving. Two entries in this file were
+  invalidated by #65 within hours of being filed: the `DEPS_PRIVATE platform` one, caught on
+  2026-09-03 because its trigger was still unfired, and the `App.cpp` citation one, which the
+  same sweep passed over because its trigger was marked fired and which was still describing a
+  deleted `TODO(S3-T13)` block five days later. The cost is bounded — grooming re-reads the
+  code before it acts — but it acts on a false premise until it does. Fix is one line of scope:
+  a sweep re-resolves a fired entry's citations too, and only skips re-deciding its trigger.
+  **Trigger:** fired — the 2026-09-04 sweep adopted the widened scope and it paid immediately.
+  Re-resolving the fired entries caught the `#prio/high` Error-handling-row entry citing
+  `Log.hpp:116`, a blank line since #66 inserted seven lines above it; `addLogSink` is at `:123`
+  and the entry is corrected. That entry is pulled at the next `/sprint-plan`, so under the old
+  scope grooming would have opened a pointer to nothing. **Keep the widened scope.** What is
+  left to decide is whether it belongs in `/weekly-review` rather than in an ad-hoc sweep.
 
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.

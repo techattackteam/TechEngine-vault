@@ -42,7 +42,7 @@ cost. In v2 the loop lives in `app`, and the editor hosts it from outside.
 | Structural change (spawn, despawn, add, remove) applies **at the phase barrier**, single-threaded and in deterministic order. `NetId`s are assigned there. | ADR-007 §6 |
 | Within a phase, the executor walks the prebuilt task-graph levels. | ADR-007 §6 → [[Task Graph — Execution Flow]] |
 | Scripts run in a **terminal slot** of `FixedUpdate` and `Update`. | ADR-010 §3 §4 *(Proposed)* |
-| The editor hosts `app` from **outside** the frame loop. | ADR-006 §1 (F14) |
+| The editor remains an App subclass; host work and simulation callbacks have distinct loops under one lifecycle. Accepted target, not yet implemented. | ADR-017 § *Decision* 3 as partially superseded by ADR-018 §3 |
 | **`FrameContext` owns simulation time. `Clock` is the time source.** See below. | ADR-006 §4, ADR-007 §5 §6 (this note, 2026-07-24) |
 | The loop **pushes** the diagnostic frame number into diagnostics once per frame. The Logger never reads the `Clock`. | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
 | `FrameContext` lives in **`core`**, `FrameLoop` in **`app`**. ADR-007 §6's `update(Scene&, const FrameContext&)` means `core` has to see the type. | S2-T7 (2026-07-30) |
@@ -54,6 +54,10 @@ cost. In v2 the loop lives in `app`, and the editor hosts it from outside.
 | Events: staged writes flip at phase barriers, and every fixed sub-step ends at one. There is no continuous dispatch. | [[ADR-014 — Events (buffered streams) & StringId]] §3 |
 
 ## Design
+
+**Accepted Sep 7:** [[ADR-018 — Host and simulation threads, render-owned GL]] assigns this
+loop to a dedicated simulation thread. [[Simulation Thread — Design]] holds the remaining
+host/input mechanism. The fixed-step rules remain; the thread split is not implemented yet.
 
 ### One frame
 

@@ -2,16 +2,18 @@
 
 > Living design doc. The ADR holds the decision that is hard to reverse. This doc holds the *how*.
 
-**Module:** `apps/editor` (exe-local, not a library) · **Kind:** helper service · **Status:** draft, nothing built
+**Module:** `apps/editor` (exe-local, not a library) · **Kind:** helper service · **Status:** built — `techengine_app()` and the `App` base class at S5-T10 and S5-T11, the `Project` type at S5-T4 (2026-09-04, `e0495146`). The bootstrap that consumes it is S5-T5, open.
 **ADRs:** [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] ·
 [[ADR-006 — v2 core architecture & module layout]] §1 §4
 **Sibling:** [[File Access — Design]] · **Backlog:** [[Backlog]] → `platform`
 
 ## Purpose
 
-A project is a directory with a `project.toml` in it. `Project` is the type that reads that
-file and turns it into a mount set. It answers one question: given this root, which physical
-directories does the virtual filesystem overlay, and under which aliases.
+A project is a directory with a `project.toml` in it. `Project` is the type that reads and
+writes that file, and it answers two questions: what is this project called, and where is its
+root. Which physical directories the virtual filesystem overlays follows from that root by
+convention, and the editor's bootstrap does that derivation
+(§ *The project layout*, § *Why `Project` does not mount*).
 
 **It belongs to the editor alone.** A shipped runtime never reads a manifest. It mounts a
 fixed layout relative to its own executable, because the editor's export step already
@@ -46,14 +48,17 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Bootstrap seam** | Each executable subclasses `App` and mounts in its `init()`. One `MountTable`, owned by the base. | ADR-017 § *Decision* 3 |
 | **Format** | `project.toml`, parsed with toml++ in its non-throwing mode. | [[Roadmap]] § *M3* |
 | **Filename** | Fixed. `project.toml`, never a scan for an extension. | Fixes v1's two sources of truth for the name |
-| **Schema** | `name`, `shaderDir`, `assetDirs`. Nothing else. | [[Roadmap]] `Roadmap.md:112` |
+| **Schema** | `name`. Nothing else. Supersedes [[Roadmap]] `Roadmap.md:112`, which still lists four keys. | See *The manifest* |
 | **Root** | Derived from the manifest's own location. Never stored inside it. | See *The manifest* |
 | **Errors** | A `ProjectResult` enum, returned. No exceptions, no silent defaults. | Mirrors `FileResult`, [[File Access — Design]] § *Resolution* |
 | **Load and save** | Both owned by `Project`, both through `FileAccess`. | Fixes v1's split |
 | **Toolchain paths** | Not on `Project` and not in the manifest. | See *Why the CMake paths are gone* |
-| **Mount authority** | Unchanged. Only the composition root mounts. `Project` returns a list and never calls `mount()`. | [[File Access — Design]] § *Wiring* |
+| **Mount authority** | Only the composition root mounts, and `Project` carries no mount knowledge at all. | See *Why `Project` does not mount* |
 | **New `FileResult` values** | `AlreadyExists` and `NotEmpty`. | See *The five mutating calls* |
 | **Missing parents** | `write` does not create them and returns `NotFound`. `createDirectory` does create them. | Answers [[File Access — Design]] § *Open questions* |
+| **Layout** | The root holds `project.toml`, `shaders/` and an `assets/` split into `common`, `client` and `server`. | See *The project layout* |
+| **Which roots a role mounts** | Derived from the root, not configured. `shaders/`, then `assets/common` at priority 0 and `assets/<side>` at 100. | See *The project layout* |
+| **Creation** | The directories plus the manifest, and nothing else. No template tree is copied. | See *Why no template tree* |
 
 ## Design
 
@@ -74,9 +79,15 @@ consume the objects:
 
 ```cmake
 add_library(editor_obj OBJECT src/project/Project.cpp)
-add_executable(editor src/main.cpp $<TARGET_OBJECTS:editor_obj>)
-add_executable(TechEngineEditorTests tests/project/ProjectTests.cpp $<TARGET_OBJECTS:editor_obj>)
+add_executable(editor src/main.cpp)
+target_link_libraries(editor PRIVATE editor_obj)
+add_executable(TechEngineEditorTests tests/project/ProjectTests.cpp)
+target_link_libraries(TechEngineEditorTests PRIVATE editor_obj Catch2::Catch2WithMain)
 ```
+
+The consumers **link** the object library rather than splicing `$<TARGET_OBJECTS:>` in, because
+linking carries the include directories and the dependencies through as well as the objects.
+That is what shipped. See § *`techengine_app()`, as shipped*.
 
 An object library produces no archive and can be nobody's link dependency, so `editor` stays
 the leaf executable ADR-006 §1 calls it. A static library would hand out a `.lib` that
@@ -105,48 +116,117 @@ Two calls differ from `techengine_module()`:
 the helper to tolerate an empty object library.
 
 **A third tier is the standing alternative.** ADR-006 §1's executable table already composes
-the editor as "app + client + core + **tooling**", and `apps/editor/CMakeLists.txt:2` repeats
-it, but `tooling` has no row in the library table. The ADR names a tier it never defines. When
+the editor as "app + client + core + **tooling**", but `tooling` has no row in the library
+table. The ADR names a tier it never defines. `apps/editor/CMakeLists.txt:2` used to repeat the
+same composition and no longer does: S5-T10 rewrote it to "app + client + core", recording that
+ADR-017 created no `tooling` tier. The argument stands on the ADR alone now. When
 M6's asset pipeline needs a home, defining `tooling` and moving `Project` into it is a file
 move plus a CMake edit.
 
 ### The manifest
 
 ```toml
-name       = "Sandbox"
-shaderDir  = "assets/shaders"
-assetDirs  = ["assets/client", "assets/common"]
+name = "Sandbox"
 ```
 
-Three keys, and that is the whole schema. Scene binding and the asset registry are M6 work.
-Writing them now would design them against a `Scene` and a resource model that do not exist,
-which is the mistake [[Roadmap]] § *M3* exists to avoid.
+**One key, and that is the whole schema.** Decided 2026-09-04, when § *The project layout*
+made the directories a convention. `shaderDir` and `assetDirs` were dropped the same day: once
+the bootstrap derives every root from the project root, a manifest key naming those directories
+is configuration nothing varies, and half-convention is worse than either extreme. Scene
+binding and the asset registry stay M6 work.
+
+**The manifest holds no paths at all**, which removes a whole class of validation. There is no
+absolute path to reject and no `..` segment to catch, because the only path the type handles is
+the root it derives.
 
 **The root is not in the file.** It is the parent directory of the `project.toml` that was
 loaded. A file that stores its own location is wrong the moment the directory is moved or
 copied, and v1 stored exactly that as `ProjectConfig::ProjectPath`.
 
-**Every path in the manifest is relative to the root.** It is rejected if it is absolute or
-contains a `..` segment. That is the same rule [[File Access — Design]] § *What counts as a
-valid path* applies to virtual paths, for the same reason: an absolute path on the right of
-`std::filesystem::operator/` discards the left side entirely.
+**So why keep a manifest.** Its presence is what marks a directory as a project root, it is
+the one home for the name, and it is where M6's scene binding and asset registry land. A
+launcher scanning for projects looks for this file.
 
-**`assetDirs` is a list because overlay is already the mechanism.** v1 kept three parallel
-directory trees, `common`, `client` and `server`, and reached them through a composite integer
-key. In v2 they are several physical roots under **one** alias, at descending priority. List
-order is priority order, so the first entry wins and later entries are the fallback. The read
-path's existence walk then does the shadowing for free.
+**The overlay is still what makes the split work.** v1 kept the same three trees but reached
+them through a composite integer key, `pathType * 10 + appType` (`Project.cpp:79` @
+`v1-reference`). In v2 the two roots a role selects sit under **one** alias at descending
+priority, so the read path's existence walk does the shadowing for free and no caller builds a
+key.
+
+### The project layout
+
+**A created project is a manifest, a three-way `assets/` split and `shaders/`. Nothing is
+copied into it.**
+
+```mermaid
+flowchart TD
+  project["MyGame/"] --> manifest["project.toml"] & assets["assets/"] & shaders["shaders/"]
+  assets --> common["common/"] & client["client/"] & server["server/"]
+```
+
+Creation writes those directories and the manifest, then stops. Decided 2026-09-04.
+
+**Why the split lands before the server does.** ADR-006 §2 already decides that a dedicated
+server is `app + core` plus `net` and links no `client`, and `FrameContext.hpp:9` already ships
+`Role::Client · ListenServer · DedicatedServer`. The layout is where that seam meets the disk.
+Deciding it later is cheap in plumbing and expensive in people: `resolveExisting` probes every
+entry for an alias in priority order (`engine/platform/src/files/MountTable.cpp:85-103`), so
+`assets://meshes/cube.temesh` resolves wherever the file sits, but somebody still has to
+classify every existing asset by hand long after its author has moved on. The split buys the
+classification, not the plumbing.
+
+**The directories are a convention, not configuration.** Every root is derived from the project
+root, so the manifest names none of them: `shaders/`, then `assets/common` at priority 0 and
+`assets/<side>` at 100, where the side comes from the role. That is what reduced the schema to
+one key (§ *The manifest*). The names live in `EditorApp::init()`, which is the one place to
+read for the whole mount set, and `Project` never holds them.
+
+| Executable | Mounts under `assets` |
+|---|---|
+| `runtime` as a client, and the editor | `assets/common`, then `assets/client` |
+| `runtime-server`, when netcode lands (ADR-006 §1) | `assets/common`, then `assets/server` |
+| `runtime` as a listen-server | Open. It runs authoritative sim, so it may need both. |
+
+**The editor mounts what a client mounts**, so play-in-editor sees what a shipped client sees.
+It needs no view of `assets/server`. Export is a bake and package step run over the server
+directory, and it produces the layout the runtime bootstrap reads (§ *Open questions*). A step
+that walks a directory to produce a package does not need that directory resolvable through the
+`assets` alias.
+
+**`shaders/` is not split.** A dedicated server loads no shaders, so that directory is
+client-side by nature and needs no marker.
+
+### Why no template tree
+
+v1's `templates/project/` held **588 files**, and 7 of them were anything like a starter. The
+tree fused four unrelated things into one recursive copy, so every created project carried the
+engine's own content and could then drift from it.
+
+| v1 template part | Files | Where it goes in v2 |
+|---|---|---|
+| Vendored GLM, `Find*.cmake` | 538 | The scripting rung's toolchain. See § *Why the CMake paths are gone*. |
+| Engine shaders | 36 | Shared through the `engine` alias, never copied. Fixes [[v1 Code Audit]] **F27**. |
+| `.idea/` IDE config | 7 | Nowhere. An engine does not author a user's IDE state. |
+| Default material, cube mesh | 2 | The `engine` mount, as editor defaults. |
+| Script scaffold, UI yaml | 5 | The scripting rung, when it has a card. |
+
+**`resources/` and `cache/` get no directory yet.** Both are deferred mount-set rows
+(§ *The mount set*), and neither has a settled definition. See § *Open questions*.
+
+**This is what `projects/dev/` commits at S5-T5**, and what the project launcher later writes
+([[Backlog]] → *editor & tooling*).
 
 ### Two bootstraps
 
-The editor learns its mounts from a manifest. The runtime is told them at compile time. Both
-paths still end at one composition root, so `run()` keeps owning `MountTable` and `FileAccess`.
+The editor learns its mounts from a manifest. The runtime will be told them by the export
+layout, which M6 decides, and mounts nothing until then (§ *Open questions*). Both paths still
+end at one composition root, so `run()` keeps owning `MountTable` and `FileAccess`.
 
 ```mermaid
 flowchart TB
   base["App (in app)<br/>owns MountTable · FileAccess · Clock<br/>JobSystem · FrameLoop"]
   ed["EditorApp::init()<br/>mounts project, reads the manifest,<br/>mounts what it names"]
-  rt["RuntimeApp::init()<br/>mounts a fixed layout<br/>off executablePath()"]
+  rt["RuntimeApp::init()<br/>empty until M6 decides<br/>the export layout"]
   loop["FrameLoop<br/>fixedUpdate · update"]
 
   base --> ed & rt
@@ -213,26 +293,53 @@ read through the VFS.
 
 1. **Bootstrap.** Mount alias `project` at the root taken from `argv`, and `engine` off
    `executablePath()`. The root is known before anything is parsed, so this needs no manifest.
+   With no argument the editor opens the absolute `${PROJECT_SOURCE_DIR}/projects/dev` path
+   supplied by CMake through `TE_EDITOR_DEFAULT_PROJECT_ROOT`, private to the `editor` target
+   (`apps/editor/CMakeLists.txt:15`, `apps/editor/src/main.cpp:8`). An explicit argument still
+   wins; relative arguments resolve from the working directory.
 2. **Read.** `Project::load` reads `project://project.toml` through the base class's
    `FileAccess`. No disk path leaves `platform`.
-3. **Project mounts.** Add `shaders` and `assets` from what the manifest names, into the same
-   table. A mount added after the `EngineContext` is built is still visible through it, which
-   [[File Access — Design]] § *Wiring* pins with a Catch2 case.
+3. **Project mounts.** Derive the three roots from `project.root()` and add them to the same
+   table (§ *The project layout*). A mount added after the `EngineContext` is built is still
+   visible through it, which [[File Access — Design]] § *Wiring* pins with a Catch2 case.
+
+S5-B1 uses a configure-time path because this is a development testbed default, which the
+launcher replaces ([[Backlog]] → *editor & tooling*); the runtime receives no source path.
+Walking upward from `executablePath()` was rejected because an out-of-tree build need not
+have the checkout among its ancestors. Moving the checkout requires reconfiguring and
+rebuilding the editor. Merged 2026-09-05 as `4512024d` (#73). The PR's Windows/Linux build
+and sanitizer checks succeeded; CLion launch and explicit-argument checks were not recorded.
 
 The v1 set, at `ProjectManager.cpp:262-271` @ `v1-reference`, maps onto this as follows.
 
 | v1 alias | v2 alias | Physical root | Rung |
 |---|---|---|---|
 | `editorAssets://` | `engine` | `executablePath()/assets` | M3 |
-| `editorAssetsClient://` | `assets` | Each entry of `assetDirs`, relative to the root | M3 |
-| (none) | `shaders` | `shaderDir`, relative to the root | M3 |
+| `editorAssetsClient://` | `assets` | `<root>/assets/common` at priority 0, `<root>/assets/<side>` at 100 | M3 |
+| (none) | `shaders` | `<root>/shaders` | M3 |
 | (none) | `project` | The root itself, for the manifest | M3 |
 | `projectResources://` | `resources` | The bake output directory | Deferred to M6 |
 | `projectCache://` | `cache` | The build and import cache | Deferred to the scripting rung |
 
-`resources` and `cache` are deferred rather than dropped. Neither has a consumer until baking
-and script compilation are real, and mounting a directory nothing reads is how v1 ended up
-with a mount set nobody could explain.
+`resources` and `cache` are deferred rather than dropped, and what they mean is itself open
+(§ *Open questions*). Mounting a directory nothing reads is how v1 ended up with a mount set
+nobody could explain.
+
+### Why `Project` does not mount
+
+`Project` reaches the mount table for **reading**, through the `const FileAccess&` that
+`load` takes. It never writes to it, and it holds no method that produces a mount list either.
+
+**The reason is legibility, not thread safety, and the distinction matters.**
+[[File Access — Design]] § *Threading* constrains **when** mounting happens, not **who** does
+it: everything mounts before the loop starts, so the table is frozen for every concurrent
+reader. A `Project` that mounted during `EditorApp::init()` would satisfy that perfectly well.
+
+What it would cost is the single place to read. `EditorApp::init()` assembles the whole mount
+set in a few explicit `mount()` calls, and a reader sees all of it there. A `mountInto()` on
+`Project` would hide half the set one level down for one caller's benefit. The alternative
+returns if a second bootstrap ever needs the same derivation, and today none does: the runtime
+mounts an exported fixed layout and reads no manifest (ADR-017 § *Decision* 1).
 
 ### Two v1 defects the port must not inherit
 
@@ -242,21 +349,33 @@ with a mount set nobody could explain.
   fatal `TE_CHECK`s, so the v1 spelling cannot reach the table at all.
 - **`executablePath()`, never `current_path()`.** v1 built its runtime paths from
   `std::filesystem::current_path()` (`ProjectManager.hpp:51`), which breaks the moment the
-  binary is launched from another working directory. S5-T1's clause bans the fallback outright.
+  binary is launched from another working directory. S5-T1 shipped the replacement on
+  2026-09-03, and no `current_path()` remains under `engine/` or `apps/`.
 
 ### The five mutating calls
 
-All five land on `FileAccess`, all return `FileResult`, and all resolve through
+All five land on `FileAccess` and all return `FileResult`. **Destinations** resolve through
 `MountTable::resolveForCreate`. That is the write path, so the highest-priority mount for the
 alias wins and existence is never probed ([[File Access — Design]] § *Resolution*).
 
+**Sources resolve through `resolveExisting` instead, decided 2026-09-03 at S5-T3.** `copy`,
+`move` and `rename` each name a path that must already exist. `resolveForCreate` takes the top
+mount and stops, so a source held by a lower-priority mount in an overlay would resolve to a
+path that is not there and return `NotFound` for a file the caller can read. Probing is the
+whole reason the read path exists.
+
 | Call | Signature | Destination exists | Missing parent |
 |---|---|---|---|
-| `createDirectory` | `(virtualPath)` | `AlreadyExists` | Created. This is the call whose job that is. |
+| `createDirectory` | `(virtualPath)` | `AlreadyExists`, whether what is there is a directory or a file. | Created. This is the call whose job that is. |
 | `remove` | `(virtualPath, bool recursive)` | not applicable | `NotFound` |
 | `copy` | `(from, to)` | `AlreadyExists` | `NotFound` |
 | `move` | `(from, to)` | `AlreadyExists` | `NotFound` |
 | `rename` | `(virtualPath, newName)` | `AlreadyExists` | not applicable |
+
+**`newName` is one path component, never a path.** Empty, `.`, `..`, or anything carrying `/`
+or `\\` returns `InvalidPath`, checked before the source is resolved. Decided at S5-T3 on
+2026-09-03: accepting a separator would turn `rename` into a `move` that skips the
+destination's mount resolution.
 
 **`move` and `rename` are one syscall and two call sites.** `rename` takes a bare leaf name
 with no separator in it, and fails validation if it contains one. `move` takes a full
@@ -289,33 +408,41 @@ want the tree has a one-line way to say so, and the intent is visible at the cal
 ### Load and save
 
 ```cpp
-enum class ProjectResult : std::uint8_t { Ok, ReadFailed, ParseFailed, SchemaInvalid };
+enum class ProjectResult : std::uint8_t { Ok, ReadFailed, WriteFailed, ParseFailed, SchemaInvalid };
 
 class Project {
 public:
-    static ProjectResult load(const FileAccess& files, std::string_view manifestPath, Project& out);
+    ProjectResult load(const FileAccess& files, std::string_view manifestPath);
     ProjectResult save(FileAccess& files, std::string_view manifestPath) const;
 
+    const std::filesystem::path& root() const;
     const std::string& name() const;
-    // shaderDir, assetDirs, and the mount list built from them
 };
 ```
 
 `Project` owns both halves. Neither hands a half-parsed document back to a caller, which is
 the v1 shape this replaces.
 
-`load` is `static` and fills an out-param, so a failed load cannot leave a half-populated
-`Project` behind. The pattern matches `FileAccess`, which returns a result and fills an
-out-param rather than returning a value that has to encode failure.
+`load` writes `m_root` and `m_name` last, on the success path only, so a failed load leaves
+the object as it was. It was a `static` with an out-param, matching `FileAccess`'s shape,
+until S5-T5 (#71) made it a member so `EditorApp` can hold the loaded `Project` directly.
 
-**toml++ must be used in its non-throwing form**, through `toml::parse_result` rather than the
-throwing `toml::parse`. The card's clause is that a malformed file returns a defined error,
-and the library's default is an exception.
+**toml++ must be used in its non-throwing form**, and that is a build setting rather than a
+call choice. `TOML_EXCEPTIONS` defaults to 1 whenever the compiler has exceptions, and in that
+mode `toml::parse_result` is a plain **alias for `toml::table`** — so a failure check against
+it compiles, never fires, and `parse()` throws instead. Wired at S5-T4 on 2026-09-04 as
+`TechEngine::tomlplusplus` in `cmake/deps.cmake`, an INTERFACE wrapper carrying
+`TOML_EXCEPTIONS=0`. Consumers link the wrapper, never the upstream target.
 
-**The four results are distinguishable on purpose.** `ReadFailed` means `FileAccess` could not
-produce bytes. `ParseFailed` means the bytes are not TOML. `SchemaInvalid` means it is valid
-TOML with a key missing, of the wrong type, or holding a path that escapes the root. An editor
-reports these three very differently.
+**The four failure results are distinguishable on purpose.** `ReadFailed` means `FileAccess`
+could not produce bytes, which also covers a `manifestPath` the mount table refuses.
+`WriteFailed` is its mirror on `save`, added at S5-T4 because the original four had no value
+for a failed write and `save` would otherwise have reported a read error. `ParseFailed` means
+the bytes are not TOML. `SchemaInvalid` means it is valid TOML with `name` missing or not a
+string. An editor reports these four very differently.
+
+**An empty file is not a parse error.** It is valid TOML and parses to an empty table, so it
+lands on `SchemaInvalid` for the missing `name`.
 
 ### Why the CMake paths are gone
 
@@ -346,24 +473,46 @@ pins to root, name, shader dir and asset dirs.
 - **Where per-user settings live.** The `cmake.exe` path needs a home that is not
   `project.toml` and is not committed. Owner: the scripting rung, when `ScriptsCompiler`'s
   replacement is carded.
-- **Creating a project.** v1's `createProject` laid out nine directories and copied a template
-  tree. Nothing needs it until the editor has UI, and `projects/dev/` is committed by hand.
+- **Creating a project.** **What** it writes is decided in § *The project layout*. **Who**
+  writes it is the editor's project launcher ([[Backlog]] → *editor & tooling*), and nothing
+  has a screen to put it on until the first editor UI card. `projects/dev/` is committed by
+  hand until then.
 - **Exporting a project.** v1's `exportProject` is what produces the fixed layout the runtime
   bootstrap assumes. Owner: M6, with baking.
-- **`assetDirs` and the client/server split.** One alias with overlay priority covers the M3
-  testbed. Whether a dedicated server wants a separate alias is netcode's question, not M3's.
+- **What the runtime mounts.** Deferred 2026-09-04 until the package format exists, because
+  the layout beside the exe is whatever export writes. Until then `RuntimeApp::init()` mounts
+  nothing, and the runtime row in § *The project layout* is a placeholder. Owner: M6.
+- **What a listen-server mounts.** ADR-006 §2 makes a listen-server the `runtime` client also
+  running authoritative sim, so it may need `assets/server` as well as `assets/client`.
+  `Role::ListenServer` ships in `FrameContext.hpp:9` and nothing maps it to roots yet. Owner:
+  netcode.
+- **What `resources/` and `cache/` are, and where they live.** Neither directory is created
+  today. Two constraints are already set. Editor content is **not** project data and has a home
+  in the `engine` alias, off `executablePath()`. And a cache must hold only regenerable output
+  that is safe to delete: v1 broke that by keeping vendored GLM and `Find*.cmake` under
+  `cache/`, so emptying it broke the project. Owner: M6 for `resources`, the scripting rung for
+  `cache`.
+- **Authoring a server-only asset.** The editor mounts no `assets/server`, so nothing in its UI
+  can create or edit one. Whether that matters depends on what a server-only asset turns out to
+  be, which netcode decides.
 - **Reloading.** Editing `project.toml` while the editor runs does nothing today. It needs the
   file watching that [[File Access — Design]] § *Open questions* already defers.
 
 ## Consequences
 
-- **S5-T5's `done:` clause contradicts this note and needs rewording.** It reads "the runtime
-  loads it by default". With the manifest editor-only, `projects/dev/` is the **editor's**
-  testbed, and the runtime's leg of that card is the fixed bootstrap instead.
+- **S5-T5's `done:` clause was reworded on 2026-08-31**, on [[Sprint Board]] and in the sprint
+  note. It had read "the runtime loads it by default". With the manifest editor-only,
+  `projects/dev/` is the **editor's** testbed, and the runtime's leg of that card is the fixed
+  bootstrap instead.
+- **S5-T5 now also commits the layout**, not just the mount set. `projects/dev/` gets the
+  three-way `assets/` split and `shaders/`, and `EditorApp::init()` derives its three roots
+  from `project.root()` rather than mounting what the manifest names. The card's `done:` clause
+  was reworded for both on 2026-09-04.
 - **S5-T2 becomes a hard prerequisite of the mount port**, not just an ordering preference.
   The v1 alias spelling carries the defect in. **Closed 2026-09-01.**
-- **`FileResult` gains two values**, so [[File Access — Design]] § *The read surface* needs its
-  enum listing updated when S5-T3 lands.
+- **`FileResult` gained two values** at S5-T3 on 2026-09-03, and [[File Access — Design]]
+  § *The read surface* carries them. That note's header and *Decided* table still call the
+  mutating half future work, which is carded on [[Backlog]] → `platform`.
 - **`run()` becomes the `App` base class**, so both `main()` files and the whole composition
   root change shape. That is S5-T5's work, and it is the largest single edit in Story B.
 - **The editor moves into the frame loop**, which partially supersedes ADR-006 §1's editor
@@ -386,5 +535,6 @@ pins to root, name, shader dir and asset dirs.
 - v1 prior art at the `v1-reference` tag: `runtime/editor/src/project/Project.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp` ·
   `runtime/editor/src/scripting/ScriptsCompiler.cpp`
-- Code, once it exists: `apps/editor/src/project/`. The composition root is
-  `engine/app/src/App.cpp:82`, and the demo mount it replaces is at line 95.
+- Code: `apps/editor/src/project/` for the type, `apps/editor/src/EditorApp.cpp:18-31` for
+  the mount set. The composition root is `App::run()` at `engine/app/src/App.cpp:15`. The
+  demo mount it replaced is gone since #65.

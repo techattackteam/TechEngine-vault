@@ -142,10 +142,14 @@ Read, in order: CLAUDE.md, CONVENTIONS.md, docs/00 Dashboard/Dashboard.md,
 docs/06 Sprints/Sprint Board.md, docs/08 AI/Autonomous Lane — Design.md.
 Then read yesterday's report in docs/07 Journal/ if one exists, and if it names a PR whose
 CI had not settled, check that PR now and carry the result into today's report.
+If yesterday's report names a PR at all, check whether it has merged. A merged PR closes its
+card: move that card to Done, in step 9's format, before picking anything.
 
 STEP 4 — PICK ONE CARD.
 From the Sprint Board's To Do column, take the highest-priority card tagged "🤖 Auto".
-Take exactly one. If none is open, run a vault freshness check instead: read the Dashboard's
+Take exactly one. Only To Do counts. A card in Review / Demo is waiting on Miguel and this lane
+never re-enters it; a card in In Progress is attended work. If none is open, run a vault
+freshness check instead: read the Dashboard's
 "Reconciled against" sha, then `git log --oneline <sha>..origin/master` in the engine repo,
 and report any design note that now describes code that has moved on.
 FILE WHAT YOU FIND. DO NOT FIX IT. A freshness check that quietly rewrites six artifacts is a
@@ -188,7 +192,25 @@ STEP 8 — CHECK CI LAST.
 After the work is done, read the PR's checks. They have been running while you worked.
 If they have not settled, say so; the next run picks it up.
 
-STEP 9 — WRITE THE REPORT, UNLESS THERE IS NOTHING TO SAY.
+STEP 9 — MOVE THE CARD ON THE BOARD. THE BOARD IS THE ONLY STATE THE NEXT FIRE READS.
+The Sprint Board's columns are this lane's state. A card left in To Do after a fire worked on
+it is a card the next fire either redoes or refuses, and both have happened. So before the
+report, put the card where the next fire needs to find it:
+  - Every `done:` clause met and no PR owed (a vault-only card): move it to ✅ Done. Write the
+    entry the way the ones already there are written: `- [x]`, the card line, then
+    `**<Mon D>**` and two or three sentences on what closed and what was left out. The
+    `done:` block does not come along; the sentences replace it.
+  - A PR opened: move it to 👀 Review / Demo, with the PR number and branch on the line. It is
+    Miguel's to merge. The fire that later finds the PR merged (step 3) moves the card to Done,
+    with the merge sha and the PR number.
+  - Anything left needs Miguel (a judgement call, a clause outside the gate, a card step 5
+    stopped): move it to 👀 Review / Demo, and say on the line exactly what he must decide.
+  - A card no fire touched stays in To Do, untouched.
+Move the entry, never copy it. Only the board line is yours. Closing a card also touches other
+notes (a design note's status line, a Known Issues row, the sprint note): that is Miguel's
+`/card-close`, so list what it owes under "Needs you" instead of doing it.
+
+STEP 10 — WRITE THE REPORT, UNLESS THERE IS NOTHING TO SAY.
 A fire that changed nothing, opened no PR and found nothing worth filing writes NOTHING: no new
 note, and no section appended to an existing one. Say so in your final message instead. A
 journal padded with "nothing to report" buries the days that mattered.
@@ -218,3 +240,8 @@ thing this lane can produce.
   so the run's job when the gate was wrong is to notice and stop, not to improvise past it.
 - **Step 7 repeats four rules the lane is most likely to break**: the branch name, the staging
   ban, the merge ban, and AI attribution. All four have a history in this repo.
+- **Step 9 exists because the board was read and never written.** Through 2026-09-04 every
+  fire read the To Do column as its input and left it as it found it. S5-P2 sat in To Do a day
+  after its PR merged, S5-P3 sat there needing a call, and four fires in a row reported an
+  empty lane while refusing both. The columns are now the lane's state, and Review / Demo is
+  the honest home for "this needs Miguel".

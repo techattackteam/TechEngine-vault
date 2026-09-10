@@ -1,36 +1,45 @@
 # YYYY-MM-DD · Sprint NN — <name>
 
 - **Quarter:** [[YYYY-QN]]
-- **Dates:** <Sat YYYY-MM-DD> – <Fri YYYY-MM-DD> (2 weeks, Sat→Fri; the end-Friday's weekend
-  is the boundary = review + plan, and day 1 of Sprint NN+1)
+- **Dates:** <Sat YYYY-MM-DD> – <Fri YYYY-MM-DD>
 - **Epic:** <epic>
 
-## 🎯 Sprint goal
-> One sentence. The single headline outcome.
+<!-- Sprints run for two weeks, Sat to Fri. The weekend after the end date starts
+the next sprint. Write readable task bullets; let them wrap instead of abbreviating. -->
+
+## Sprint goal
+
+State the single outcome this sprint should deliver.
 
 ## Stories & tasks
-> Each task: `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light` (priority + day-fit weight,
-> [[Planning Workflow — Artifact Gate]]). Pick weight-fits-day first, then priority.
+
+<!-- Use card kinds, priorities, and weights from [[Planning Workflow — Artifact Gate]].
+Keep only the stories needed for this sprint. Link rationale rather than repeating it. -->
+
 ### Story A — <name>
-- [ ] SN-T1 — <task> · P1 · 🟢 Deep — done: <condition>
-- [ ] SN-T2 — <task> · P2 · 🟡 Light — done: <condition>
 
-### Story B — <name>
-- [ ] SN-T3 — <task> · P? · 🟢/🟠/🟡 — done: <condition>
+- [ ] SN-T1 — <task> · P1 · 🟢 Deep — done: <observable condition>
+- [ ] SN-T2 — <task> · P2 · 🟡 Light — done: <observable condition>
 
-### Story C — <name> · ~N tasks · **size after ADR-NNN**
-> Heavy-gated → deliberately unsized ([[Planning Workflow — Artifact Gate]] § *Don't size
-> past an open decision*). Cards get cut when the ADR is Accepted, per that task's
-> done-condition. Leave this as a story — no done-conditions yet.
+### Story B — <name> · ~N tasks · size after ADR-NNN
+
+<!-- Keep a heavy-gated story roughly sized until its artifact is settled.
+Do not invent task acceptance criteria before that decision. Remove this example
+if no story needs it. -->
 
 ## Definition of Done
-- [ ]
+
+- [ ] State the evidence that demonstrates the sprint goal.
 
 ## Capacity note
-Match task weight to the day's mode, and size against [[Dashboard]] § *Rhythm*.
+
+Size the work against [[Dashboard]] § Rhythm. State only the constraints that
+affect this sprint; do not copy the weekly schedule.
 
 ## Sprint review (end)
-- What shipped:
-- Demo / artifact:
 
-→ Retrospective in [[07 Journal]].
+<!-- Keep this section while the sprint is active. Fill it at the end. -->
+
+- Link what shipped and the demo or artifact that proves it.
+
+Retrospective: [[07 Journal]]

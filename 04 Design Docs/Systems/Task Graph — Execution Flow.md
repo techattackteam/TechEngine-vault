@@ -108,9 +108,9 @@ Grouped by the ADR that owns them. The [[Roadmap]] rung is in brackets.
 
 ### Settled by ADR-015 (2026-08-22)
 
-Topology, GL ownership and the pool shape are decided: sim on main, the render thread owns
-the context, and the executor runs on the loop's thread against `JobSystem`'s batch submit
-and wait. Current shape: [[Concurrency — Design]] § *Decided*.
+ADR-018 (Accepted Sep 7) supersedes simulation-on-main: the executor will run on the
+dedicated simulation thread against `JobSystem`'s batch submit/wait. GL ownership and
+level/barrier semantics remain. Current target: [[Simulation Thread — Design]].
 
 ### Owned by the task-graph ADR [M5]
 

@@ -1,21 +1,28 @@
 # Story — <name>
 
 - **Epic:** <epic>
-- **Sprint:** [[YYYY-MM Sprint NN — ...]]
+- **Sprint:** [[Active sprint note]]
 - **Status:** To Do / In Progress / Review / Done
 
-## Goal
-What outcome does this story deliver? Why does it matter?
+<!-- Keep the story readable without its session context. Remove prompts and
+unused optional links. Task details may wrap; do not squeeze them into shorthand. -->
 
-## Tasks (each fits one 2–6h session)
-> Tag each: `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light` — priority + day-fit weight
-> ([[Planning Workflow — Artifact Gate]]). Artifact tasks come first.
-- [ ] T1 — <task> · P? · 🟢/🟠/🟡 — done: <condition>
-- [ ] T2 — <task> · P? · 🟢/🟠/🟡 — done: <condition>
+## Goal
+
+Explain the outcome and why it matters in a few sentences.
+
+## Tasks
+
+<!-- Each task fits one 2–6 hour session. Use the card kinds, priorities, and
+weights in [[Planning Workflow — Artifact Gate]]. Put required artifacts first. -->
+
+- [ ] SN-T1 — <task> · P1 · 🟢 Deep — done: <observable condition>
+- [ ] SN-T2 — <task> · P2 · 🟡 Light — done: <observable condition>
 
 ## Done when
--
+
+- State the evidence that demonstrates the story's outcome.
 
 ## Notes / links
-- ADRs: 
-- Systems: 
+
+Link relevant ADRs and system designs. Explain only what those links do not cover.

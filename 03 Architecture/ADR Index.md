@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 018 | [[ADR-018 — Host and simulation threads, render-owned GL]] | Accepted | 2026-09 |
 | 017 | [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] | Accepted | 2026-08 |
 | 016 | [[ADR-016 — Serialization (binary primitives & describe-once seam)]] | Accepted | 2026-08 |
 | 015 | [[ADR-015 — Threading (sim on main, render thread owns GL)]] | Accepted | 2026-08 |
@@ -31,7 +32,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 — Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/` — history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **018** (numbers are never reused).
+> Next number is **019** (numbers are never reused).
 
 ### Partial supersessions
 
@@ -45,6 +46,9 @@ anyone noticed (2026-08-20).
 
 | Clause | Superseded by | Scope |
 | --- | --- | --- |
+| [[ADR-015 — Threading (sim on main, render thread owns GL)]] §1 — client and dedicated-server simulation run on main | [[ADR-018 — Host and simulation threads, render-owned GL]] §1 | Accepted Sep 7: main hosts window/editor or CLI/control input; simulation has a dedicated thread. GL ownership and phase-barrier rules remain. |
+| [[ADR-015 — Threading (sim on main, render thread owns GL)]] §3 — JobSystem exposes only batch submit/wait | [[ADR-018 — Host and simulation threads, render-owned GL]] §4 | Accepted Sep 7: add dedicated-thread creation, registration and diagnostics. Finite-batch execution remains; dedicated handles belong to subsystems. |
+| [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Decision* 3 — single loop driver and four-hook restriction | [[ADR-018 — Host and simulation threads, render-owned GL]] §3 | Accepted Sep 7: distinct host and simulation loops under one app-owned lifecycle. App subclasses, composition ownership and manifest rules remain. |
 | [[ADR-006 — v2 core architecture & module layout]] §6 — assert **tier** clause (`TE_VERIFY` always-on abort) | [[ADR-011 — Diagnostics (Logger & Assert)]] §5 | **That clause only.** §6's logging bullet, `TE_ASSERT` semantics, the never-silent-`__debugbreak` rule and the `[[unlikely]]`/cold failure path all remain in force. |
 | [[ADR-006 — v2 core architecture & module layout]] §5 — the `Profiler` **classification row** (helper *service*, injected via `EngineContext`) | [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §9 | **That row only.** The Profiler is a helper *utility* — global macros, no injection. §5's two-bucket test, the System/helper split, "profiler wraps the executor" and the F19 fix all remain in force. |
 | [[ADR-006 — v2 core architecture & module layout]] §4 — the **`EventBus& events` field** of the `EngineContext` sketch | [[ADR-014 — Events (buffered streams) & StringId]] §5 | **That field only.** Event streams are per-`Scene` state. §4's DI rule, context immutability, "holds no systems", F13 ownership and the `app` composition root all remain in force. |
