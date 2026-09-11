@@ -1,12 +1,12 @@
 # Concurrency — Design
 
 > Living design doc. **Status: active.** The decisions live in
-> [[ADR-018 — Host and simulation threads, render-owned GL]] and the remaining clauses of
+> [[ADR-018 — Main and simulation threads, render-owned GL]] and the remaining clauses of
 > [[ADR-015 — Threading (sim on main, render thread owns GL)]]; this note is the working
 > shape. Created with the ADR at S4-D1 (2026-08-22), mechanism pinned ahead of the
 > implementation cards.
 
-**Module:** `core` (JobSystem) · `app` hosts the loop · **Kind:** system · **Status:** active
+**Module:** `core` (JobSystem) · `app` owns the loop · **Kind:** system · **Status:** active
 **ADRs:** [[ADR-015 — Threading (sim on main, render thread owns GL)]] ·
 [[ADR-006 — v2 core architecture & module layout]] §1 §4 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6
@@ -17,21 +17,28 @@
 
 | Fact | Where |
 |---|---|
-| Client target: main hosts window/editor input, a dedicated simulation thread drives the loop, and rendering owns GL. Not yet implemented. | ADR-018 §1–3 |
-| Dedicated-server target: main hosts CLI/control input, simulation has its own thread, and there is no render thread. | ADR-018 §1; ADR-006 §2 |
+| One shared Clock supplies all loops; each loop owns its timing state and publishes copied measurements through App's timing view. | ADR-019 §3, Accepted Sep 10; [[Clock — Design]] |
+| Simulation executes fixed ticks and publishes once after catch-up; render owns interpolation and variable presentation work, with optional vsync. | ADR-019 §1–3 |
+| Ordered bounded queues carry input/commands/results; latest-value handoffs carry snapshots, presentation input and metrics. Two interpolation snapshots are private to render. | ADR-019 §3 §4; [[Game Loop — Frame Flow]] |
+| Main is event-driven: blocks on events, performs per-wake work, no periodic timer. Tracy frame sets have one writer each. | ADR-019 §5 §6; [[Profiler — Design]] |
+| Client target: main owns window/editor input, a dedicated simulation thread drives the loop, and rendering owns GL. | ADR-018 §1–3 |
+| Dedicated-server target: main owns CLI/control input, simulation has its own thread, and there is no render thread. | ADR-018 §1; ADR-006 §2 |
 | The GL context is current on the render thread once, forever; main issues no GL call after handoff. Work arrives as complete per-frame command lists, newest complete list wins. | ADR-015 §2 |
 | `JobSystem` lives in `core`, engine-lifetime, injected via `EngineContext`. | ADR-006 §1 §4, ADR-015 §3 |
 | Shipped M2 interface: batch submit/wait. The accepted extension adds dedicated-thread creation, registration and diagnostics; dedicated handles stay with subsystem owners. | ADR-018 §4; [[Simulation Thread — Design]] |
 | The pool ships with four workers and a real queue, watched by `linux-tsan`. | ADR-015 §3 + its 2026-08-24 amendment |
 | One task-graph level submits as one batch; join before the next level; barriers never run on workers. | ADR-015 §4, ADR-007 §6 |
 | Event `publish` is sim-thread-only until P1; lane layout is designed at P1. | ADR-015 §5, [[Events — Design]] § *Open* |
-| Host stalls must not suspend simulation. This accepted requirement is not implemented yet. | ADR-018 §1 |
+| Dedicated thread handles use scoped registration, explicit readiness/failure and owner-controlled stop/join. | [[Simulation Thread — Design]] § Thread creation and lifetime; Sep 8 |
+| Main thread stalls must not suspend simulation. | ADR-018 §1 |
 
 ## Design
 
 The accepted target and diagram live in [[Simulation Thread — Design]], backed by
-[[ADR-018 — Host and simulation threads, render-owned GL]] (Accepted Sep 7). The topology
-below records the shipped M4 baseline, which still awaits that implementation.
+[[ADR-018 — Main and simulation threads, render-owned GL]] (Accepted Sep 7). The topology
+below records the historical M4 baseline. ADR-019, Accepted Sep 10, now supplies the time
+model in [[Game Loop — Frame Flow]]. T14's branch contains the runner, but integration of
+the accepted time model and its validation remain pending; this note does not mark them shipped.
 
 ### Shipped topology at M4
 
@@ -51,7 +58,7 @@ flowchart LR
 ```
 
 The older dedicated-server baseline likewise places simulation on main plus the pool;
-ADR-018 replaces that target with a CLI/control host and separate simulation thread.
+ADR-018 replaces that target with a CLI/control main thread and separate simulation thread.
 
 ### Surface (pinned 2026-08-22)
 
@@ -89,13 +96,14 @@ all in `engine/core/src/jobs/JobSystem.cpp`.
 
 - **Per-worker event staging lanes and the merge.** Semantics fixed in
   [[Events — Design]]; layout designed at **P1** when concurrent publishers exist.
-- **Render-thread handoff detail** (list memory, swap timing, pacing against vsync).
-  Owner: **R1**'s renderer ADR; M4 only proves the seam.
+- **Richer render-data lifetime.** Owner: **R1**'s renderer ADR. ADR-019 already settles
+  the small-value mailbox, private interpolation history and optional vsync.
 - **Editor ImGui thread.** Owner: **T1**.
 - **Jolt pool integration** onto the JobSystem. Owner: **P2** (F15).
 - **Beyond fork-join**: task-level edges across level boundaries, caller-runs in `wait`.
   Owner: **P2**, only if P1's captures show the per-level join bubble actually costs.
-- **Frame pacing** stays open on [[Game Loop — Frame Flow]]; nothing here decides it.
+- **Render frame limiter and latency tuning.** ADR-019 fixes loop ownership and makes vsync
+  optional; any later limiter remains renderer-owned. See [[Game Loop — Frame Flow]].
 - **`JobSystem.hpp`'s weight in public `core`.** The pool's state is in the header, so
   `<mutex>`, `<condition_variable>`, `<deque>` and `<unordered_map>` now reach every consumer
   of `EngineContext`. A pimpl would cost an indirection and an allocation. Surfaced at S4-T4,

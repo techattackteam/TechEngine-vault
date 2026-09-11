@@ -201,6 +201,11 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/xlow · **Include `<string>` directly in `EditorApp.hpp`.** PR #81 added
+  `std::string m_appliedTitle` at `apps/editor/src/EditorApp.hpp:16`, but the header receives
+  `<string>` transitively through `Project.hpp`. The build is green, so this is header hygiene
+  rather than a current defect. **Trigger:** the next edit to `EditorApp.hpp` or its include set.
+
 - #prio/low · **`techengine_app()` has no `LIBS_PRIVATE`, so every third-party dep an app links
   is PUBLIC on its object library** — `cmake/techengine_app.cmake:36` puts `LIBS` on the PUBLIC
   side with the `DEPS`, and its sibling `techengine_module()` carries both `LIBS` and
@@ -226,6 +231,13 @@ groups are kept, because they show where future work will land.
   **Trigger:** the first editor UI card. Nothing before that has a screen to put it on.
 
 ## etc — cross-cutting
+
+- #prio/medium · **Reconcile the accepted warning policy after S5-T12** — #78 (`5c0764bd`)
+  removed `/WX`, `-Werror` and `TE_WERROR`, and made clang-tidy findings advisory at Miguel's
+  request. [[ADR-008 — v2 build & testing baseline]] §5 still mandates warnings-as-errors;
+  [[ADR-005 — v2 tech stack & toolchain]] also describes `/WX` and enforced lint.
+  Record the changed policy through dated amendments and align [[B3 — Build & Testing Notes]].
+  Formatting remains enforced. **Trigger:** fired — merged Sep 8, identified at the Sep 9 close.
 
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly** — report-once is per call site through a function-local static (ADR-011 §5), and

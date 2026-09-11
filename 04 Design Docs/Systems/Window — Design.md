@@ -2,7 +2,7 @@
 
 > Living design doc. The decision that is hard to reverse is [[ADR-015 — Threading (sim on main, render thread owns GL)]] §2. This doc holds the *how*.
 
-**Module:** `platform` (the window and input) · `client` (the context, glad2, the render thread) · **Kind:** system · **Status:** triangle and independent resize drawing shipped (S5-T8, #77); input pending, simulation topology revision at S5-D3
+**Module:** `platform` (the window and input) · `client` (the context, glad2, the render thread) · **Kind:** system · **Status:** M4 window, input and independent simulation/render loops shipped; S5-T8 in #77 and S5-T14–T17/T9 in #81
 **ADRs:** [[ADR-015 — Threading (sim on main, render thread owns GL)]] §1 §2 ·
 [[ADR-006 — v2 core architecture & module layout]] §1 ·
 [[ADR-008 — v2 build & testing baseline]] §4 case 3 · §5 ·
@@ -27,14 +27,18 @@ This table is the summary. Every row that needed an argument has one in *Design*
 
 | What | Call | Ref |
 |---|---|---|
+| **Accepted time model, Sep 10** | Main is event-driven with no periodic timer; render owns variable work and interpolation with optional vsync. | ADR-019 §2 §5 |
+| **Window input fan-out** | Ordered simulation ingress plus independent latest presentation input. Framebuffer size remains copied state. | ADR-019 §4; [[Game Loop — Frame Flow]] |
+| **Render snapshot handoff** | Simulation publishes tick/time-stamped complete values through one shared slot; render owns two private history values. | ADR-019 §3; shipped in #81 |
+| **Main/simulation split** | Main owns events; simulation consumes ordered input and publishes complete render values. Lifecycle and overflow recovery are settled. | ADR-018 §1–3; shipped in #81 |
 | **Module split** | `platform` owns the window and raw input and issues **no GL call ever**. `client` owns the context, glad2 and every GL call. | See *The seam*, 2026-08-30 |
 | **GLFW stays inside `platform`** | `client` never calls a `glfw*` function. Context and presentation operations are methods on `Window`. | See *The seam* |
 | **glad2 lives in `client`** | Moved off `platform`'s dependency row. **This reverses ADR-006 §1** and is filed there as a dated `decision` amendment. | ADR-006 §1 amendment, 2026-08-30 |
 | **glad2 is generated, committed, and never fetched** | GL 4.5 core, no extensions, `--reproducible`. Committed under `external/glad/`, wrapped in `cmake/deps.cmake`. The one vendored dep. | ADR-008 §4 case 3 |
 | **Context handoff** | Main creates the window and never makes the context current. The render thread claims it once and holds it until shutdown. | See *Startup and shutdown order* |
 | **`gladLoadGL` runs on the render thread** | It needs a current context, so it cannot run at startup on main. | See *Startup and shutdown order* |
-| **Frame handoff at M4** | A single-slot **frame command buffer** carrying a `FrameCommand`. Newest complete wins; main may overwrite an unconsumed command, and the render thread may re-consume the last one. | See *The frame command buffer* |
-| **The command's contents are M4's, not R1's** | Clear colour plus a draw flag. The real command-list format belongs to R1's renderer ADR. | ADR-015 §2 |
+| **Frame handoff at M4** | A single-slot `SnapshotMailbox` carries tick/time-stamped complete values; render retains two private values for interpolation. Newest complete wins. | ADR-019 §3; see *The frame command buffer* for the historical baseline |
+| **The snapshot's visual contents are M4's, not R1's** | Clear colour plus a draw flag. The real command-list format belongs to R1's renderer ADR. | ADR-015 §2 |
 | **Framebuffer dimensions** | Main seeds pixel dimensions and publishes framebuffer callback updates; both writer and render-thread snapshot reader use the same mutex. | S5-T8, #77 |
 | **Triangle resources** | Private `Buffer` and `VertexArray` wrappers use GL 4.5 DSA; `FrameRenderer` owns vertex/index buffers, VAO and checked shader startup. Cleanup precedes context release. | S5-T8, #77 |
 | **CI opens a real window** | Linux uses Xvfb and Mesa llvmpipe; Windows uses pinned Mesa DLLs beside the binaries. | See *How CI proves this*, verified 2026-09-06 |
@@ -42,10 +46,31 @@ This table is the summary. Every row that needed an argument has one in *Design*
 
 ## The seam
 
-**Accepted Sep 7:** [[ADR-018 — Host and simulation threads, render-owned GL]] separates
-host and simulation ownership. [[Simulation Thread — Design]] holds the draft double-buffer
-mechanism; intermediate snapshots may be skipped and the current snapshot is redrawn when
-none is ready. The split is not implemented; the shipped M4 description remains below.
+**Accepted Sep 7:** [[ADR-018 — Main and simulation threads, render-owned GL]] separates
+main and simulation ownership. The mechanism was accepted Sep 8 in
+[[Simulation Thread — Design]]: keep the value mailbox, move its producer to simulation,
+and consume ordered input before fixed ticks. ADR-019 was Accepted Sep 10 and adds the
+time model below. The remaining M4 API and lifecycle examples record the shipped baseline.
+
+### Shipped threaded model (ADR-019)
+
+The platform window seam exposes blocking event waiting and a wake operation alongside the
+existing polling API. Main blocks on `glfwWaitEvents` and wakes only on OS events or
+`glfwPostEmptyEvent` from another thread. Stop/completion/failure posts the wake while the
+main thread is alive. After a stall, process delivered events in order and perform per-wake
+work; never replay missed iterations. [[Game Loop — Frame Flow]] owns the wake-lifetime
+details.
+
+Render owns preparation, drawing and presentation, plus two private snapshots for
+interpolation. Vsync can be disabled; changing it is applied on the context-owning thread.
+Main publishes presentation input and framebuffer size independently of simulation ingress.
+No main thread callback reads live simulation state or calls GL. Simulation publishes complete
+tick/time-stamped snapshots through the single-slot mailbox after catch-up.
+
+The shared Clock and copied metrics are specified in [[Clock — Design]]. Render emits
+Tracy's default frame marker after swap; main uses zones, as in [[Profiler — Design]].
+These requirements shipped in #81; the later sections retain the earlier M4 baseline where
+its history still explains the current seam.
 
 ADR-006 §1 lists **window** and **input** under both `platform` and `client`, and lists glad2
 under `platform`. That row cannot be followed as written, so this note resolves it.
@@ -71,6 +96,9 @@ namespace TechEngine {
         static void  terminate();        // after every window closes
         bool         open(int width, int height, std::string_view title);
         void         pollEvents();
+        void         waitEvents();
+        static void  postEmptyEvent();
+        void         setInputBuffer(InputBuffer* input);
         void         setTitle(std::string_view title);
         void         close();
 
@@ -143,12 +171,17 @@ both locks, draws and swaps until its stop token is requested. Window closure is
 main; the worker does not read GLFW's unsynchronized close flag. GL resources are deleted
 on the worker before it releases the context.
 
-Rendering continues while main is inside native move/resize processing. Simulation still
-pauses there in the shipped implementation. ADR-018 replaces that topology; **S5-D3** still
-needs to settle the input/lifecycle mechanism before T9 is re-cut.
+At S5-T8, rendering continued while main was inside native move/resize processing but
+simulation still paused. S5-D3 supplied the replacement design. S5-T14–T17 and T9 shipped
+Sep 11 as `7d2546fc` (#81): main now waits on events, simulation runs independently, and
+completed tick/time-stamped snapshots feed render. Miguel's native Windows Tracy demo showed
+both independent streams progressing across `Main.WaitEvents`; see
+[[2026-09-11 Threaded Engine Validation]].
 
 This is the part that is easy to get backwards, because GLFW pins some calls to the main thread
 and the context to exactly one thread, and those two rules point in opposite directions.
+
+The sequence below is the historical S5-T8 baseline replaced by #81.
 
 ```mermaid
 sequenceDiagram
@@ -181,12 +214,16 @@ sequenceDiagram
 | `open()` does **not** make the context current. GLFW does not do this for you. | The render thread would find the context owned by main, and `makeContextCurrent` on a second thread is an error while it is current on the first. |
 | `gladLoadGL` runs **after** `makeContextCurrent`, on the render thread. | Every loaded pointer is null and the first GL call segfaults. |
 | The render thread is **joined before** `close()`. | The window is destroyed under a thread still issuing GL against it. |
-| `swapBuffers` blocks on vsync, **on the render thread**. | This is the one frame of present latency ADR-015 §2 accepts. If it ran on main, the sim would be pinned to the display's refresh rate, which is the coupling the render thread exists to break. |
+| `swapBuffers` runs on render; it may wait for vsync when enabled. | ADR-019 makes vsync optional. Presentation waiting must never pace simulation or main. |
 
-**Input callbacks fire inside `pollEvents`, on main.** They write into `platform`'s input
-buffer and must never touch the render thread's data or issue a GL call.
+**Input callbacks run on main**, including during event waiting and some other window
+operations. They publish copied input and must never mutate render-owned data or issue GL.
 
 ## The frame command buffer
+
+The producer and payload below describe the historical M4 baseline. ADR-019's accepted
+target moves publication to simulation, adds tick/time metadata and keeps private render
+history; the shared transfer remains one slot. See [[Game Loop — Frame Flow]].
 
 ADR-015 §2 says the render thread "consumes the most recent complete list". At M4 that is a
 single-slot frame command buffer rather than a queue, and the command is deliberately trivial:
@@ -222,6 +259,12 @@ indexed-triangle output, redraw with unchanged frame index, viewport changes and
 Miguel confirmed the Tracy thread-ownership check and continued drawing during native resize
 in session. No capture file was supplied; the demo evidence is his confirmation and the
 triangle screenshot, not an agent-run launch.
+
+**Independent-loop verification, Sep 11:** [PR #81](https://github.com/techattackteam/TechEngine/pull/81)
+merged as `7d2546fc`. Its final CI passed Linux TSan and the real-window suites. Miguel
+confirmed the native Windows move/resize demo while Tracy showed simulation and rendering
+continuing across `Main.WaitEvents`; the focused delayed-input test passed. Full evidence is
+in [[2026-09-11 Threaded Engine Validation]].
 
 **Decided 2026-08-30: the Linux legs open a real window under `xvfb-run`.**
 
@@ -261,8 +304,8 @@ what the test is really proving.
 - **Does the editor's ImGui share this window or open its own?** Owner: **T1**. ADR-015
   § *Consequences* already names the ImGui thread as a T1 question, and this note does not
   pre-empt it.
-- **Frame pacing beyond the triangle.** Owner: **R1**. S5-T8 calls `Window::setVSync(true)`
-  on the render thread. The production pacing policy remains open.
+- **Frame limiting and latency tuning.** Owner: **R1**. S5-T8 enables vsync; ADR-019 makes
+  it configurable and leaves render in charge of pacing. A separate limiter remains future work.
 - **Multiple windows.** No consumer. `Window` is a type rather than a singleton, so nothing
   here forbids a second one.
 - **Gamepad and text input.** M4 carries keyboard and mouse only. Text input needs

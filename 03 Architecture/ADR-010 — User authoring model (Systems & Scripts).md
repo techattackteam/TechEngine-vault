@@ -3,6 +3,10 @@
 - **Status:** Proposed
 - **Date:** 2026-07
 - **Deciders:** Miguel (Lead Engineer)
+- **Draft revised 2026-09-10:** §2–4 remove variable-rate gameplay scripts in coordination
+  with [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] §2,
+  Accepted Sep 10. This record's broader authoring model remains Proposed; ADR-019 fixes
+  the time/ownership constraint without accepting all of ADR-010.
 
 ## Context
 
@@ -56,8 +60,8 @@ touching engine ones.
 - authored by deriving from `Script` in the game DLL, registered with
   `TE_REGISTER_SCRIPT(T)` — self-registers a factory (stable name → create) at DLL load,
   the same self-registering idiom used for Logger channels;
-- **lifecycle mirrors Systems** — `onFixedUpdate` (authoritative tick) and `onUpdate`
-  (per frame), plus `onStart` / `onDestroy`.
+- **simulation-owned lifecycle** — `onFixedUpdate` (authoritative tick), plus `onStart`
+  and `onDestroy`. There is no gameplay `onUpdate` callback.
 
 **2a. Binding is a `ScriptComponent`.** A script attaches through an ordinary ECS
 component. The rejected alternative is v1's shape — a side table on `ScriptSystem` keyed
@@ -86,19 +90,20 @@ the half that worked; the broken half was delivery (F9/F11), already fixed by th
 **Explicitly not the reason for this choice:** it does *not* fix the change-tracking cost of
 §5 — that is an independent axis, see §5a.
 
-**3. Scripts run after all Systems, within the same phase.**
+**3. Gameplay scripts run after fixed Systems in each tick.**
 
-```
-FixedUpdate:  [ all systems' fixedUpdate ]  →  [ all scripts' onFixedUpdate ]
-Update:       [ all systems' update      ]  →  [ all scripts' onUpdate      ]
+```mermaid
+flowchart LR
+    Systems["Fixed Systems"] --> Scripts["Scripts: onFixedUpdate"] --> Barrier["Tick barrier"]
 ```
 
-Because the lifecycle mirrors Systems, the author chooses determinism the same way a
-System author does: simulation-affecting logic in `onFixedUpdate` (inside the
-authoritative tick → replication-safe, ADR-007), presentation/glue in `onUpdate`.
+The gameplay instance and its Scene façade stay on simulation. Presentation scripting is
+deferred until a concrete consumer needs it. Any future API uses separate render-owned
+instances and copied snapshot data, with no Scene access; the same live script object
+cannot cross to render. See ADR-019 §2 and ADR-018 §2.
 
 **4. The runner is an ordinary System.** `ScriptSystem` is a normal schedule entry — no
-privileged path (ADR-007 §6) — registered in **both** `FixedUpdate` and `Update`, pinned
+privileged path (ADR-007 §6) — registered only in **`FixedUpdate`**, pinned
 to a **terminal slot** in its phase. This is a new task-graph concept: ADR-007 §6's
 `.after<A>()` is *pairwise* and cannot express "after everything."
 

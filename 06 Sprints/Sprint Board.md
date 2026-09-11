@@ -25,15 +25,7 @@ kanban-plugin: board
 
 
 
-## 📋 D · M4 build *(T6 → P4 → T7 → T8 → D3 → T9)*
-
-- [ ] **S5-T9** · raw input through `Window` · P2 · 🟠 Moderate
-	  done: keyboard and mouse arrive through GLFW callbacks into a `platform` input buffer that
-	  main drains inside `pollEvents`; no callback touches the render thread or issues a GL call;
-	  a Catch2 case pins the drain semantics. Gamepad and text input explicitly out.
-	  **Held for S5-D3:** the main-drain clause and estimate above are provisional until the
-	  input handoff is decided. Re-cut before implementation. **First cut inside this story.**
-
+## 📋 D · M4 build · ✅ **complete** *(S5-T17, Sep 11)*
 
 ## 📋 E · Process · ✅ **complete** *(S5-P4, Sep 6)*
 
@@ -41,24 +33,63 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S5-D3** · simulation independence during window moves/resizes · P1 · 🟢 Deep
-	  Design card added Sep 7 at Miguel's request. After T8, before T9.
-	  **Progress Sep 7:** [[ADR-018 — Host and simulation threads, render-owned GL]] accepted.
-	  Input/lifecycle details and implementation breakdown remain in [[Simulation Thread — Design]].
-	  done: agree a superseding ADR for ADR-015's main-thread simulation decision; define
-	  window, simulation and render ownership, input handoff and startup/stop/join order;
-	  specify how ticks continue during a blocked event pump and how input resumes afterward;
-	  update the affected design hubs and re-cut T9 plus session-sized implementation cards
-	  with resize, shutdown, headless and TSan verification. Implementation stays unsized
-	  until this decision is accepted. Full acceptance in [[2026-08 Sprint 05 — M3 Project & M4 Window]].
-
-
 ## 👀 Review / Demo
-
 
 
 ## ✅ Done — [[2026-08 Sprint 05 — M3 Project & M4 Window]]
 
+- [x] **S5-T17** · simulation independence integration proof · P1 · 🟠 Moderate ·
+	  **Sep 11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+	  Miguel confirmed the native Windows move/resize demo while Tracy showed render and
+	  simulation progress continuing across `Main.WaitEvents`; the focused profile test consumed
+	  delayed input after the stall. PR CI supplied the integrated Linux TSan evidence.
+	  **Completes Story D** and closes the remaining Sprint 05 implementation cards.
+- [x] **S5-T9** · Window input to fixed ticks · P2 · 🟠 Moderate ·
+	  **Sep 11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+	  No acceptance deviation: callbacks publish ordered keyboard, mouse and focus input, and
+	  simulation consumes it before fixed ticks. Gamepad, text and editor/CLI commands remain
+	  outside this card as cut. Evidence is in [[2026-09-11 Threaded Engine Validation]].
+- [x] **S5-T16** · bounded raw-input ingress · P2 · 🟢 Deep ·
+	  **Sep 11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+	  The small ordered queue retained explicit overflow recovery and a separate latest-value
+	  presentation path; neither consumer drains the other. No acceptance deviation.
+- [x] **S5-T15** · editor and simulation integration · P1 · 🟠 Moderate ·
+	  **Sep 11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+	  Review found that an unconditional metrics-title write made X11 wake its own event loop.
+	  Caching the applied title fixed the loop before merge. The direct `<string>` include did
+	  not ride the merge and is recorded on [[Backlog]].
+- [x] **S5-T14** · App simulation runner and lifecycle · P1 · 🟢 Deep ·
+	  **Sep 11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+	  ADR-019 changed the card's time model during review. The merged result replaces the legacy
+	  combined `FrameLoop` with fixed simulation ticks, render-owned interpolation and one shared
+	  Clock; it does not retain a compatibility path. [[Simulation Thread — Design]] records the
+	  shipped lifecycle and evidence.
+- [x] **S5-T13** · adopt the shared thread mechanism · P1 · 🟠 Moderate ·
+	  **Merged Sep 9; closed Sep 10**, `a60b64bd` ([#79](https://github.com/techattackteam/TechEngine/pull/79)).
+	  The PR had no description, review comments or reviews; GitHub reported 11 checks passed.
+	  `JobSystem` now gives pool workers and `RenderThread` the shared registration path, while
+	  `App` registers the existing main thread as `TEMain`. Dedicated owners retain their handles
+	  and stop/join order; JobSystem shutdown still joins only its pool workers. **Unblocks
+	  S5-T14.** The main/simulation split and Story D proof remain open.
+- [x] **S5-T12** · dedicated-thread handles and registration · P1 · 🟢 Deep ·
+	  **Merged Sep 8; closed Sep 9**, `5c0764bd` ([#78](https://github.com/techattackteam/TechEngine/pull/78)).
+	  Empty PR body, comments and reviews; the build corrections and policy choices happened in session.
+	  **Retro:** Jolt exported `_HAS_EXCEPTIONS=0` into core while Catch2 used normal exception
+	  types. The failure tests reported “Unknown exception”; enabling Jolt's exception support
+	  fixed the mismatch. [[Simulation Thread — Design]] records the startup/result contract.
+	  **Build policy changed mid-card:** Miguel removed compiler warnings-as-errors and made
+	  clang-tidy advisory after Catch2's unreachable fallback and performance suggestions blocked
+	  builds. Warning levels and formatting enforcement remain. ADR-005/008 updates are on [[Backlog]].
+	  The three classes now have separate files; enums and result structs stay with `DedicatedThread`.
+	  **Unblocks S5-T13.** Pool/render adoption and main registration remain there; Story D stays open.
+- [x] **S5-D3** · simulation independence during window moves/resizes · P1 · 🟢 Deep ·
+	  **Sep 8**, vault-only design; no engine PR. ADR-018 accepted Sep 7; Miguel accepted
+	  the mechanism Sep 8. [[Simulation Thread — Design]] records the completed contract.
+	  The proposed double buffer is deferred; the small value mailbox already meets the
+	  accepted delivery policy. Overflow explicitly reports lost transitions and resynchronizes
+	  held state. D3 closes on design, not on simulation independence already working.
+	  Unblocks T12–T17 and re-cut T9. Seven implementation/verification sessions are sized;
+	  Miguel authorized rollover instead of fitting them to the remaining sprint calendar.
 - [x] **S5-T8** · clear + triangle through the frame command buffer · P1 · 🟢 Deep ·
 	  **Sep 7**, `681ddf6b` ([#77](https://github.com/techattackteam/TechEngine/pull/77)).
 	  PR body and discussion were empty; review and demo confirmation happened in session.

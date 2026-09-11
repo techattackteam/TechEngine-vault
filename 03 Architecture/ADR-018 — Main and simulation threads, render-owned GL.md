@@ -1,4 +1,4 @@
-# ADR-018 — Host and simulation threads, render-owned GL
+# ADR-018 — Main and simulation threads, render-owned GL
 
 - **Status:** Accepted
 - **Date:** 2026-09 (Accepted 2026-09-07)
@@ -16,43 +16,43 @@
 At engine `681ddf6b` (#77), `engine/app/src/App.cpp:32` advances simulation before calling
 `update()`. `apps/editor/src/EditorApp.cpp:41` polls window events inside that same driver.
 During the S5-T8 demo, rendering continued during resize while TPS fell. Miguel confirmed
-the rendering and Tracy checks and wants simulation independent of host interaction too.
+the rendering and Tracy checks and wants simulation independent of main thread interaction too.
 This changes a requirement deliberately accepted by ADR-015 §1; it is not a T8 defect.
 
-The host also exists on a dedicated server: Miguel requires a CLI for server commands.
+The main thread also exists on a dedicated server: Miguel requires a CLI for server commands.
 Waiting for console input must not stop ticks. Command-based editor changes are a benefit:
 they establish a clear owner of simulation state instead of allowing direct UI mutation.
 
 The existing render handoff copies a complete value under a short mutex
 (`engine/client/src/render/FrameCommandBuffer.cpp:4`). The worker pool already exposes batch
 submit/wait, with waits rejected on pool workers (`engine/core/src/jobs/JobSystem.cpp:63`).
-The task-graph executor itself remains M5 work. This decision changes its eventual host,
+The task-graph executor itself remains M5 work. This decision changes its eventual owner,
 not its dependencies or execution semantics.
 
 ## Decision
 
-### 1. Separate host interaction from simulation
+### 1. Separate main thread interaction from simulation
 
-Interactive clients and dedicated servers have a main host thread and a dedicated
-simulation thread. The client host owns window events and editor interaction. The server
-host accepts CLI/control input without acquiring a graphical dependency. A host with no
-input can wait for control or shutdown; it does not need to busy-poll.
+Interactive clients and dedicated servers have a main thread and a dedicated
+simulation thread. The client main thread owns window events and editor interaction. The
+server main thread accepts CLI/control input without acquiring a graphical dependency. A
+main thread with no input can wait for control or shutdown; it does not need to busy-poll.
 
 The simulation thread owns simulation time, mutable simulation state and loop progression.
 It coordinates the existing worker pool and, later, the task-graph executor. Structural
 changes still apply at the established phase barriers. Tests may drive the same simulation
 loop synchronously; that test seam is not a second simulation implementation.
 
-Host operations cannot require a tick to run on the host thread. A blocked host pump must
-not suspend simulation. CPU overload and slow simulation jobs can still lower TPS; the
-decision provides independence from host work, not a hard real-time guarantee.
+Main thread operations cannot require a tick to run on the main thread. A blocked main event
+pump must not suspend simulation. CPU overload and slow simulation jobs can still lower TPS;
+the decision provides independence from main thread work, not a hard real-time guarantee.
 
 ### 2. Cross ownership boundaries through data
 
 Input, editor edits and CLI commands cross into simulation through explicit handoffs.
 The simulation applies them at defined boundaries. Accepted key/button transitions and
 control commands must not disappear silently; overload and stale-input policy are explicit.
-Host code reads published results or snapshots rather than live mutable simulation state.
+Main thread code reads published results or snapshots rather than live mutable simulation state.
 
 The render thread keeps exclusive GL ownership and consumes complete render snapshots.
 Miguel chose **allow skipping; keep simulation independent** on Sep 7. A slow renderer
@@ -65,20 +65,20 @@ Double buffering is the proposed storage mechanism in [[Simulation Thread — De
 Two buffers do not imply delivery of every frame. The producer must never overwrite data
 still owned by the consumer; resource lifetime is part of snapshot ownership.
 
-### 3. One lifecycle owner, distinct host and simulation loops
+### 3. One lifecycle owner, distinct main and simulation loops
 
 `app` remains the presentation-agnostic composition and lifecycle owner. Executables retain
-their `App` subclasses and supply host-specific behavior. `platform` owns OS interaction;
+their `App` subclasses and supply app-specific behavior. `platform` owns OS interaction;
 `client` owns GL and rendering. A server links no client rendering code (ADR-006 §1–2).
 
-The lifecycle separates host work from simulation callbacks rather than moving today's
+The lifecycle separates main thread work from simulation callbacks rather than moving today's
 mixed `update()` wholesale. This explicitly relaxes ADR-017's single-driver/four-hook
-restriction. There is one simulation driver; a host event/control loop is separately owned
+restriction. There is one simulation driver; a main event/control loop is separately owned
 and coordinated by the same lifecycle. Exact hooks belong in the design note.
 
 Startup reports success or failure across threads. Shutdown stops new submissions, settles
 outstanding simulation work, joins its owner, and releases render resources on their owner
-before destroying the window. No join may depend on a host action that the joining thread
+before destroying the window. No join may depend on a main thread action that the joining thread
 has stopped servicing. CLI waits and handoff waits must be interruptible during shutdown.
 
 ### 4. Thread creation and subsystem ownership
@@ -87,7 +87,7 @@ has stopped servicing. CLI waits and handoff waits must be interruptible during 
 and thread diagnostics through distinct APIs. A separate `ThreadCoordinator` is not needed.
 The OS-created main thread is registered, never created or joined by `JobSystem`. Simulation
 and rendering use named dedicated threads; their permanent loops never occupy pool workers.
-No graphics or host-specific type enters `core` through this seam.
+No graphics or main-thread-specific type enters `core` through this seam.
 
 Owning handles remain with their subsystems: simulation with its app-owned runner, rendering
 with `Client`, pool workers with `JobSystem`. The composition root orders stop/join through
@@ -97,7 +97,7 @@ This expands ADR-015 §3's batch-only interface without changing batch execution
 
 ## Consequences
 
-- **Benefit:** window interaction and server CLI waits no longer suspend simulation.
+- **Benefit:** window interaction and server CLI waits on the main thread no longer suspend simulation.
 - **Benefit:** editor and administrative changes become explicit commands, giving simulation
   a clear mutation boundary and a basis for later validation and history.
 - **Cost:** one extra simulation thread, input/result buffering, independent pacing and
@@ -118,8 +118,8 @@ This expands ADR-015 §3's batch-only interface without changing batch execution
 
 | Option | Trade-off and disposition |
 |---|---|
-| Keep simulation and host on main | Simplest lifecycle and no input handoff, but retains the resize/CLI coupling Miguel now rejects. |
-| Keep server simulation on main; use asynchronous CLI input | Viable and may use fewer threads without a CLI. Deferred in favor of one host/simulation ownership model across executables; revisit if its overhead is material. |
+| Keep simulation and main event loop on one thread | Simplest lifecycle and no input handoff, but retains the resize/CLI coupling Miguel now rejects. |
+| Keep server simulation on main; use asynchronous CLI input | Viable and may use fewer threads without a CLI. Deferred in favor of one main/simulation ownership model across executables; revisit if its overhead is material. |
 | Run the permanent simulation loop as a pool job | Reuses a worker but occupies it indefinitely and conflicts with the current prohibition on worker-side batch waits. Rejected. |
 | Separate `ThreadCoordinator` | Separates thread infrastructure from scheduling, but adds a service and lifetime dependency without a current consumer that needs the separation. Deferred. |
 | Share mutable world state behind a broad mutex | Reduces message plumbing but makes editor/CLI access stall simulation and hides ownership. Rejected. |

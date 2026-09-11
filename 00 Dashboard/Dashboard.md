@@ -9,9 +9,9 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-08 Sprint 05 — M3 Project & M4 Window]] *(Aug 29 to Sep 11 — the boundary was pulled **one week early**)* |
 | **Sprint goal** | **Ship M3 and open the window: `projects/dev/` loads through a real `project.toml`, and a triangle draws on the render thread.** M3 is the commitment; M4 is the reach, and it is the half at risk. |
-| **Current focus** | S5-D3 is in progress. [[ADR-018 — Host and simulation threads, render-owned GL]] was accepted Sep 7; [[Simulation Thread — Design]] holds the remaining handoff/lifecycle details and implementation breakdown. |
-| **Top blocker** | T9 waits for D3's input mechanism and re-cut. The new topology is accepted but unimplemented; simulation still pauses during native event processing in the shipped code. |
-| **Next milestone** | M3 editor testbed shipped (#71, #73); M4's triangle proof shipped (#77). D3 and optional T9 remain this sprint; runtime packaging stays deferred to M6. |
+| **Current focus** | S5-T12 merged in #78 and closed Sep 9. [[Simulation Thread — Design]] records the shipped thread mechanism; S5-T13 adoption is next. |
+| **Top blocker** | The accepted main/simulation split remains unimplemented. T9 depends on the runner/editor integration and bounded input buffer. |
+| **Next milestone** | M3 editor testbed and M4 triangle proof shipped. T13–T17 plus T9 remain for simulation independence; rollover authorized Sep 8. Runtime packaging stays deferred to M6. |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `01ed7a30` (2026-08-30) |
 
@@ -144,10 +144,14 @@ _Tasks → [[Sprint Board]]._
 ## Active decisions
 
 Recently locked — full set in [[ADR Index]]:
-- [x] **Host/simulation split** ([[ADR-018 — Host and simulation threads, render-owned GL]]),
+- [x] **Threaded time model** ([[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]]),
+  **Accepted Sep 10** after S5-T14 review. Fixed simulation ticks, render-owned interpolation,
+  one shared Clock, copied timing metrics, event-driven main thread and separate Tracy frame streams.
+  Design notes now describe this target; implementation and validation remain pending.
+- [x] **Main/simulation split** ([[ADR-018 — Main and simulation threads, render-owned GL]]),
   **Accepted Sep 7**. JobSystem also supplies dedicated-thread creation and registration;
-  subsystem owners retain handles and stop/join control. S5-D3 remains open on mechanism
-  and implementation breakdown. The accepted topology is not implemented yet.
+  subsystem owners retain handles and stop/join control. S5-D3 closed Sep 8 with the accepted
+  mechanism and seven sized cards. The accepted topology is not implemented yet.
 - [x] **Profiler** ([[ADR-013 — Profiler (Tracy-backed instrumentation)]]) + **Events/`StringId`** ([[ADR-014 — Events (buffered streams) & StringId]]) — **both Accepted 2026-08-02**, both M1 gates closed, and M2's threading ADR is unblocked
 - [x] **Threading** ([[ADR-015 — Threading (sim on main, render thread owns GL)]]) + **Serialization** ([[ADR-016 — Serialization (binary primitives & describe-once seam)]]) — **both Accepted 2026-08-22**, both M2 gates closed on day 1. ADR-015 §3 amended 2026-08-24: the pool ships four workers, not one
 - [x] **Bootstrapping** ([[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]]) —

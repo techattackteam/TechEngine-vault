@@ -48,6 +48,7 @@ optimizing blind.
 | Memory tracking rides the profiler: a global `new`/`delete` replacement in `app`, plus each dependency's allocator hook. | ADR-013 §7 |
 | GPU zones live in **`client`**, not `base`, and land with the render graph. | ADR-013 §8 |
 | The Profiler is a **utility** of global macros, not an injected service. | ADR-013 §9 |
+| The unnamed frame stream has one owner; simulation and main instrumentation cannot interleave into render frames. | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] §6, Accepted |
 
 ## Design
 
@@ -71,6 +72,7 @@ flowchart LR
 | `TE_PROFILER_SCOPE(name)` | `base` | `ZoneScopedN` |
 | `TE_PROFILER_FUNCTION()` | `base` | `ZoneScoped` |
 | `TE_PROFILER_FRAME()` | `base` | `FrameMark` |
+| `TE_PROFILER_FRAME_NAMED(name)` | `base` | `FrameMarkNamed(name)` |
 | `TE_PROFILER_ALLOC(p, n)` and `TE_PROFILER_FREE(p)` | `base` | `TracySecureAlloc` and `TracySecureFree` |
 | `TE_PROFILER_GPU_CONTEXT()`, `_GPU_ZONE(name)`, `_GPU_COLLECT()` | `client` | `TracyGpuContext`, `TracyGpuZone`, `TracyGpuCollect` |
 
@@ -132,15 +134,54 @@ The witness was a deliberate 12-byte `new` in the loop, since removed. So the ca
 that the pipe works end to end. It does not prove that any particular library's allocations
 are attributed.
 
+### Threaded frame streams (Accepted ADR-019)
+
+**Shipped Sep 11 in `7d2546fc` (#81):** render emits the default frame mark after swap; simulation
+emits SimulationTicks when presentation is active and the default mark when headless.
+Main emits work/wait zones. Miguel's attended Tracy capture showed render and simulation
+progress continuing across `Main.WaitEvents`; the profile preset and focused tests passed.
+See [[2026-09-11 Threaded Engine Validation]].
+The duplicate-marker findings below describe the pre-migration state.
+
+Checked in the S5-T14 working tree Sep 10: `engine/app/src/App.cpp:56` and
+`engine/app/src/SimulationThread.cpp:116` both call `TE_PROFILER_FRAME()`.
+`engine/base/include/TechEngine/base/diagnostics/Profile.hpp:12` maps it to unnamed FrameMark.
+They therefore contribute boundaries to the same frame set, not one set per thread.
+Those intervals mix main and simulation completion spacing; they cannot represent render FPS.
+
+| Composition/lane | Frame boundary and instrumentation |
+|---|---|
+| Graphical process: render | Sole unnamed FrameMark owner, immediately after each completed swap. Includes work and pacing between swaps, with vsync on or off. |
+| Graphical process: primary simulation | Named continuous `SimulationTicks` frame set, marked after each completed tick; a zone surrounds the actual tick work. |
+| Headless process: primary simulation | Sole unnamed FrameMark owner, after each completed tick; work zones separate execution cost from idle time. |
+| Main thread | Separate zones for event/control work and waiting. No unnamed frame marks. |
+| Additional simulations | Per-instance work zones/identity; do not emit into another simulation's frame set. A distinct named set needs a stable name per instance. |
+
+Completion-to-completion intervals measure observed cadence, not simulated fixedDeltaTime.
+Catch-up yields several close tick boundaries; the work zones measure each tick's cost.
+A render mark after swap does not prove GPU work or physical scanout completed. GPU timing
+still needs ADR-013 §8's GPU zones. Clock's diagnostic counter does not drive Tracy numbering.
+
+Add the named marker through the existing TE macro façade, with a no-op OFF path. Keep
+frame names stable and pooled; do not allocate/format them per tick. Tracy supports named
+secondary sets separately from its default set; see the [Tracy manual, Marking frames](https://github.com/wolfpld/tracy/blob/master/manual/tracy.tex).
+Do not mix continuous and discontinuous markers for one named set. Start with continuous
+completion markers plus ordinary zones; no start/end frame API is needed for tick costs.
+
+The render-active capture is complete. A headless capture and a forced catch-up capture remain
+future profiler verification; neither blocks S5-T17 because its headless and catch-up behavior
+is covered by deterministic tests. Check that frame counts match each owner's completions and
+main wakes add no default frames when those captures are made.
+
 ### Where the zones go
 
 This is instrumentation policy, not a frozen decision. Story D fills it in as each site lands.
 
 | Site | Zone |
 |---|---|
-| `app`'s frame loop (`engine/app/src/App.cpp`) | **Landed S3-T4.** `TE_PROFILER_FRAME()` is the **last** statement of the loop body, after the pacer, so the mark closes a whole frame rather than splitting one. |
-| `FrameLoop::advance` (`engine/app/src/FrameLoop.cpp`) | **Landed S3-T4.** `TE_PROFILER_FUNCTION()`, plus a `TE_PROFILER_SCOPE("FixedSteps")` around the accumulator loop in **its own nested block**. Both macros declare an object with a fixed name, so they cannot share a scope. See the header's `GOTCHA`. |
-| Each phase: Input, FixedUpdate, Update, PostUpdate, Present | One scope per phase, per [[Game Loop — Frame Flow]]. The phases do not exist yet. |
+| Main and simulation drivers | Current duplicate unnamed markers are documented above; accepted ownership replaces the old single-loop policy. |
+| `SimulationThread::advance` | Function and catch-up-batch zones exist. Add a work zone per fixed tick so catch-up cost is visible separately. |
+| Simulation input/fixed work and renderer preparation/draw/presentation | Separate scopes on their owning threads; suggested renderer names live in [[Game Loop — Frame Flow]]. |
 | Task-graph levels, and each task | One scope per task, named from the task. See [[Task Graph — Execution Flow]]. |
 | Render-graph passes | A GPU zone pair per pass, from R1 onwards. |
 

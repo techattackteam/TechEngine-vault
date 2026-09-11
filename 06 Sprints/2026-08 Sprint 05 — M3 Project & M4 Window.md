@@ -47,8 +47,8 @@
 
 **Added Sep 7:** S5-D3 revisits simulation ownership after the resize demo exposed the
 accepted event-pump stall. It requires a superseding ADR because "sim on main" is part of
-ADR-015's headline decision ([[ADR Index]]). The implementation stays unsized; T9 waits
-for the input handoff decision. See S5-D3 and the current capacity update below.
+ADR-015's headline decision ([[ADR Index]]). D3 closed Sep 8 with the accepted mechanism and sized cards below. Miguel authorized
+rollover to the next sprint as needed; see the current capacity update.
 
 > Every task carries `· P1/P2/P3 · 🟢 Deep / 🟠 Moderate / 🟡 Light / 🤖 Auto`. Weight fits the
 > day first, then priority ([[Planning Workflow — Artifact Gate]]).
@@ -229,12 +229,13 @@ for the input handoff decision. See S5-D3 and the current capacity update below.
       **One planning claim was wrong and is corrected**: CI already installs GLFW's Linux build
       dependencies on every leg, so clause (d) was only ever about a *display at test time*.
 
-### Story D — M4 build *(cut 2026-08-30 off [[Window — Design]])*
+### Story D — M4 build · ✅ complete Sep 11 *(cut 2026-08-30 off [[Window — Design]])*
 
 > Ordering: **T6 → P4 → T7 → T8**, with T9 last because it is the pre-named first cut inside
 > this story. P4 comes before T7 because a window test cannot pass CI until xvfb is in place.
-> **Updated Sep 7:** after T8, take **D3 → T9**. D3 settles simulation ownership before
-> T9 is re-cut around its input consumer.
+> **Updated Sep 8:** after D3, take **T12 → T13 → T14 → T15 → T9 → T17**.
+> T16 is ready after D3 and must finish before T9. Seven sessions: **3 Deep + 4 Moderate,
+> 20–34h**. These are work estimates, not a completion promise for this sprint.
 >
 > **ADR-015 §2 forbids the cheap version.** The context is current on the render thread from
 > the first line. A main-thread clear "for now" is the retrofit M2 exists to prevent, and that
@@ -280,10 +281,10 @@ for the input handoff decision. See S5-D3 and the current capacity update below.
       **Clarified Sep 6:** drawing continues during window moves and resizes, reusing the
       latest command; framebuffer-size changes reach the render thread for viewport updates.
       Simulation still runs on main and may pause inside event processing.
-- [ ] **S5-D3** · simulation independence during window moves/resizes · P1 · 🟢 Deep —
+- [x] **S5-D3** · simulation independence during window moves/resizes · P1 · 🟢 Deep —
       **Design, added 2026-09-07 at Miguel's request.**
-      **Progress Sep 7:** [[ADR-018 — Host and simulation threads, render-owned GL]] accepted;
-      mechanism and implementation breakdown remain open in [[Simulation Thread — Design]].
+      **Done Sep 8:** ADR-018 accepted Sep 7; Miguel accepted the mechanism Sep 8.
+      Design and breakdown recorded in [[Simulation Thread — Design]]. Vault-only, no engine PR.
       The requirement is that window moves/resizes must not suspend simulation ticks; T8's independent presentation alone
       does not satisfy it. Needs T8; ordered before T9.
       done: Miguel accepts a superseding ADR for [[ADR-015 — Threading (sim on main, render thread owns GL)]]'s
@@ -298,16 +299,48 @@ for the input handoff decision. See S5-D3 and the current capacity update below.
       Their verification must cover continued ticks during a deliberately blocked event
       pump, native Windows move/resize with simultaneous tick/render evidence, input delivery
       after the stall, shutdown during activity, headless operation and Linux TSan.
-      **This card delivers the design and breakdown.** Implementation remains unsized until
-      that decision, and entry into this sprint requires a fresh remaining-capacity check.
-- [ ] **S5-T9** · raw input through `Window` · P2 · 🟠 Moderate — done: keyboard and mouse
-      arrive through GLFW callbacks into a `platform` input buffer that main reads inside
-      `pollEvents`; no callback touches the render thread or issues a GL call; a Catch2 case
-      pins the buffer's drain semantics. Gamepad and text input are explicitly out
-      ([[Window — Design]] § *Open questions*). **First cut inside this story.**
-      **Held Sep 7 for S5-D3:** the main-reader clause and moderate estimate are provisional;
-      re-cut them against the accepted input handoff before starting implementation.
-
+      **This card delivers the design and breakdown.** Implementation is sized below; Miguel
+      authorized rollover Sep 8, without a remaining-capacity gate.
+- [x] **S5-T12** · dedicated-thread handles and registration · P1 · 🟢 Deep · **4–6h** —
+      **Merged 2026-09-08; closed Sep 9**, `5c0764bd` ([#78](https://github.com/techattackteam/TechEngine/pull/78)).
+      Acceptance met; startup/failure details and verification are in [[Simulation Thread — Design]].
+      Unblocks T13; Story D and the integrated simulation proof remain open.
+      done: JobSystem creates named dedicated threads with move-only stop/join handles,
+      scoped registration and explicit readiness/completion/failure results per
+      [[Simulation Thread — Design]]. Tests cover failure before readiness, failure after
+      readiness, repeated stop/join and registration cleanup. No pool or renderer migration.
+      Needs D3.
+- [x] **S5-T13** · adopt the shared thread mechanism · P1 · 🟠 Moderate · **2–4h** —
+      **done 2026-09-10**, `a60b64bd` ([#79](https://github.com/techattackteam/TechEngine/pull/79)).
+      Acceptance met: pool workers and RenderThread use T12's creation/registration path, and
+      App registers main. Subsystem owners retain handles and join order. Existing batch drain,
+      worker-wait rejection and GL startup/cleanup behavior remain covered by tests;
+      JobSystem shutdown never joins a subsystem's dedicated thread. Entry on [[Sprint Board]].
+- [x] **S5-T14** · App simulation runner and lifecycle · P1 · 🟢 Deep · **4–6h** —
+      **done 2026-09-11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+      Fixed-only simulation, the shared Clock, copied metrics, initial/batch publication and
+      cancellable main lifecycle shipped. ADR-019 replaced the legacy combined `FrameLoop`
+      during review; no compatibility path remains. See [[2026-09-11 Threaded Engine Validation]].
+- [x] **S5-T15** · editor and simulation integration · P1 · 🟠 Moderate · **2–4h** —
+      **done 2026-09-11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+      Editor event waiting, copied metrics, tick-stamped snapshots, render history and optional
+      vsync shipped; runtime stops on tick 120. Review caught and fixed an X11 self-wake loop
+      by applying the metrics title only when it changes.
+- [x] **S5-T16** · bounded raw-input ingress · P2 · 🟢 Deep · **4–6h** —
+      **done 2026-09-11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+      Sequenced input, preallocated drain buffers, held/focus state, explicit overflow recovery
+      and the independent presentation copy shipped. Tiny-capacity and concurrent schedules
+      are covered by the merged tests.
+- [x] **S5-T9** · Window input to fixed ticks · P2 · 🟠 Moderate · **2–4h** —
+      **done 2026-09-11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+      Keyboard, mouse and focus callbacks feed ordered ingress; simulation consumes it before
+      every fixed tick. Gamepad, text and editor/CLI commands remain outside the card as cut.
+- [x] **S5-T17** · simulation independence integration proof · P1 · 🟠 Moderate · **2–4h** —
+      **done 2026-09-11**, `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+      The controlled main-stall test proves tick/render progress, delayed input and shutdown;
+      headless cancellation is covered. PR CI passed integrated Linux TSan. Miguel confirmed
+      the native Windows move/resize demo with Tracy showing render and simulation progress
+      while main remained in `Main.WaitEvents`. **Completes Story D.**
 ### Story E — Process *(first thing cut; the mix is called out below)*
 
 - [x] **S5-P1** · watch the routine's first real fires · P2 · 🟡 Light — **done 2026-09-01**,
@@ -391,12 +424,9 @@ for the input handoff decision. See S5-D3 and the current capacity update below.
 
 ## Capacity note
 
-**Current update, Sep 7:** Miguel added S5-D3 with only T8 and T9 still open. Remaining
-work after T8's close (#77) is one new 🟢 design session and T9 provisionally 🟠.
-The sprint ends **Fri Sep 11**. This week has Mon/Thu deep slots (Monday is already in use),
-Tuesday light work and Friday moderate work; Wednesday remains optional recovery time.
-T9 remains the first cut if T8 or D3 overruns. This addition commits the design review,
-not an unsized simulation implementation squeezed into the same week.
+**Close update, Sep 11:** T14/T15/T16/T9/T17 merged together as `7d2546fc` (#81),
+and Story D is complete. The estimates below are planning history. The formal sprint review
+remains for the Sep 12–13 boundary ceremony; see [[2026-09-11 Threaded Engine Validation]].
 
 The earlier capacity estimates below are planning history, not today's remaining load.
 
