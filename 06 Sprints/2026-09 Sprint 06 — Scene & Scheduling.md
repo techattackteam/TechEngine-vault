@@ -164,7 +164,7 @@ action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
 ## Definition of Done
 
 - [ ] Scene reuse is grounded in inspected v1 code and an agreed design note.
-- [ ] The task-graph ADR is Accepted and its design hub reflects fixed-only simulation.
+- [x] The task-graph ADR is Accepted and its design hub reflects fixed-only simulation. — ADR-020 Accepted Sep 12.
 - [ ] A small scene runs through the declared dependency graph on the simulation thread
   and produces the expected state headlessly over repeated ticks.
 - [ ] Tests prove handle invalidation, storage/query behavior, graph conflicts and semantic

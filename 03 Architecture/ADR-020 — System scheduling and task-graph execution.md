@@ -1,6 +1,6 @@
 # ADR-020 — System scheduling and task-graph execution
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09
 - **Deciders:** Miguel (Lead Engineer), with AI as technical lead
 - **Task:** S6-D2
