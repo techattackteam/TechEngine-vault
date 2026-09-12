@@ -48,7 +48,7 @@ implementation. This story supplies the first consumer for its storage primitive
 Built-in hierarchy and transform are included per the accepted design; the D1 session
 confirmed every entity carries both components.
 
-- [ ] **S6-T1** · Entity handles and ComponentRegistry · P1 · 🟢 Deep · 3–5h
+- [ ] **S6-T1** · Entity handles and ComponentRegistry · P1 · 🟠 Moderate · 3–5h
   - Generational slot table: u32 index + u32 generation
   - Null sentinel at `UINT32_MAX`, exhaustion via `TE_CHECK` + null return
   - Slot reuse with advanced generation, retirement on wrap
@@ -64,7 +64,7 @@ confirmed every entity carries both components.
   - Enforce default-constructible + copyable + nothrow-movable at registration
   - Tests: add/remove components, swap removal repairs locations, signature collisions, row-count invariant across transitions
 
-- [ ] **S6-T3** · Queries and iteration · P1 · 🟢 Deep · 3–4h (depends on T2)
+- [ ] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h (depends on T2)
   - Query describes required component types and read/write access modes
   - Revision-based match caching: refresh on new archetypes, fresh spans each iteration
   - Const spans for reads, mutable spans for writes, read-only entity IDs
@@ -89,7 +89,7 @@ confirmed every entity carries both components.
 
 ### Story C — Settle system dependencies and execution
 
-- [ ] **S6-D2** · Task-graph/System ADR and execution design · P1 · 🟢 Deep · 4–6h —
+- [x] **S6-D2** · Task-graph/System ADR and execution design · P1 · 🟢 Deep · 4–6h — **done 2026-09-12.**
   done: Miguel accepts the task-graph contract; update the existing execution note and
   ADR Index with its relationship to ADR-007 and ADR-019. Settle system-owned component
   and resource read/write declarations, explicit order, deterministic conflict direction,
@@ -99,17 +99,52 @@ confirmed every entity carries both components.
   scripting. Include a worked graph example and cut Stories D/E into 2–6h cards. Use D1's
   registry and query findings; the serial executor must preserve the future worker seam.
 
-### Story D — Schedule, graph and serial execution · ~3–4 tasks · size after S6-D2
+### Story D — Schedule, graph and serial execution · 3 tasks · sized Sep 12
 
-System declarations feed a graph compiled when the schedule changes. Fixed ticks reuse
-it. Structural commands and their temporary storage belong to this story where the
-accepted barrier contract requires them; FrameAllocator is sized with that first consumer.
+System declarations feed a graph built once at simulation start. Fixed ticks reuse it.
+The schedule is immutable after build (ADR-020 §7). Structural commands queue into the
+barrier. The serial executor walks levels one system at a time (ADR-020 §8).
 
-### Story E — Scene integration and headless proof · ~1–2 tasks · size after S6-D1/D2
+- [ ] **S6-T6** · Schedule and access declarations · P1 · 🟠 Moderate · 3–4h
+  - Schedule holds entries: system factory, priority (int, default 0), access bitmask
+  - `DeclareAccess<Write<T...>, Read<T...>>` lowered to dense-ID bitmasks at registration
+  - `.priority(N)`, `.before<A>()`, `.after<A>()` on entries
+  - `Slot::Terminal` flag for the script runner slot (ADR-020 §4)
+  - Registration closes before first tick (same freeze as ComponentRegistry, S6-T1)
+  - Tests: register entries, priority assignment, before/after edges, terminal slot flag, double-registration rejection, post-freeze rejection
+
+- [ ] **S6-T7** · Graph builder · P1 · 🟢 Deep · 4–6h (depends on T6)
+  - Conflict detection: `A.writes ∩ B.touches ≠ ∅` produces an edge
+  - Priority-based direction: lower priority runs first
+  - Equal priority on a conflicting pair is a build error
+  - Explicit `.before<>()`/`.after<>()` edges override priority between that pair
+  - Terminal slot pinned after all regular levels
+  - Topological sort into levels. Cycle detection with `TE_CHECK` naming every system
+  - Log every conflict-derived edge at build time
+  - Tests: conflict detection, priority ordering, explicit override, cycle rejection with named systems, terminal slot placement, disjoint readers on same level, equal-priority error
+
+- [ ] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h (depends on T7 + T2)
+  - Walk levels in order, run one system at a time
+  - Command buffer: queue spawn/despawn/add/remove during tick
+  - Barrier after tick: apply commands in deterministic order, validate hierarchy (S6-T4), assign NetIds, flush event streams
+  - Structural changes invisible until barrier
+  - Debug validation: actual access is a subset of declared (`TE_ASSERT`)
+  - Coarse write-stamping: `changeTick` per system/archetype/component (ADR-007 §2)
+  - Tests: systems run in level order, command buffer deferred until barrier, undeclared access fires assert, write-stamp advances on declared writes only
+
+### Story E — Scene integration and headless proof · 1 task · sized Sep 12
 
 Connect the scene and executor to the shipped simulation lifecycle and demonstrate a
-small dependency chain. Hierarchy and transform are now in Story B (S6-T4/T5). Input
+small dependency chain. Hierarchy and transform are in Story B (S6-T4/T5). Input
 action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
+
+- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h (depends on T5 + T8)
+  - Build the graph once at simulation start from registered systems
+  - Each fixed tick: executor walks levels, then runs barrier
+  - Register Movement, Gravity, Propagation and Collision as test systems with real access
+  - Prove the graph orders them correctly (ADR-020 §5 worked example)
+  - Run headlessly: same scene, same graph, no window, deterministic output
+  - Tests: multi-tick run produces expected transform state, headless matches windowed, graph reuse across ticks (no rebuild)
 
 ### Story F — Repair bounded documentation drift
 
@@ -146,12 +181,14 @@ plus two weekend deep days at 2–3 slots each = **8–10 Deep**, plus **2 Moder
 **2 Light** slots. The boundary ceremony shares the first weekend's time; it is not extra
 capacity. Weekend work days remain swappable and at least one rest day is the default.
 
-Story B is now sized at 5 Dev cards (S6-T1 through S6-T5, 16–23h total). With 2 Design
-and 2 Process that is **9 cut cards, ~11–14 substantive sessions** including the unsized
-Stories D and E. The upper end can roll over. Check the actual mix at the Sep 19–20 review.
-Cut S6-P1 first if attended time tightens, then carry unfinished scope explicitly.
+Story B is 5 Dev cards (S6-T1 through S6-T5, 16–23h). Story D is 3 Dev cards (S6-T6
+through S6-T8, 11–16h). Story E is 1 Dev card (S6-T9, 3–4h). With 2 Design and
+2 Process that is **13 cut cards, ~15–21 substantive sessions**. The upper end will
+roll into Sprint 07. Check the actual mix at the Sep 19–20 review. Cut S6-P1 first
+if attended time tightens, then carry unfinished scope explicitly.
 
-Current card mix is 5 Dev / 2 Design / 0 Bug / 2 Process. One Process card is Auto.
+Current card mix is 9 Dev (5 Deep + 4 Moderate) / 2 Design / 0 Bug / 2 Process.
+One Process card is Auto.
 The Auto pass selected only S6-P2: no decisions, file-verifiable, off the critical path,
 and no workflow edits. It costs no code PR or CI minutes. No automation was changed.
 

@@ -1,20 +1,22 @@
 # Task Graph — Execution Flow
 
-> Living design doc. **Status: draft**, not yet accepted.
+> Living design doc. **Status: draft**, updated 2026-09-12 against ADR-020 (Proposed).
 >
-> The ADR holds the decision, this doc holds the *how*. The decisions live in
-> [[ADR-007 — v2 networking & ECS replication foundation]] §6. This note is the **execution
-> view**, meaning one end-to-end sequence. It is not a restatement of the rules.
+> The ADR holds the decision, this doc holds the *how*. The scheduling decisions live in
+> [[ADR-020 — System scheduling and task-graph execution]]. ADR-007 §6 defined the system
+> interface and conflict DAG; ADR-020 settles the items §6 deferred. This note is the
+> **execution view**: one end-to-end sequence, not a restatement of the rules.
 
 **Module:** `core` · **Kind:** system · **Status:** draft
 **Runs inside:** [[Game Loop — Frame Flow]]. This doc covers one stage of one phase.
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
+[[ADR-020 — System scheduling and task-graph execution]] *(Proposed)* ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
 **Roadmap:** [[Roadmap]]. **M2**'s threading ADR is **decided**:
 [[ADR-015 — Threading (sim on main, render thread owns GL)]], hub [[Concurrency — Design]].
-Next: **M5**'s task-graph ADR (the System interface, which is this doc), then the lanes:
-**P1** turns real workers on, **P2** brings the work-stealing implementation
+**M5**'s task-graph ADR is [[ADR-020 — System scheduling and task-graph execution]] (Proposed).
+**P1** turns real workers on, **P2** brings work-stealing tuning
 
 ## Purpose
 
@@ -24,87 +26,89 @@ Three layers get conflated whenever people talk about this, so name them separat
 
 | Layer | What it is |
 |---|---|
-| **`Schedule`** | The **input data**. Mutable entries, each carrying a phase, an enabled flag and an access declaration. |
-| **Task graph** | The **derived structure**, built once from the schedule. Systems are the nodes. Conflict edges and explicit order edges are the task edges. |
-| **Executor** | The **runner**. It walks the prebuilt graph once per frame. |
+| **`Schedule`** | The **input data**. Entries registered at startup, each carrying a priority, an access declaration, and optional ordering overrides. Immutable after the graph is built (ADR-020 §7). |
+| **Task graph** | The **derived structure**, built once at simulation start. Systems are nodes. Conflict edges and explicit order edges are the task edges. Sorted into levels. |
+| **Executor** | The **runner**. Walks the levels once per tick. Serial first (ADR-020 §8); parallel at P1. |
 
 In one line: the `Schedule` is what you registered, the task graph is what got compiled from
 it, and the executor is what runs it.
 
 ## Design
 
-### Stage 1: compose time, once, at `app`'s composition root
+### Stage 1: registration, once, at startup
 
 ```cpp
-schedule.add<MovementSystem>(Phase::FixedUpdate,
-                             DeclareAccess<Write<Transform>, Read<Velocity>>);
+schedule.add<MovementSystem>(DeclareAccess<Write<Transform>, Read<Velocity>>)
+        .priority(10);
 ```
 
-- An access declaration covers **components and resources**, not components alone.
-- It is lowered to **`ComponentDenseId` bitmasks** at registration time. Conflict detection
-  later is then a cheap set operation.
-- Engine defaults are ordinary entries. There is no privileged path, so disabling or replacing
-  one is an edit to a list.
-- `.after<A>()` is the escape hatch for semantic ordering where there is **no** data conflict
-  to derive an edge from. It is pairwise only.
+- One phase: **Tick** (ADR-020 §1). No Input, Update, PostUpdate or Present phases.
+- An access declaration covers **components and resources** in the same dense-ID bitmask
+  space (ADR-020 §2). `Write<T>` implies read.
+- Every system carries an integer **priority** (default 0). Lower runs first on conflict.
+  Equal priority on a conflicting pair is a build error (ADR-020 §3).
+- Engine systems ship with spaced priorities (10, 20, 30...) so user systems slot between
+  them without renumbering.
+- `.after<A>()` / `.before<A>()` override priority-derived direction between a specific pair.
+- Engine defaults are ordinary entries. No privileged path.
 
-### Stage 2: build the graph, once, on schedule mutation
+### Stage 2: build the graph, once, at simulation start
 
-1. Partition the entries **by phase**. A system belongs to exactly one.
-2. Within a phase, two systems conflict when `A.writes ∩ B.touches ≠ ∅`. That covers
-   write-write, write-read and read-write. **Two readers never conflict, so they run in
-   parallel.**
-3. Every conflict becomes a deterministic serializing edge. Explicit `.after<>` edges are
-   added alongside them.
-4. Topologically sort the result into **levels**. That cached structure *is* the task graph.
+1. Two systems conflict when `A.writes ∩ B.touches ≠ ∅`. Write-write, write-read and
+   read-write. **Two readers never conflict.**
+2. Each conflict produces a directed edge. The system with the lower priority runs first.
+   Equal priority on a conflicting pair is a build error.
+3. `.after<>()` / `.before<>()` edges override priority-derived direction between that pair.
+4. Topologically sort the DAG into **levels**. That cached structure *is* the task graph.
+5. A cycle (from any combination of edges) is a fatal build error. `TE_CHECK` names every
+   system in the loop.
 
-**This is built once, not per frame.** No allocation and no string work happen inside a frame,
-which is F19's fix.
+**Built once, never rebuilt.** The schedule is immutable after this point (ADR-020 §7).
+No allocation and no string work happen inside a tick, which is F19's fix.
 
-### Stage 3: per frame, the executor walks the prebuilt graph
+### Stage 3: per tick, the executor walks the prebuilt graph
 
 ```mermaid
 flowchart TD
-  A["schedule.add&lt;Sys&gt;(Phase, DeclareAccess&lt;…&gt;)"] --> B["lower to ComponentDenseId bitmasks"]
-  B --> C["partition by phase"]
-  C --> D["conflict edges + explicit .after&lt;&gt; edges"]
-  D --> E["topological levels = TASK GRAPH (cached)"]
-  E --> F["Input"]
-  F --> G["FixedUpdate ×N (accumulator)"]
-  G --> H["Update"]
-  H --> I["PostUpdate"]
-  I --> J["Present (client-only)"]
+  A["schedule.add&lt;Sys&gt;(DeclareAccess&lt;…&gt;).priority(N)"] --> B["lower to dense-ID bitmasks"]
+  B --> C["conflict edges (priority) + explicit .before/.after edges"]
+  C --> D["topological levels = TASK GRAPH (cached)"]
+  D --> E["Tick ×N (accumulator)"]
+  E --> F["barrier"]
 ```
 
-**Within a phase**, the executor walks the levels from the top down. Systems on the same level
-have disjoint writes by construction, so they are safe to run in parallel. Today that means
-level by level. Later the same level structure feeds a job pool **unchanged**.
+**Within the Tick phase**, the executor walks the levels in order. Systems on the same level
+have disjoint writes, so they are safe to run in parallel. The serial executor (ADR-020 §8)
+runs them one at a time. The parallel executor at P1 dispatches each level to workers.
 
-Systems perform value reads and writes only at this point. Nothing structural happens here.
+Systems perform value reads and writes only. Nothing structural happens here.
 
-**At each phase barrier**, the command buffer is applied **single-threaded, in a deterministic
-order**, and `NetId`s are assigned. Every structural change lands here: spawn, despawn, add
-and remove. That is what makes determinism hold even once the levels run in parallel.
+**At the barrier**, the command buffer is applied **single-threaded, in deterministic order**,
+and `NetId`s are assigned. Structural changes land here: spawn, despawn, add, remove.
+Hierarchy constraints are validated at commit time. That is what makes determinism hold even
+once levels run in parallel.
 
-**A debug safety net backs the declarations.** `Scene` asserts that the **actual** access is a
-subset of the **declared** access, so touching an undeclared component fires `TE_ASSERT`. It
-compiles out in release.
+**Debug validation.** `Scene` asserts that the **actual** access is a subset of the
+**declared** access, so touching an undeclared component fires `TE_ASSERT`. Column
+write-stamping (`changeTick` per system/archetype/component) happens as each system runs.
+Both compile out or become no-ops in release.
 
 ### Where scripts slot in (ADR-010, Proposed)
 
-`ScriptSystem` is an ordinary entry, pinned to the **terminal slot** of both `FixedUpdate` and
-`Update`.
+`ScriptSystem` is an ordinary entry pinned to the **terminal slot** of the Tick phase
+(ADR-020 §4). `Slot::Terminal` means "after all regular levels, before the barrier."
 
 ```
-[ level 0 ‖ level 1 ‖ … ]  →  [ ScriptSystem: all scripts ]  →  ‖ barrier: apply command buffer ‖
+[ level 0 ‖ level 1 ‖ … ]  →  [ ScriptSystem: terminal slot ]  →  ‖ barrier ‖
 ```
 
-Scripts therefore run after every system in the phase. Their spawns queue into the **same**
-command buffer as everything else, so there is no separate path to keep consistent.
+One terminal entry per phase; a second is a build error. A terminal entry may omit its
+access declaration (ADR-010 §5). Scripts run after every system in the phase. Their spawns
+queue into the **same** command buffer, so there is no separate path to keep consistent.
 
-## Open questions
+## Settled questions
 
-Grouped by the ADR that owns them. The [[Roadmap]] rung is in brackets.
+Grouped by the ADR that settled them.
 
 ### Settled by ADR-015 (2026-08-22)
 
@@ -112,27 +116,29 @@ ADR-018 (Accepted Sep 7) supersedes simulation-on-main: the executor will run on
 dedicated simulation thread against `JobSystem`'s batch submit/wait. GL ownership and
 level/barrier semantics remain. Current target: [[Simulation Thread — Design]].
 
-### Owned by the task-graph ADR [M5]
+### Settled by ADR-020 (2026-09, Proposed)
 
-- **The terminal slot.** ADR-010 §4 needs it, and `.after<A>()` cannot express it, because it
-  is pairwise and this means "after everything". The mechanism is undecided.
-- **Level granularity.** Whole-system nodes only, or intra-system chunking for wide parallel
-  iteration?
-- **Schedule mutation at runtime.** What a rebuild costs, and when a rebuild is legal. Is
-  mid-frame allowed?
+- **Terminal slot.** `Slot::Terminal` pins an entry after all regular levels, before the
+  barrier. One per phase. ADR-020 §4.
+- **Level granularity.** Whole-system nodes. Intra-system chunking deferred to P1/P2 with
+  measurement. ADR-020 §6.
+- **Schedule mutation.** The schedule is immutable after the graph is built at simulation
+  start. No enable/disable, no mid-tick mutation. A system that should sometimes skip work
+  checks its own flag and early-outs. Required for deterministic prediction and rollback.
+  ADR-020 §7.
 
 ### Deferred to implementation [P1 → P2]
 
-- **A work-stealing executor, plus Jolt pool integration.** This fixes F15. Levels walk
-  serially until a measurement says otherwise (workers turn on at P1, tuning is P2). The
-  level structure feeds a pool **unchanged**, so this changes no interface.
+- **A parallel executor, plus Jolt pool integration.** This fixes F15. P1 is a near-term
+  follow-up to M5. The level structure feeds a pool **unchanged**, so this changes no
+  interface. Work-stealing tuning is P2.
 
 ## References
 
-- [[ADR-007 — v2 networking & ECS replication foundation]] §6: the decisions
+- [[ADR-020 — System scheduling and task-graph execution]]: the scheduling decisions
+- [[ADR-007 — v2 networking & ECS replication foundation]] §6: system interface and conflict DAG
 - [[ADR-006 — v2 core architecture & module layout]] §5: the System and helper taxonomy
-- [[Game Loop — Frame Flow]]: the frame this graph executes inside, including `FixedUpdate`
-  running N times
+- [[Game Loop — Frame Flow]]: the frame this graph executes inside, including Tick running N times
 - [[ADR-010 — User authoring model (Systems & Scripts)]]: the script terminal slot
 - [[v1 Code Audit]]: F15 (three ad-hoc threading models) · F19 (per-frame allocation)
 - Code: none yet, `core` is greenfield
