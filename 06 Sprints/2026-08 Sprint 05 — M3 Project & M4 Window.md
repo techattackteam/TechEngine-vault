@@ -426,7 +426,7 @@ rollover to the next sprint as needed; see the current capacity update.
 
 **Close update, Sep 11:** T14/T15/T16/T9/T17 merged together as `7d2546fc` (#81),
 and Story D is complete. The estimates below are planning history. The formal sprint review
-remains for the Sep 12–13 boundary ceremony; see [[2026-09-11 Threaded Engine Validation]].
+was completed Sep 12; see [[2026-09-11 Threaded Engine Validation]].
 
 The earlier capacity estimates below are planning history, not today's remaining load.
 
@@ -494,9 +494,38 @@ ahead of it.
 
 Weekend days stay a swappable pair; nothing here is assigned to Sat or Sun.
 
-## Sprint review (fill Sep 12-13)
+## Sprint review
 
-- What shipped:
-- Demo / artifact:
+Closed Sep 12. All 25 cards closed: 17 Dev, 3 Design, 1 Bug and 4 Process.
+The editor testbed, render-thread triangle and simulation independence shipped.
+Runtime packaging remains deferred to M6.
 
-→ Retrospective in [[07 Journal]].
+- **S5-T17** · simulation independence integration proof — `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+- **S5-T9** · Window input to fixed ticks — `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+- **S5-T16** · bounded raw-input ingress — `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+- **S5-T15** · editor and simulation integration — `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+- **S5-T14** · App simulation runner and lifecycle — `7d2546fc` ([#81](https://github.com/techattackteam/TechEngine/pull/81)).
+- **S5-T13** · adopt the shared thread mechanism — `a60b64bd` ([#79](https://github.com/techattackteam/TechEngine/pull/79)).
+- **S5-T12** · dedicated-thread handles and registration — `5c0764bd` ([#78](https://github.com/techattackteam/TechEngine/pull/78)).
+- **S5-D3** · simulation independence during window moves/resizes — vault artifact.
+- **S5-T8** · clear + triangle through the frame command buffer — `681ddf6b` ([#77](https://github.com/techattackteam/TechEngine/pull/77)).
+- **S5-T7** · `platform::Window` + the context on the render thread — `a053486c` ([#76](https://github.com/techattackteam/TechEngine/pull/76)).
+- **S5-P4** · xvfb on the Linux legs — `1482e927` ([#75](https://github.com/techattackteam/TechEngine/pull/75)).
+- **S5-T6** · glad2 generated, vendored and wired — `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)).
+- **S5-B1** · editor default project root — `4512024d` ([#73](https://github.com/techattackteam/TechEngine/pull/73)).
+- **S5-T5** · the two bootstraps + `projects/dev/` testbed — `934cf999` ([#71](https://github.com/techattackteam/TechEngine/pull/71)).
+- **S5-P3** · 🤖 vault `file:line` citation sweep — vault artifact.
+- **S5-P2** · 🤖 [[Known Issues]] D1's fallback fix — `0ac1a9b0` ([#66](https://github.com/techattackteam/TechEngine/pull/66)).
+- **S5-T4** · `project.toml` + the `Project` type — `e0495146` ([#70](https://github.com/techattackteam/TechEngine/pull/70)).
+- **S5-T3** · the five mutating `FileAccess` calls — `84181fae` ([#68](https://github.com/techattackteam/TechEngine/pull/68)).
+- **S5-T1** · `platform::executablePath()` — `a7908904` ([#67](https://github.com/techattackteam/TechEngine/pull/67)).
+- **S5-T2** · `MountTable::mount()` validation — `4e3c6f7f` ([#64](https://github.com/techattackteam/TechEngine/pull/64)).
+- **S5-P1** · watch the routine's first real fires — vault artifact.
+- **S5-T11** · the `App` base class and `EntryPoint.hpp` — `b6273327` ([#63](https://github.com/techattackteam/TechEngine/pull/63)).
+- **S5-T10** · `techengine_app()` and apps as object libraries — `76056402` ([#62](https://github.com/techattackteam/TechEngine/pull/62)).
+- **S5-D1** · project design note — vault artifact.
+- **S5-D2** · window design note — vault artifact.
+
+Demo and integrated evidence: [[2026-09-11 Threaded Engine Validation]] and
+[[Window — Design]]. Historical CI/demo results were not rerun at planning.
+Retrospective: [[2026-09-12 Sprint 05 Retrospective]].

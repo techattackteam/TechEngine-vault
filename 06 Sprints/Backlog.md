@@ -232,12 +232,6 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
-- #prio/medium · **Reconcile the accepted warning policy after S5-T12** — #78 (`5c0764bd`)
-  removed `/WX`, `-Werror` and `TE_WERROR`, and made clang-tidy findings advisory at Miguel's
-  request. [[ADR-008 — v2 build & testing baseline]] §5 still mandates warnings-as-errors;
-  [[ADR-005 — v2 tech stack & toolchain]] also describes `/WX` and enforced lint.
-  Record the changed policy through dated amendments and align [[B3 — Build & Testing Notes]].
-  Formatting remains enforced. **Trigger:** fired — merged Sep 8, identified at the Sep 9 close.
 
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly** — report-once is per call site through a function-local static (ADR-011 §5), and
@@ -258,17 +252,6 @@ groups are kept, because they show where future work will land.
   revisit (`CONVENTIONS.md` § *Attributes*). **Trigger:** fired — pull at the next
   `/sprint-plan`.
 
-- #prio/high · **[[ADR-013 — Profiler (Tracy-backed instrumentation)]] and [[Profiler — Design]]
-  both pin Tracy `v0.13.1`, and the tree is on `v0.14.1`** — the bump rode along in #46
-  (S4-T4, 2026-08-24) and its only record is that card's Sprint Board entry. `cmake/deps.cmake`
-  is on `v0.14.1`, while ADR-013 names `v0.13.1` as its decision and Profiler — Design's wiring
-  table repeats it. `deps.cmake`'s own header says that tag is a **wire-protocol lock** rather
-  than a version preference, because Tracy compiles its ProtocolVersion into both sides, so a
-  reader trusting either artifact pairs the client with the wrong desktop app and gets a refused
-  connection. It wants a dated amendment on an Accepted ADR, which is a decision rather than a
-  sweep. **There is a third site:** [[B3 — Build & Testing Notes]] § *Profiling builds* also
-  names `v0.13.1`, so the amendment sweeps three artifacts, not two.
-  **Trigger:** fired — found by the 2026-08-30 freshness check; third site added by S5-P3.
 
 - #prio/medium · **Measure cache refresh and storage after #76** — ccache now saves once per
   commit and restores compatible older snapshots; Mesa archives are cached separately.

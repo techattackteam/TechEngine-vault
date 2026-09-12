@@ -102,6 +102,11 @@ all in `engine/core/src/jobs/JobSystem.cpp`.
 - **Jolt pool integration** onto the JobSystem. Owner: **P2** (F15).
 - **Beyond fork-join**: task-level edges across level boundaries, caller-runs in `wait`.
   Owner: **P2**, only if P1's captures show the per-level join bubble actually costs.
+- **Sub-worker spawning from systems.** Currently a system runs on one assigned worker and
+  cannot spawn child jobs (`wait()` rejects calls from pool workers). Future expansion:
+  let a system's worker spawn sub-workers for its own iteration and wait for their
+  completion. Requires either a parallel-for helper or work-stealing inside `wait()`.
+  Not in scope until profiling shows single-threaded system iteration is a bottleneck.
 - **Render frame limiter and latency tuning.** ADR-019 fixes loop ownership and makes vsync
   optional; any later limiter remains renderer-owned. See [[Game Loop — Frame Flow]].
 - **`JobSystem.hpp`'s weight in public `core`.** The pool's state is in the header, so

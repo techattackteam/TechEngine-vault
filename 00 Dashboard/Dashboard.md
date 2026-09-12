@@ -7,11 +7,11 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q3 (Jul–Sep) |
-| **Sprint** | [[2026-08 Sprint 05 — M3 Project & M4 Window]] *(Aug 29 to Sep 11 — the boundary was pulled **one week early**)* |
-| **Sprint goal** | **Ship M3 and open the window: `projects/dev/` loads through a real `project.toml`, and a triangle draws on the render thread.** M3 is the commitment; M4 is the reach, and it is the half at risk. |
-| **Current focus** | S5-T12 merged in #78 and closed Sep 9. [[Simulation Thread — Design]] records the shipped thread mechanism; S5-T13 adoption is next. |
-| **Top blocker** | The accepted main/simulation split remains unimplemented. T9 depends on the runner/editor integration and bounded input buffer. |
-| **Next milestone** | M3 editor testbed and M4 triangle proof shipped. T13–T17 plus T9 remain for simulation independence; rollover authorized Sep 8. Runtime packaging stays deferred to M6. |
+| **Sprint** | [[2026-09 Sprint 06 — Scene & Scheduling]] *(Sep 12–25)* |
+| **Sprint goal** | Port the reusable v1 ECS into Scene and run declared system dependencies on fixed ticks, proven headlessly. |
+| **Current focus** | S6-D1 done (Sep 12). Story B cards T1-T5 cut. Next: S6-D2 task-graph ADR, then Story B implementation. |
+| **Top blocker** | M5 implementation waits on the task-graph ADR (S6-D2). Scene design gate is cleared. |
+| **Next milestone** | M5 Scene & scheduling. M3 editor testbed and M4, including simulation independence, are complete. |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `01ed7a30` (2026-08-30) |
 
@@ -28,14 +28,12 @@ git log --oneline 01ed7a30..origin/master
 so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
 you *which* note drifted, only that nobody has looked.
 
-**Latest check: 2026-09-05**, against local HEAD and cached `origin/master` at `934cf999`.
-The Project/App/FileAccess spot-check confirmed unresolved drift, including the const
-mutators contradicting the read-only claim and ADR-017 lifecycle differences.
-See [[2026-09-05 Weekly Review]] for scope, evidence and remaining editorial fixes.
+**Latest check: Sep 12, 2026**, after fetching `origin/master` at `7d2546fc`.
+The spot-check confirmed shipped simulation integration and stale Project, Task Graph
+and Simulation Thread claims. Full hub/ADR reconciliation remains incomplete.
+**Stamp unchanged.** See [[2026-09-12 Sprint 05 Retrospective]]; S6-D2 and S6-P1/P2
+carry follow-ups. No build, test, live CI check or demo ran during planning.
 
-**Stamp unchanged:** reconciliation is deferred and the check did not cover every touched
-system. The last advance remains Aug 30 at `01ed7a30`; no remote fetch, build, demo or live
-CI verification ran today. Known Tracy-version drift remains on [[Backlog]].
 ## 🗓️ Rhythm
 
 > **The one home for cadence.** Sprint length, ceremony timing, the weekday fallback and the
@@ -59,9 +57,9 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **weekend of Sep 12–13, 2026**: `$sprint-plan`, the Sprint 05 → 06
-boundary. It absorbs the final-week review. The Sep 5 mid-sprint checkpoint is recorded in
-[[2026-09-05 Weekly Review]].
+→ **Next ceremony:** **Sep 19–20, 2026**: `$weekly-review`, the Sprint 06 midpoint.
+The next `$sprint-plan` is Sep 26–27. Sprint 05's boundary review is recorded in
+[[2026-09-12 Sprint 05 Retrospective]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
 
@@ -128,7 +126,7 @@ Build order from here: the [[Roadmap]] ladder — **chain M0–M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005–008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop — [[2026-08 Sprint 02 — Base Foundation]] | ✅ goal met (Jul 30); sprint closed Aug 2 |
-| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → 🔨 **M3 + M4 together** in [[2026-08 Sprint 05 — M3 Project & M4 Window]]; M5 needs the task-graph ADR |
+| 5 | **Climb the ladder** | Chain M1–M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes — [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete**; 🔨 **M5** in [[2026-09 Sprint 06 — Scene & Scheduling]]; design gates first |
 
 _Tasks → [[Sprint Board]]._
 
@@ -147,11 +145,11 @@ Recently locked — full set in [[ADR Index]]:
 - [x] **Threaded time model** ([[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]]),
   **Accepted Sep 10** after S5-T14 review. Fixed simulation ticks, render-owned interpolation,
   one shared Clock, copied timing metrics, event-driven main thread and separate Tracy frame streams.
-  Design notes now describe this target; implementation and validation remain pending.
+  Implemented and validated in #81 (`7d2546fc`); remaining hub drift is recorded in the Sep 12 retrospective.
 - [x] **Main/simulation split** ([[ADR-018 — Main and simulation threads, render-owned GL]]),
   **Accepted Sep 7**. JobSystem also supplies dedicated-thread creation and registration;
   subsystem owners retain handles and stop/join control. S5-D3 closed Sep 8 with the accepted
-  mechanism and seven sized cards. The accepted topology is not implemented yet.
+  mechanism and seven sized cards. The topology and integration proof shipped in #81 (`7d2546fc`).
 - [x] **Profiler** ([[ADR-013 — Profiler (Tracy-backed instrumentation)]]) + **Events/`StringId`** ([[ADR-014 — Events (buffered streams) & StringId]]) — **both Accepted 2026-08-02**, both M1 gates closed, and M2's threading ADR is unblocked
 - [x] **Threading** ([[ADR-015 — Threading (sim on main, render thread owns GL)]]) + **Serialization** ([[ADR-016 — Serialization (binary primitives & describe-once seam)]]) — **both Accepted 2026-08-22**, both M2 gates closed on day 1. ADR-015 §3 amended 2026-08-24: the pool ships four workers, not one
 - [x] **Bootstrapping** ([[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]]) —
@@ -160,9 +158,7 @@ Recently locked — full set in [[ADR Index]]:
   reads no manifest; `app` owns the lifecycle through an `App` base class every executable
   subclasses. **Partially supersedes [[ADR-006 — v2 core architecture & module layout]] §1**'s
   "editor out of the frame loop" clause. It cut **Story F** into Sprint 05 and rewrote three
-  Story B cards, which is where the 🟠 overload came from. **Two clauses of § *Decision* 3 did
-  not ship as written:** all four virtuals are pure, and `main()` stayed per-exe behind a
-  `runApp<>()` template. Both are logged and neither is amended yet ([[Backlog]])
+  Story B cards, which is where the 🟠 overload came from. The original implementation diverged on optional hooks and the entry point. #81 supplies optional hooks; the per-executable `main()` / `runApp<>()` wording still needs reconciliation ([[Backlog]]).
 - [x] **Autonomous lane:** S5-P1, P2 and P3 are closed. The first code PR (#66) merged
   Sep 3; [[Sprint Board]] records Linux validation and the one-PR-per-day observation.
   [[Autonomous Lane — Design]] now requires completed cards to move to Done and human
@@ -176,14 +172,12 @@ Recently locked — full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (2026-09-05)
+## Health check (2026-09-12)
 
-- **Delivery:** M3's editor half and both design gates are complete. S5-B1 closed Sep 5 (#73);
-  M4 is a stretch. The checkpoint's automatic cut does not trigger because F and B closed.
-- **Build:** unverified this session. Local history records 11 merges Aug 31–Sep 4;
-  no builds, tests, demos or live CI checks ran. Prior validation is recorded on [[Sprint Board]].
-- **Sustainability:** Miguel reports good energy and room for more programming. Recalibrate
-  light/moderate estimates in both directions before increasing scope; S5-T2 and S5-T1 are
-  the concrete examples. Specific rest days and job/karting balance were not reported.
-- **Artifact health:** needs reconciliation. [[2026-09-05 Weekly Review]] records the
-  confirmed differences and check limits; the reconciliation stamp has not advanced.
+- **Delivery:** Sprint 05 closed all 25 cards; no unfinished card carries. Sprint 06 opens
+  M5, with implementation stories held behind explicit design gates.
+- **Evidence:** fetched history confirms `7d2546fc`. Prior test/CI and native demo evidence
+  is in [[2026-09-11 Threaded Engine Validation]]; not rerun today.
+- **Sustainability:** Miguel reports good energy and wants the current pace. Use the normal
+  rhythm; the upper estimate may roll over. Specific unavailable dates were not supplied.
+- **Artifact health:** reconciliation remains partial. See the retrospective and S6-P1/P2.
