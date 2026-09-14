@@ -48,21 +48,28 @@ implementation. This story supplies the first consumer for its storage primitive
 Built-in hierarchy and transform are included per the accepted design; the D1 session
 confirmed every entity carries both components.
 
-- [ ] **S6-T1** · Entity handles and ComponentRegistry · P1 · 🟠 Moderate · 3–5h
+- [x] **S6-T1** · Entity handles and ComponentRegistry · P1 · 🟠 Moderate · 3–5h —
+  **done 2026-09-14 · `9fb6aeaf` · PR #82.**
   - Generational slot table: u32 index + u32 generation
   - Null sentinel at `UINT32_MAX`, exhaustion via `TE_CHECK` + null return
   - Slot reuse with advanced generation, retirement on wrap
   - ComponentRegistry: stable tag to StringId, dense u16 ID, collision rejection
   - Registration closes before first tick (startup-only freeze)
   - Tests: create/destroy/reuse handles, generation advancement, null checks, duplicate tag rejection, dense-ID exhaustion
+  - Close note: slot exhaustion is fatal and cannot return null under ADR-011. The freeze
+    mechanism landed here; composition-root ownership and the pre-first-tick call remain S6-T9.
 
-- [ ] **S6-T2** · Archetype storage and transitions · P1 · 🟢 Deep · 4–6h (depends on T1)
+- [x] **S6-T2** · Archetype storage and transitions · P1 · 🟢 Deep · 4–6h (depends on T1) —
+  **done 2026-09-14 · `4bcc71d0` · PR #84.**
   - Typed vector columns behind `IComponentStorage`, type-erased factory
   - Archetype with parallel entity/column rows, swap removal
   - Sorted-vector signatures with full equality check (not hash-only)
   - Cached add/remove transition edges with shared-column mappings
   - Enforce default-constructible + copyable + nothrow-movable at registration
   - Tests: add/remove components, swap removal repairs locations, signature collisions, row-count invariant across transitions
+  - Close note: review added transactional rollback for throwing default construction and
+    shared-column copies before the source row is changed. Dedicated archetype tests also
+    verify canonical reuse and entity/column alignment across mixed transitions.
 
 - [ ] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h (depends on T2)
   - Query describes required component types and read/write access modes
@@ -139,6 +146,7 @@ small dependency chain. Hierarchy and transform are in Story B (S6-T4/T5). Input
 action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
 
 - [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h (depends on T5 + T8)
+  - Freeze ComponentRegistry and Schedule after startup registration and before the first tick
   - Build the graph once at simulation start from registered systems
   - Each fixed tick: executor walks levels, then runs barrier
   - Register Movement, Gravity, Propagation and Collision as test systems with real access
@@ -163,7 +171,8 @@ action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
 
 ## Definition of Done
 
-- [ ] Scene reuse is grounded in inspected v1 code and an agreed design note.
+- [x] Scene reuse is grounded in inspected v1 code and an agreed design note. — S6-D1;
+  first implementation merged 2026-09-14 as `9fb6aeaf`, PR #82.
 - [x] The task-graph ADR is Accepted and its design hub reflects fixed-only simulation. — ADR-020 Accepted Sep 12.
 - [ ] A small scene runs through the declared dependency graph on the simulation thread
   and produces the expected state headlessly over repeated ticks.

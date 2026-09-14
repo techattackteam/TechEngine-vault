@@ -2,7 +2,7 @@
 
 **Module:** core
 **Kind:** system
-**Status:** draft — S6-D1, 2026-09-12; reuse boundary and most mechanics agreed, D2 barriers remain open
+**Status:** implementing — S6-T1 identity and S6-T2 archetype storage merged 2026-09-14
 **ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
@@ -12,19 +12,21 @@ Scene owns live entities, their built-in parent/child hierarchy and component va
 fixed-tick simulation, using v1's archetype storage and cached transitions as the starting
 point. It must run headlessly without a renderer, editor, resource system or system locator.
 
-This note is S6-D1's deliverable. No Scene/ECS implementation exists in the inspected v2
-tree. The sections marked proposed describe the intended port, not shipped behavior or
-newly accepted decisions. Scheduling and barrier placement belong to S6-D2.
+This note began as S6-D1's deliverable. S6-T1 shipped the entity-handle and component-
+identity foundation; S6-T2 shipped typed columns, archetypes and cached transitions.
+Sections marked proposed still describe intended query and Scene integration work.
+Scheduling and barrier placement belong to S6-D2.
 
 ## Evidence and freshness
 
-Inspected v1 at `v1-reference` (`00e63207d24518b4e79a0d95ad2dd983e901aa13`) and v2 at
-`7d2546fc1eccf13d2c9806664cd8d3f3419d5068`. All v1 code citations below refer to that tag,
-not files in the current checkout. Read them with `git show v1-reference:<path>`.
+Inspected v1 at `v1-reference` (`00e63207d24518b4e79a0d95ad2dd983e901aa13`) and the
+S6-T2 merge at `4bcc71d0103abad323968394a69432679311059c`. All v1 code citations below
+refer to that tag, not files in the current checkout. Read them with
+`git show v1-reference:<path>`.
 
-The Dashboard reconciliation stamp is still `01ed7a30`; local `origin/master` contains
-later commits. This was a targeted source inspection, not a full reconciliation or a
-fresh remote fetch. No build, tests or runtime experiments ran.
+The Dashboard reconciliation stamp is still `01ed7a30`; `origin/master` contains later
+commits. This was a targeted S6-T2 inspection, not a full reconciliation. PR #84 merged
+after its listed Windows, Linux, sanitizer, format and diff-coverage checks passed.
 
 ## Decided
 
@@ -104,6 +106,10 @@ the data allowed by D2's execution contract. A mutex inside Query cannot enforce
 
 ## Local entity handles — agreed Sep 12
 
+S6-T1 shipped the value handle and generation-preserving slot allocator. S6-T2 added slot
+locations and repairs them after component transitions and swap removal. `ArchetypeStorage`
+owns this machinery until the later Story B work supplies the Scene-facing integration.
+
 Each occupied slot stores generation and location `{archetype, row}`. Every public entity
 operation validates index bounds, occupancy and generation before reading that location.
 Destroy removes the row, repairs the swapped entity's location and invalidates the slot.
@@ -113,7 +119,8 @@ Clear must invalidate existing handles without resetting generations to their in
 values. Retain the slot table and advance occupied generations while
 freeing rows. Retire a slot when its generation would wrap, rather than reviving an ancient
 handle. The null entity uses index `UINT32_MAX` as a reserved sentinel; valid indices are
-0 to max-1. Slot exhaustion reports via `TE_CHECK` and returns a null entity.
+0 to max-1. Slot exhaustion is a fatal `TE_CHECK`; under ADR-011's Sep 1 amendment it does
+not return to produce a null handle.
 
 Handles refer to entities in the single live Scene. Replacing its loaded contents must
 invalidate old handles, including editor selections and queued commands targeting the old
@@ -212,13 +219,20 @@ Hierarchy operations are available to custom systems through the same deferred s
 command contract. Internal hierarchy links must not be freely writable in a way that bypasses
 Scene invariants; D2 must account for hierarchy access and transform propagation dependencies.
 
-Registration closes before the first tick (startup-only). There is no runtime registration
-and no engine DLL hot-reload. Editor script reload tears down Scene and registry, then
-re-registers all types from scratch. Archetype signatures use sorted vectors of dense IDs.
+Registration closes before the first tick (startup-only). S6-T1 supplies the registry's
+freeze mechanism; S6-T9 owns the composition-root call that closes registration before
+execution. There is no runtime registration and no engine DLL hot-reload. Editor script
+reload tears down Scene and registry, then re-registers all types from scratch. Archetype
+signatures use sorted vectors of dense IDs.
 Whatever module supplies callbacks must remain loaded until its systems, component values
 and cached metadata have been destroyed. No plugin loader is implied by this contract.
 
-## Registration and serialization seam — deferred to resource system
+## Registration and serialization seam — identity and storage factory shipped
+
+S6-T1 shipped stable tag hashing, registration-order dense IDs, stable/dense lookup and
+the startup freeze mechanism. S6-T2 added a type-erased storage factory to each registered
+record. Duplicate tags, conflicting tags for one C++ type and dense-ID exhaustion fail
+before publishing a record. Disk and replication traits remain resource-system work.
 
 Each registered component supplies its stable tag, stable ID, local dense ID, storage
 factory, disk eligibility and replication eligibility. Serializable types bind adapters
@@ -242,14 +256,20 @@ load. Wire references similarly require network identity. This is a schema gate:
 accepted raw-byte path does not itself supply reference remapping or portable struct layout.
 No Scene file format, loader or network encoder is included in the first storage port.
 
-## Storage and transitions — proposed mechanics
+## Storage and transitions — shipped Sep 14
 
-Port v1's storage and transition mechanics as-is. One entity row and one value in every
-column at the same index; typed construction, relocation and destruction; the cached
-add/remove transition sequence. Components must be default-constructible, copyable and
-nothrow-movable. Swap-removal moves the tail row into the vacated slot; nothrow-move
-prevents partial failures that would break the equal-row-count invariant. Move-only
-or throwing components are not supported in this first port.
+S6-T2 retained v1's vector-backed columns, parallel entity/value rows and cached add/remove
+edges. `ArchetypeStorage` canonicalizes sorted, unique dense-ID signatures and compares the
+full signature inside each hash bucket. Archetypes remain allocated during ordinary execution,
+so cached archetype and column pointers survive owner-vector growth. Swap-removal moves the
+tail entity and every column into the vacated row, then repairs the moved entity's slot.
+
+The `ComponentValue` constraint requires default construction, copying and nothrow move
+construction/assignment at compile time. Default construction and copying may still throw.
+Review therefore changed transitions to build the destination row transactionally: a partial
+append or shared-column copy removes the destination row before rethrowing, and the source
+row is mutated only after destination preparation succeeds. Move-only or throwing-move
+components remain unsupported in this first port.
 
 ## Queries and invalidation — proposed mechanics
 
@@ -306,6 +326,8 @@ Each includes focused tests. Cards are cut on the sprint note.
   handling, dense-ID exhaustion and registry stability across replacement of Scene contents.
 - Exercise canonical signatures and hash collisions. Create empty entities, add/remove
   components repeatedly and remove first, middle and last rows; verify every location/value.
+  S6-T2 covers these cases plus transition reuse, mixed migrations and rollback after
+  throwing default construction or shared-column copy in PR #84 (`4bcc71d0`).
 - Prove parent/child traversal, reparenting, cycle rejection, subtree destruction and deep-tree
   handling. Exercise entity slot reuse and archetype moves while entities remain linked.
   Verify preserve-local and preserve-world reparenting results and child reordering.
@@ -319,8 +341,9 @@ Each includes focused tests. Cards are cut on the sprint note.
 - Use a project-owned component and system through only public engine APIs, without engine
   source edits. Exercise mixed built-in/custom queries, declared conflicts and custom hierarchy
   commands. Reference remapping for subtree duplication is deferred to the resource system.
-- Count construction/destruction with a non-trivial component. Verify that registration
-  rejects types that are not default-constructible, copyable or nothrow-movable.
+- Count construction/destruction with a non-trivial component. S6-T2 covers balanced
+  lifetimes and compile-time rejection of types that are not default-constructible,
+  copyable or nothrow-movable.
 - Query multiple archetypes with read/write access; create a new matching archetype, grow
   existing columns and clear the Scene. Prove fresh matches and prohibit structural mutation
   during iteration. Check the documented empty-query and Entity-only behavior once selected.
