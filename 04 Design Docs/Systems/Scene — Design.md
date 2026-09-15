@@ -2,7 +2,7 @@
 
 **Module:** core
 **Kind:** system
-**Status:** implementing — S6-T1 identity and S6-T2 archetype storage merged 2026-09-14
+**Status:** implementing — S6-T1 identity, S6-T2 storage and S6-T3 queries merged by 2026-09-15
 **ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
@@ -13,19 +13,20 @@ fixed-tick simulation, using v1's archetype storage and cached transitions as th
 point. It must run headlessly without a renderer, editor, resource system or system locator.
 
 This note began as S6-D1's deliverable. S6-T1 shipped the entity-handle and component-
-identity foundation; S6-T2 shipped typed columns, archetypes and cached transitions.
-Sections marked proposed still describe intended query and Scene integration work.
-Scheduling and barrier placement belong to S6-D2.
+identity foundation; S6-T2 shipped typed columns, archetypes and cached transitions;
+S6-T3 shipped query matching and iteration. Remaining proposed sections describe Scene
+integration work. Scheduling and barrier placement belong to S6-D2.
 
 ## Evidence and freshness
 
 Inspected v1 at `v1-reference` (`00e63207d24518b4e79a0d95ad2dd983e901aa13`) and the
-S6-T2 merge at `4bcc71d0103abad323968394a69432679311059c`. All v1 code citations below
-refer to that tag, not files in the current checkout. Read them with
+S6-T2 and S6-T3 merges at `4bcc71d0103abad323968394a69432679311059c` and
+`150f8f0d50c4dd498cb0b6a3d0baeae83b9dd496`. All v1 code citations below refer to
+that tag, not files in the current checkout. Read them with
 `git show v1-reference:<path>`.
 
 The Dashboard reconciliation stamp is still `01ed7a30`; `origin/master` contains later
-commits. This was a targeted S6-T2 inspection, not a full reconciliation. PR #84 merged
+commits. This was a targeted S6-T3 inspection, not a full reconciliation. PR #85 merged
 after its listed Windows, Linux, sanitizer, format and diff-coverage checks passed.
 
 ## Decided
@@ -271,21 +272,25 @@ append or shared-column copy removes the destination row before rethrowing, and 
 row is mutated only after destination preparation succeeds. Move-only or throwing-move
 components remain unsupported in this first port.
 
-## Queries and invalidation — proposed mechanics
+## Queries and invalidation — shipped Sep 15
 
-Keep query matching separate from iteration. A query describes required component types
-and access modes; iteration obtains fresh typed spans for each matching archetype. Reads
-return const values/spans, writes return mutable values/spans. Entity IDs are read-only.
-The same access description must support D2's debug check of actual versus declared access.
+S6-T3 added `Query<Write<...>, Read<...>>`. Matching is separate from iteration: the
+query caches archetype and column owners, then obtains fresh typed spans for each pass.
+Callbacks receive Entity by value first, mutable references for writes and const references
+for reads. Component queries require at least one access type and reject duplicates across
+the read/write packs. Explicit `eachEntity` visits every live entity, including entities in
+the empty archetype, without inventing an empty component-access declaration.
 
-Cache matching archetypes with a Scene archetype revision counter. New archetypes bump the
-revision; queries refresh their match cache before the next iteration when stale. Adding
-rows to an existing archetype does not require rematching, but spans must be reacquired
-fresh each iteration. Clear invalidates all cached matches.
+`ArchetypeStorage` owns an archetype revision. New archetypes and clear bump it; retained
+queries refresh matches when stale. Growing an existing archetype needs no rematch because
+the spans are reacquired. Retained queries point to their storage owner, so storage is
+non-copyable and non-movable and must outlive them.
 
-Structural mutation during iteration is prohibited. D2 chooses how systems enqueue it and
-where it becomes visible. Serial execution does not relax this rule. Immediate mutation is
-only a setup/stopped-execution operation or an internal barrier operation.
+Structural mutation is prohibited while any query or `eachEntity` callback is active.
+Iteration depth is atomic so disjoint queries may run concurrently; the task graph remains
+responsible for preventing conflicting component access. D2 chooses how systems enqueue
+structural changes and where they become visible. Immediate mutation is only a setup,
+stopped-execution or internal barrier operation.
 
 ## Scheduling and presentation seams
 
@@ -344,9 +349,10 @@ Each includes focused tests. Cards are cut on the sprint note.
 - Count construction/destruction with a non-trivial component. S6-T2 covers balanced
   lifetimes and compile-time rejection of types that are not default-constructible,
   copyable or nothrow-movable.
-- Query multiple archetypes with read/write access; create a new matching archetype, grow
-  existing columns and clear the Scene. Prove fresh matches and prohibit structural mutation
-  during iteration. Check the documented empty-query and Entity-only behavior once selected.
+- S6-T3 covers multi-archetype read/write access, new matching archetypes, existing-column
+  growth, clear invalidation, structural-mutation rejection, callback unwinding and concurrent
+  disjoint queries in PR #85 (`150f8f0d`). It also covers explicit `eachEntity`; empty
+  component queries are rejected.
 - Serialization round-trip testing is deferred to the resource system.
 - With D2, prove deferred mutation visibility, declared-access checks and column change ticks
   in a repeated headless fixed-tick scenario. Snapshot publication must own its values.

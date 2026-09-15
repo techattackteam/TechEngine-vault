@@ -15,7 +15,6 @@ kanban-plugin: board
 
 ## Story B — Port Scene identity, storage, queries and hierarchy
 
-- [ ] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h
 - [ ] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h
 - [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h · ⛔ T4
 
@@ -52,6 +51,13 @@ kanban-plugin: board
 
 ## ✅ Done
 
+- [x] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h —
+	  Merged as PR #85 (`150f8f0d`). Queries cache matching archetypes by revision
+	  while reacquiring current column spans for every iteration. Read/write access,
+	  explicit `eachEntity` traversal, clear invalidation and structural-mutation rejection
+	  are covered by focused tests. Retained queries keep a storage pointer, so storage is
+	  non-movable; an atomic iteration depth also preserves concurrent disjoint-query use
+	  for the future task-graph executor. Story B remains open for hierarchy and transforms.
 - [x] **S6-T2** · Archetype storage and transitions · P1 · 🟢 Deep · 4–6h —
 	  Merged as PR #84 (`4bcc71d0`). Review exposed that default construction and
 	  shared-column copying may throw even though committed row relocation is nothrow;

@@ -71,12 +71,17 @@ confirmed every entity carries both components.
     shared-column copies before the source row is changed. Dedicated archetype tests also
     verify canonical reuse and entity/column alignment across mixed transitions.
 
-- [ ] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h (depends on T2)
+- [x] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h (depends on T2) —
+  **done 2026-09-15 · `150f8f0d` · PR #85.**
   - Query describes required component types and read/write access modes
   - Revision-based match caching: refresh on new archetypes, fresh spans each iteration
   - Const spans for reads, mutable spans for writes, read-only entity IDs
   - Structural mutation during iteration is prohibited
   - Tests: multi-archetype matching, stale revision refresh, grow existing archetype, clear invalidation, mutation-during-iteration rejection
+  - Close note: Entity-only traversal uses explicit `eachEntity`; component queries reject
+    empty access packs. Storage is non-movable while retained queries point into it, and
+    atomic iteration depth supports concurrent disjoint queries while the task graph owns
+    conflict prevention.
 
 - [ ] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h (depends on T1 + T2)
   - Hierarchy component on every entity: parent, first-child, sibling links
