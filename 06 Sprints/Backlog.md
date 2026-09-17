@@ -1,17 +1,20 @@
 # 🗃️ Backlog
 
-A parking lot for ideas. **One bullet each, and nothing more.** It is not a design doc, and it
-is not a planning source. Groom it at `/sprint-plan`.
+A parking lot for ideas, observed problems and future work. **One bullet per item.**
+It supplies candidates at `/sprint-plan`, not design decisions or implementation specs.
 
-- **Each entry is one bullet, a `#prio/…` and a `Trigger:`.** An entry that grows a decision, a
-  rationale or a `How:` has outgrown this file. It belongs in an ADR or a design note
-  ([[Planning Workflow — Artifact Gate]]).
-- **Prio means *want*. `Trigger:` means *readiness*.** They are orthogonal, and both must hold.
-  A `#prio/xhigh` whose trigger has not fired is **not** pullable, so draining top-down means
-  top-down *among the entries whose trigger has fired*.
+- **Each triaged entry is one bullet with `#prio/…`; `Trigger:` is optional.** Use a
+  trigger only when a concrete event would make the work timely. An entry that grows
+  a decision, a rationale or a `How:` has outgrown this file. Move that content to an
+  ADR or a design note ([[Planning Workflow — Artifact Gate]]).
+- **Prio means *want*; a trigger marks a reason to act now.** At sprint planning, turn
+  every still-valid fired entry into a task after checking its evidence. Then review
+  the rest by priority with Miguel, choose one to three to add to the sprint, remove
+  rejected or obsolete entries, and keep useful unselected items with an updated priority.
+  An item does not need a fired trigger to be chosen.
   This is not the board's `P1/P2/P3`. That scores value against one sprint's goal
   ([[Planning Workflow — Artifact Gate]] → *Priority + weight*). This scores whether a thing
-  has value at all.
+  has value in the backlog.
 - **Five levels, re-bucketed at `/sprint-plan`:** `#prio/xhigh` › `#prio/high` ›
   `#prio/medium` › `#prio/low` › `#prio/xlow`. Filter with `tag:#prio/high` in search, or use
   the tag pane. A bucket that nobody ever re-scores downward is a broken bucket, so that pass
@@ -414,4 +417,4 @@ groups are kept, because they show where future work will land.
 
 ## Ideas (unsorted)
 
-- _drop raw ideas here; untagged until triage gives them a `#prio/…` and a `Trigger:`_
+- _drop raw ideas here; untagged until triage gives them a `#prio/…` and, when useful, a `Trigger:`_

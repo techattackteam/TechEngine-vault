@@ -63,12 +63,9 @@ Choose the model and reasoning level in Codex. The project leaves those settings
 unset, so your selection and personal defaults apply. Specialists inherit them
 and retain their read-only default.
 
-The project `.codex/config.toml` requests a 1,000,000-token context window through
-`model_context_window`. This does not increase a model's actual capacity. On
-2026-09-05, the local Codex catalog listed Astra's maximum as 872,000 tokens;
-the full requested window has not been verified in a running task. When switching
-to a smaller-context model, lower or remove this override to match its capacity.
-Project configuration applies when the project is trusted.
+The project leaves the context window unset. Its capacity follows the selected
+model rather than a hard-coded project value. Project configuration applies when
+the project is trusted.
 See [OpenAI configuration docs](https://learn.chatgpt.com/docs/config-file/config-basic)
 and [custom agent docs](https://learn.chatgpt.com/docs/agent-configuration/subagents).
 
@@ -106,7 +103,9 @@ after-job evening; protect light days and rest.
 - Run `$weekly-review` on the other weekend.
 - Source tasks from design decisions that are unbuilt and have a consumer now.
 - Keep work below an unresolved heavy artifact roughly sized until it is decided.
-- Park unrelated ideas in [[Backlog]], with a trigger and a durable artifact link.
+- Park unrelated ideas and observed CI problems in [[Backlog]] with a priority.
+  Add a trigger or artifact link when one applies. At sprint planning, task valid
+  fired entries and choose one to three more through priority review with Miguel.
 
 ## Specialist agents
 

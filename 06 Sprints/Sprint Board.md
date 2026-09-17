@@ -15,8 +15,7 @@ kanban-plugin: board
 
 ## Story B — Port Scene identity, storage, queries and hierarchy
 
-- [ ] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h
-- [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h · ⛔ T4
+- [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h
 
 
 ## Story C — Settle system dependencies and execution
@@ -44,13 +43,20 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
-
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done
 
+- [x] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h —
+	  Merged as PR #86 (`5a687af1`). Entity creation now starts in the required
+	  Hierarchy archetype, superseding the empty-entity fixture assumption.
+	  Built-in registration remains in storage until S6-T9 moves it to the app
+	  composition root. This unblocks S6-T5; Story B still awaits Transform.
+	  **Retro:** the local 100% diff-coverage report counted only six changed
+	  lines while Scene files were untracked. CI exposed missing clear and
+	  stale-handle coverage, added before merge.
 - [x] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h —
 	  Merged as PR #85 (`150f8f0d`). Queries cache matching archetypes by revision
 	  while reacquiring current column spans for every iteration. Read/write access,

@@ -19,7 +19,7 @@ So pick deliberately, with both readers in mind.
 
 ## Where plans come from
 
-**From design notes. Not from ADRs, and not from the [[Backlog]].**
+**Start from design notes; refine the [[Backlog]] after the other sources.**
 
 The note is the entry point at planning. An ADR is opened only when a decision's *rationale*
 carries the argument (CLAUDE.md rule 2).
@@ -32,7 +32,7 @@ and a partially superseded clause is not amended at all. So a § can be dead, or
 current value sitting in a header entry above it. The design note's *Decided* rows are the
 reconciled view. Plan straight off the ADR and you can size a card against either.
 
-Two sources, in priority order.
+Two design-derived sources, in priority order.
 
 | # | Source | Produces |
 |---|---|---|
@@ -49,9 +49,19 @@ consumes it. That is the same pressure test Sprint 02's Definition of Done used.
 An open question with nothing waiting on it earns **no card**. Minting an ADR nobody is
 building against is the reflex this stops.
 
-**[[Backlog]] is read last, and only to ask one question: has a trigger fired?** It is a
-parking lot, not a menu. It holds wants and never decisions, so nothing can be planned from
-it.
+**Read [[Backlog]] last when gathering candidates.** Validate each fired trigger
+and mark every still-relevant entry for a sprint task. Rank the other entries by
+priority. After setting the sprint goal, turn the fired entries into tasks and review
+the rest with Miguel; choose one to three for the sprint, remove rejected or obsolete
+entries, and keep useful ones with an updated priority. If the artifact gate finds
+an open decision, the first task is Design and the implementation remains unsized.
+A missing or unfired trigger does not block a discretionary pick. The backlog holds
+wants and observations, not settled decisions or a build specification. Check its
+claims against the current design and code before writing cards.
+
+Fit the selected tasks to the sprint's actual capacity. If fired entries exceed it,
+show what would be displaced and resolve the scope with Miguel before finalizing;
+do not silently skip fired entries or overfill the sprint.
 
 ### Coverage check: an ADR with no design note
 
@@ -300,8 +310,9 @@ weekday. Cost table in [[Autonomous Lane — Design]] § *Cost model*.
 
 ## Lean model this collapses to
 
-1. **Source the work**, from a design note's *Decided* rows against the code (see *Where plans
-   come from*). Read the [[Backlog]] last, and only for fired triggers.
+1. **Source the work** from a design note's *Decided* rows against the code (see *Where plans
+   come from*). Read [[Backlog]] last: task valid fired entries, then refine the rest by
+   priority and choose one to three with Miguel.
 2. **One decision artifact**, where one is owed. An ADR *or* a design note, rarely both, per
    the gate above. Often neither. A light one is drafted in planning. A heavy one becomes a
    **Design** task, and the breakdown stops there.
@@ -320,12 +331,13 @@ The other commands are **triggered out of it**. They are not run in sequence aft
 ```mermaid
 flowchart TD
     A["/sprint-plan · boundary weekend"] --> B["Gather: roadmap · quarter · sprint ·<br/>design notes' Decided rows vs the code"]
-    B --> B2["Backlog last: fired triggers only"]
+    B --> B2["Backlog last: validate fired entries;<br/>rank the rest by priority"]
     B2 --> C{"Sprint ending?"}
     C -->|yes| D["Retro first"]
     C -->|no| E["Propose ONE headline goal"]
     D --> E
-    E --> E2{"System in play<br/>has a design note?"}
+    E --> E1["Refine backlog: task valid fired entries;<br/>choose 1–3 more with Miguel"]
+    E1 --> E2{"System in play<br/>has a design note?"}
     E2 -->|no| E3["Coverage gap: say it ·<br/>Design task THIS sprint"]
     E2 -->|yes| F["Co-create Epic → Story → Task"]
     E3 --> F

@@ -24,8 +24,9 @@ Omit this section when nothing changed. Do not list every file touched.
 
 ## Findings
 
-Link relevant [[Backlog]] entries created during the run, with their priority and
-trigger. Omit this section when there were no findings outside the card's work.
+Link relevant [[Backlog]] entries created during the run, with their priority.
+Include a trigger when a concrete event matters. Omit this section when there
+were no findings outside the card's work.
 
 ## Unverified
 

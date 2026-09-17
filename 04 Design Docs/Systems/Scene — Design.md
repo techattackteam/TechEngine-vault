@@ -2,7 +2,7 @@
 
 **Module:** core
 **Kind:** system
-**Status:** implementing — S6-T1 identity, S6-T2 storage and S6-T3 queries merged by 2026-09-15
+**Status:** implementing — S6-T1–T4 merged by 2026-09-17; Transform and integration pending
 **ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
@@ -14,8 +14,8 @@ point. It must run headlessly without a renderer, editor, resource system or sys
 
 This note began as S6-D1's deliverable. S6-T1 shipped the entity-handle and component-
 identity foundation; S6-T2 shipped typed columns, archetypes and cached transitions;
-S6-T3 shipped query matching and iteration. Remaining proposed sections describe Scene
-integration work. Scheduling and barrier placement belong to S6-D2.
+S6-T3 shipped query matching and iteration; S6-T4 added the built-in hierarchy. Remaining
+proposed sections describe Scene integration work. Scheduling and barrier placement belong to S6-D2.
 
 ## Evidence and freshness
 
@@ -26,8 +26,8 @@ that tag, not files in the current checkout. Read them with
 `git show v1-reference:<path>`.
 
 The Dashboard reconciliation stamp is still `01ed7a30`; `origin/master` contains later
-commits. This was a targeted S6-T3 inspection, not a full reconciliation. PR #85 merged
-after its listed Windows, Linux, sanitizer, format and diff-coverage checks passed.
+commits. This was a targeted S6-T4 inspection, not a full reconciliation. PR #86 merged
+as `5a687af1` after its Windows, Linux, sanitizer, format and diff-coverage checks passed.
 
 ## Decided
 
@@ -76,9 +76,9 @@ mean copy a whole file unchanged. “Drop” means exclude it from this first Sc
 | Retained query matches                                    | Adapt                                         | `engine/core/include/TechEngine/core/components/ArchetypesManager.hpp:126`. Matches are captured only at query creation; new archetypes are missed and clear destroys their targets.               |
 | Query-owned threads and mutex callback                    | Drop                                          | `engine/core/include/TechEngine/core/components/Query.hpp:90`. Work execution belongs to the executor/JobSystem; this also removes division by a possibly zero hardware-concurrency result.        |
 | Scene's SystemsRegistry dependency and runSystem wrappers | Drop                                          | `engine/core/include/TechEngine/core/scene/Scene.hpp:20` and `:61`. Scene stores data; the schedule runs systems.                                                                                  |
-| Built-in hierarchy and creation defaults | Adapt | `engine/core/src/scene/Scene.cpp:22`. Preserve engine-provided hierarchy. Every entity carries Hierarchy and Transform; UUID remains opt-in under ADR-007. |
-| Parent/child operations and transform hierarchy | Adapt | `engine/core/src/scene/Scene.cpp:168`. Keep these engine features, replacing raw IDs and defining cycle prevention, destruction and transform behavior. |
-| Recursive duplication | Design with reference remapping | `engine/core/src/scene/Scene.cpp:36`. Copying values alone cannot correctly clone references in arbitrary project components. |
+| Built-in hierarchy and creation defaults                  | Adapt                                         | `engine/core/src/scene/Scene.cpp:22`. Preserve engine-provided hierarchy. Every entity carries Hierarchy and Transform; UUID remains opt-in under ADR-007.                                         |
+| Parent/child operations and transform hierarchy           | Adapt                                         | `engine/core/src/scene/Scene.cpp:168`. Keep these engine features, replacing raw IDs and defining cycle prevention, destruction and transform behavior.                                            |
+| Recursive duplication                                     | Design with reference remapping               | `engine/core/src/scene/Scene.cpp:36`. Copying values alone cannot correctly clone references in arbitrary project components.                                                                      |
 | Hardcoded component serialization dispatch                | Drop                                          | `engine/core/src/resources/scene/SceneResource.cpp`, serialize/deserialize. It writes runtime entity/type IDs and branches on each built-in type. Use the accepted registration seam instead.      |
 | Immediate structural event dispatch                       | Adapt under D2                                | `engine/core/include/TechEngine/core/scene/Scene.hpp:35`. v1 dispatches even when the manager reports a failed add/remove. Publish only successful committed changes.                              |
 
@@ -96,6 +96,9 @@ Scene owns its entity slots, archetypes, columns and transition caches. Keep v1'
 `vector<unique_ptr<Archetype>>` ownership shape: growing the owner vector does not move
 the archetypes. Each archetype owns its type-erased columns. Edges borrow storage objects,
 never pointers into a component vector's current allocation.
+
+S6-T4 keeps `ArchetypeStorage` under core's private source tree. Scene owns it through
+a pointer so the public Scene header does not include a private storage header.
 
 Retain empty archetypes during ordinary execution so cached edge targets remain valid.
 Clear/destruction discards all edges and query matches before reclaiming archetypes.
@@ -159,6 +162,10 @@ Subtree duplication needs an old-to-new entity map. Internal references point to
 entities; external references need an explicit preserve/clear policy. Custom components must
 participate through registered reference handling, not a switch over engine component names.
 The same requirement informs future serialization remapping, without fixing a file format now.
+
+S6-T4 creates entities directly in the `{Hierarchy}` archetype. The storage constructor
+registers Hierarchy until S6-T9 moves built-in registration to the app composition root.
+S6-T5 must add Transform to the starting archetype to complete the two-component contract.
 
 ## Transform propagation — agreed Sep 12
 
@@ -278,8 +285,8 @@ S6-T3 added `Query<Write<...>, Read<...>>`. Matching is separate from iteration:
 query caches archetype and column owners, then obtains fresh typed spans for each pass.
 Callbacks receive Entity by value first, mutable references for writes and const references
 for reads. Component queries require at least one access type and reject duplicates across
-the read/write packs. Explicit `eachEntity` visits every live entity, including entities in
-the empty archetype, without inventing an empty component-access declaration.
+the read/write packs. Explicit `eachEntity` visits every live entity, including entities with
+only built-in components, without inventing an empty component-access declaration.
 
 `ArchetypeStorage` owns an archetype revision. New archetypes and clear bump it; retained
 queries refresh matches when stale. Growing an existing archetype needs no rematch because
@@ -329,13 +336,15 @@ Each includes focused tests. Cards are cut on the sprint note.
   generation exhaustion through a controlled test seam and reject handles from prior loads.
 - Register types in different orders and compare stable identities. Check duplicate/conflict
   handling, dense-ID exhaustion and registry stability across replacement of Scene contents.
-- Exercise canonical signatures and hash collisions. Create empty entities, add/remove
-  components repeatedly and remove first, middle and last rows; verify every location/value.
+- Exercise canonical signatures and hash collisions. Create entities with their required
+  built-in components, add/remove optional components repeatedly and remove first, middle
+  and last rows; verify every location/value.
   S6-T2 covers these cases plus transition reuse, mixed migrations and rollback after
   throwing default construction or shared-column copy in PR #84 (`4bcc71d0`).
-- Prove parent/child traversal, reparenting, cycle rejection, subtree destruction and deep-tree
-  handling. Exercise entity slot reuse and archetype moves while entities remain linked.
-  Verify preserve-local and preserve-world reparenting results and child reordering.
+- S6-T4 covers parent/child traversal, ordered reparenting, cycle rejection, detach/reparent
+  survival, iterative deep-tree destruction, slot reuse and Scene clear in PR #86
+  (`5a687af1`). Still verify archetype moves while linked and S6-T5's preserve-local/world
+  transform results.
 - Prove parent-first propagation after local writes and committed hierarchy changes, including
   changes to a parent whose descendants' local values are unchanged. World readers and
   snapshot extraction must observe the required propagation point.

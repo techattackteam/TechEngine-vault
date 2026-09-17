@@ -43,8 +43,8 @@ they are not promises that the unresolved design already fits a particular API.
 ### Story B — Port Scene identity, storage, queries and hierarchy · 5 tasks · sized Sep 12
 
 Retain v1's archetype/transition model and useful implementation. Adapt identity and
-ownership to the accepted v2 boundaries. The source tree currently has no Scene/ECS
-implementation. This story supplies the first consumer for its storage primitives.
+ownership to the accepted v2 boundaries. This story supplies Scene and its storage
+primitives.
 Built-in hierarchy and transform are included per the accepted design; the D1 session
 confirmed every entity carries both components.
 
@@ -83,13 +83,16 @@ confirmed every entity carries both components.
     atomic iteration depth supports concurrent disjoint queries while the task graph owns
     conflict prevention.
 
-- [ ] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h (depends on T1 + T2)
+- [x] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h (depends on T1 + T2) —
+  **done 2026-09-17 · `5a687af1` · PR #86.**
   - Hierarchy component on every entity: parent, first-child, sibling links
   - Parenting, unparenting, child reordering with insertion at position
   - Cycle rejection via ancestor walk (not just self-parent check)
   - Subtree destruction default, explicit detach/reparent for survivors
   - Deep trees must not use unbounded C++ recursion
   - Tests: traversal, cycle rejection, deep-tree destruction, reordering, entity slot reuse while linked
+  - Close note: creation starts in the required Hierarchy archetype. Registration in
+    `ArchetypeStorage` is temporary until S6-T9 moves built-ins to the app composition root.
 
 - [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h (depends on T4)
   - Transform component: local + world position (vec3), rotation (quat with euler conversion), scale (vec3)
@@ -151,6 +154,8 @@ small dependency chain. Hierarchy and transform are in Story B (S6-T4/T5). Input
 action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
 
 - [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h (depends on T5 + T8)
+  - Register built-in components in the app composition root and remove their temporary
+    registration from `ArchetypeStorage`
   - Freeze ComponentRegistry and Schedule after startup registration and before the first tick
   - Build the graph once at simulation start from registered systems
   - Each fixed tick: executor walks levels, then runs barrier
@@ -183,7 +188,8 @@ action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
   and produces the expected state headlessly over repeated ticks.
 - [ ] Tests prove handle invalidation, storage/query behavior, graph conflicts and semantic
   ordering, cycle rejection, graph reuse/rebuild boundaries and deferred structural changes.
-  Exact cases are cut with the accepted designs; none has run at planning.
+  Handle invalidation and hierarchy cycle rejection landed through S6-T4, PR #86
+  (`5a687af1`); graph and barrier cases remain.
 - [ ] Required implementation PRs are merged with recorded validation, and touched design
   notes describe the shipped behavior. Presentation does not access the live Scene.
 
