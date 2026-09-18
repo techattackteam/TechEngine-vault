@@ -2,7 +2,7 @@
 
 > Living design doc. The ADR holds the decision that is hard to reverse. This doc holds the *how*.
 
-**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** read side shipped (Story F, S3-T11 to T13), `write` shipped at S4-T7 (2026-08-30), the rest of the mutating half is M3
+**Module:** `platform` · **Kind:** utility (helper *service*) · **Status:** read and mutating calls shipped by S5-T3 (2026-09-03); overlay and const-access questions remain on [[Backlog]]
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 ·
 **v1:** [[v1 Code Audit]] F30 · F16 · **Backlog:** [[Backlog]] → `platform`
 
@@ -13,9 +13,9 @@
 `C:/dev/TechEngine/engine/app/assets/textures/brick.png`. `FileAccess` turns the first into
 the second and reads the bytes.
 
-Every asset, shader and config load goes through it. That is the whole point: **no disk path
-ever leaves `platform`.** A path anywhere higher would bake one machine's layout into the
-engine.
+Every asset, shader and config load goes through it. Consumers use virtual paths.
+The app composition root supplies physical mount roots; gameplay and resource loaders
+do not bake a machine's layout into their requests.
 
 ### What this fixes from v1
 
@@ -50,7 +50,7 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **Path validation** | A malformed path is rejected before it reaches a mount. | S3-T11 |
 | **Alias validation** | `mount()` rejects an empty alias, a `/` and a `:` with fatal checks, so the two ends cannot disagree about what an alias is. The rules mirror `splitVirtualPath`'s. | S5-T2 |
 | **Async** | None. Every call is synchronous. | See *Open questions* |
-| **Surface** | One class. `read` and `write` both live on `FileAccess`. The other five mutating calls are M3. | See *The write surface* |
+| **Surface** | One class. `read`, `write` and the five other mutating calls live on `FileAccess`. | See *The write surface* |
 | **Mount authority** | Only the composition root mounts. `mount()` lives on `MountTable`. | See *Wiring* |
 
 ## Design
@@ -90,47 +90,40 @@ drops an uncalled function anyway, and nobody ever measured the difference. That
 speculative optimization `CLAUDE.md` § *Performance* rules out.
 
 **The cost is real and it is not binary size.** `EngineContext` carries `FileAccess& files`,
-so every system holding the context can now write to disk. The script SDK inherits that the
-day file access is exposed through it. The split would have made read-only access provable by
-type. What replaces it is weaker: `write` is the class's one **non-const** method, so a
-caller that must not write can hold a `const FileAccess&`. That is a convention the compiler
-checks, not a boundary it enforces.
+so every system holding the context can write to disk. The script SDK inherits that risk if
+file access reaches it. The intended `const FileAccess&` read-only convention does not hold:
+`copy`, `move` and `rename` are `const` and write to disk, while `write`,
+`createDirectory` and `remove` are non-const. [[Backlog]] § *platform* records the open
+API correction; this note does not settle it.
 
 **Reversal trigger:** the first consumer that must be handed file access it provably cannot
-write with. The SDK boundary (ADR-006 §3) is the likely one. Extraction stays mechanical,
-because `FileAccess::write` and `MountTable::resolveForCreate` are the only two functions
-that would move.
+write with. The SDK boundary (ADR-006 §3) is the likely one. Extraction now involves all
+six mutating methods, so it is no longer just a move of `write`.
 
 ### Wiring
 
-`run()` in `engine/app/src/App.cpp` is the composition root. It owns `MountTable` and
-`FileAccess` **by value**, builds `EngineContext` over them, and mounts afterwards.
+`App` owns `MountTable` and `FileAccess` **by value** and builds `EngineContext` over
+them. `EditorApp::init()` mounts project roots before simulation starts; the runtime
+mount set remains M6 work.
 
 That order matters. `EngineContext` holds a reference, not a copy, so a mount added after
 the context is built is still visible through it. A Catch2 case pins this. The case exists
 because a future `FileAccess` that snapshotted the table in its constructor would pass every
 other test and quietly break this one.
 
-**`EngineContext` has one field today**, `FileAccess& files`.
+`EngineContext` currently carries `FileAccess& files`, `JobSystem& jobs` and
+`const Clock& clock`. `App` owns all three services. The fixed `SimulationContext`
+holds a `const EngineContext&`; event streams remain Scene-owned under ADR-014.
 
-ADR-006 §4 sketched a fuller context, with `Clock`, the event streams and others beside it.
-That sketch is a shape, not a checklist. A service earns a field when something actually
-needs to reach it *through the context*, and nothing does yet. So `Clock` stays owned by
-`run()`, and the event streams stay owned by their drivers (S3-T10).
+### The removed demo mount
 
-`FrameContext` carries the per-frame values plus a `const EngineContext& engine`. A
-reference member deletes the struct's copy-assignment, which is the intent. A system
-observes a frame through the loop's `const&`. Nobody should be able to reseat one frame's
-context onto another.
+The former demo mounted `engine/app/assets/` through `TE_DEMO_ASSETS_DIR`, a path baked in
+at configure time. #63 removed the demo body; #65 removed the define, the TODO and the
+assets directory.
 
-### The demo mount is throwaway
-
-It mounts `engine/app/assets/` through `TE_DEMO_ASSETS_DIR`, a path baked in at configure
-time. Both `App.cpp` and `engine/app/CMakeLists.txt` carry a `TODO(S3-T13)` on it.
-
-The problem is that a source-tree path means nothing in an installed build. The mount
-resolves to a directory that is not there. This is acceptable only because M3 replaces the
-whole mount set anyway.
+That source-tree path could not serve an installed build. The editor now mounts roots in
+`EditorApp::init()` using its project root and `platform::executablePath()`. The runtime's
+fixed exported layout remains M6 work; there is no demo mount set left to replace.
 
 The real fix is `platform::executablePath()`, **shipped at S5-T1 on 2026-09-03**
 (`engine/platform/src/ExecutablePath.cpp`). Mount
@@ -189,9 +182,9 @@ public:
 };
 ```
 
-**All four read methods are `const`.** `FileAccess` owns no state of its own. It holds the
-table as a `const MountTable*` and only reads it. The class has a fifth method, `write`, and
-it is deliberately **not** const. The reason is in *The two types*, not const-correctness.
+**All four read methods are `const`.** `FileAccess` holds a non-owning
+`const MountTable*`. The mutating calls are also on this class; their current mixed
+constness is recorded in *Why the write split was dropped*.
 
 **`read` on a directory returns `IsADirectory`.** The check has to be explicit, because
 `std::ifstream` opens a directory successfully on Linux and fails on Windows. Without it,
@@ -334,8 +327,8 @@ directory. Resolution then canonicalises on the spot instead.
 
 ### Threading
 
-**There is none, and none is needed.** All mounting happens at the composition root, before
-the loop starts. The table is frozen after that, so concurrent readers see a constant.
+All mounting happens in app initialization before simulation starts. The table is then
+frozen for concurrent readers; file operations use their own OS calls and results.
 
 **This rule is about *when*, not *who*.** Code called from `init()` on the one thread, such as
 the editor's project bootstrap, could mount without breaking anything here. The Decided table's
@@ -346,7 +339,7 @@ This is worth stating because v1 took a `shared_mutex` on every single read. The
 is not that v2 is braver. It follows from moving `mount()` off the interface that every
 consumer held. When anyone can mount at any time, every read needs a lock.
 
-M2's threading ADR re-opens this the moment a job thread reads a file.
+ADR-018's thread split does not move mount authority or permit mounts during execution.
 
 ### Buffer type
 
@@ -369,19 +362,22 @@ two failure surfaces a caller has to check, is in [[Serialization — Design]] �
 
 | Rung | Uses |
 |---|---|
-| **M3** project | The project root and `project.toml`. It **owns the mount set**, which is v1's `editorAssets://`, `projectResources://` and `projectCache://` (`ProjectManager.cpp:263-271`). It brings the other five mutating calls with it; `write` itself shipped at S4-T7. |
+| **M3** project | `EditorApp::init()` mounts project and asset roots, then `Project` reads `project.toml`. S5-T3 supplied the five other mutating calls. |
 | **M6** resources | Every asset load, by virtual path. |
 | editor | The asset pipeline's import and bake steps, which write. |
 
 ## Open questions
 
+- **Read-only access.** `copy`, `move` and `rename` remain callable through
+  `const FileAccess&` even though they write to disk. Decide whether to correct their
+  constness or extract a separate write surface before an SDK consumer needs a
+  provably read-only view. [[Backlog]] § *platform* retains the trigger.
 - **File watching.** v1 had `IFileWatcher` for editor hot-reload. It is out of M1, and it
   needs more than a port. It was built on callback subscriptions, which
   [[ADR-014 — Events (buffered streams) & StringId]] rules out. Re-read it against that ADR
   before designing a v2 one.
 - **Archive mounts.** Mounting a `.pak` file instead of a directory. `MountTable`'s shape
   allows it. No consumer needs it before shipping.
-- **Threading.** Goes to M2's threading ADR. See above.
 - **One live defect.** [[Known Issues]] **D3**: `canonical()` and symlinks, described under
   *Case sensitivity*. It came out of S3-T11's review alongside the `mount()` validation gap,
   which S5-T2 closed on 2026-09-01.

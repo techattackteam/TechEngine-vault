@@ -8,7 +8,7 @@
 > vs rewrite the renderer" is moot: v1 is now a reference prototype and the
 > renderer will be **designed fresh in v2**. The v1 render-graph work (`graph/` +
 > `passes/`) becomes prior art to mine — see [[Lessons from v1 (reference prototype)]].
-> A new ADR will capture the v2 renderer design during Foundation Planning.
+> A future ADR will capture the v2 renderer design.
 
 
 ## Context
@@ -19,8 +19,7 @@ exist alongside. Separately, there's an open question of whether the renderer �
 or even the whole engine core — warrants a **ground-up rewrite** now that a
 proper planning process is in place.
 
-This ADR captures that decision. It is intentionally **Proposed** until Sprint 1
-produces the evidence.
+This draft captured the v1 alternatives before ADR-004 superseded the question.
 
 ## Options on the table
 
@@ -31,7 +30,7 @@ produces the evidence.
 3. **Rewrite the engine** — core + renderer together under the new architecture.
    Highest risk; must clear a high evidence bar (see [[Principles]] #2).
 
-## Decision criteria (fill in during Sprint 1)
+## Decision criteria considered
 
 - Where is the *actual* pain (measured, not vibes)?
 - What % of each subsystem would survive a rewrite unchanged?
@@ -40,9 +39,10 @@ produces the evidence.
 
 ## Decision
 
-_TBD — record the choice, the reasoning, and the rejected options here at the end
-of Sprint 1, then flip Status to Accepted._
+No choice among the three v1 options was made. ADR-004 chose a fresh v2 start with
+v1 as reference, superseding this question before this draft was completed.
 
 ## Consequences
 
-_TBD._
+The unfinished v1 render-graph migration remains prior art. The v2 renderer needs
+its own design decision when its roadmap rung begins.

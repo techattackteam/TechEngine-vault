@@ -8,9 +8,11 @@
 
 **Module:** `core` (JobSystem) · `app` owns the loop · **Kind:** system · **Status:** active
 **ADRs:** [[ADR-015 — Threading (sim on main, render thread owns GL)]] ·
+[[ADR-018 — Main and simulation threads, render-owned GL]] ·
+[[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] ·
 [[ADR-006 — v2 core architecture & module layout]] §1 §4 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6
-**Roadmap:** M2 builds the pool and runs it four wide · M4 exercises the render thread ·
+**Roadmap:** M2 built the four-worker pool · M4 proved render ownership ·
 **P1** opens `publish` to workers · **P2** tunes (stealing, Jolt pool, F15)
 
 ## Decided
@@ -34,31 +36,31 @@
 
 ## Design
 
-The accepted target and diagram live in [[Simulation Thread — Design]], backed by
-[[ADR-018 — Main and simulation threads, render-owned GL]] (Accepted Sep 7). The topology
-below records the historical M4 baseline. ADR-019, Accepted Sep 10, now supplies the time
-model in [[Game Loop — Frame Flow]]. T14's branch contains the runner, but integration of
-the accepted time model and its validation remain pending; this note does not mark them shipped.
+The accepted thread topology shipped in #81. [[Simulation Thread — Design]] owns its
+lifecycle, and [[Game Loop — Frame Flow]] owns timing under ADR-019. The earlier
+simulation-on-main M4 baseline is preserved in [[Window — Design]] § *Startup and shutdown order*.
 
-### Shipped topology at M4
+### Current topology
 
 ```mermaid
 flowchart LR
   subgraph main["main thread (client)"]
-    PUMP["glfwPollEvents"] --> LOOP["FrameLoop: Input · FixedUpdate ×N · Update · PostUpdate"]
+    PUMP["glfwWaitEvents and input capture"]
+  end
+  subgraph sim["simulation thread"]
+    TICK["fixed ticks and snapshot publication"]
   end
   subgraph rt["render thread"]
-    GL["GL context owner: consume newest complete command list"]
+    GL["GL context owner: consume complete snapshots"]
   end
-  subgraph pool["JobSystem workers (4 at M2)"]
-    W["level batches"]
-  end
-  LOOP -->|"per-frame command list"| GL
-  LOOP -->|"submit level, wait"| W
+  PUMP -->|"ordered ingress"| TICK
+  PUMP -->|"presentation input"| GL
+  TICK -->|"latest complete snapshot"| GL
 ```
 
-The older dedicated-server baseline likewise places simulation on main plus the pool;
-ADR-018 replaces that target with a CLI/control main thread and separate simulation thread.
+The pool is an app-owned service. The S6 serial executor is not yet using it for
+graph levels; P1 activates parallel level dispatch. A dedicated server keeps main
+for CLI/control and runs the same simulation loop without a render thread.
 
 ### Surface (pinned 2026-08-22)
 
@@ -122,4 +124,4 @@ all in `engine/core/src/jobs/JobSystem.cpp`.
 - [[v1 Code Audit]]: F15 · F31
 - Code: `engine/core/include/TechEngine/core/jobs/JobSystem.hpp` ·
   `engine/core/src/jobs/JobSystem.cpp` · `engine/core/tests/jobs/JobSystemTests.cpp` ·
-  wired into `EngineContext` and driven per frame from `engine/app/src/App.cpp` (S4-T4, S4-T5)
+  wired into `EngineContext`; `engine/app/src/App.cpp` owns the service

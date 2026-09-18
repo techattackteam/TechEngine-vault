@@ -261,21 +261,17 @@ T12 supplied the thread mechanism; T13 adopted it; T14–T15 integrated simulati
 editor; T16–T9 supplied input; T17 recorded the integration proof. The five final cards
 merged together as `7d2546fc` (#81).
 
-T14 is the highest-risk card because initialization, failure and stop paths intersect.
-Start it with a fake headless app and controlled startup failures before migrating the
-editor in T15. Sep 10: ADR-019 is Accepted and settles the revised time model for T14/T15;
-it does not reopen ADR-018's thread ownership. The research
-index's Taskflow item concerns later scheduling and is not a dependency of this thread split.
+T14 carried the highest startup/failure/stop risk. Its headless lifecycle cases preceded
+editor migration in T15. ADR-019 settled the time model without changing ADR-018's
+thread ownership. The research index's Taskflow item concerns later scheduling.
 
 ## Evidence
 
-Use a controlled main stall plus a native Windows resize session. Observe tick progress,
-render progress and input age independently. Test press/release order, delayed focus loss,
-overflow, startup failures, stop during work and CLI cancellation without another input line.
-Exercise mailbox publication with fast-producer/slow-consumer schedules under TSan. Delay
-publication: rendering must redraw its private copy without waiting, then acquire the next
-complete value. Verify that a headless composition needs no
-graphical initialization and that synchronous loop tests remain.
+The S5 verification plan used a controlled main stall plus a native Windows resize session
+to observe tick progress, render progress and input age independently. It also called for
+press/release order, delayed focus loss, overflow, startup failure, stop-during-work and
+CLI cancellation cases. The plan included fast-producer/slow-consumer mailbox schedules
+under TSan, delayed publication, headless composition and synchronous loop tests.
 
 Closed Sep 11: the merged tests cover the controlled stall, delayed input, lifecycle,
 overflow, mailbox schedules and headless cancellation. PR #81 CI passed Linux TSan.
@@ -319,12 +315,11 @@ Catch2's exception types. `cmake/deps.cmake` now enables `CPP_EXCEPTIONS_ENABLED
 Compiler warnings and clang-tidy findings became advisory at Miguel's request; formatting
 still gates CI. The accepted build-policy text needs reconciliation; see [[Backlog]].
 
-The integration baseline is now `a60b64bd` (#79): `engine/app/src/App.cpp:15` still owns the current driver;
-`apps/editor/src/EditorApp.cpp:40` mixes main work and frame publication. The shared
-`FrameLoop` and its TPS counters must belong to simulation after the split, so main cannot
-keep reading them directly for the title.
+The pre-integration baseline was `a60b64bd` (#79): `engine/app/src/App.cpp:15` still owned
+the driver; `apps/editor/src/EditorApp.cpp:40` mixed main work and frame publication.
+The split moved fixed-step timing and TPS measurement to simulation; main no longer reads
+the old shared `FrameLoop` for the title.
 
-The Dashboard stamp is still `01ed7a30`; this is a targeted design check, not reconciliation
-of all older Game Loop/Concurrency notes. T12's thread infrastructure and T13's shared-
-mechanism adoption are implemented; main/simulation separation and its integrated move/resize
-proof remain future cards.
+The Dashboard stamp remained `01ed7a30` during that targeted pre-integration check;
+it did not reconcile the older Game Loop or Concurrency notes. The main/simulation
+split and move/resize proof subsequently shipped in #81, as recorded above.

@@ -40,7 +40,7 @@ kanban-plugin: board
 
 ## Rendering 👽
 
-- [ ] [[Paper#A Lightweight Parallel and Heterogeneous Task Graph Computing System Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System - >|A Lightweight Parallel and Heterogeneous Task Graph Computing System|Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System - >]]
+- [ ] [[Paper#Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System|Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System]]
 
 
 ## Physics 🍎

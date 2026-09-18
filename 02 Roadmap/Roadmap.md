@@ -18,9 +18,9 @@ Cadence — sprint length, week shape, ceremony anchor → [[Dashboard]] § Rhyt
 
 ```mermaid
 flowchart TB
-  M0["M0 · base ✅"] --> M1["M1 · enablers"]
-  M1 --> M2["M2 · concurrency &amp; serialization"] & M3["M3 · project"]
-  M2 & M3 --> M4["M4 · window"] & M5["M5 · scene &amp; scheduling"]
+  M0["M0 · base ✅"] --> M1["M1 · enablers ✅"]
+  M1 --> M2["M2 · concurrency &amp; serialization ✅"] & M3["M3 · project ✅"]
+  M2 & M3 --> M4["M4 · window ✅"] & M5["M5 · scene &amp; scheduling"]
   M5 --> M6["M6 · content"] & P["⚡ P1 → P2"] & S["🎮 S1 physics"] & N["🌐 N1 → N5"]
   M4 --> R
   M6 --> R["🎨 R1 → R2 → R3"] & T["🔧 T1 → T5"]
@@ -36,7 +36,7 @@ flowchart TB
 | **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a four-worker pool · **binary serialization + ADR-005's trait seam**                                | **threading ADR** — gated on M1's Profiler · **serialization ADR**                                |
 | **M3** | project ‖ M2                | root + `project.toml` (toml++) · path/mount resolution · **the rest of `FileAccess`'s mutating half**: `createDirectory` · `remove` · `copy` · `move` · `rename`. `write` itself shipped at S4-T7 · shader + asset dirs · **`projects/dev/` testbed** | none: toml, not the binary format                                                                 |
 | **M4** | window                      | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                                              | M2's context-ownership call                                                                       |
-| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping                            | **task-graph ADR** — the System interface ([[ADR-006 — v2 core architecture & module layout]] §5) |
+| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping                            | [[ADR-020 — System scheduling and task-graph execution]] Accepted Sep 12; implementation remains |
 | **M6** | content                     | Resources (CPU/UUID) · project↔scene binding                                                                                                                      | **none** — its seam closed at M2. ⚠️ the only gateless rung; revisit whether Resources owes one   |
 
 ## The lanes
@@ -76,14 +76,14 @@ Three places where the split costs nothing only if a rule holds.
 
 - **R1 goes behind ADR-005's device seam (F22)** — or R2 is a rewrite instead of a wrapper.
   That rule is the whole reason splitting the renderer is safe.
-- **A2 is not ImGui.** ImGui is an editor dep ([[ADR-006 — v2 core architecture & module
-  layout]] §1); game UI is shipped, skinnable and script-driven, needs its own ADR
+- **A2 is not ImGui.** ImGui is an editor dep ([[ADR-006 — v2 core architecture & module layout]] §1);
+  game UI is shipped, skinnable and script-driven, needs its own ADR
   (retained vs immediate, layout, styling, input routing), and drags in a font rasterizer —
   `stb` would go from editor-only to shared.
 - **N1 is independent of everything** — it needs sockets, nothing more. The cheapest lane head
   to start when a sprint has odd capacity left over.
 
-### M2 — what the concurrency ADR must settle
+### M2 — what the concurrency ADR settled
 
 > M2 carries a **second, independent** ADR since 2026-08-02 — serialization, which shares the
 > rung but not the subject. Why it sits here: § *Why this shape*. The two are unrelated and
@@ -96,18 +96,21 @@ GL call. Input polling and drawing therefore sit on different threads from the f
 M4. Retrofitting that across a written renderer is a rewrite, which is why the decision
 outranks its own implementation.
 
-The ADR settles: **thread topology** (main / sim / render / workers) · **who owns the GL
+The ADR settled: **thread topology** (main / sim / render / workers) · **who owns the GL
 context** and how work reaches it · **pool shape** · how [[Task Graph — Execution Flow]]'s
-levels map onto it. It ships a **four-worker pool** (ADR-015 §3, amended 2026-08-24) so M5's
-executor is written against the real interface; **P1** opens `publish` to those workers and
+levels map onto it. M2 shipped a **four-worker pool** (ADR-015 §3, amended 2026-08-24) so M5's
+executor can use the real interface; **P1** opens `publish` to those workers and
 **P2** tunes them.
+
+ADR-018 later moved simulation off main onto a dedicated thread; ADR-019 then fixed the
+shared time model. [[Concurrency — Design]] shows the current topology.
 
 ### M3 — the dev testbed
 
 `projects/dev/` at repo root, beside `apps/` — **data, not a CMake target**. The project the
-`runtime` (and later the `editor`) loads by default, and the home for dev shaders, test scenes
-and throwaway assets. From M3 on, "does this work" is answered by running the testbed rather
-than by a throwaway `main.cpp`.
+editor loads by default, and the home for dev shaders, test scenes and throwaway assets.
+Runtime uses a fixed exported layout when M6 defines it. From M3 on, "does this work" is
+answered by running the editor testbed rather than by a throwaway `main.cpp`.
 
 **Keep the M3 manifest minimal.** This line read "root, name, shader dir, asset dirs" until
 2026-09-04. Three of those four are gone: the root is **derived** from the manifest's own
@@ -132,7 +135,7 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 | Aug 1 – Aug 28 | [[2026-08 Sprint 03 — M1 Enablers]] | **M1 ✅** closed Aug 20, 8 days early; both gates Accepted Aug 2. RNG · crash handler **carry** (memory tracking shipped at S3-T5) |
 | Aug 22 to Aug 28 | [[2026-08 Sprint 04 — M2 Concurrency & Serialization]] | **M2 ✅** — threading + serialization ADRs Accepted day 1, first code against each. **Closed Aug 30 on day 9**, and the boundary moved a week early rather than the box running to Sep 4 |
 | Aug 29 to Sep 11 | [[2026-08 Sprint 05 — M3 Project & M4 Window]] | **M3 editor testbed + M4 complete.** Simulation independence also shipped; runtime packaging remains M6. Closed Sep 12. |
-| Sep 12 to Sep 25 | [[2026-09 Sprint 06 — Scene & Scheduling]] | **M5 opens:** port the reusable ECS and execute declared system dependencies. Scene design and task-graph ADR gate implementation. |
+| Sep 12 to Sep 25 | [[2026-09 Sprint 06 — Scene & Scheduling]] | **M5 in progress:** Scene design and ADR-020 cleared Sep 12; T1–T4 merged, while Transform and executor integration remain. |
 
 ## Quarters
 

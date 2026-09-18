@@ -9,6 +9,10 @@
 [[ADR-006 — v2 core architecture & module layout]] §1 §4
 **Id primitive:** [[StringId — Design]]
 
+**Execution status:** stream storage and registry shipped at M1. ADR-020 now specifies one
+Tick barrier; Scene ownership, cursor binding and retention after the ADR-019 loop split
+remain S6-T8/T9 integration work.
+
 ## Purpose
 
 Discrete notifications that cross systems and reach scripts. "Collision entered", "entity
@@ -25,7 +29,7 @@ That fixes **F28** structurally, rather than by convention.
 |---|---|
 | Buffered per-type streams. No subscriptions and no callbacks. | ADR-014 §2 |
 | An event is a trivially-copyable struct plus a stable tag, which becomes an `EventTypeId` over a `StringId`. | ADR-014 §2 §1 |
-| Events become visible at phase barriers, including every FixedUpdate sub-step. | ADR-014 §3 |
+| Events become visible at each Tick barrier. ADR-020 replaced the earlier phase names. | ADR-014 §3; ADR-020 §1 |
 | Merge order is the publisher's schedule position, then FIFO within a publisher. A replay is identical. | ADR-014 §3 |
 | Retention: an event retires only after at least one frame boundary **and** at least one fixed tick. It is reader-independent, so it is lossy for an absent reader. | ADR-014 §3 |
 | Event access is a third `SystemAccess` category, and it creates no conflict edges. | ADR-014 §4 |
@@ -40,7 +44,7 @@ That fixes **F28** structurally, rather than by convention.
 |---|---|
 | Physics `OnCollision*` and `OnTrigger*` (`core/src/events/physics/`) | Streams, in the fixed domain. This is the first real consumer, at M5 or later. |
 | Scene lifecycle: `EntityCreated`, `EntityDeleted`, `ComponentAdded`, `ComponentRemoved` | Maybe **not events at all**. Structural changes already flow through the barrier's command buffer (ADR-007 §6). Decide when a consumer appears. |
-| Input events (`client/events/input/`) | **Not events.** They become command and intent components at `Input` (ADR-007 §6). |
+| Input events (`client/events/input/`) | **Not event streams.** Input conversion is a regular Tick system (ADR-020 §1). |
 | Resource created and deleted | Editor-side. The editor sits outside the loop, so these stay direct calls rather than streams. |
 | UI widget events | Client-side, in the frame domain. Later. |
 | The `editorWatchDog` catch-all callback | The editor observes streams after a frame. That needs a read API outside the schedule, which is open below. |
@@ -77,14 +81,16 @@ layout's owner.)
 
 ### Making events visible
 
-At every barrier, including every fixed sub-step, the staged batch becomes visible and a mark
-is recorded: `{endSeq, frameIndex, tick}`.
+ADR-020 requires the staged batch to become visible at each Tick barrier. The current
+stream code records `{endSeq, frameIndex, tick}`; how Scene supplies the lifetime mark
+after the loop split remains open below.
 
 This is cheap. Nothing is copied, because the buffer is shared.
 
 ### Retiring
 
-Once per frame, at frame start and before `Input`, the leading batches are dropped. A batch
+The M1 driver retired batches once per frame, at frame start and before the former `Input`
+phase. A batch
 goes when `currentFrame > mark.frame` **and** `currentTick > mark.tick`. That is ADR-014 §3's
 rule.
 
@@ -92,7 +98,9 @@ Both halves of it matter. A fast frame that runs zero ticks leaves `tick` unadva
 batches survive until a tick actually runs. A slow frame running many ticks retires at the
 next frame boundary.
 
-The retention window is therefore at most the longer of one frame and one tick period.
+That retention window was at most the longer of one frame and one tick period. ADR-019
+separated host, simulation and render loops; S6-T8/T9 must choose a current retention
+anchor that preserves ADR-014's minimum lifetime without a simulation frame index.
 
 ### Cursors
 
@@ -253,9 +261,10 @@ construction.
 A cursor older than `m_retireHeadSequence` is clamped forward to it. That is how a lagging
 reader misses silently instead of dangling.
 
-## Container and loop wiring
+## Container and loop wiring — historical M1 driver
 
-Pinned 2026-08-08, with S3-T10.
+Pinned 2026-08-08, with S3-T10. The `FrameLoop` wiring below is historical; #81 removed
+that shared driver. ADR-020's Tick barrier governs the pending Scene integration.
 
 `EventStreamManager` (`core/events/`) owns the `std::vector<EventStream>`, indexed by the
 registry's dense stream index.
@@ -294,6 +303,9 @@ Three ordering facts, each of which is a silent bug if reversed.
 
 - **The script façade surface.** Something `onEvent<T>`-shaped, drained by the runner, with
   publishes routed through the façade. **Owner:** the scripting ADR.
+- **Retention after the loop split.** ADR-014 requires at least one frame boundary and one
+  fixed tick before retirement, but ADR-019 removed the simulation's frame boundary.
+  S6-T8/T9 must define the equivalent lifetime before wiring `retire` into Scene.
 - **Binding a cursor to a system is mandatory, not sugar.** Sharpened 2026-08-08, after
   S3-T10. `read<T>(cursor)` needs the *caller* to hold the cursor, and a system cannot: the
   cursor lives on its schedule entry. So the executor has to bind the stream and the cursor

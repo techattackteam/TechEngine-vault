@@ -17,21 +17,25 @@ needs an explicit rule. The task-graph ADR settles the exact API and edge direct
 
 ## Artifact gate
 
-| Area | Grounding | Gate |
+At sprint opening on Sep 12, the Scene and task-graph design gates were open. S6-D1
+created [[Scene — Design]] and S6-D2 accepted ADR-020 that day. The remaining gates
+are implementation and verification in Stories B, D and E.
+
+| Area | Grounding | Current gate |
 |---|---|---|
-| Scene/ECS port | [[Lessons from v1 (reference prototype)]]; ADR-007 §1–2 | No Scene/ECS design note exists. S6-D1 reviews v1 and creates the hub before port cards are cut. |
-| Systems, graph and executor | [[Task Graph — Execution Flow]] | Draft exists but retains the superseded variable-phase pipeline. S6-D2 settles the task-graph ADR and reconciles it with ADR-019. |
+| Scene/ECS port | [[Scene — Design]]; ADR-007 §1–2 | Design cleared by S6-D1. T1–T4 merged; Transform (T5) remains. |
+| Systems, graph and executor | [[Task Graph — Execution Flow]]; ADR-020 | Design cleared by S6-D2. Schedule, graph and executor (T6–T8) remain. |
 | Fixed simulation and presentation | [[Simulation Thread — Design]]; ADR-019 | Already implemented. Integration consumes these seams; presentation cannot borrow live Scene data. |
 
-Implementation stories remain roughly counted under the heavy gates, per
-[[Planning Workflow — Artifact Gate]]. Their counts include verification and integration;
-they are not promises that the unresolved design already fits a particular API.
+Implementation stories were roughly counted under the heavy gates at planning,
+per [[Planning Workflow — Artifact Gate]]. Their card estimates include verification
+and integration.
 
 ## Stories & tasks
 
 ### Story A — Ground the ECS port
 
-- [x] **S6-D1** · Review the v1 ECS and draft Scene — Design · P1 · 🟢 Deep · 4–6h —
+- [x] **S6-D1** · Review the v1 ECS and draft [[Scene — Design]] · P1 · 🟢 Deep · 4–6h —
   done: read the relevant storage, archetype, transition, query and entity code at
   `v1-reference`; record file-backed port/adapt/drop decisions and a Decided index against
   ADR-007. Cover local handles, stable/dense component identity, registration's existing
@@ -51,7 +55,7 @@ confirmed every entity carries both components.
 - [x] **S6-T1** · Entity handles and ComponentRegistry · P1 · 🟠 Moderate · 3–5h —
   **done 2026-09-14 · `9fb6aeaf` · PR #82.**
   - Generational slot table: u32 index + u32 generation
-  - Null sentinel at `UINT32_MAX`, exhaustion via `TE_CHECK` + null return
+  - Null sentinel at `UINT32_MAX`; exhaustion is a fatal `TE_CHECK`
   - Slot reuse with advanced generation, retirement on wrap
   - ComponentRegistry: stable tag to StringId, dense u16 ID, collision rejection
   - Registration closes before first tick (startup-only freeze)

@@ -7,9 +7,9 @@
 
 **Module:** `core` · **Kind:** system · **Status:** active
 **ADRs:** [[ADR-016 — Serialization (binary primitives & describe-once seam)]] ·
-[[ADR-005 — v2 tech stack & toolchain]] · [[ADR-007 — v2 networking & ECS replication
-foundation]] §1 §2 · [[ADR-014 — Events (buffered streams) & StringId]] §1
-**Roadmap:** M2 builds the primitives and the seam · M3 brings the file writer · M5/M6/T4/N3
+[[ADR-005 — v2 tech stack & toolchain]] · [[ADR-007 — v2 networking & ECS replication foundation]] §1 §2 ·
+[[ADR-014 — Events (buffered streams) & StringId]] §1
+**Roadmap:** M2 built the primitives and the seam; S4-T7 brought `FileAccess::write` forward · M5/M6/T4/N3
 bring the document schemas · consumers registered, none built for (ADR-016 §6)
 
 ## Decided
@@ -127,9 +127,9 @@ A hand-made non-POD struct and a trivially-copyable one both round-trip: write, 
 compare equal, and a corrupted or truncated buffer fails soft.
 
 The unit cases stay in memory, because `core` sits above `platform` and a disk-touching test
-would need a writable directory it does not otherwise want. **The headless demo goes further
-and round-trips through a real file** (`engine/app/src/App.cpp`), which S4-T7 made possible
-by shipping `FileAccess::write`. No schema and no compression.
+would need a writable directory it does not otherwise want. S4-T7 also shipped a headless
+App demo that round-tripped through a real file after `FileAccess::write` landed. The demo
+body was removed in #63; the unit cases remain. No schema or compression was added.
 
 ### Composing with `FileAccess`
 
@@ -199,9 +199,9 @@ moves them.
 - [[ADR-007 — v2 networking & ECS replication foundation]] §1 §2: identity and the
   three-fact registration seam this plugs into
 - [[StringId — Design]]: the frozen hash and `fromValue`
-- [[File Access — Design]] § *The write surface*: why no file lands before M3
+- [[File Access — Design]] § *The write surface*: the file-writing seam
 - [[v1 Code Audit]]: F1 (identity, the real v1 pain)
 - Code: `engine/core/include/TechEngine/core/serialization/` holds the pair and the header
   (S4-T6) plus `Visit.hpp` and `field` on both archives (S4-T7) ·
   `engine/core/include/TechEngine/core/events/EventRegistry.hpp:15` (`EventWire`, the seam's
-  first edge) · `engine/app/src/App.cpp` (the disk round-trip demo).
+  first edge). The former App disk demo was removed in #63.

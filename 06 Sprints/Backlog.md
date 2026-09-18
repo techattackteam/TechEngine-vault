@@ -62,33 +62,6 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **File watching** — v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
   [[ADR-014 — Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
-- #prio/medium · **[[File Access — Design]] § *The demo mount is throwaway* describes code that
-  no longer exists** — the section is written in the present tense about a mount of
-  `engine/app/assets/` through `TE_DEMO_ASSETS_DIR`, with a `TODO(S3-T13)` in both `App.cpp`
-  and `engine/app/CMakeLists.txt`. #63 deleted the demo body and #65 deleted the define, the
-  TODO and the assets directory; `TE_DEMO_ASSETS_DIR` and `S3-T13` now appear nowhere under
-  `engine/`, `apps/` or `cmake/`. **Nothing in the tree calls `mount()` outside tests**, so the
-  section's framing — a throwaway mount set that M3 will replace — is wrong in the other
-  direction: there is no mount set to replace.
-  **Half of it was repaired on 2026-09-03 and the half this entry was filed for was not.**
-  S5-T3's close (`28f24eb`) rewrote the `platform::executablePath()` sentence into past tense,
-  so `:135` now correctly reads "shipped at S5-T1 on 2026-09-03". The two paragraphs above it
-  (`:128-133`) are untouched and still present-tense about `TE_DEMO_ASSETS_DIR`, the
-  `TODO(S3-T13)` in both `App.cpp` and `engine/app/CMakeLists.txt`, and the mount of
-  `engine/app/assets/` — none of which exist in the tree.
-  **Trigger:** fired — S5-T3 merged 2026-09-03 as `84181fae` (#68).
-- #prio/low · **[[File Access — Design]] § *Wiring* has the composition root and the
-  `EngineContext` field count wrong** — it says `run()` in `engine/app/src/App.cpp` owns
-  `MountTable` and `FileAccess` by value. Since #63 the owner is the `App` class itself
-  (`engine/app/include/TechEngine/app/App.hpp:16-17`); by-value is still right, the owner is
-  not. The same section says "**`EngineContext` has one field today**, `FileAccess& files`" and
-  it has carried two since `jobs` landed (`EngineContext.hpp:8-9`). **The paragraph under it is
-  the reason this is more than a count:** it argues a service earns a field only when something
-  needs to reach it through the context "and nothing does yet", which `jobs` has already
-  falsified. The Catch2 case the section credits does still exist and still pins
-  reference-not-snapshot (`engine/app/tests/AppTests.cpp:55`).
-  **Trigger:** fired — S5-T3's close edited that note on 2026-09-03 (`28f24eb`) and left
-  § *Wiring* untouched, so both claims above still stand word for word.
 
 - #prio/low · **`executablePath()` aborts on a Windows path longer than `MAX_PATH`** —
   `resolveExecutablePath` calls `GetModuleFileNameW` into a fixed `wchar_t[MAX_PATH]` and
@@ -129,27 +102,9 @@ groups are kept, because they show where future work will land.
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
   that section.
 
-- #prio/medium · **`copy`, `move` and `rename` shipped `const`, so `const FileAccess&` no longer
-  means read-only** — all three are declared `const` while writing to disk
-  (`engine/platform/include/TechEngine/platform/files/FileAccess.hpp:43-47`), and
-  `createDirectory` and `remove` are not, so the same card shipped the split both ways.
-  [[File Access — Design]] § *Why the write split was dropped* gives that convention as the
-  entire replacement for the `FileWriteAccess` type it dropped: `write` is "the class's one
-  **non-const** method, so a caller that must not write can hold a `const FileAccess&`". Three
-  methods that copy, relocate and rename files are now reachable through such a reference.
-  § *The read surface* repeats the claim, and [[Project — Design]]'s
-  `Project::load(const FileAccess&, …)` (`:308`) is built on it. So is the note's own reversal
-  trigger, which calls extraction mechanical because `write` and `resolveForCreate` are "the only
-  two functions that would move" — five more would move now. **Trigger:** the SDK boundary
-  (ADR-006 §3), which is the note's named reversal trigger, or the next edit to either note.
-
-- #prio/low · **[[File Access — Design]]'s header and Decided table still call the mutating half
-  future work** — § *The write surface* records the five calls shipping at S5-T3 (2026-09-03) and
-  § *The read surface*'s enum already carries `AlreadyExists` and `NotEmpty`, but the **Status:**
-  line still reads "the rest of the mutating half is M3" and the Decided table's *Surface* row
-  still says "The other five mutating calls are M3". The body was reconciled at that card's close
-  and the header and the summary were not, so a reader who stops at the table gets the pre-S5-T3
-  surface. **Trigger:** the next [[File Access — Design]] edit.
+- #prio/medium · **Restore a read-only FileAccess boundary** — `copy`, `move` and
+  `rename` are `const` but write to disk. [[File Access — Design]] § *Open questions*
+  records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
 
 ## core
 
@@ -167,14 +122,6 @@ groups are kept, because they show where future work will land.
 
 ## app
 
-- #prio/high · **Frame pacing** — S2-T7's spin-to-deadline stand-in is not shippable; the
-  Windows 15.6 ms timer evidence and the open questions live on [[Game Loop — Frame Flow]].
-  **Trigger:** the first build that runs unattended.
-- #prio/high · **`App::run()` is untestable** — it hardcodes 120 frames and spins to a 60 Hz
-  deadline, so any case asserting "`update` runs once per frame" costs ~2 s of a busy CPU.
-  S5-T11 shipped with its central bug (`run()` shadowing every member it owned) invisible to
-  the suite for exactly this reason. A frame budget on the constructor makes such a case cheap.
-  **Trigger:** the next `App::run()` change, or M4 replacing the count with `shouldClose`.
 - #prio/low · **`engine/app` declares `platform` PRIVATE while its public header uses it** —
   `engine/app/CMakeLists.txt:6` says `DEPS_PRIVATE platform`, but since #63 the public header
   `engine/app/include/TechEngine/app/App.hpp` includes `FileAccess.hpp` and `MountTable.hpp`
@@ -221,17 +168,9 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
-- #prio/medium · **A project launcher, inside the editor exe** — the editor's first screen
-  lists known projects, opens one, and creates a new one. Decided 2026-09-03: **not a separate
-  executable.** How the known-project list is stored and loaded is deliberately left open.
-  It closes two of [[Project — Design]] § *Open questions* at once, *Creating a project* and
-  *Where per-user settings live*, since a recents list is per-user state that cannot live in
-  `project.toml`.
-  **It does not remove the `argv` seam.** The editor still has to accept a project root from
-  outside, because the launcher screen supplies one the same way a command line does.
-  Until then, the editor uses the development default recorded in [[Project — Design]]
-  § *The mount set* (S5-B1, #73). The launcher replaces it for real projects.
-  **Trigger:** the first editor UI card. Nothing before that has a screen to put it on.
+- #prio/medium · **Project launcher UI** — list, open and create projects inside the
+  editor executable. [[Project — Design]] records the placement and open storage choice.
+  **Trigger:** the first editor UI card.
 
 ## etc — cross-cutting
 
@@ -335,42 +274,20 @@ groups are kept, because they show where future work will land.
   found. Points-at-the-right-thing is a read, and stays with `/weekly-review`. The vault has
   its own HEAD, so the check resolves against the Dashboard's `Reconciled against` sha, not
   `master`: it proves "nothing dangles as of the last reconciliation". Citations anchored
-  "at `<sha>`" resolve at that sha. **Trigger:** the next dangling citation found by hand.
+  "at `<sha>`" resolve at that sha. **Trigger:** fired during the Sep 18 vault sweep:
+  [[Known Issues]] D4 still cited the removed `FrameContext.hpp`; the obsolete issue
+  was removed here, but a citation check is still wanted.
 
-- #prio/medium · **[[Game Loop — Frame Flow]]'s dated callout is stale on both of its claims** —
-  the block reads "Not wired yet (checked 2026-08-20). The shipped `EngineContext` has exactly
-  one field, `FileAccess& files` … The loop still constructs its own `Clock` locally, at
-  `engine/app/src/App.cpp:49`." `EngineContext` now carries **two** fields, `files` and `jobs`
-  (`engine/core/include/TechEngine/core/EngineContext.hpp:8-9`), and the `Clock` is an `App`
-  member (`engine/app/include/TechEngine/app/App.hpp:20`), not a loop local. Re-dating the
-  block means re-deciding how much of the split is built, which is a design read rather than a
-  sweep. **Trigger:** fired — found by S5-P3, 2026-09-01. S5-T5 closed 2026-09-04 without
-  it, so pull with the next Frame Flow edit.
+- #prio/medium · **Four app-local headers still use quoted `#include`** —
+  `apps/editor/src/main.cpp`, `apps/runtime/src/main.cpp` and the matching app test
+  files include their local headers with quotes. `CONVENTIONS.md` § *Includes* calls for
+  angle brackets throughout; recheck the include paths before changing these four lines.
+  **Trigger:** fired — the Sep 18 vault sweep rechecked the surviving sites.
 
-- #prio/medium · **Every quoted `#include` in the tree arrived in #62 and #63, and the house
-  rule is angle brackets** — `CONVENTIONS.md` § *Includes* says "angle brackets throughout"
-  and "never `"FormatBuffer.hpp"`", and 382 of the 395 `#include` lines under `engine/`,
-  `apps/` and `sdk/` obey it. All 13 that do not sit in the two commits no drift check had
-  covered: `engine/app/src/App.cpp:3-5`, and the mirrored pairs under `apps/editor/` and
-  `apps/runtime/` — each app's own header, its `.cpp`, its `main.cpp` and its test file.
-  Nothing mechanical catches the delimiter: `.clang-format` regroups includes but never
-  rewrites them, and `misc-include-cleaner` is not in `.clang-tidy`'s conservative set. It
-  also costs the sort order the rule exists for — `apps/editor/src/EditorApp.hpp` puts
-  `<TechEngine/core/FrameContext.hpp>` at `:3` and `"TechEngine/app/App.hpp"` at `:5` in two
-  separate blocks, where one delimiter would sort `app` above `core` in a single group.
-  A 13-line mechanical sweep. **Trigger:** fired — found by the 2026-09-01 freshness check.
-
-- #prio/low · **ADR-017 § *Decision* 3's `main()` clause did not ship either, and this half is
-  recorded nowhere** — the clause reads "`main()` lives in a header included once per
-  executable, never in the `app` library", and [[Project — Design]] § *The entry point*
-  repeats it. What shipped at S5-T11 is a `runApp<AppType>()` function template
-  (`engine/app/include/TechEngine/app/EntryPoint.hpp:8-14`), with each executable keeping its
-  own `main()` (`apps/runtime/src/main.cpp:5`, `apps/editor/src/main.cpp:5`). The
-  § *Consequences* bullet built on that clause — `Catch2WithMain` handing `TechEngineAppTests`
-  a second `main()` — is moot as a result. The four-pure-virtuals divergence in the same clause
-  is already recorded in [[Project — Design]] § *The App base class* as owing either a fix or a
-  dated amendment; this half is not, so that amendment would be written without it.
-  **Trigger:** fired — pull with whatever amendment ADR-017 § *Decision* 3 gets.
+- #prio/low · **Reconcile ADR-017's `main()` clause** — each executable defines `main()`
+  and calls `runApp<AppType>()`; ADR-017 § *Decision* 3 instead places `main()` in a shared
+  header. [[Project — Design]] § *Entry point and presentation boundary* records the
+  divergence. **Trigger:** the next ADR-017 decision amendment.
 
 - #prio/medium · **A prompt edit in the vault does not reach the running routine, and nothing
   catches the gap** — `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] § *The prompt* on

@@ -3,7 +3,7 @@
 **Module:** core
 **Kind:** system
 **Status:** implementing — S6-T1–T4 merged by 2026-09-17; Transform and integration pending
-**ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]]
+**ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] · [[ADR-020 — System scheduling and task-graph execution]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
 ## Purpose
@@ -15,7 +15,8 @@ point. It must run headlessly without a renderer, editor, resource system or sys
 This note began as S6-D1's deliverable. S6-T1 shipped the entity-handle and component-
 identity foundation; S6-T2 shipped typed columns, archetypes and cached transitions;
 S6-T3 shipped query matching and iteration; S6-T4 added the built-in hierarchy. Remaining
-proposed sections describe Scene integration work. Scheduling and barrier placement belong to S6-D2.
+proposed sections describe Scene integration work. ADR-020 now settles scheduling and
+barrier placement; S6-T5–T9 implement the remaining seams.
 
 ## Evidence and freshness
 
@@ -39,7 +40,7 @@ as `5a687af1` after its Windows, Linux, sanitizer, format and diff-coverage chec
 | One ComponentRegistry is owned by the app composition root; registration bridges stable and dense IDs and checks collisions. | ADR-007 §1 |
 | Retain archetypes, cached transition edges and vector-backed SoA columns behind IComponentStorage; iterate typed spans. | ADR-007 §2 |
 | One registration seam describes identity, disk serialization and replication eligibility. Replicated components are restricted to trivially-copyable data without process-local pointers or handles. | ADR-007 §2; ADR-016 §1–2 |
-| Declared system writes feed per-column change ticks. Structural changes are deferred during system execution. | ADR-007 §2 and §6; exact fixed-tick barriers await S6-D2 |
+| Declared system writes feed per-column change ticks. Structural changes are deferred during system execution and applied after Tick. | ADR-007 §2 and §6; ADR-020 §1 and §8 |
 | Simulation performs fixed ticks; presentation consumes copied snapshots and never accesses live Scene storage. | ADR-019 §1–3, superseding ADR-007's variable/presentation pipeline |
 | Serialization uses the existing Writer/Reader and ADL visit seam. Scene document layout belongs to its consumer. | ADR-016 §2 and §6; [[Serialization — Design]] |
 
@@ -53,13 +54,13 @@ remain listed under Open questions and gates.
 Each game/project can define custom components and custom systems without modifying engine
 source. This follows ADR-007 §1–2 and §6: engine and project types share registration,
 queries, access declarations and scheduling. Engine defaults are ordinary schedule entries
-that projects can extend or replace. D2 settles the scheduling API, not whether this is supported.
+that projects can extend or replace. ADR-020 settles the scheduling API.
 
 ## v1 reuse boundary — agreed Sep 12
 
 Miguel approved this port/adapt/drop boundary, including built-in hierarchy and project
-extensibility. Approval settles reuse scope; the proposed mechanics and open questions
-below still need resolution before affected implementation cards are cut.
+extensibility. Approval settled reuse scope; the later implementation cards were cut
+in the Sprint 06 note. Open implementation gates remain below.
 
 “Port” means retain the useful mechanism and adapt house style and identity. It does not
 mean copy a whole file unchanged. “Drop” means exclude it from this first Scene slice.
@@ -80,7 +81,7 @@ mean copy a whole file unchanged. “Drop” means exclude it from this first Sc
 | Parent/child operations and transform hierarchy           | Adapt                                         | `engine/core/src/scene/Scene.cpp:168`. Keep these engine features, replacing raw IDs and defining cycle prevention, destruction and transform behavior.                                            |
 | Recursive duplication                                     | Design with reference remapping               | `engine/core/src/scene/Scene.cpp:36`. Copying values alone cannot correctly clone references in arbitrary project components.                                                                      |
 | Hardcoded component serialization dispatch                | Drop                                          | `engine/core/src/resources/scene/SceneResource.cpp`, serialize/deserialize. It writes runtime entity/type IDs and branches on each built-in type. Use the accepted registration seam instead.      |
-| Immediate structural event dispatch                       | Adapt under D2                                | `engine/core/include/TechEngine/core/scene/Scene.hpp:35`. v1 dispatches even when the manager reports a failed add/remove. Publish only successful committed changes.                              |
+| Immediate structural event dispatch                       | Adapt under ADR-020                           | `engine/core/include/TechEngine/core/scene/Scene.hpp:35`. v1 dispatches even when the manager reports a failed add/remove. Publish only successful committed changes.                              |
 
 ## Ownership and lifetime — agreed Sep 12
 
@@ -106,7 +107,7 @@ Archetype reclamation and game-DLL unload/hot reload are outside this first slic
 
 The simulation owns mutable access after startup. Setup and teardown occur with execution
 stopped; no main-thread inspector or renderer borrows Scene. Future workers may access only
-the data allowed by D2's execution contract. A mutex inside Query cannot enforce that.
+the data allowed by ADR-020's access contract. A mutex inside Query cannot enforce that.
 
 ## Local entity handles — agreed Sep 12
 
@@ -147,7 +148,8 @@ Hierarchy mutations preserve reciprocal links and child counts. Reject self-pare
 parenting beneath a descendant and stale handles from previously loaded contents before changing
 links. v1 checks self-parenting but does not walk ancestors to reject longer cycles.
 Structural commands must validate against the hierarchy at commit time, including earlier
-commands in the same barrier. D2 supplies ordering and visibility.
+commands in the same barrier. ADR-020 §1 supplies ordering and visibility; S6-T8
+implements the command buffer and barrier.
 
 Retain subtree destruction as v1's default, with explicit detach/reparent
 operations when children should survive. Traversal
@@ -184,11 +186,12 @@ and before consumers that require current world transforms. A changed parent aff
 descendants even when their local values did not change. The renderer never updates live
 Scene hierarchy; snapshot extraction copies completed values for presentation.
 
-Access conflicts alone do not establish semantic order. D2 must express writer → propagation
-→ consumer dependencies and propagation after committed hierarchy changes. If a consumer
-such as physics subsequently changes local transforms, another propagation point may be
-needed before downstream world readers or snapshot extraction. D2 settles those execution
-points; one unconditional pass at the end is not assumed sufficient.
+Access conflicts alone do not establish semantic order. ADR-020 provides numeric priority
+and pairwise ordering for writer → propagation → consumer dependencies. A committed hierarchy
+change becomes visible after the Tick barrier, so propagation sees it on the next tick. If a
+consumer such as physics subsequently changes local transforms, S6-T5/T9 must determine
+whether another propagation point is needed before downstream world readers or snapshot
+extraction. One unconditional pass at the end is not assumed sufficient.
 
 ## Editor Local / World editing — agreed Sep 12
 
@@ -202,8 +205,9 @@ command is applied. The editor must not perform authoritative conversion using i
 snapshot. Propagation then recomputes world values from the updated local data.
 
 Command application must obtain an up-to-date parent transform, accounting for earlier
-accepted edits or hierarchy commands. D2 settles how that freshness is established and
-orders the subsequent propagation. Reject stale entity handles after destruction or load.
+accepted edits or hierarchy commands. S6-T8/T9 must establish that freshness when applying
+commands and order the subsequent propagation. Reject stale entity handles after destruction
+or load.
 
 World-position conversion requires an invertible parent transform. Zero scale is prevented
 by the engine, so inversion is always valid. Non-uniform parent scale may produce approximate
@@ -225,7 +229,7 @@ A custom system can query and update both built-in and project components throug
 
 Hierarchy operations are available to custom systems through the same deferred structural
 command contract. Internal hierarchy links must not be freely writable in a way that bypasses
-Scene invariants; D2 must account for hierarchy access and transform propagation dependencies.
+Scene invariants; S6-T8/T9 must account for hierarchy access and transform propagation dependencies.
 
 Registration closes before the first tick (startup-only). S6-T1 supplies the registry's
 freeze mechanism; S6-T9 owns the composition-root call that closes registration before
@@ -295,9 +299,9 @@ non-copyable and non-movable and must outlive them.
 
 Structural mutation is prohibited while any query or `eachEntity` callback is active.
 Iteration depth is atomic so disjoint queries may run concurrently; the task graph remains
-responsible for preventing conflicting component access. D2 chooses how systems enqueue
-structural changes and where they become visible. Immediate mutation is only a setup,
-stopped-execution or internal barrier operation.
+responsible for preventing conflicting component access. ADR-020 places queued structural
+changes at the post-Tick barrier; S6-T8 implements the command buffer. Immediate mutation
+is only a setup, stopped-execution or internal barrier operation.
 
 ## Scheduling and presentation seams
 
@@ -311,20 +315,24 @@ and wait for them. This requires either a parallel-for helper called from outsid
 or work-stealing inside `wait()`. Not in scope until profiling shows single-threaded
 iteration is a bottleneck.
 
-D2 defines the system access scope, structural command ordering, event visibility and
-column write-stamping points. S6-D1 must not restore v1's `parallelEach` or ADR-007's
-superseded variable-rate tail while that work is pending.
+ADR-020 defines the system access scope, structural command ordering, event visibility
+and column write-stamping points. S6-T6–T9 implement those decisions. The port does not
+restore v1's `parallelEach` or ADR-007's superseded variable-rate tail.
 
 Completed simulation state is extracted into owned presentation values through the
 existing publication lifecycle. Extraction may read Scene on its owner thread; the
 published value must contain no borrowed columns, archetypes or component references.
 See [[Game Loop — Frame Flow]] and ADR-019 for delivery and interpolation.
 
-## Open questions and gates
+## Open implementation gates
 
-| Decision                                     | Recommendation / next step                                                                                                                                                                          | Blocks                                                                                                 |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Structural/event barriers and change ticks   | Deferred to S6-D2. Includes transform propagation dependencies, current-parent conversion for world edits and the accepted fixed-only boundary.                                                     | Scheduling-bound cards and Scene integration.                                                          |
+- S6-T5 must prove Transform propagation, preserve-local/world reparenting and world
+  editing against the current parent state.
+- S6-T8 must implement deferred structural commands, event visibility and write stamps
+  under ADR-020's Tick barrier. [[Events — Design]] records the unresolved retention
+  anchor after the loop split.
+- S6-T9 must register built-ins at the composition root and prove the integrated
+  schedule headlessly.
 
 Story B is sized at five cards (S6-T1 through S6-T5): entity handles and registry,
 archetype storage and transitions, queries, built-in hierarchy and transform propagation.
@@ -363,14 +371,14 @@ Each includes focused tests. Cards are cut on the sprint note.
   disjoint queries in PR #85 (`150f8f0d`). It also covers explicit `eachEntity`; empty
   component queries are rejected.
 - Serialization round-trip testing is deferred to the resource system.
-- With D2, prove deferred mutation visibility, declared-access checks and column change ticks
+- With T8/T9, prove deferred mutation visibility, declared-access checks and column change ticks
   in a repeated headless fixed-tick scenario. Snapshot publication must own its values.
 
 ## References
 
 - [[Serialization — Design]] and current `engine/core/include/TechEngine/core/serialization/`
   (`Writer.hpp`, `Reader.hpp`, `Visit.hpp`) supply the existing archive seam.
-- [[Task Graph — Execution Flow]] is D2's working document; its superseded phase pipeline
-  must be reconciled before it can specify Scene execution.
+- [[Task Graph — Execution Flow]] is the accepted execution view for ADR-020; T6–T8
+  still need to implement it.
 - [[Simulation Thread — Design]] and [[Game Loop — Frame Flow]] describe the integration
   boundary; ADR-019 controls where older wording conflicts.

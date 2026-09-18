@@ -9,8 +9,8 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-09 Sprint 06 — Scene & Scheduling]] *(Sep 12–25)* |
 | **Sprint goal** | Port the reusable v1 ECS into Scene and run declared system dependencies on fixed ticks, proven headlessly. |
-| **Current focus** | S6-D1 done (Sep 12). Story B cards T1-T5 cut. Next: S6-D2 task-graph ADR, then Story B implementation. |
-| **Top blocker** | M5 implementation waits on the task-graph ADR (S6-D2). Scene design gate is cleared. |
+| **Current focus** | S6-D1/D2 and S6-T1–T4 are done. The board has Transform (T5) in progress; schedule declarations (T6) are next. |
+| **Top blocker** | Scene integration (T9) waits on Transform (T5) and the serial executor (T8). T8 also needs an event-retention rule for the threaded loop. |
 | **Next milestone** | M5 Scene & scheduling. M3 editor testbed and M4, including simulation independence, are complete. |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `01ed7a30` (2026-08-30) |
@@ -135,13 +135,16 @@ _Tasks → [[Sprint Board]]._
 - 📌 [[Roadmap]] · [[2026-Q3]]
 - 🏃 [[Sprint Board]] · [[Backlog]]
 - 🏛️ [[ADR Index]] · [[Known Issues]] · [[v1 Code Audit]] · [[Lessons from v1 (reference prototype)]]
-- 🧠 [[Technical Lead Charter]] · [[Working with Claude — Operating Guide]]
+- 🧠 [[Technical Lead Charter]] · [[Working with Codex — Operating Guide]] · [[Working with Claude — Operating Guide]]
 - 📓 Journal: [[07 Journal]]
-- 🔗 [[References]]
+- 🔗 [[Research]] · [[References]]
 
 ## Active decisions
 
 Recently locked — full set in [[ADR Index]]:
+- [x] **System scheduling** ([[ADR-020 — System scheduling and task-graph execution]]) —
+  **Accepted Sep 12**. One Tick phase, declared component/resource access, numeric
+  priority for conflicts and an immutable schedule. Implementation is S6-T6–T9.
 - [x] **Threaded time model** ([[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]]),
   **Accepted Sep 10** after S5-T14 review. Fixed simulation ticks, render-owned interpolation,
   one shared Clock, copied timing metrics, event-driven main thread and separate Tracy frame streams.
@@ -163,7 +166,7 @@ Recently locked — full set in [[ADR Index]]:
   Sep 3; [[Sprint Board]] records Linux validation and the one-PR-per-day observation.
   [[Autonomous Lane — Design]] now requires completed cards to move to Done and human
   follow-up to Review/Demo. The live scheduler was not inspected during this review.
-- [ ] task-graph · renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
+- [ ] renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20** — § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.
 - [x] **What happens when a ceremony's weekend is lost?** **Weekday fallback, 2026-08-20** —

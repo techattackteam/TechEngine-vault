@@ -12,4 +12,5 @@ Living docs, one per v2 subsystem or utility. Each is filled in as that piece ge
 **On writing style.** Bullets and tables beat prose, but write them as real sentences. No
 dropped articles and no keyword shorthand. A note is read months later with the context gone,
 so shorthand that saves five words costs a re-read. Keep sections under about 30 lines. File
-length is uncapped. The full rules are in `CLAUDE.md` → *The vault*.
+length is uncapped. The active rules are in the engine checkout's `AGENTS.md` § *Writing*;
+`CLAUDE.md` remains a backup.

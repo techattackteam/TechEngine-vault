@@ -15,7 +15,6 @@ kanban-plugin: board
 
 ## Story B — Port Scene identity, storage, queries and hierarchy
 
-- [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h
 
 
 ## Story C — Settle system dependencies and execution
@@ -41,6 +40,8 @@ kanban-plugin: board
 
 
 ## 🔨 In Progress
+
+- [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h
 
 
 ## 👀 Review / Demo
@@ -80,12 +81,11 @@ kanban-plugin: board
 	  **Retro:** PR #82 also removed the tracked Codex context-window request; that conflicts
 	  with the repository instructions and needs Miguel's call.
 - [x] **S6-D2** · Task-graph/System ADR and execution design · P1 · 🟢 Deep · 4–6h —
-	  ADR-020 drafted (Proposed). Three design calls changed during review: conflict direction
+	  ADR-020 Accepted Sep 12. Three design calls changed during review: conflict direction
 	  uses numeric priority instead of registration order, schedule is fully immutable (not
 	  mutable between ticks) for multiplayer determinism, and the phase model collapsed from
 	  two (Input + FixedUpdate) to one (Tick). Design note reconciled, ADR Index updated,
-	  Stories D/E cut as 4 cards (T6–T9). ADR-020 is Proposed, not Accepted. DoD line 2 is
-	  not yet satisfied; acceptance is Miguel's call.
+	  Stories D/E cut as 4 cards (T6–T9). Sprint DoD line 2 is satisfied.
 - [x] **S6-D1** · Review the v1 ECS and draft Scene — Design · P1 · 🟢 Deep · 4–6h
 
 

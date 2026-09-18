@@ -295,10 +295,6 @@ the desktop-session assumption was insufficient. #76 deploys pinned, hash-verifi
 Tests have 60-second limits, test steps five minutes, and build jobs twenty minutes.
 Workflow-only pushes are also filtered; manual dispatch remains available.
 
-If llvmpipe turns out to cap below 4.5, the fallback is to keep the window test and drop the
-context to whatever llvmpipe offers for the CI leg only, since the window and thread seam is
-what the test is really proving.
-
 ## Open questions
 
 - **Does the editor's ImGui share this window or open its own?** Owner: **T1**. ADR-015
@@ -321,7 +317,7 @@ what the test is really proving.
   2026-08-30 amendment moving glad2) · §2 (why a dedicated server links no `client`)
 - [[ADR-008 — v2 build & testing baseline]] §4 case 3 (glad2 is the one vendored dep) ·
   §5 (`te_warnings` never reaches third-party code)
-- [[Concurrency — Design]] § *Topology* (the thread picture this sits inside) ·
+- [[Concurrency — Design]] § *Current topology* (the thread picture this sits inside) ·
   § *Open questions* (the render-thread handoff detail is R1's)
 - Shipped loader: `external/glad/` · `cmake/deps.cmake` · `engine/client/CMakeLists.txt`.
 - Shipped window and render-thread lifecycle: `engine/platform/include/TechEngine/platform/window/` ·

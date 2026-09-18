@@ -2,7 +2,7 @@
 
 > Living design doc. The ADR holds the decision that is hard to reverse. This doc holds the *how*.
 
-**Module:** `apps/editor` (exe-local, not a library) · **Kind:** helper service · **Status:** built — `techengine_app()` and the `App` base class at S5-T10 and S5-T11, the `Project` type at S5-T4 (2026-09-04, `e0495146`). The bootstrap that consumes it is S5-T5, open.
+**Module:** `apps/editor` (exe-local, not a library) · **Kind:** helper service · **Status:** editor Project and bootstrap shipped in Sprint 05; runtime export layout remains M6 work
 **ADRs:** [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] ·
 [[ADR-006 — v2 core architecture & module layout]] §1 §4
 **Sibling:** [[File Access — Design]] · **Backlog:** [[Backlog]] → `platform`
@@ -45,7 +45,7 @@ All `path:line` refs above are at the `v1-reference` tag.
 |---|---|---|
 | **Audience** | Editor only. The runtime has a fixed bootstrap and never reads a manifest. | ADR-017 § *Decision* 1 |
 | **Placement** | `apps/editor/src/project/`, compiled into the editor executable. Not a library. | ADR-017 § *Decision* 2 |
-| **Bootstrap seam** | Each executable subclasses `App` and mounts in its `init()`. One `MountTable`, owned by the base. | ADR-017 § *Decision* 3 |
+| **Bootstrap seam** | Each executable subclasses `App`. The editor mounts in `init()`; the runtime mount set waits on M6's export layout. One `MountTable` belongs to the base. | ADR-017 § *Decision* 3; ADR-018 §3 |
 | **Format** | `project.toml`, parsed with toml++ in its non-throwing mode. | [[Roadmap]] § *M3* |
 | **Filename** | Fixed. `project.toml`, never a scan for an extension. | Fixes v1's two sources of truth for the name |
 | **Schema** | `name`. Nothing else. Supersedes [[Roadmap]] `Roadmap.md:112`, which still lists four keys. | See *The manifest* |
@@ -59,6 +59,7 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Layout** | The root holds `project.toml`, `shaders/` and an `assets/` split into `common`, `client` and `server`. | See *The project layout* |
 | **Which roots a role mounts** | Derived from the root, not configured. `shaders/`, then `assets/common` at priority 0 and `assets/<side>` at 100. | See *The project layout* |
 | **Creation** | The directories plus the manifest, and nothing else. No template tree is copied. | See *Why no template tree* |
+| **Project launcher** | Lives inside the editor executable, not in a separate program. It will list, open and create projects; storage for its known-project list remains open. | Decided 2026-09-03; see *Open questions* |
 
 ## Design
 
@@ -167,7 +168,7 @@ flowchart TD
 Creation writes those directories and the manifest, then stops. Decided 2026-09-04.
 
 **Why the split lands before the server does.** ADR-006 §2 already decides that a dedicated
-server is `app + core` plus `net` and links no `client`, and `FrameContext.hpp:9` already ships
+server is `app + core` plus `net` and links no `client`, and `SimulationContext.hpp:11` ships
 `Role::Client · ListenServer · DedicatedServer`. The layout is where that seam meets the disk.
 Deciding it later is cheap in plumbing and expensive in people: `resolveExisting` probes every
 entry for an alias in priority order (`engine/platform/src/files/MountTable.cpp:85-103`), so
@@ -218,73 +219,35 @@ engine's own content and could then drift from it.
 
 ### Two bootstraps
 
-The editor learns its mounts from a manifest. The runtime will be told them by the export
-layout, which M6 decides, and mounts nothing until then (§ *Open questions*). Both paths still
-end at one composition root, so `run()` keeps owning `MountTable` and `FileAccess`.
-
-```mermaid
-flowchart TB
-  base["App (in app)<br/>owns MountTable · FileAccess · Clock<br/>JobSystem · FrameLoop"]
-  ed["EditorApp::init()<br/>mounts project, reads the manifest,<br/>mounts what it names"]
-  rt["RuntimeApp::init()<br/>empty until M6 decides<br/>the export layout"]
-  loop["FrameLoop<br/>fixedUpdate · update"]
-
-  base --> ed & rt
-  ed & rt --> loop
-  %% solid down = 'is a', so init() runs inside the object that owns the table
-```
+The editor starts with a project root, mounts it, reads `project.toml` for the name,
+then derives the remaining mounts from the root by convention. `RuntimeApp::init()`
+currently mounts nothing; M6 must define the exported layout beside the executable.
+`App` owns the shared `MountTable`, `FileAccess`, Clock, JobSystem and simulation
+runner. [[Simulation Thread — Design]] owns the loop and hook lifecycle.
 
 ### The `App` base class
 
-> **Shipped at S5-T11** (2026-08-31, `b6273327`) with **all four virtuals pure**, not just
-> `init()`. That contradicts ADR-017 § *Decision* 3 and this section. It is recorded here as a
-> live divergence rather than reconciled: an Accepted ADR clause changed value in the code, so
-> it owes either a fix or a dated `decision` amendment ([[ADR Index]] § *What is not an
-> amendment*, the mirror case). The shape below is what the ADR still decides.
+`App` owns the mount table, so `EditorApp::init()` mounts into the one used throughout
+execution. There is no second table. `EditorApp` is the only subclass that knows
+`Project`; the base and runtime do not link it.
 
+S5-T11 initially shipped four pure hooks, but #81 supplied the optional defaults and
+separate main/simulation hooks. `init()` is the only pure virtual now. ADR-018 partially
+supersedes ADR-017's single-loop/four-hook restriction, and ADR-019 fixes the simulation
+context and publication shape. [[Simulation Thread — Design]] § *Lifecycle* lists the
+current hooks and their owning threads; `App.hpp` is the code source.
 
-```cpp
-// engine/app/include/TechEngine/app/App.hpp
-class App {
-public:
-    virtual ~App() = default;
-    int run();                                        // init, loop, shutdown
+### Entry point and presentation boundary
 
-protected:
-    virtual void init() = 0;                          // mounts, systems, resources
-    virtual void fixedUpdate(const FrameContext&) {}  // simulation, fixed timestep
-    virtual void update(const FrameContext&) {}       // presentation, once per frame
-    virtual void shutdown() {}
+Each executable's own `main.cpp` constructs its App subclass and calls `run()`.
+ADR-017 § *Decision* 3 instead specifies a shared `EntryPoint.hpp` defining
+`main()`; that clause did not ship and remains a decision reconciliation on
+[[Backlog]]. No `main()` is compiled into the `app` library.
 
-    MountTable& mounts();
-    const EngineContext& engine() const;
-};
-```
-
-`App` owns the mount table, so `init()` mounts into the one that the loop will use. There is
-no second table and no list handed across a boundary. `EditorApp` is the only subclass that
-knows what a `Project` is, and it lives in the editor executable beside it.
-
-### The entry point, and what `update()` may not do
-
-**`main()` lives in `<TechEngine/app/EntryPoint.hpp>`**, included exactly once per executable,
-and never compiled into the `app` library. `techengine_test(app …)` links
-`Catch2::Catch2WithMain`, so a `main()` inside the library gives `TechEngineAppTests` two of
-them and it fails to link.
-
-**`update()` never issues a GL call.** It produces a render command list, which the render
-thread consumes. The render thread owns the context exclusively (ADR-015 §2), and the name
-`update()` is the kind of thing that invites a subclass to draw in it.
-
-**This is what keeps `app` free of `Project`.** The base class never names it. It calls a
-virtual, and the editor's override is where the manifest is read.
-
-**`init()` is the only pure virtual.** It is where an executable states its mounts, and no
-executable is correct without doing so. `fixedUpdate`, `update` and `shutdown` default to
-empty, because a dedicated server genuinely has nothing to put in `update()`.
-
-The two rejected seams, a `std::span<const MountSpec>` parameter and a mount callback, are in
-ADR-017 § *Alternatives* with the trade for each.
+The old `update(FrameContext)` hook is gone. Simulation uses
+`fixedUpdate(SimulationContext)` and `publishSnapshot(SimulationContext)`;
+rendering consumes copied values and owns every GL call under ADR-015 §2 and ADR-019.
+The alternative mount seams remain in ADR-017 § *Alternatives*.
 
 ### The mount set
 
@@ -470,13 +433,12 @@ pins to root, name, shader dir and asset dirs.
 
 ## Open questions
 
-- **Where per-user settings live.** The `cmake.exe` path needs a home that is not
-  `project.toml` and is not committed. Owner: the scripting rung, when `ScriptsCompiler`'s
-  replacement is carded.
-- **Creating a project.** **What** it writes is decided in § *The project layout*. **Who**
-  writes it is the editor's project launcher ([[Backlog]] → *editor & tooling*), and nothing
-  has a screen to put it on until the first editor UI card. `projects/dev/` is committed by
-  hand until then.
+- **Where per-user settings live.** The future launcher needs a known-project list;
+  its storage location is undecided. The `cmake.exe` path also needs a home that is not
+  `project.toml` and is not committed. Owner: the editor UI and scripting rungs.
+- **Creating a project.** **What** it writes is decided in § *The project layout*.
+  The editor's project launcher will write it ([[Backlog]] → *editor & tooling*);
+  the UI is not built yet. `projects/dev/` is committed by hand until then.
 - **Exporting a project.** v1's `exportProject` is what produces the fixed layout the runtime
   bootstrap assumes. Owner: M6, with baking.
 - **What the runtime mounts.** Deferred 2026-09-04 until the package format exists, because
@@ -484,7 +446,7 @@ pins to root, name, shader dir and asset dirs.
   nothing, and the runtime row in § *The project layout* is a placeholder. Owner: M6.
 - **What a listen-server mounts.** ADR-006 §2 makes a listen-server the `runtime` client also
   running authoritative sim, so it may need `assets/server` as well as `assets/client`.
-  `Role::ListenServer` ships in `FrameContext.hpp:9` and nothing maps it to roots yet. Owner:
+  `Role::ListenServer` ships in `SimulationContext.hpp:11` and nothing maps it to roots yet. Owner:
   netcode.
 - **What `resources/` and `cache/` are, and where they live.** Neither directory is created
   today. Two constraints are already set. Editor content is **not** project data and has a home
@@ -502,25 +464,23 @@ pins to root, name, shader dir and asset dirs.
 
 - **S5-T5's `done:` clause was reworded on 2026-08-31**, on [[Sprint Board]] and in the sprint
   note. It had read "the runtime loads it by default". With the manifest editor-only,
-  `projects/dev/` is the **editor's** testbed, and the runtime's leg of that card is the fixed
-  bootstrap instead.
-- **S5-T5 now also commits the layout**, not just the mount set. `projects/dev/` gets the
+  `projects/dev/` is the editor's testbed; the runtime's fixed exported layout is M6 work.
+- **S5-T5 committed the layout**, not just the mount set. `projects/dev/` got the
   three-way `assets/` split and `shaders/`, and `EditorApp::init()` derives its three roots
   from `project.root()` rather than mounting what the manifest names. The card's `done:` clause
   was reworded for both on 2026-09-04.
 - **S5-T2 becomes a hard prerequisite of the mount port**, not just an ordering preference.
   The v1 alias spelling carries the defect in. **Closed 2026-09-01.**
 - **`FileResult` gained two values** at S5-T3 on 2026-09-03, and [[File Access — Design]]
-  § *The read surface* carries them. That note's header and *Decided* table still call the
-  mutating half future work, which is carded on [[Backlog]] → `platform`.
-- **`run()` becomes the `App` base class**, so both `main()` files and the whole composition
-  root change shape. That is S5-T5's work, and it is the largest single edit in Story B.
-- **The editor moves into the frame loop**, which partially supersedes ADR-006 §1's editor
+  records them with the shipped mutating surface. Its const-access question remains on
+  [[Backlog]] → `platform`.
+- **`run()` became the `App` base class**, so both `main()` files and the composition
+  root changed shape in S5-T5.
+- **The editor moved into the app lifecycle**, which partially supersedes ADR-006 §1's editor
   row. Rowed in [[ADR Index]] § *Partial supersessions*. That row's clause fixes
   [[v1 Code Audit]] **F14**, so ADR-017 § *Consequences* carries why the reversal is safe and
   what it costs.
-- **A `techengine_app()` helper is new build work** that every app needs, not just the editor.
-  It is a prerequisite of S5-T4's Catch2 cases.
+- **`techengine_app()` shipped at S5-T10** for both executables and their tests.
 
 ## References
 
@@ -535,6 +495,6 @@ pins to root, name, shader dir and asset dirs.
 - v1 prior art at the `v1-reference` tag: `runtime/editor/src/project/Project.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp` ·
   `runtime/editor/src/scripting/ScriptsCompiler.cpp`
-- Code: `apps/editor/src/project/` for the type, `apps/editor/src/EditorApp.cpp:18-31` for
-  the mount set. The composition root is `App::run()` at `engine/app/src/App.cpp:15`. The
-  demo mount it replaced is gone since #65.
+- Code: `apps/editor/src/project/` for the type, `apps/editor/src/EditorApp.cpp:18-31`
+  for the mount set, and `engine/app/include/TechEngine/app/App.hpp` for shared ownership.
+  The demo mount it replaced is gone since #65.

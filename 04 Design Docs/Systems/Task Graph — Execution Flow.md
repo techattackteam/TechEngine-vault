@@ -1,22 +1,22 @@
 # Task Graph — Execution Flow
 
-> Living design doc. **Status: draft**, updated 2026-09-12 against ADR-020 (Proposed).
+> Living design doc. **Status: design accepted; implementation pending**, updated
+> 2026-09-18 against ADR-020 (Accepted).
 >
 > The ADR holds the decision, this doc holds the *how*. The scheduling decisions live in
 > [[ADR-020 — System scheduling and task-graph execution]]. ADR-007 §6 defined the system
 > interface and conflict DAG; ADR-020 settles the items §6 deferred. This note is the
 > **execution view**: one end-to-end sequence, not a restatement of the rules.
 
-**Module:** `core` · **Kind:** system · **Status:** draft
-**Runs inside:** [[Game Loop — Frame Flow]]. This doc covers one stage of one phase.
+**Module:** `core` · **Kind:** system · **Status:** implementation pending (S6-T6–T8)
+**Runs inside:** [[Game Loop — Frame Flow]]. This doc covers one Tick and its barrier.
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
-[[ADR-020 — System scheduling and task-graph execution]] *(Proposed)* ·
+[[ADR-020 — System scheduling and task-graph execution]] *(Accepted)* ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
-**Roadmap:** [[Roadmap]]. **M2**'s threading ADR is **decided**:
-[[ADR-015 — Threading (sim on main, render thread owns GL)]], hub [[Concurrency — Design]].
-**M5**'s task-graph ADR is [[ADR-020 — System scheduling and task-graph execution]] (Proposed).
-**P1** turns real workers on, **P2** brings work-stealing tuning
+**Roadmap:** [[Roadmap]]. ADR-018 owns the simulation thread; [[Concurrency — Design]]
+shows the topology. **P1** turns parallel graph execution on; **P2** considers
+work-stealing tuning.
 
 ## Purpose
 
@@ -42,29 +42,18 @@ schedule.add<MovementSystem>(DeclareAccess<Write<Transform>, Read<Velocity>>)
         .priority(10);
 ```
 
-- One phase: **Tick** (ADR-020 §1). No Input, Update, PostUpdate or Present phases.
-- An access declaration covers **components and resources** in the same dense-ID bitmask
-  space (ADR-020 §2). `Write<T>` implies read.
-- Every system carries an integer **priority** (default 0). Lower runs first on conflict.
-  Equal priority on a conflicting pair is a build error (ADR-020 §3).
-- Engine systems ship with spaced priorities (10, 20, 30...) so user systems slot between
-  them without renumbering.
-- `.after<A>()` / `.before<A>()` override priority-derived direction between a specific pair.
-- Engine defaults are ordinary entries. No privileged path.
+Register each system for the single Tick phase with access declarations, a priority
+and any pairwise ordering. ADR-020 §1–4 owns the exact rules. Registration closes
+before the first tick.
 
 ### Stage 2: build the graph, once, at simulation start
 
-1. Two systems conflict when `A.writes ∩ B.touches ≠ ∅`. Write-write, write-read and
-   read-write. **Two readers never conflict.**
-2. Each conflict produces a directed edge. The system with the lower priority runs first.
-   Equal priority on a conflicting pair is a build error.
-3. `.after<>()` / `.before<>()` edges override priority-derived direction between that pair.
-4. Topologically sort the DAG into **levels**. That cached structure *is* the task graph.
-5. A cycle (from any combination of edges) is a fatal build error. `TE_CHECK` names every
-   system in the loop.
+Lower the declarations to dense-ID masks, derive conflict and explicit-order edges,
+then sort the resulting DAG into levels. ADR-020 §3 owns edge direction and cycle
+diagnostics. The cached levels are the task graph consumed by the executor.
 
 **Built once, never rebuilt.** The schedule is immutable after this point (ADR-020 §7).
-No allocation and no string work happen inside a tick, which is F19's fix.
+Graph construction adds no allocation or string work inside a tick, which is F19's fix.
 
 ### Stage 3: per tick, the executor walks the prebuilt graph
 
@@ -98,34 +87,30 @@ Both compile out or become no-ops in release.
 `ScriptSystem` is an ordinary entry pinned to the **terminal slot** of the Tick phase
 (ADR-020 §4). `Slot::Terminal` means "after all regular levels, before the barrier."
 
-```
-[ level 0 ‖ level 1 ‖ … ]  →  [ ScriptSystem: terminal slot ]  →  ‖ barrier ‖
+```mermaid
+flowchart LR
+  L["Regular levels"] --> S["ScriptSystem: terminal slot"] --> B["Barrier"]
 ```
 
-One terminal entry per phase; a second is a build error. A terminal entry may omit its
-access declaration (ADR-010 §5). Scripts run after every system in the phase. Their spawns
+One terminal entry is allowed in Tick; a second is a build error. A terminal entry may
+omit its access declaration (ADR-010 §5). Scripts run after every regular system. Their spawns
 queue into the **same** command buffer, so there is no separate path to keep consistent.
 
 ## Settled questions
 
 Grouped by the ADR that settled them.
 
-### Settled by ADR-015 (2026-08-22)
+### Thread ownership
 
 ADR-018 (Accepted Sep 7) supersedes simulation-on-main: the executor will run on the
 dedicated simulation thread against `JobSystem`'s batch submit/wait. GL ownership and
 level/barrier semantics remain. Current target: [[Simulation Thread — Design]].
 
-### Settled by ADR-020 (2026-09, Proposed)
+### Settled by ADR-020 (Accepted Sep 12)
 
-- **Terminal slot.** `Slot::Terminal` pins an entry after all regular levels, before the
-  barrier. One per phase. ADR-020 §4.
-- **Level granularity.** Whole-system nodes. Intra-system chunking deferred to P1/P2 with
-  measurement. ADR-020 §6.
-- **Schedule mutation.** The schedule is immutable after the graph is built at simulation
-  start. No enable/disable, no mid-tick mutation. A system that should sometimes skip work
-  checks its own flag and early-outs. Required for deterministic prediction and rollback.
-  ADR-020 §7.
+The terminal slot, whole-system node granularity and immutable schedule are now
+decided in ADR-020 §4, §6 and §7. S6-T6–T8 implement those decisions; S6-T9 connects
+the executor to fixed ticks.
 
 ### Deferred to implementation [P1 → P2]
 
@@ -141,4 +126,4 @@ level/barrier semantics remain. Current target: [[Simulation Thread — Design]]
 - [[Game Loop — Frame Flow]]: the frame this graph executes inside, including Tick running N times
 - [[ADR-010 — User authoring model (Systems & Scripts)]]: the script terminal slot
 - [[v1 Code Audit]]: F15 (three ad-hoc threading models) · F19 (per-frame allocation)
-- Code: none yet, `core` is greenfield
+- Code: Scene storage and queries exist; Schedule, graph and executor are S6-T6–T8 work

@@ -28,7 +28,7 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 | Think | Obsidian (this vault) | Vision, architecture, research, planning |
 | Execute | Obsidian Sprint board | Epics → Stories → Tasks |
 | History | Git | What actually changed |
-| Technical Lead | Claude Code | Architecture reviews, trade-off analysis, research |
+| Technical Lead | Codex (Claude Code backup) | Architecture reviews, trade-off analysis, research |
 | Studio Director + Lead Engineer | You | Direction and implementation |
 
 > Planning happens in dedicated planning sessions. Implementation happens in
@@ -46,7 +46,7 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 | `04 Design Docs` | Living design docs per system + utility — the *how* behind the ADRs |
 | `05 Research` | Papers, SIGGRAPH notes, technique write-ups |
 | `06 Sprints` | Sprint board, active sprint, backlog |
-| `07 Journal` | Weekly reviews, sprint retrospectives |
+| `07 Journal` | Weekly reviews, sprint retrospectives, autonomous run reports |
 | `08 AI` | Technical-lead charter + the day-to-day operating guide |
 | `09 References` | External links and resources |
 | `Templates` | Note templates (ADR, sprint, story, review, research) |

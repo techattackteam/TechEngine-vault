@@ -29,7 +29,7 @@ the two sections below explain why.
 | The composition root owns one time source; `EngineContext` carries `const Clock&` to all three lanes. | ADR-006 §4; ADR-019 §3; shipped in #81 |
 | It lives in **`base`**, with no `platform` seam. `steady_clock` is standard, and it is QPC-backed on Windows. | This note. The profiler puts no pressure on it ([[ADR-013 — Profiler (Tracy-backed instrumentation)]] §5). |
 | It owns a monotonic `now()`, a wall-clock stamp, `totalTime`, and a **diagnostic** frame counter. | [[Game Loop — Frame Flow]] (2026-07-24) |
-| It does not own delta, fixed step, tick, alpha or role. Fixed state stays per simulation; alpha stays in that simulation's presentation view. | ADR-019 §2 §3, Accepted context split |
+| It does not own delta, fixed step, tick, alpha or role. Fixed state stays per simulation; render computes alpha from its private snapshot history. | ADR-019 §2 §3, Accepted context split |
 | Monotonic time is for **durations**. Wall-clock time is for **stamps only**. | This note. It is a local call, so no ADR owes it. |
 | `app` **pushes** the frame stamp into diagnostics. `base` holds no `Clock` reference. | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
 | `timeScale`, pause and slow motion are **loop policy**, not Clock knobs. | [[Game Loop — Frame Flow]] |
@@ -105,8 +105,8 @@ counter or catch-up accumulator. Tracy host zones provide the initial host-work 
 This is the Logger's ambient stamp. It is not Tracy's frame number: Tracy receives explicit
 frame markers, with stream ownership defined in [[Profiler — Design]] and ADR-019 §6.
 
-The Logger's `[f 1043]` stamp and the profiler's zones are **global macros**. A macro cannot
-be handed a `FrameContext`, so it needs an ambient frame number from somewhere. The Clock
+The Logger's `[f 1043]` stamp and the profiler's zones are **global macros**. A macro does
+not receive a simulation context, so it needs an ambient frame number from somewhere. The Clock
 keeps one for exactly that.
 
 That number is **approximate when two sims share a process**, for the reason above. It is
@@ -155,7 +155,7 @@ So the determinism and clamp tests (S2-T8) simply call `advance()` with a synthe
 of deltas. No fake clock, no virtual function, and `Clock` stays the plain concrete utility
 this note wanted.
 
-## Open questions
+## Wiring history and remaining questions
 
 ### Shared wiring implemented Sep 11
 
@@ -183,10 +183,9 @@ The question assumed the profiler would read `Clock`. It does not. Tracy carries
 timer and its own calibration, so it never asks us for a timestamp. `Clock` therefore needs
 no `platform` seam and no raw timer, and it stays exactly as it is.
 
-If `steady_clock` ever does prove too coarse, it will surface as a **frame pacing** problem
-rather than a profiling one. That is already a [[Backlog]] item under `app`, with its
-evidence recorded in [[Game Loop — Frame Flow]]. The profiler is now the instrument that
-would measure it.
+If `steady_clock` ever proves too coarse, it will surface as a pacing problem rather
+than a profiling one. [[Game Loop — Frame Flow]] holds the earlier timing evidence;
+the profiler can measure any new problem.
 
 ## References
 

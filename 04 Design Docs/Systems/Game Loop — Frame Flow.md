@@ -86,7 +86,8 @@ flowchart LR
 
 Simulation waits interruptibly for its next deadline. It samples actual elapsed time after
 waking, applies the clamp, then executes all due ticks. Ingress precedes every fixed tick;
-ScriptSystem's proposed terminal slot follows fixed Systems before the final tick barrier.
+ADR-020's terminal slot follows regular Tick systems before the barrier; ADR-010's
+ScriptSystem remains Proposed.
 The publication hook extracts complete state once after catch-up, only if ticks advanced.
 Publish an initial complete state before readiness; no render phase runs on a headless server.
 
@@ -294,7 +295,7 @@ timeBeginPeriod(1) did not change it. No build, tests or timing experiment ran f
 
 ## Deferred consumers
 
-FrameAllocator reset granularity, net receive/send placement and the task graph's terminal
-slot still need their owning designs. Pause/time scaling needs a timeline mapping and reset
+FrameAllocator reset granularity and net receive/send placement still need their owning
+designs. Pause/time scaling needs a timeline mapping and reset
 contract. Remote-clock conversion, prediction and interpolation delay tuning belong to the
 netcode ADR; one local Clock does not imply a shared clock across machines.

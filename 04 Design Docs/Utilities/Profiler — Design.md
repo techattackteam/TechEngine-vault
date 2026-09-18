@@ -215,11 +215,11 @@ sanitizer trio. Everything below follows from that one fact.
 
 | Claim | How it is actually held |
 |---|---|
-| The macros expand to nothing when OFF. | `App.cpp` and `FrameLoop.hpp` compile the OFF path on all four legs. That much is real. |
+| The macros expand to nothing when OFF. | `App.cpp`, `SimulationThread.hpp` and `RenderThread.cpp` compile the OFF path in unprofiled CI legs. That much is real. |
 | They also do not evaluate their arguments. | One Catch2 case in `engine/base/tests/diagnostics/ProfileTests.cpp`. **That is its whole value.** It is guarded by `#if !defined(TE_PROFILE_ENABLED)`, so it never runs on the ON path. |
 | Every call site spells `TE_PROFILER_*` rather than a Tracy name. | A **grep**, not a test. `.github/workflows/ci.yml`'s `check` line bans `ZoneScoped\|ZoneTransient\|FrameMark\|Tracy(Secure)?(Alloc\|Free)\|tracy/` outside `base/diagnostics/`. |
 | No transient or runtime-named zones sit on a per-frame path. | The same grep. This is what makes ADR-013 §6's rule structural instead of review-only, and it is **the only** gate on it. |
-| The ON path works at all. | A **demo capture at S3-T4 and S3-T5, not a test.** One `windows-profile` run, on one machine, MSVC only. |
+| The ON path works at all. | Attended `windows-profile` captures at S3-T4/S3-T5 and after #81, not an automated test. The latter showed independent render and simulation streams. |
 | `linux-profile` works. | **Nothing.** It has never been configured and never been built. |
 
 The grep is the honest half. It catches the failure mode that actually matters, which is F19's
@@ -301,7 +301,8 @@ thousands of small tasks is a measurement, and Story D takes it against §6's bu
   zones wrap
 - [[v1 Code Audit]]: F19, per-frame allocation and string work in the timing path
 - Code: `engine/base/include/TechEngine/base/diagnostics/Profile.hpp` (the macros) ·
-  `engine/app/src/App.cpp` and `engine/app/src/FrameLoop.cpp` (the zones) ·
+  `engine/app/src/App.cpp`, `engine/app/include/TechEngine/app/SimulationThread.hpp`,
+  `engine/app/src/SimulationThread.cpp` and `engine/client/src/render/RenderThread.cpp` (the zones) ·
   `engine/app/src/diagnostics/MemoryTracking.cpp` and `.hpp` (the allocator replacement) ·
   `.github/workflows/ci.yml` (the Tracy-spelling grep) ·
   `engine/base/tests/diagnostics/ProfileTests.cpp` (the OFF-path case) ·
