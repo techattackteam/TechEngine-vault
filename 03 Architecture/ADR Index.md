@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 021 | [[ADR-021 — Immediate Scene transform propagation]] | Accepted | 2026-09 |
 | 020 | [[ADR-020 — System scheduling and task-graph execution]] | Accepted | 2026-09 |
 | 019 | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted | 2026-09 |
 | 018 | [[ADR-018 — Main and simulation threads, render-owned GL]] | Accepted | 2026-09 |
@@ -34,7 +35,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 — Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/` — history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **021** (numbers are never reused).
+> Next number is **022** (numbers are never reused).
 
 ### Partial supersessions
 
@@ -48,6 +49,7 @@ anyone noticed (2026-08-20).
 
 | Clause | Superseded by | Scope |
 | --- | --- | --- |
+| [[ADR-020 — System scheduling and task-graph execution]] §1 — hierarchy changes propagated on the next tick; §3/§5 — separate `TransformPropagation` schedule entry | [[ADR-021 — Immediate Scene transform propagation]] | Accepted Sep 18: Transform setters and committed hierarchy changes refresh the affected subtree immediately. The next Tick sees barrier changes already propagated; the Tick graph and barrier remain. |
 | ADR-007 §5 — variable tail, simulation alpha and combined FrameContext | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §1–3: fixed simulation context, no-delta publication, render-owned interpolation. Server-master timing and catch-up remain. |
 | ADR-007 §6 — Input → FixedUpdate → Update → PostUpdate → Present as one pipeline; Scene-taking presentation Systems; physics/audio staging example | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §2: per-tick input/fixed phases and barriers; presentation stages use snapshot data on render. Scene-dependent work stays fixed; no cross-thread phase barrier. |
 | ADR-006 §4 — combined frame-context sketch; §5 — presentation Systems operate on live ECS and share its scheduling interface | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §2: separate simulation/presentation contexts and schedules; presentation operates on snapshots. Replaceable defaults and module boundaries remain. |

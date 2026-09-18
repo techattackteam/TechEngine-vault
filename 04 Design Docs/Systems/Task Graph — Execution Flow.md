@@ -13,6 +13,7 @@
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
 [[ADR-020 — System scheduling and task-graph execution]] *(Accepted)* ·
+[[ADR-021 — Immediate Scene transform propagation]] *(Accepted)* ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
 **Roadmap:** [[Roadmap]]. ADR-018 owns the simulation thread; [[Concurrency — Design]]
 shows the topology. **P1** turns parallel graph execution on; **P2** considers
@@ -71,6 +72,9 @@ have disjoint writes, so they are safe to run in parallel. The serial executor (
 runs them one at a time. The parallel executor at P1 dispatches each level to workers.
 
 Systems perform value reads and writes only. Nothing structural happens here.
+Transform setters refresh their affected subtrees within the calling system, so
+world reads later in that system see current values. No separate transform
+propagation entry is scheduled (ADR-021).
 
 **At the barrier**, the command buffer is applied **single-threaded, in deterministic order**,
 and `NetId`s are assigned. Structural changes land here: spawn, despawn, add, remove.

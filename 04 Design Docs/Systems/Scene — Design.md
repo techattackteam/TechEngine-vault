@@ -2,8 +2,8 @@
 
 **Module:** core
 **Kind:** system
-**Status:** implementing — S6-T1–T4 merged by 2026-09-17; Transform and integration pending
-**ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] · [[ADR-020 — System scheduling and task-graph execution]]
+**Status:** implementing — S6-T1–T5 merged by 2026-09-18; scheduling integration pending
+**ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] · [[ADR-020 — System scheduling and task-graph execution]] · [[ADR-021 — Immediate Scene transform propagation]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
 ## Purpose
@@ -14,9 +14,10 @@ point. It must run headlessly without a renderer, editor, resource system or sys
 
 This note began as S6-D1's deliverable. S6-T1 shipped the entity-handle and component-
 identity foundation; S6-T2 shipped typed columns, archetypes and cached transitions;
-S6-T3 shipped query matching and iteration; S6-T4 added the built-in hierarchy. Remaining
-proposed sections describe Scene integration work. ADR-020 now settles scheduling and
-barrier placement; S6-T5–T9 implement the remaining seams.
+S6-T3 shipped query matching and iteration; S6-T4 added the built-in hierarchy;
+S6-T5 added Transform and immediate propagation. Remaining proposed sections describe
+Scene integration work. ADR-020 settles scheduling and barrier placement; S6-T6–T9
+implement the remaining seams.
 
 ## Evidence and freshness
 
@@ -27,8 +28,8 @@ that tag, not files in the current checkout. Read them with
 `git show v1-reference:<path>`.
 
 The Dashboard reconciliation stamp is still `01ed7a30`; `origin/master` contains later
-commits. This was a targeted S6-T4 inspection, not a full reconciliation. PR #86 merged
-as `5a687af1` after its Windows, Linux, sanitizer, format and diff-coverage checks passed.
+commits. This note received targeted S6-T4/T5 updates, not a full reconciliation.
+PR #86 merged as `5a687af1` and PR #87 as `47bfaefc`.
 
 ## Decided
 
@@ -165,33 +166,33 @@ entities; external references need an explicit preserve/clear policy. Custom com
 participate through registered reference handling, not a switch over engine component names.
 The same requirement informs future serialization remapping, without fixing a file format now.
 
-S6-T4 creates entities directly in the `{Hierarchy}` archetype. The storage constructor
-registers Hierarchy until S6-T9 moves built-in registration to the app composition root.
-S6-T5 must add Transform to the starting archetype to complete the two-component contract.
+S6-T4 created entities in the `{Hierarchy}` archetype. S6-T5 added Transform to the
+starting archetype. The storage constructor registers both built-ins until S6-T9
+moves registration to the app composition root.
 
-## Transform propagation — agreed Sep 12
+## Transform propagation — shipped Sep 18
 
-One Transform component stores both local and world values: position (vec3), rotation
-(quaternion, with euler conversion for display and editing) and scale (vec3). Local values
-are the source of truth; an engine-provided Transform system computes world values via
-parent-first propagation. Scale is never zero; the engine rejects or clamps zero scale.
-Non-uniform parent scale combined with child rotation produces shear that does not
-decompose exactly into position/rotation/scale. The stored world values are the best
-approximation; the rendered result uses the full accumulated matrix and is correct.
-Custom systems declare local writes and world reads through the same access mechanism
-as built-in systems.
+One Transform stores local and world position, quaternion rotation and scale. Local TRS
+is authoritative. `setLocal` validates and stores it, then Scene refreshes that entity
+and all descendants before returning. `setWorld` converts the requested world TRS
+against the current parent chain and takes the same path. Reject an unrepresentable
+local shear without changing values. Zero scale is rejected; small nonzero scales remain valid.
 
-Run propagation during fixed simulation ticks, parent-first, after local-transform writers
-and before consumers that require current world transforms. A changed parent affects its
-descendants even when their local values did not change. The renderer never updates live
-Scene hierarchy; snapshot extraction copies completed values for presentation.
+Scene binds each default-constructed Transform to its Scene and Entity at creation.
+Assigning values to a bound Transform retains the destination binding and refreshes its
+subtree. Storage swap removal move-constructs the replacement row to carry its binding.
+Scene's internal parent-first subtree traversal updates the exact accumulated world matrix
+without invoking the public world-edit setter. The world TRS cache is approximate
+under shear; rendering uses the exact matrix. Traversal is iterative, so deep trees
+do not depend on C++ recursion. `propagateTransforms()` remains available for a
+full cache rebuild, but normal setters and hierarchy changes are immediately visible.
 
-Access conflicts alone do not establish semantic order. ADR-020 provides numeric priority
-and pairwise ordering for writer → propagation → consumer dependencies. A committed hierarchy
-change becomes visible after the Tick barrier, so propagation sees it on the next tick. If a
-consumer such as physics subsequently changes local transforms, S6-T5/T9 must determine
-whether another propagation point is needed before downstream world readers or snapshot
-extraction. One unconditional pass at the end is not assumed sufficient.
+The binding is runtime owner data, so Transform cannot use ADR-007's raw replicated
+column path. Replication must extract portable local values or revisit this choice.
+During Tick, systems writing Transform may also cause writes to descendant Transforms
+and internal hierarchy reads. S6-T9 must account for that in access validation.
+Committed hierarchy changes refresh the moved subtree at the barrier, ready for the
+next Tick. Snapshot extraction reads completed values, never live Scene on render.
 
 ## Editor Local / World editing — agreed Sep 12
 
@@ -202,18 +203,17 @@ The inspector reads copied simulation state, never live component references.
 Local edits request local-transform changes. World edits request a world-space target;
 simulation converts it to local values using the current parent world transform when the
 command is applied. The editor must not perform authoritative conversion using its older
-snapshot. Propagation then recomputes world values from the updated local data.
+snapshot. The accepted setter refreshes world values before returning.
 
-Command application must obtain an up-to-date parent transform, accounting for earlier
-accepted edits or hierarchy commands. S6-T8/T9 must establish that freshness when applying
-commands and order the subsequent propagation. Reject stale entity handles after destruction
-or load.
+Command application uses the current parent chain, including earlier accepted edits or
+hierarchy commands. S6-T8/T9 must preserve command order and reject stale entity handles
+after destruction or load.
 
-World-position conversion requires an invertible parent transform. Zero scale is prevented
-by the engine, so inversion is always valid. Non-uniform parent scale may produce approximate
-world decomposition in the inspector; the rendered result remains correct. UI delivery
-remains separate from the Scene storage port, while these data and command requirements
-guide its design.
+World-position conversion requires an invertible parent transform. The engine rejects
+zero local scale, and conversion also rejects a singular or non-finite parent matrix.
+Non-uniform parent scale may produce approximate world decomposition in the inspector;
+the rendered result remains correct. UI delivery remains separate from the Scene
+storage port, while these data and command requirements guide its design.
 
 ## Project extension contract
 
@@ -326,17 +326,15 @@ See [[Game Loop — Frame Flow]] and ADR-019 for delivery and interpolation.
 
 ## Open implementation gates
 
-- S6-T5 must prove Transform propagation, preserve-local/world reparenting and world
-  editing against the current parent state.
 - S6-T8 must implement deferred structural commands, event visibility and write stamps
   under ADR-020's Tick barrier. [[Events — Design]] records the unresolved retention
   anchor after the loop split.
 - S6-T9 must register built-ins at the composition root and prove the integrated
   schedule headlessly.
 
-Story B is sized at five cards (S6-T1 through S6-T5): entity handles and registry,
+Story B closed with five cards (S6-T1 through S6-T5): entity handles and registry,
 archetype storage and transitions, queries, built-in hierarchy and transform propagation.
-Each includes focused tests. Cards are cut on the sprint note.
+Each includes focused tests. The sprint note holds their acceptance criteria.
 
 ## Verification required when implemented
 
@@ -351,11 +349,11 @@ Each includes focused tests. Cards are cut on the sprint note.
   throwing default construction or shared-column copy in PR #84 (`4bcc71d0`).
 - S6-T4 covers parent/child traversal, ordered reparenting, cycle rejection, detach/reparent
   survival, iterative deep-tree destruction, slot reuse and Scene clear in PR #86
-  (`5a687af1`). Still verify archetype moves while linked and S6-T5's preserve-local/world
-  transform results.
-- Prove parent-first propagation after local writes and committed hierarchy changes, including
-  changes to a parent whose descendants' local values are unchanged. World readers and
-  snapshot extraction must observe the required propagation point.
+  (`5a687af1`). Still verify archetype moves while linked during integration.
+- S6-T5 covers immediate parent-first propagation after local/world writes and hierarchy
+  changes, current-parent world edits, preserve-local/world reparenting, small nonzero scale
+  boundaries and non-uniform scale in PR #87 (`47bfaefc`). System execution and snapshot
+  extraction still need S6-T9 proof.
 - Prove editor world edits convert using the current parent state despite an older displayed
   snapshot. Cover root equivalence, ordered parent/child edits and stale handles. Verify
   that zero scale is rejected and that non-uniform parent scale produces correct rendered

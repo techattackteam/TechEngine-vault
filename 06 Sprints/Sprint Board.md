@@ -30,7 +30,7 @@ kanban-plugin: board
 
 ## Story E — Scene integration and headless proof
 
-- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h · ⛔ T5 + T8
+- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h · ⛔ T8
 
 
 ## Story F — Repair bounded documentation drift
@@ -41,7 +41,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h
 
 
 ## 👀 Review / Demo
@@ -50,6 +49,14 @@ kanban-plugin: board
 
 ## ✅ Done
 
+- [x] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h —
+	  Merged as PR #87 (`47bfaefc`). [[ADR-021 — Immediate Scene transform propagation]]
+	  replaced the planned schedule pass with immediate subtree updates; [[Scene — Design]]
+	  records the shipped contract. Review caught a late preserve-world scale rejection and
+	  loss of Scene binding on Transform assignment; both were fixed before merge.
+	  Story B is complete, leaving S6-T9 waiting on T8.
+	  **Retro:** initial green CI missed tiny local scales and bound assignment; focused
+	  regression cases were added before the final green run.
 - [x] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h —
 	  Merged as PR #86 (`5a687af1`). Entity creation now starts in the required
 	  Hierarchy archetype, superseding the empty-entity fixture assumption.

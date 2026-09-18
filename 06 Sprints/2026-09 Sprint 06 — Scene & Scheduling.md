@@ -23,7 +23,7 @@ are implementation and verification in Stories B, D and E.
 
 | Area | Grounding | Current gate |
 |---|---|---|
-| Scene/ECS port | [[Scene — Design]]; ADR-007 §1–2 | Design cleared by S6-D1. T1–T4 merged; Transform (T5) remains. |
+| Scene/ECS port | [[Scene — Design]]; ADR-007 §1–2; [[ADR-021 — Immediate Scene transform propagation]] | Design cleared by S6-D1. T1–T5 merged; Story B complete. |
 | Systems, graph and executor | [[Task Graph — Execution Flow]]; ADR-020 | Design cleared by S6-D2. Schedule, graph and executor (T6–T8) remain. |
 | Fixed simulation and presentation | [[Simulation Thread — Design]]; ADR-019 | Already implemented. Integration consumes these seams; presentation cannot borrow live Scene data. |
 
@@ -98,13 +98,16 @@ confirmed every entity carries both components.
   - Close note: creation starts in the required Hierarchy archetype. Registration in
     `ArchetypeStorage` is temporary until S6-T9 moves built-ins to the app composition root.
 
-- [ ] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h (depends on T4)
+- [x] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h (depends on T4) —
+  **done 2026-09-18 · `47bfaefc` · PR #87.**
   - Transform component: local + world position (vec3), rotation (quat with euler conversion), scale (vec3)
-  - Parent-first propagation system computes world values from local
+  - Scene propagates parent-first immediately after accepted Transform writes and hierarchy changes ([[ADR-021 — Immediate Scene transform propagation]])
   - Zero scale rejected by the engine
   - Non-uniform parent scale: approximate world decomposition, correct rendered matrix
   - Preserve-local and preserve-world reparenting
   - Tests: propagation after local writes, propagation after hierarchy changes, zero-scale rejection, preserve-local/world results, non-uniform scale decomposition
+  - Close note: review caught late rejection of small nonzero preserve-world scales and
+    owner-binding loss on Transform assignment; both were fixed and covered before merge.
 
 ### Story C — Settle system dependencies and execution
 
@@ -157,14 +160,14 @@ Connect the scene and executor to the shipped simulation lifecycle and demonstra
 small dependency chain. Hierarchy and transform are in Story B (S6-T4/T5). Input
 action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
 
-- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h (depends on T5 + T8)
+- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h (depends on T8)
   - Register built-in components in the app composition root and remove their temporary
     registration from `ArchetypeStorage`
   - Freeze ComponentRegistry and Schedule after startup registration and before the first tick
   - Build the graph once at simulation start from registered systems
   - Each fixed tick: executor walks levels, then runs barrier
-  - Register Movement, Gravity, Propagation and Collision as test systems with real access
-  - Prove the graph orders them correctly (ADR-020 §5 worked example)
+  - Register Movement, Gravity and Collision as test systems with real access; Transform setters propagate immediately under ADR-021
+  - Prove the graph orders them under ADR-020's conflict and priority rules, without a separate propagation node ([[ADR-021 — Immediate Scene transform propagation]])
   - Run headlessly: same scene, same graph, no window, deterministic output
   - Tests: multi-tick run produces expected transform state, headless matches windowed, graph reuse across ticks (no rebuild)
 
