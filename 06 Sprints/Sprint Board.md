@@ -23,24 +23,24 @@ kanban-plugin: board
 
 ## Story D — Schedule, graph and serial execution
 
-- [ ] **S6-T6** · Schedule and access declarations · P1 · 🟠 Moderate · 3–4h
-- [ ] **S6-T7** · Graph builder · P1 · 🟢 Deep · 4–6h · ⛔ T6
-- [ ] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h · ⛔ T7
 
 
 ## Story E — Scene integration and headless proof
 
-- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h · ⛔ T8
+- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h
 
 
 ## Story F — Repair bounded documentation drift
 
-- [ ] **S6-P1** · Align the documented build/profiler policy with shipped decisions · P3 · 🟡 Light · 2h
 - [ ] **S6-P2** · Report remaining Sprint 05 artifact and backlog drift · P3 · 🤖 Auto
 
 
-## 🔨 In Progress
+## Story G — Protect the Linux TSan signal
 
+- [ ] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h
+
+
+## 🔨 In Progress
 
 
 ## 👀 Review / Demo
@@ -49,6 +49,26 @@ kanban-plugin: board
 
 ## ✅ Done
 
+- [x] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h —
+	  Merged as PR #91 (`4da771af`). The executor owns persistent systems and one command
+	  buffer per graph node; it walks cached levels and applies those buffers in graph
+	  order at one deterministic barrier. Type-erased component values own their queued
+	  payloads, while access validation and declared-write stamps establish the seam for
+	  a later parallel executor. This completes Story D and unblocks S6-T9.
+	  **Retro:** the first pending-entity resolver mixed buffer-local indices with the
+	  shared spawned list; the graph-order regression caught the failure before merge.
+- [x] **S6-T7** · Graph builder · P1 · 🟢 Deep · 4–6h —
+	  Merged as PR #90 (`ea5d0c9c`). The implementation follows [[ADR-020 — System
+	  scheduling and task-graph execution]] without changing its scheduling decisions.
+	  Review strengthened exact conflict-log direction and access-mask boundary coverage
+	  before merge. This unblocks S6-T8; Story D remains open for the executor and barrier.
+- [x] **S6-T6** · Schedule and access declarations · P1 · 🟠 Moderate · 3–4h —
+	  Merged as PR #89 (`9be7a8be`). Review narrowed access tracking from components
+	  and shared resources to components only; [[ADR-020 — System scheduling and
+	  task-graph execution]] and [[Task Graph — Execution Flow]] record the deferred
+	  resource seam. Release-critical registration invariants moved from dev-only
+	  assertions to always-on `TE_CHECK`, with rejection tests active in every configuration.
+	  This unblocks S6-T7; Story D remains open for the graph and executor.
 - [x] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h —
 	  Merged as PR #87 (`47bfaefc`). [[ADR-021 — Immediate Scene transform propagation]]
 	  replaced the planned schedule pass with immediate subtree updates; [[Scene — Design]]

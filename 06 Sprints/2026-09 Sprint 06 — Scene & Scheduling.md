@@ -12,8 +12,10 @@ Demonstrate the same scene behavior headlessly.
 
 Miguel set the direction on Sep 12: reuse v1's sound ECS code, and let each system
 declare its component use so the graph derives dependencies. Read/write declarations
-also cover shared resources. A conflict requires serialization; semantic order still
-needs an explicit rule. The task-graph ADR settles the exact API and edge direction.
+cover components in S6-T6–T9; ADR-020's Sep 19 amendment defers shared-resource access
+until a concrete scheduled resource conflict needs it. A component conflict requires
+serialization; semantic order still needs an explicit rule. The task-graph ADR settles
+the exact API and edge direction.
 
 ## Artifact gate
 
@@ -24,7 +26,7 @@ are implementation and verification in Stories B, D and E.
 | Area | Grounding | Current gate |
 |---|---|---|
 | Scene/ECS port | [[Scene — Design]]; ADR-007 §1–2; [[ADR-021 — Immediate Scene transform propagation]] | Design cleared by S6-D1. T1–T5 merged; Story B complete. |
-| Systems, graph and executor | [[Task Graph — Execution Flow]]; ADR-020 | Design cleared by S6-D2. Schedule, graph and executor (T6–T8) remain. |
+| Systems, graph and executor | [[Task Graph — Execution Flow]]; ADR-020 | Design cleared by S6-D2. Schedule, graph and serial executor merged through T8; S6-T9 integration remains. |
 | Fixed simulation and presentation | [[Simulation Thread — Design]]; ADR-019 | Already implemented. Integration consumes these seams; presentation cannot borrow live Scene data. |
 
 Implementation stories were roughly counted under the heavy gates at planning,
@@ -113,8 +115,10 @@ confirmed every entity carries both components.
 
 - [x] **S6-D2** · Task-graph/System ADR and execution design · P1 · 🟢 Deep · 4–6h — **done 2026-09-12.**
   done: Miguel accepts the task-graph contract; update the existing execution note and
-  ADR Index with its relationship to ADR-007 and ADR-019. Settle system-owned component
-  and resource read/write declarations, explicit order, deterministic conflict direction,
+  ADR Index with its relationship to ADR-007 and ADR-019. The accepted scope originally
+  covered component and resource read/write declarations; ADR-020's Sep 19 amendment
+  narrows S6-T6–T9 to components and defers shared resources. Settle explicit order,
+  deterministic conflict direction,
   cycle diagnostics, legal schedule mutations/rebuilds, debug access validation, node
   granularity, and structural/event barriers. Keep fixed simulation separate from snapshot
   presentation. Address the future fixed-only script terminal slot without implementing
@@ -127,15 +131,20 @@ System declarations feed a graph built once at simulation start. Fixed ticks reu
 The schedule is immutable after build (ADR-020 §7). Structural commands queue into the
 barrier. The serial executor walks levels one system at a time (ADR-020 §8).
 
-- [ ] **S6-T6** · Schedule and access declarations · P1 · 🟠 Moderate · 3–4h
-  - Schedule holds entries: system factory, priority (int, default 0), access bitmask
-  - `DeclareAccess<Write<T...>, Read<T...>>` lowered to dense-ID bitmasks at registration
+- [x] **S6-T6** · Schedule and access declarations · P1 · 🟠 Moderate · 3–4h —
+  **done 2026-09-19 · `9be7a8be` · PR #89.**
+  - Schedule holds entries: system factory, priority (int, default 0), component-access bitmask
+  - `DeclareAccess<Write<T...>, Read<T...>>` lowered to component dense-ID bitmasks at registration
   - `.priority(N)`, `.before<A>()`, `.after<A>()` on entries
   - `Slot::Terminal` flag for the script runner slot (ADR-020 §4)
   - Registration closes before first tick (same freeze as ComponentRegistry, S6-T1)
   - Tests: register entries, priority assignment, before/after edges, terminal slot flag, double-registration rejection, post-freeze rejection
+  - Close note: the Sep 19 ADR-020 amendment narrowed this slice to component access
+    and deferred shared resources. Review promoted registration invariants from dev-only
+    `TE_ASSERT` to always-on `TE_CHECK` and ungated their rejection tests. T7 is unblocked.
 
-- [ ] **S6-T7** · Graph builder · P1 · 🟢 Deep · 4–6h (depends on T6)
+- [x] **S6-T7** · Graph builder · P1 · 🟢 Deep · 4–6h (depends on T6) —
+  **done 2026-09-19 · `ea5d0c9c` · PR #90.**
   - Conflict detection: `A.writes ∩ B.touches ≠ ∅` produces an edge
   - Priority-based direction: lower priority runs first
   - Equal priority on a conflicting pair is a build error
@@ -144,8 +153,11 @@ barrier. The serial executor walks levels one system at a time (ADR-020 §8).
   - Topological sort into levels. Cycle detection with `TE_CHECK` naming every system
   - Log every conflict-derived edge at build time
   - Tests: conflict detection, priority ordering, explicit override, cycle rejection with named systems, terminal slot placement, disjoint readers on same level, equal-priority error
+  - Close note: no scheduling decision changed. Review tightened exact directional-log
+    assertions and added conflict coverage across the 64-bit access-mask boundary. T8 is unblocked.
 
-- [ ] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h (depends on T7 + T2)
+- [x] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h (depends on T7 + T2) —
+  **done 2026-09-19 · `4da771af` · PR #91.**
   - Walk levels in order, run one system at a time
   - Command buffer: queue spawn/despawn/add/remove during tick
   - Barrier after tick: apply commands in deterministic order, validate hierarchy (S6-T4), assign NetIds, flush event streams
@@ -153,6 +165,11 @@ barrier. The serial executor walks levels one system at a time (ADR-020 §8).
   - Debug validation: actual access is a subset of declared (`TE_ASSERT`)
   - Coarse write-stamping: `changeTick` per system/archetype/component (ADR-007 §2)
   - Tests: systems run in level order, command buffer deferred until barrier, undeclared access fires assert, write-stamp advances on declared writes only
+  - Close note: persistent system instances and per-system command buffers live in the
+    executor, leaving the cached graph immutable. Buffers merge in graph order at one
+    post-Tick barrier; pending-entity tokens are local to the buffer that produced them.
+    Queued type-erased component values own their payloads, and declared writable columns
+    are stamped once per system before execution. Story D is complete and S6-T9 is unblocked.
 
 ### Story E — Scene integration and headless proof · 1 task · sized Sep 12
 
@@ -173,18 +190,32 @@ action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
 
 ### Story F — Repair bounded documentation drift
 
-- [ ] **S6-P1** · Align the documented build/profiler policy with shipped decisions · P3 · 🟡 Light · 2h —
-  done: confirm the shipped warning/tidy policy and Tracy pin, apply dated amendments to
-  ADR-005/008/013 where needed, and align B3 and Profiler — Design. Preserve enforced
-  formatting and the matching Tracy client/desktop requirement. Record any unresolved
-  discrepancy rather than making a new policy choice. Sources are the S5-T12 decision
-  and the existing backlog entries, moved here at planning.
 - [ ] **S6-P2** · Report remaining Sprint 05 artifact and backlog drift · P3 · 🤖 Auto —
   done: produce one bounded report comparing Project, File Access, Simulation Thread,
   Game Loop and their indexed decisions with the inspected engine revision; re-resolve
   fired backlog witnesses too. Classify stale history versus live claims and identify
   resolved entries. Report only; do not amend decisions or advance the Dashboard stamp.
   Verify by reading files. No code PR, build, workflow edit or dependency on this report.
+
+S6-P1 returned to [[Backlog]] on Sep 19 when the mid-sprint S6-B1 defect displaced the
+lowest-priority Process card.
+
+### Story G — Protect the Linux TSan signal
+
+- [ ] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h —
+  [PR #91 run 35463582634](https://github.com/techattackteam/TechEngine/actions/runs/35463582634/job/105952186879?pr=91)
+  passed the pacing test's six assertions, then TSan reported two races during
+  `RenderThread`'s `window.swapBuffers()` call: `pthread_mutex_destroy` against an
+  llvmpipe worker lock and `pthread_cond_destroy` against another llvmpipe worker read.
+  PR #91 changes only `engine/core`; it does not touch the client/render/window paths.
+  Miguel reports this is the second occurrence.
+  - Reproduce with repeated focused `linux-tsan` runs and record the failure frequency
+  - Determine whether engine context/thread lifetime, Mesa/llvmpipe, or sanitizer instrumentation owns the race
+  - Use `LP_NUM_THREADS=0` only as a diagnostic comparison; do not accept it as the root-cause fix
+  - If engine-owned, fix it and add focused regression coverage; if dependency-owned,
+    record upstream evidence and use only a narrow workaround that preserves engine-race detection
+  - Finish with a green focused stress run and full Linux TSan suite, or split a concretely
+    scoped resolution card if the investigation proves larger than this session
 
 ## Definition of Done
 
@@ -196,7 +227,9 @@ action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
 - [ ] Tests prove handle invalidation, storage/query behavior, graph conflicts and semantic
   ordering, cycle rejection, graph reuse/rebuild boundaries and deferred structural changes.
   Handle invalidation and hierarchy cycle rejection landed through S6-T4, PR #86
-  (`5a687af1`); graph and barrier cases remain.
+  (`5a687af1`); graph conflicts, semantic ordering and graph-cycle rejection landed through
+  S6-T7, PR #90 (`ea5d0c9c`). Deferred structural changes and repeated executor use landed
+  through S6-T8, PR #91 (`4da771af`); repeated headless integration remains S6-T9.
 - [ ] Required implementation PRs are merged with recorded validation, and touched design
   notes describe the shipped behavior. Presentation does not access the live Scene.
 
@@ -209,19 +242,21 @@ plus two weekend deep days at 2–3 slots each = **8–10 Deep**, plus **2 Moder
 capacity. Weekend work days remain swappable and at least one rest day is the default.
 
 Story B is 5 Dev cards (S6-T1 through S6-T5, 16–23h). Story D is 3 Dev cards (S6-T6
-through S6-T8, 11–16h). Story E is 1 Dev card (S6-T9, 3–4h). With 2 Design and
-2 Process that is **13 cut cards, ~15–21 substantive sessions**. The upper end will
+through S6-T8, 11–16h). Story E is 1 Dev card (S6-T9, 3–4h). With 2 Design, 1 Bug and
+1 Process that is **13 cut cards, ~15–21 substantive sessions**. The upper end will
 roll into Sprint 07. Check the actual mix at the Sep 19–20 review. Cut S6-P1 first
-if attended time tightens, then carry unfinished scope explicitly.
+if attended time tightens, then carry unfinished scope explicitly. S6-B1 arrived on
+Sep 19 and took that cut: S6-P1 returned to the backlog rather than adding work on top.
 
-Current card mix is 9 Dev (5 Deep + 4 Moderate) / 2 Design / 0 Bug / 2 Process.
+Current card mix is 9 Dev (5 Deep + 4 Moderate) / 2 Design / 1 Bug / 1 Process.
 One Process card is Auto.
 The Auto pass selected only S6-P2: no decisions, file-verifiable, off the critical path,
 and no workflow edits. It costs no code PR or CI minutes. No automation was changed.
 
 No unfinished Sprint 05 card carries. Known Issue D3 has no identified consumer in this
 slice; D4 must be rechecked if integration introduces a real Role-formatting caller.
-No new running defect was established in this planning pass. Error-handling policy,
+No running defect was known at planning; S6-B1 was established from the repeated Sep 19
+Linux TSan failure. Error-handling policy,
 branch-link tooling and workflow-policy decisions remain parked, despite fired triggers;
 they are not prerequisites inferred for this sprint. RNG/crash handling remain deferred
 roadmap items, not untracked carry cards. Parallel execution stays P1; content stays M6.

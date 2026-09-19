@@ -4,6 +4,10 @@
 - **Date:** 2026-09
 - **Deciders:** Miguel (Lead Engineer), with AI as technical lead
 - **Task:** S6-D2
+- **Amended 2026-09-19 — decision:** "Access declarations cover components and
+  resources" → S6-T6–T9 track components only. Shared-resource access is deferred
+  until a concrete scheduled resource conflict needs graph ordering or debug
+  validation. Trigger: S6-T6 lowers access through `ComponentRegistry`.
 - **Related:** settles the open items ADR-007 §6 deferred to "the task-graph ADR" ·
   builds on ADR-019's fixed-only simulation model · provides ADR-010 §4's terminal slot ·
   design hub: [[Task Graph — Execution Flow]]
@@ -52,6 +56,11 @@ until its barrier. Hierarchy changes take effect at the barrier and are propagat
 on the next tick.
 
 ### 2. Access declarations cover components and resources
+
+> **Amended 2026-09-19:** S6-T6–T9 lower component access only through
+> `ComponentRegistry`. The original component-and-resource decision below is
+> historical. Add shared-resource access when a concrete scheduled resource conflict
+> needs automatic ordering or debug validation.
 
 `DeclareAccess<Write<Transform>, Read<Velocity, PhysicsWorld>>` declares read
 and write intent over components and shared resources. Both use the same dense-ID

@@ -2,7 +2,7 @@
 
 **Module:** core
 **Kind:** system
-**Status:** implementing — S6-T1–T5 merged by 2026-09-18; scheduling integration pending
+**Status:** implementing — S6-T1–T8 merged by 2026-09-19; fixed-tick integration pending
 **ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] · [[ADR-020 — System scheduling and task-graph execution]] · [[ADR-021 — Immediate Scene transform propagation]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
@@ -15,9 +15,9 @@ point. It must run headlessly without a renderer, editor, resource system or sys
 This note began as S6-D1's deliverable. S6-T1 shipped the entity-handle and component-
 identity foundation; S6-T2 shipped typed columns, archetypes and cached transitions;
 S6-T3 shipped query matching and iteration; S6-T4 added the built-in hierarchy;
-S6-T5 added Transform and immediate propagation. Remaining proposed sections describe
-Scene integration work. ADR-020 settles scheduling and barrier placement; S6-T6–T9
-implement the remaining seams.
+S6-T5 added Transform and immediate propagation; S6-T6 added Schedule declarations.
+S6-T7 added the immutable graph and S6-T8 added serial execution and the structural
+barrier. Remaining proposed sections describe S6-T9 Scene integration work.
 
 ## Evidence and freshness
 
@@ -28,8 +28,9 @@ that tag, not files in the current checkout. Read them with
 `git show v1-reference:<path>`.
 
 The Dashboard reconciliation stamp is still `01ed7a30`; `origin/master` contains later
-commits. This note received targeted S6-T4/T5 updates, not a full reconciliation.
-PR #86 merged as `5a687af1` and PR #87 as `47bfaefc`.
+commits. This note received targeted S6-T4/T5/T6/T7/T8 updates, not a full reconciliation.
+PR #86 merged as `5a687af1`, PR #87 as `47bfaefc`, PR #89 as `9be7a8be`,
+PR #90 as `ea5d0c9c` and PR #91 as `4da771af`.
 
 ## Decided
 
@@ -42,6 +43,7 @@ PR #86 merged as `5a687af1` and PR #87 as `47bfaefc`.
 | Retain archetypes, cached transition edges and vector-backed SoA columns behind IComponentStorage; iterate typed spans. | ADR-007 §2 |
 | One registration seam describes identity, disk serialization and replication eligibility. Replicated components are restricted to trivially-copyable data without process-local pointers or handles. | ADR-007 §2; ADR-016 §1–2 |
 | Declared system writes feed per-column change ticks. Structural changes are deferred during system execution and applied after Tick. | ADR-007 §2 and §6; ADR-020 §1 and §8 |
+| S6-T6–T9 schedule conflicts from component access only. Shared-resource access waits for a concrete scheduled resource conflict. | ADR-020 §2, Sep 19 amendment |
 | Simulation performs fixed ticks; presentation consumes copied snapshots and never accesses live Scene storage. | ADR-019 §1–3, superseding ADR-007's variable/presentation pipeline |
 | Serialization uses the existing Writer/Reader and ADL visit seam. Scene document layout belongs to its consumer. | ADR-016 §2 and §6; [[Serialization — Design]] |
 
@@ -149,8 +151,8 @@ Hierarchy mutations preserve reciprocal links and child counts. Reject self-pare
 parenting beneath a descendant and stale handles from previously loaded contents before changing
 links. v1 checks self-parenting but does not walk ancestors to reject longer cycles.
 Structural commands must validate against the hierarchy at commit time, including earlier
-commands in the same barrier. ADR-020 §1 supplies ordering and visibility; S6-T8
-implements the command buffer and barrier.
+commands in the same barrier. ADR-020 §1 supplies ordering and visibility; S6-T8 shipped
+the command buffer and barrier in PR #91 (`4da771af`).
 
 Retain subtree destruction as v1's default, with explicit detach/reparent
 operations when children should survive. Traversal
@@ -206,8 +208,9 @@ command is applied. The editor must not perform authoritative conversion using i
 snapshot. The accepted setter refreshes world values before returning.
 
 Command application uses the current parent chain, including earlier accepted edits or
-hierarchy commands. S6-T8/T9 must preserve command order and reject stale entity handles
-after destruction or load.
+hierarchy commands. S6-T8 establishes graph-order structural application; S6-T9 must
+connect editor commands to that order and reject stale entity handles after destruction
+or load.
 
 World-position conversion requires an invertible parent transform. The engine rejects
 zero local scale, and conversion also rejects a singular or non-finite parent matrix.
@@ -223,13 +226,16 @@ traits are supplied there. Scene, archetype transitions and queries remain gener
 `MyGame.Health` must not require changing a central enum, serializer switch or Scene class.
 
 A project registers stateful systems into the app-composed Schedule. Each declares component
-and resource reads/writes and any semantic ordering. Those declarations include custom types
+reads/writes and any semantic ordering. Those declarations include custom component types
 and feed the same graph, debug access validation and change tracking as engine systems.
+Shared resources are outside S6-T6–T9 access masks; add them when a concrete scheduled
+resource conflict needs graph ordering or debug validation.
 A custom system can query and update both built-in and project components through public APIs.
 
-Hierarchy operations are available to custom systems through the same deferred structural
-command contract. Internal hierarchy links must not be freely writable in a way that bypasses
-Scene invariants; S6-T8/T9 must account for hierarchy access and transform propagation dependencies.
+The S6-T8 deferred command contract covers spawn, despawn, component add and component
+remove. Custom-system hierarchy operations must join that structural path rather than
+write internal links directly; their integration must preserve Scene invariants and
+Transform propagation dependencies.
 
 Registration closes before the first tick (startup-only). S6-T1 supplies the registry's
 freeze mechanism; S6-T9 owns the composition-root call that closes registration before
@@ -300,24 +306,30 @@ non-copyable and non-movable and must outlive them.
 Structural mutation is prohibited while any query or `eachEntity` callback is active.
 Iteration depth is atomic so disjoint queries may run concurrently; the task graph remains
 responsible for preventing conflicting component access. ADR-020 places queued structural
-changes at the post-Tick barrier; S6-T8 implements the command buffer. Immediate mutation
+changes at the post-Tick barrier. S6-T8 shipped per-system command buffers whose owned
+type-erased values survive until deterministic graph-order application. Immediate mutation
 is only a setup, stopped-execution or internal barrier operation.
 
 ## Scheduling and presentation seams
 
 Scene exposes data operations; it does not own worker threads or call sibling systems.
-Each system runs on a single worker assigned by the task graph. A system iterates its
-matched archetypes on that thread and does not spawn child jobs. `JobSystem::wait()` rejects
-calls from pool workers, so nested parallelism is not available.
+The S6-T8 serial executor invokes each system on one thread. A future parallel executor
+may assign graph nodes to workers, but a system still does not spawn child jobs.
+`JobSystem::wait()` rejects calls from pool workers, so nested parallelism is not available.
 
 **Future expansion:** allow a system's worker to spawn sub-workers for its own iteration
 and wait for them. This requires either a parallel-for helper called from outside the pool
 or work-stealing inside `wait()`. Not in scope until profiling shows single-threaded
 iteration is a bottleneck.
 
-ADR-020 defines the system access scope, structural command ordering, event visibility
-and column write-stamping points. S6-T6–T9 implement those decisions. The port does not
-restore v1's `parallelEach` or ADR-007's superseded variable-rate tail.
+ADR-020 defines the component-access scope, structural command ordering, event visibility
+and column write-stamping points. S6-T6–T8 ship Schedule, graph and serial execution.
+`SerialExecutor` owns persistent system instances and one reusable command buffer per
+graph node, while `TaskGraph` remains immutable. Scene validates actual accesses against
+the active declaration, and the executor stamps every matching declared writable column
+once before a system runs. Injected barrier services assign `NetId`s and flush event streams
+without moving networking or event ownership into Scene. S6-T9 connects this path to fixed
+ticks. The port does not restore v1's `parallelEach` or ADR-007's superseded variable-rate tail.
 
 Completed simulation state is extracted into owned presentation values through the
 existing publication lifecycle. Extraction may read Scene on its owner thread; the
@@ -326,11 +338,12 @@ See [[Game Loop — Frame Flow]] and ADR-019 for delivery and interpolation.
 
 ## Open implementation gates
 
-- S6-T8 must implement deferred structural commands, event visibility and write stamps
-  under ADR-020's Tick barrier. [[Events — Design]] records the unresolved retention
-  anchor after the loop split.
 - S6-T9 must register built-ins at the composition root and prove the integrated
   schedule headlessly.
+
+S6-T8 shipped deferred structural commands, event flushing through barrier services and
+declared-write stamps under ADR-020's Tick barrier. [[Events — Design]] still records the
+unresolved retention anchor after the loop split.
 
 Story B closed with five cards (S6-T1 through S6-T5): entity handles and registry,
 archetype storage and transitions, queries, built-in hierarchy and transform propagation.
@@ -369,14 +382,15 @@ Each includes focused tests. The sprint note holds their acceptance criteria.
   disjoint queries in PR #85 (`150f8f0d`). It also covers explicit `eachEntity`; empty
   component queries are rejected.
 - Serialization round-trip testing is deferred to the resource system.
-- With T8/T9, prove deferred mutation visibility, declared-access checks and column change ticks
-  in a repeated headless fixed-tick scenario. Snapshot publication must own its values.
+- S6-T8 proves deferred mutation visibility, declared-access checks, graph-order buffer
+  application and column change ticks in executor tests. S6-T9 must prove the same path in
+  a repeated headless fixed-tick scenario. Snapshot publication must own its values.
 
 ## References
 
 - [[Serialization — Design]] and current `engine/core/include/TechEngine/core/serialization/`
   (`Writer.hpp`, `Reader.hpp`, `Visit.hpp`) supply the existing archive seam.
 - [[Task Graph — Execution Flow]] is the accepted execution view for ADR-020; T6–T8
-  still need to implement it.
+  shipped it through PRs #89–91.
 - [[Simulation Thread — Design]] and [[Game Loop — Frame Flow]] describe the integration
   boundary; ADR-019 controls where older wording conflicts.

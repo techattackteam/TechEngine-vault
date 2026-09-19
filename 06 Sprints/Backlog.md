@@ -116,6 +116,10 @@ groups are kept, because they show where future work will land.
   fails and costs a CI timeout to catch. **Trigger:** a test helper that can fail a case on a
   deadline.
 
+- #prio/low · **Intra-system chunking for heavy systems** — parallelize a system's entity
+  iteration without changing whole-system graph semantics. **Trigger:** profiling after the
+  parallel executor shows one system node dominates a tick.
+
 ## client
 
 - *(none)*
@@ -174,6 +178,12 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
+- #prio/medium · **Align the documented build/profiler policy with shipped decisions** —
+  confirm the warning/tidy policy and Tracy pin, apply dated amendments to ADR-005/008/013
+  where needed, and align B3 and Profiler — Design. Preserve enforced formatting and the
+  matching Tracy client/desktop requirement; record unresolved discrepancies rather than
+  making a new policy choice. This was S6-P1 until the Sep 19 S6-B1 TSan defect displaced
+  the sprint's lowest-priority Process card. **Trigger:** the next sprint plan.
 
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly** — report-once is per call site through a function-local static (ADR-011 §5), and

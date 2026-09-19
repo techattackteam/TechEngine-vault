@@ -9,8 +9,8 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-09 Sprint 06 — Scene & Scheduling]] *(Sep 12–25)* |
 | **Sprint goal** | Port the reusable v1 ECS into Scene and run declared system dependencies on fixed ticks, proven headlessly. |
-| **Current focus** | S6-D1/D2 and S6-T1–T4 are done. The board has Transform (T5) in progress; schedule declarations (T6) are next. |
-| **Top blocker** | Scene integration (T9) waits on Transform (T5) and the serial executor (T8). T8 also needs an event-retention rule for the threaded loop. |
+| **Current focus** | Schedule and graph are complete through T7. T8 is in progress; S6-B1 now tracks the repeated Linux TSan llvmpipe synchronization race and displaced S6-P1. |
+| **Top blocker** | Scene integration (T9) waits on the serial executor (T8). Query, entity-traversal and component-mutation mechanisms remain private, so T9 must expose the public custom-system path before the headless proof. |
 | **Next milestone** | M5 Scene & scheduling. M3 editor testbed and M4, including simulation independence, are complete. |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `01ed7a30` (2026-08-30) |
@@ -25,14 +25,14 @@ git log --oneline 01ed7a30..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
-so when grounding an answer (CLAUDE.md rule 2). Distance is a signal, not proof: it cannot tell
-you *which* note drifted, only that nobody has looked.
+so when grounding an answer (`AGENTS.md` § *Design and evidence*). Distance is a signal, not
+proof: it cannot tell you *which* note drifted, only that nobody has looked.
 
-**Latest check: Sep 12, 2026**, after fetching `origin/master` at `7d2546fc`.
-The spot-check confirmed shipped simulation integration and stale Project, Task Graph
-and Simulation Thread claims. Full hub/ADR reconciliation remains incomplete.
-**Stamp unchanged.** See [[2026-09-12 Sprint 05 Retrospective]]; S6-D2 and S6-P1/P2
-carry follow-ups. No build, test, live CI check or demo ran during planning.
+**Latest check: Sep 19, 2026**, after fetching `origin/master` at `8ccde237`.
+The targeted check confirmed the shipped Scene mechanics and found a missing public Scene
+query/mutation seam plus stale Claude autonomous-lane artifacts. Full reconciliation remains
+incomplete. **Stamp unchanged.** See [[2026-09-19 Weekly Review]]. No build, test, live CI
+check or demo ran during the review.
 
 ## 🗓️ Rhythm
 
@@ -57,9 +57,8 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **Sep 19–20, 2026**: `$weekly-review`, the Sprint 06 midpoint.
-The next `$sprint-plan` is Sep 26–27. Sprint 05's boundary review is recorded in
-[[2026-09-12 Sprint 05 Retrospective]].
+→ **Next ceremony:** **Sep 26–27, 2026**: `$sprint-plan`, the Sprint 06 boundary.
+The midpoint review is recorded in [[2026-09-19 Weekly Review]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
 
@@ -162,10 +161,10 @@ Recently locked — full set in [[ADR Index]]:
   subclasses. **Partially supersedes [[ADR-006 — v2 core architecture & module layout]] §1**'s
   "editor out of the frame loop" clause. It cut **Story F** into Sprint 05 and rewrote three
   Story B cards, which is where the 🟠 overload came from. The original implementation diverged on optional hooks and the entry point. #81 supplies optional hooks; the per-executable `main()` / `runApp<>()` wording still needs reconciliation ([[Backlog]]).
-- [x] **Autonomous lane:** S5-P1, P2 and P3 are closed. The first code PR (#66) merged
-  Sep 3; [[Sprint Board]] records Linux validation and the one-PR-per-day observation.
-  [[Autonomous Lane — Design]] now requires completed cards to move to Done and human
-  follow-up to Review/Demo. The live scheduler was not inspected during this review.
+- [x] **Claude autonomous lane:** S5-P1, P2 and P3 are closed. The first code PR (#66)
+  merged Sep 3. This provider-specific lane is now historical. PR #88 migrated attended
+  guidance to Codex but created no OpenAI schedule or remote environment; that lane remains
+  missing. The old scheduler was not inspected during this review.
 - [ ] renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20** — § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.
@@ -175,12 +174,18 @@ Recently locked — full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (2026-09-12)
+## Health check (2026-09-19)
 
-- **Delivery:** Sprint 05 closed all 25 cards; no unfinished card carries. Sprint 06 opens
-  M5, with implementation stories held behind explicit design gates.
-- **Evidence:** fetched history confirms `7d2546fc`. Prior test/CI and native demo evidence
-  is in [[2026-09-11 Threaded Engine Validation]]; not rerun today.
-- **Sustainability:** Miguel reports good energy and wants the current pace. Use the normal
-  rhythm; the upper estimate may roll over. Specific unavailable dates were not supplied.
-- **Artifact health:** reconciliation remains partial. See the retrospective and S6-P1/P2.
+- **Delivery:** Story B closed through S6-T5 and scheduling through S6-T7. T8–T9 remain
+  on the sprint goal's critical path. S6-B1 is the in-sprint TSan investigation; the
+  OpenAI lane and paper-review chatbot integration are not Sprint 06 scope.
+- **Evidence:** freshly fetched history confirms `8ccde237`. Source inspection covered the
+  merged Scene public surface and core storage/Transform paths. No build, test, demo or live
+  CI check ran during this review.
+- **Sustainability:** the first week exceeded the normal rhythm and review found several
+  planning misses. Protect one weekend rest day. The Sep 19 S6-B1 defect displaced S6-P1
+  instead of adding work on top. Current energy and the actual job/karting balance were
+  not reported.
+- **Artifact health:** targeted drift remains in Scene's public-system seam and the
+  Claude-specific autonomous-lane artifacts. See [[2026-09-19 Weekly Review]]; the
+  reconciliation stamp stays unchanged.

@@ -11,6 +11,7 @@ the one home for cadence. Entries appear here as they're written, newest first.
 
 | Date | Entry |
 |---|---|
+| 2026-09-19 | [[2026-09-19 Weekly Review]] — Story B closed; T6–T9 remain; OpenAI lane and paper-review integration stay unscheduled |
 | 2026-09-12 | [[2026-09-12 Sprint 05 Retrospective]] — Sprint 05 closed; M3, M4 and simulation independence shipped |
 | 2026-09-05 | [[2026-09-05 Weekly Review]] — F and B closed; S5-B1 first, M4 remains a stretch; artifact reconciliation deferred |
 | 2026-08-30 | [[2026-08-30 Sprint 04 Retrospective]] — M2 goal met and Sprint 05 opened early |
