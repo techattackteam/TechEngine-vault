@@ -2,7 +2,7 @@
 
 **Module:** core
 **Kind:** system
-**Status:** implementing — S6-T1–T8 merged by 2026-09-19; fixed-tick integration pending
+**Status:** implementing — S6-T1–T9 merged by 2026-09-22; repeated Scene proof pending
 **ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] · [[ADR-020 — System scheduling and task-graph execution]] · [[ADR-021 — Immediate Scene transform propagation]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
@@ -17,7 +17,8 @@ identity foundation; S6-T2 shipped typed columns, archetypes and cached transiti
 S6-T3 shipped query matching and iteration; S6-T4 added the built-in hierarchy;
 S6-T5 added Transform and immediate propagation; S6-T6 added Schedule declarations.
 S6-T7 added the immutable graph and S6-T8 added serial execution and the structural
-barrier. Remaining proposed sections describe S6-T9 Scene integration work.
+barrier. S6-T9 connected the App-owned Scene and executor to fixed ticks; repeated
+Scene-state and presentation proof remains open.
 
 ## Evidence and freshness
 
@@ -28,9 +29,9 @@ that tag, not files in the current checkout. Read them with
 `git show v1-reference:<path>`.
 
 The Dashboard reconciliation stamp is still `01ed7a30`; `origin/master` contains later
-commits. This note received targeted S6-T4/T5/T6/T7/T8 updates, not a full reconciliation.
+commits. This note received targeted S6-T4/T5/T6/T7/T8/T9 updates, not a full reconciliation.
 PR #86 merged as `5a687af1`, PR #87 as `47bfaefc`, PR #89 as `9be7a8be`,
-PR #90 as `ea5d0c9c` and PR #91 as `4da771af`.
+PR #90 as `ea5d0c9c`, PR #91 as `4da771af` and PR #92 as `2a50f8cb`.
 
 ## Decided
 
@@ -169,8 +170,8 @@ participate through registered reference handling, not a switch over engine comp
 The same requirement informs future serialization remapping, without fixing a file format now.
 
 S6-T4 created entities in the `{Hierarchy}` archetype. S6-T5 added Transform to the
-starting archetype. The storage constructor registers both built-ins until S6-T9
-moves registration to the app composition root.
+starting archetype. S6-T9 moved built-in registration from storage to `App` startup;
+direct Scene tests register both built-ins in their fixtures.
 
 ## Transform propagation — shipped Sep 18
 
@@ -192,7 +193,7 @@ full cache rebuild, but normal setters and hierarchy changes are immediately vis
 The binding is runtime owner data, so Transform cannot use ADR-007's raw replicated
 column path. Replication must extract portable local values or revisit this choice.
 During Tick, systems writing Transform may also cause writes to descendant Transforms
-and internal hierarchy reads. S6-T9 must account for that in access validation.
+and internal hierarchy reads. Access validation must account for those effects.
 Committed hierarchy changes refresh the moved subtree at the barrier, ready for the
 next Tick. Snapshot extraction reads completed values, never live Scene on render.
 
@@ -208,8 +209,8 @@ command is applied. The editor must not perform authoritative conversion using i
 snapshot. The accepted setter refreshes world values before returning.
 
 Command application uses the current parent chain, including earlier accepted edits or
-hierarchy commands. S6-T8 establishes graph-order structural application; S6-T9 must
-connect editor commands to that order and reject stale entity handles after destruction
+hierarchy commands. S6-T8 establishes graph-order structural application; later editor
+command integration must connect to that order and reject stale handles after destruction
 or load.
 
 World-position conversion requires an invertible parent transform. The engine rejects
@@ -238,8 +239,8 @@ write internal links directly; their integration must preserve Scene invariants 
 Transform propagation dependencies.
 
 Registration closes before the first tick (startup-only). S6-T1 supplies the registry's
-freeze mechanism; S6-T9 owns the composition-root call that closes registration before
-execution. There is no runtime registration and no engine DLL hot-reload. Editor script
+freeze mechanism; S6-T9 added the `App` call that closes registration before execution.
+There is no runtime registration and no engine DLL hot-reload. Editor script
 reload tears down Scene and registry, then re-registers all types from scratch. Archetype
 signatures use sorted vectors of dense IDs.
 Whatever module supplies callbacks must remain loaded until its systems, component values
@@ -323,13 +324,15 @@ or work-stealing inside `wait()`. Not in scope until profiling shows single-thre
 iteration is a bottleneck.
 
 ADR-020 defines the component-access scope, structural command ordering, event visibility
-and column write-stamping points. S6-T6–T8 ship Schedule, graph and serial execution.
+and column write-stamping points. S6-T6–T8 shipped Schedule, graph and serial execution.
 `SerialExecutor` owns persistent system instances and one reusable command buffer per
 graph node, while `TaskGraph` remains immutable. Scene validates actual accesses against
 the active declaration, and the executor stamps every matching declared writable column
-once before a system runs. Injected barrier services assign `NetId`s and flush event streams
-without moving networking or event ownership into Scene. S6-T9 connects this path to fixed
-ticks. The port does not restore v1's `parallelEach` or ADR-007's superseded variable-rate tail.
+once before a system runs. S6-T9 connected this path to fixed ticks. The barrier service
+interface has `NetId` and event hooks after command application, but `App` currently
+supplies a no-op adapter. Actual assignment, event flushing and engine ownership of the
+adapter remain [[Backlog]] work. The port does not restore v1's `parallelEach` or
+ADR-007's superseded variable-rate tail.
 
 Completed simulation state is extracted into owned presentation values through the
 existing publication lifecycle. Extraction may read Scene on its owner thread; the
@@ -338,11 +341,13 @@ See [[Game Loop — Frame Flow]] and ADR-019 for delivery and interpolation.
 
 ## Open implementation gates
 
-- S6-T9 must register built-ins at the composition root and prove the integrated
-  schedule headlessly.
+- PR #92 (`2a50f8cb`) registered built-ins at the composition root and ran the
+  configured demo through the fixed-tick executor. Repeated expected Scene state,
+  graph reuse at the App boundary and headless/windowed parity remain unproven
+  ([[Backlog]]).
 
-S6-T8 shipped deferred structural commands, event flushing through barrier services and
-declared-write stamps under ADR-020's Tick barrier. [[Events — Design]] still records the
+S6-T8 shipped deferred structural commands, barrier-service hooks and declared-write
+stamps under ADR-020's Tick barrier. [[Events — Design]] still records the
 unresolved retention anchor after the loop split.
 
 Story B closed with five cards (S6-T1 through S6-T5): entity handles and registry,
@@ -365,8 +370,8 @@ Each includes focused tests. The sprint note holds their acceptance criteria.
   (`5a687af1`). Still verify archetype moves while linked during integration.
 - S6-T5 covers immediate parent-first propagation after local/world writes and hierarchy
   changes, current-parent world edits, preserve-local/world reparenting, small nonzero scale
-  boundaries and non-uniform scale in PR #87 (`47bfaefc`). System execution and snapshot
-  extraction still need S6-T9 proof.
+  boundaries and non-uniform scale in PR #87 (`47bfaefc`). PR #92 executes demo systems;
+  its snapshot does not yet carry Scene state.
 - Prove editor world edits convert using the current parent state despite an older displayed
   snapshot. Cover root equivalence, ordered parent/child edits and stale handles. Verify
   that zero scale is rejected and that non-uniform parent scale produces correct rendered
@@ -383,14 +388,15 @@ Each includes focused tests. The sprint note holds their acceptance criteria.
   component queries are rejected.
 - Serialization round-trip testing is deferred to the resource system.
 - S6-T8 proves deferred mutation visibility, declared-access checks, graph-order buffer
-  application and column change ticks in executor tests. S6-T9 must prove the same path in
-  a repeated headless fixed-tick scenario. Snapshot publication must own its values.
+  application and column change ticks in executor tests. PR #92 wires the executor to
+  fixed ticks, but its runtime test observes one entity after one tick. Repeated
+  headless state proof and owned Scene snapshot values remain future work.
 
 ## References
 
 - [[Serialization — Design]] and current `engine/core/include/TechEngine/core/serialization/`
   (`Writer.hpp`, `Reader.hpp`, `Visit.hpp`) supply the existing archive seam.
-- [[Task Graph — Execution Flow]] is the accepted execution view for ADR-020; T6–T8
-  shipped it through PRs #89–91.
+- [[Task Graph — Execution Flow]] is the accepted execution view for ADR-020; T6–T9
+  shipped scheduling through fixed-tick wiring in PRs #89–92.
 - [[Simulation Thread — Design]] and [[Game Loop — Frame Flow]] describe the integration
   boundary; ADR-019 controls where older wording conflicts.

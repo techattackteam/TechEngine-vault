@@ -44,13 +44,12 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 | `02 Roadmap` | Quarterly goals, 2-week sprints, milestones |
 | `03 Architecture` | ADRs, system overview, diagrams, [[Known Issues]] |
 | `04 Design Docs` | Living design docs per system + utility — the *how* behind the ADRs |
-| `05 Research` | Papers, SIGGRAPH notes, technique write-ups |
+| `05 Research` | Paper review board, approved papers, SIGGRAPH notes, technique write-ups |
 | `06 Sprints` | Sprint board, active sprint, backlog |
 | `07 Journal` | Weekly reviews, sprint retrospectives, autonomous run reports |
 | `08 AI` | Technical-lead charter + the day-to-day operating guide |
 | `09 References` | External links and resources |
 | `Templates` | Note templates (ADR, sprint, story, review, research) |
-| `Scripts` | Vault maintenance scripts (`Sync-Papers.ps1`) |
 
 ## Weekly rhythm
 

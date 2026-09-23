@@ -27,12 +27,10 @@ kanban-plugin: board
 
 ## Story E — Scene integration and headless proof
 
-- [ ] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h
 
 
 ## Story F — Repair bounded documentation drift
 
-- [ ] **S6-P2** · Report remaining Sprint 05 artifact and backlog drift · P3 · 🤖 Auto
 
 
 ## Story G — Protect the Linux TSan signal
@@ -43,12 +41,22 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
+
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done
 
+- [x] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h —
+	  Merged as PR #92 (`2a50f8cb`). [[Scene — Design]] and [[Task Graph — Execution Flow]]
+	  record the App-owned startup and fixed-tick path. The runtime remains a one-tick demo;
+	  repeated-state and headless/windowed proof remain open in [[Backlog]]. The App-local
+	  no-op barrier adapter also has a next-sprint ownership follow-up there. Story E's
+	  proof is still open.
+	  **Retro:** Linux CI caught a missing `Transform` forward declaration after the Windows
+	  build; the final CI run passed. The PR used `[skip-coverage]`, so changed-line coverage
+	  was not enforced.
 - [x] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h —
 	  Merged as PR #91 (`4da771af`). The executor owns persistent systems and one command
 	  buffer per graph node; it walks cached levels and applies those buffers in graph

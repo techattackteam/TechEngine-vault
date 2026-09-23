@@ -87,6 +87,7 @@ instructions contain the original workflow gates and input defaults.
 | `$weekly-review [notes]` | Run the non-boundary weekend review and update the vault. |
 | `$sprint-plan [focus]` | Run the boundary retro and plan the next sprint. |
 | `$vault-clean [folder]` | Apply mechanical vault cleanup and surface larger changes. |
+| `$paper-validate <papers>` | Add only Miguel-approved papers to [[Paper]] and move their [[Research]] cards to topic columns. |
 
 Codex discovers repo skills in `.agents/skills/`; if new skills do not appear,
 restart Codex. See [OpenAI skills docs](https://learn.chatgpt.com/docs/build-skills).

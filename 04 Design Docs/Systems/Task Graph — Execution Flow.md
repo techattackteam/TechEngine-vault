@@ -1,14 +1,14 @@
 # Task Graph — Execution Flow
 
-> Living design doc. **Status: implementing; Schedule, graph and serial executor shipped**, updated
-> 2026-09-19 against ADR-020 (Accepted).
+> Living design doc. **Status: implementing; fixed-tick App integration shipped**, updated
+> 2026-09-22 against ADR-020 (Accepted).
 >
 > The ADR holds the decision, this doc holds the *how*. The scheduling decisions live in
 > [[ADR-020 — System scheduling and task-graph execution]]. ADR-007 §6 defined the system
 > interface and conflict DAG; ADR-020 settles the items §6 deferred. This note is the
 > **execution view**: one end-to-end sequence, not a restatement of the rules.
 
-**Module:** `core` · **Kind:** system · **Status:** implementing (S6-T9 integration remains)
+**Module:** `core` · **Kind:** system · **Status:** implementing (repeated headless proof remains)
 **Runs inside:** [[Game Loop — Frame Flow]]. This doc covers one Tick and its barrier.
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
@@ -91,14 +91,22 @@ entity output. It consumes the graph's immutable cached levels, runs nodes seria
 merges their buffers in graph order. Keeping runtime state outside `TaskGraph` preserves
 the same graph and per-node buffer boundary for the later parallel executor.
 
+S6-T9 connected this path to the simulation thread in PR #92 (`2a50f8cb`). `App`
+registers built-in components, accepts app-specific registration, freezes the registry,
+builds the graph and executor once, then executes that instance on each fixed tick.
+`RuntimeApp` configures a Movement/Gravity/Collision demo. Its current test observes
+one spawned entity after one tick; expected component state over repeated ticks and
+headless/windowed parity remain unverified ([[Backlog]]).
+
 Systems perform value reads and writes only. Nothing structural happens here.
 Transform setters refresh their affected subtrees within the calling system, so
 world reads later in that system see current values. No separate transform
 propagation entry is scheduled (ADR-021).
 
 **At the barrier**, per-system command buffers are merged in graph order and applied
-**single-threaded, in deterministic order**, then `NetId`s are assigned and event streams
-are flushed through injected barrier services. Structural changes land here: spawn,
+**single-threaded, in deterministic order**, then injected barrier services are called
+for `NetId` assignment and event flushing. `App` currently supplies a no-op adapter, so
+neither service performs its intended work yet ([[Backlog]]). Structural changes land here: spawn,
 despawn, add and remove. Pending-entity tokens are local to the buffer that created them.
 Hierarchy constraints are validated at commit time. That is what makes determinism hold
 even once levels run in parallel.
@@ -138,7 +146,7 @@ level/barrier semantics remain. Current target: [[Simulation Thread — Design]]
 
 The terminal slot, whole-system node granularity and immutable schedule are now
 decided in ADR-020 §4, §6 and §7. S6-T6–T8 implement schedule declarations, graph
-construction and serial execution; S6-T9 connects them to fixed ticks.
+construction and serial execution; S6-T9 connected them to fixed ticks.
 
 ### Deferred to implementation [P1 → P2]
 
@@ -154,4 +162,4 @@ construction and serial execution; S6-T9 connects them to fixed ticks.
 - [[Game Loop — Frame Flow]]: the frame this graph executes inside, including Tick running N times
 - [[ADR-010 — User authoring model (Systems & Scripts)]]: the script terminal slot
 - [[v1 Code Audit]]: F15 (three ad-hoc threading models) · F19 (per-frame allocation)
-- Code: Schedule, graph and serial executor shipped in PRs #89–91 (`9be7a8be`, `ea5d0c9c`, `4da771af`); fixed-tick integration remains S6-T9 work
+- Code: Schedule, graph and serial executor shipped in PRs #89–91 (`9be7a8be`, `ea5d0c9c`, `4da771af`); fixed-tick integration shipped in PR #92 (`2a50f8cb`)

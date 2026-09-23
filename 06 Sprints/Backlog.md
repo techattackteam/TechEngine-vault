@@ -108,6 +108,16 @@ groups are kept, because they show where future work will land.
 
 ## core
 
+- #prio/high · **Move Tick barrier service ownership out of App** — `App.cpp` currently
+  creates `NoOpTickBarrierServices` for each tick. Investigate which engine subsystem
+  should own the service, then replace the App adapter while preserving the executor's
+  command-before-services ordering. Coordinate with the event-stream and NetId entries
+  below. **Trigger:** Sprint 07 planning.
+
+- #prio/xhigh · **Integrate event streams with Scene and the Tick barrier** — move
+  `EventStreamManager` into Scene-owned simulation state and make staged events visible at
+  the post-Tick barrier under ADR-014 and ADR-020. **Trigger:** Sprint 07 planning.
+
 - #prio/medium · **Resources — hot-reload / eviction** — candidate ADR; depends on the
   UUID/cache model ported from v1 (F7, F13, F31). **Trigger:** the resource cache being real (M6).
 
@@ -126,6 +136,11 @@ groups are kept, because they show where future work will land.
 
 ## app
 
+- #prio/high · **Prove repeated Scene state and headless parity** — S6-T9's runtime
+  demo observes one entity after one tick. Expected component values across ticks,
+  App-level graph reuse and equal headless/windowed Scene output remain unproven;
+  the last needs Scene state in presentation. **Trigger:** Sprint 07 planning.
+
 - #prio/low · **`engine/app` declares `platform` PRIVATE while its public header uses it** —
   `engine/app/CMakeLists.txt:6` says `DEPS_PRIVATE platform`, but since #63 the public header
   `engine/app/include/TechEngine/app/App.hpp` includes `FileAccess.hpp` and `MountTable.hpp`
@@ -140,6 +155,10 @@ groups are kept, because they show where future work will land.
   still line 6, so the citation holds.
 
 ## net
+
+- #prio/medium · **Assign NetIds at the Tick barrier** — connect server-authoritative NetId
+  allocation to newly spawned replicated entities. **Trigger:** the first networking or N2
+  replication card; move this requirement into that card when scheduled.
 
 - #prio/low · **Debug assert on raw entity indices arriving over the wire** — catches a user
   component holding a slotmap index instead of a `NetId`. **Trigger:** the first replicated
