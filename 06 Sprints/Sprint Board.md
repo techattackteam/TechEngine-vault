@@ -35,7 +35,6 @@ kanban-plugin: board
 
 ## Story G — Protect the Linux TSan signal
 
-- [ ] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h
 
 
 ## 🔨 In Progress
@@ -48,6 +47,14 @@ kanban-plugin: board
 
 ## ✅ Done
 
+- [x] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h —
+	  Merged as PR #93 (`742fed7e`) on Sep 24. A standalone GLFW program reproduced
+	  Mesa's `lp_fence_destroy` report without TechEngine; [[Window — Design]] records
+	  the narrow Linux TSan workaround. The full WSL suite passed with Mesa workers
+	  disabled, while a deliberately racy test program still reported. Story G is complete.
+	  **Retro:** #93 received only stand-in checks, so the hosted TSan leg has not exercised
+	  the change; manual dispatch skips PR-only sanitizers. The PR also bundled unrelated
+	  `paper-validate` and `AGENTS.md` edits. The CI validation gap is in [[Backlog]].
 - [x] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h —
 	  Merged as PR #92 (`2a50f8cb`). [[Scene — Design]] and [[Task Graph — Execution Flow]]
 	  record the App-owned startup and fixed-tick path. The runtime remains a one-tick demo;

@@ -295,6 +295,23 @@ the desktop-session assumption was insufficient. #76 deploys pinned, hash-verifi
 Tests have 60-second limits, test steps five minutes, and build jobs twenty minutes.
 Workflow-only pushes are also filtered; manual dispatch remains available.
 
+### Linux TSan and llvmpipe (S6-B1, Sep 24)
+
+PR #93 (`742fed7e`) sets `LP_NUM_THREADS=0` only in the Linux TSan test step.
+WSL stress runs reproduced the same two `lp_fence_destroy` warnings in 100/100
+threaded client runs and none in 100/100 single-threaded llvmpipe runs. A standalone
+GLFW/OpenGL program without TechEngine reproduced them in 20/20 threaded runs,
+including rendering on main. That rules out TechEngine's render-thread scheduling
+as a necessary cause; it does not settle whether Mesa races or TSan misses a Mesa
+synchronization. See [[2026-09 Sprint 06 — Scene & Scheduling]] for the symbol and
+upstream evidence.
+
+The existing WSL TSan build passed 425/425 tests with that variable set.
+`RenderThread.cpp` stayed instrumented, and a deliberate race still raised a TSan
+warning. PR #93 received only docs-only stand-in checks; its hosted Linux TSan leg
+remains unverified. `workflow_dispatch` skips the PR-only sanitizer job, so a
+manual run on `master` cannot validate this change. [[Backlog]] tracks that gap.
+
 ## Open questions
 
 - **Does the editor's ImGui share this window or open its own?** Owner: **T1**. ADR-015

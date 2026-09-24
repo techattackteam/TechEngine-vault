@@ -200,7 +200,8 @@ lowest-priority Process card.
 
 ### Story G — Protect the Linux TSan signal
 
-- [ ] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h —
+- [x] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h —
+  **done 2026-09-24 · `742fed7e` · PR #93.**
   [PR #91 run 35463582634](https://github.com/techattackteam/TechEngine/actions/runs/35463582634/job/105952186879?pr=91)
   passed the pacing test's six assertions, then TSan reported two races during
   `RenderThread`'s `window.swapBuffers()` call: `pthread_mutex_destroy` against an
@@ -214,6 +215,23 @@ lowest-priority Process card.
     record upstream evidence and use only a narrow workaround that preserves engine-race detection
   - Finish with a green focused stress run and full Linux TSan suite, or split a concretely
     scoped resolution card if the investigation proves larger than this session
+  - Sep 23 diagnosis: classify the warning as a false positive for TechEngine's race
+    investigation. In WSL, the focused client test reported the same two Mesa warnings
+    in 100/100 threaded runs and none in 100/100 runs with `LP_NUM_THREADS=0`.
+    A standalone GLFW/OpenGL program without TechEngine reproduced them in 20/20
+    threaded runs, including 10/10 with rendering on the main thread; its 20
+    single-threaded llvmpipe runs were clean. Matching Ubuntu debug symbols map the
+    destroy offsets to Mesa's `lp_fence_destroy` (`lp_fence.c:130–131`), the same
+    function in [Mozilla bug 1930713](https://bugzilla.mozilla.org/show_bug.cgi?id=1930713).
+    This excludes engine-owned render-thread scheduling as a necessary cause; it does
+    not prove whether Mesa itself has a race or TSan misses its synchronization.
+    The Linux TSan workflow now sets `LP_NUM_THREADS=0` only for its test step.
+    The existing WSL TSan build passed 425/425 tests under that setting. Its
+    `RenderThread.cpp` compile command retains `-fsanitize=thread`, and a deliberate
+    race still reports with `LP_NUM_THREADS=0`. PR #93 merged with only docs-only
+    stand-in checks: the hosted Linux TSan job has not run with this change. Manual
+    dispatch on `master` also skips the PR-only sanitizer job; the remaining CI
+    validation gap is recorded in [[Backlog]].
 
 ## Definition of Done
 

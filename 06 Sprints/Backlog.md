@@ -275,6 +275,13 @@ groups are kept, because they show where future work will land.
   run they produce on `master`. Found at the 2026-08-29 drift check (A3). **Trigger:** fired —
   Sprint 05 planning ran on 2026-08-30 and passed the entry over, deliberately or not. Pull at
   the next `/sprint-plan`.
+- #prio/medium · **Make sanitizer workflow edits testable in hosted CI** — PR #93
+  changed the Linux TSan test step but received only docs-only stand-in checks.
+  A manual `workflow_dispatch` on `master` cannot validate it because `sanitizers`
+  runs only for `pull_request`. The local WSL TSan suite passed, but the hosted leg
+  remains unverified. Find a targeted validation path that preserves the normal
+  PR-only sanitizer cost. **Trigger:** before the next sanitizer workflow edit;
+  inspect the next code PR's Linux TSan result for #93's first hosted evidence.
 - #prio/low · **`ci.yml`'s `build-test` gate comment is wrong about skipped checks** — it says
   a required check skipped by an `if:` "never reports its context at all". Measured on #49's
   push run, a skipped *plain* job does report it (`diff coverage` came back `skipped`); it is
