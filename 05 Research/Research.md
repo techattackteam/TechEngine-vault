@@ -49,9 +49,9 @@ kanban-plugin: board
 ## TO VALIDATE - MIGUEL REVIEW
 
 - [ ] http://mmacklin.com/smallsteps.pdf (Physics)
-	**Small Steps in Physics Simulation** — fixed-step substeps and XPBD stability; useful for the planned physics lane.
+	**Small Steps in Physics Simulation**: fixed-step substeps and XPBD stability; useful for the planned physics lane.
 - [ ] https://www.highperformancegraphics.org/previous/www_2012/media/Papers/HPG2012_Papers_Olsson.pdf (Rendering)
-	**Clustered Deferred and Forward Shading** — light assignment for a future forward renderer.
+	**Clustered Deferred and Forward Shading**: light assignment for a future forward renderer.
 - [ ] https://arxiv.org/abs/2011.05538 - **Sound Synthesis, Propagation, and Rendering: A Survey** | Survey preprint 2020 (Audio)
 	Broad map of game and VR audio techniques before selecting specialized audio papers.
 
@@ -59,9 +59,9 @@ kanban-plugin: board
 ## REJECTED
 
 - [ ] https://arxiv.org/abs/2204.07137 (Physics)
-	**Accelerated Policy Learning with Parallel Differentiable Simulation** — centered on reinforcement-learning policy training, outside the engine roadmap.
+	**Accelerated Policy Learning with Parallel Differentiable Simulation**: centered on reinforcement-learning policy training, outside the engine roadmap.
 - [ ] https://la.disneyresearch.com/publication/doc-differentiable-optimal-control-for-retargeting-motions-onto-legged-robots/ (Physics)
-	**DOC: Differentiable Optimal Control for Retargeting Motions onto Legged Robots** — robot-control and hardware retargeting, outside the engine roadmap.
+	**DOC: Differentiable Optimal Control for Retargeting Motions onto Legged Robots**: robot-control and hardware retargeting, outside the engine roadmap.
 - [ ] https://github.com/awesome-physics/awesome-neural-physics
 	Bibliography, not a paper to ingest. Keep as a discovery link if useful.
 - [ ] https://gpuopen.com/advanced-rendering-research/

@@ -58,7 +58,7 @@ flowchart TD
         DeclareAccess<Write<Transform>, Read<Velocity>>
         ```
     *   Generate lock-free task graph nodes, work-stealing job structures, and audio DSP loops.
-    *   Strict adherence to `03 Architecture/B4 — Code Conventions.md` (no raw pointers for ownership, value semantics, `FixedTick`, cache-friendly struct packing).
+    *   Strict adherence to `03 Architecture/B4 - Code Conventions.md` (no raw pointers for ownership, value semantics, `FixedTick`, cache-friendly struct packing).
 *   **Architecture:**
     *   **Few-Shot Prompt Engineering:** Library of canonical engine code examples injected into prompt context.
     *   **Compiler-in-the-Loop Validation:** Agent triggers local `clang` / MSVC syntax check on generated code and feeds compiler errors back to self-correct before presenting to the user.

@@ -4,7 +4,7 @@ sprint: Sprint NN
 date: YYYY-MM-DD
 ---
 
-# Retrospective — Sprint NN
+# Retrospective: Sprint NN
 
 <!-- Focus on lessons, not a second list of shipped work. Use short, complete
 sentences. Omit optional sections with nothing useful to record. -->

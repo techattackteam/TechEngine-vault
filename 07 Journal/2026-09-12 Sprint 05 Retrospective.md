@@ -4,7 +4,7 @@ sprint: Sprint 05
 date: 2026-09-12
 ---
 
-# Retrospective — Sprint 05
+# Retrospective: Sprint 05
 
 ## Outcome
 
@@ -13,7 +13,7 @@ independence work also closed. All **25 cards** closed: **17 Dev, 3 Design, 1 Bu
 4 Process**. Process was 16% of closed cards. These counts classify the existing IDs;
 they do not imply all defect-fixing time had a Bug card.
 
-The permanent card summary is in [[2026-08 Sprint 05 — M3 Project & M4 Window]].
+The permanent card summary is in [[2026-08 Sprint 05 - M3 Project & M4 Window]].
 The final week's git history includes glad2, Xvfb, Window, drawing, dedicated threads,
 worker adoption and #81's simulation/input integration. Freshly fetched `origin/master`
 is `7d2546fc`; [[2026-09-11 Threaded Engine Validation]] holds the recorded test/CI
@@ -51,7 +51,7 @@ evidence and Miguel's native Windows demo. No build, test or demo was rerun toda
 Miguel reports: “it good I believe we can continue with this pace”. Keep the current
 rhythm and rest-day default. Actual hours, individual rest days and job/karting conflicts
 were not reported, so the card count cannot prove that every day respected the cadence.
-No specific unavailable dates were supplied for Sep 12–25.
+No specific unavailable dates were supplied for Sep 12-25.
 
 ## Artifact check and limits
 
@@ -61,7 +61,7 @@ hooks, fixed SimulationContext and the editor's snapshot publication/event wait.
 
 - The task-graph draft still shows the old variable-phase pipeline. ADR-019 explicitly
   supersedes it. S6-D2 must reconcile that hub before implementation.
-- Project — Design still calls S5-T5 open. Simulation Thread — Design has a correct
+- Project - Design still calls S5-T5 open. Simulation Thread - Design has a correct
   implemented header but ends with an old claim that separation remains future work.
 - The old four-pure-hook warning is no longer current: App now has optional work hooks.
   Project/ADR-017 historical wording and the separate entry-point divergence need a

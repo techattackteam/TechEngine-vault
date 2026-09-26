@@ -6,7 +6,7 @@ date: 2026-08-22
 
 # Retrospective: Sprint 03 (M1 Enablers)
 
-Sprint [[2026-08 Sprint 03 — M1 Enablers]], Aug 1 to Aug 20, closed 8 days early. This entry
+Sprint [[2026-08 Sprint 03 - M1 Enablers]], Aug 1 to Aug 20, closed 8 days early. This entry
 covers the final week too: no separate weekly review runs this weekend.
 
 ## 🟢 What went well

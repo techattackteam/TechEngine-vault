@@ -1,7 +1,7 @@
-# YYYY-MM-DD · Sprint NN — <name>
+# YYYY-MM-DD · Sprint NN: <name>
 
 - **Quarter:** [[YYYY-QN]]
-- **Dates:** <Sat YYYY-MM-DD> – <Fri YYYY-MM-DD>
+- **Dates:** <Sat YYYY-MM-DD> - <Fri YYYY-MM-DD>
 - **Epic:** <epic>
 
 <!-- Sprints run for two weeks, Sat to Fri. The weekend after the end date starts
@@ -13,15 +13,15 @@ State the single outcome this sprint should deliver.
 
 ## Stories & tasks
 
-<!-- Use card kinds, priorities, and weights from [[Planning Workflow — Artifact Gate]].
+<!-- Use card kinds, priorities, and weights from [[Planning Workflow - Artifact Gate]].
 Keep only the stories needed for this sprint. Link rationale rather than repeating it. -->
 
-### Story A — <name>
+### Story A: <name>
 
-- [ ] SN-T1 — <task> · P1 · 🟢 Deep — done: <observable condition>
-- [ ] SN-T2 — <task> · P2 · 🟡 Light — done: <observable condition>
+- [ ] **SN-T1** · <task> · P1 · 🟢 Deep · done: <observable condition>
+- [ ] **SN-T2** · <task> · P2 · 🟡 Light · done: <observable condition>
 
-### Story B — <name> · ~N tasks · size after ADR-NNN
+### Story B: <name> · ~N tasks · size after ADR-NNN
 
 <!-- Keep a heavy-gated story roughly sized until its artifact is settled.
 Do not invent task acceptance criteria before that decision. Remove this example
@@ -32,7 +32,7 @@ if no story needs it. -->
 <!-- Cards the unattended lane may take, planned in /sprint-plan's Auto pass and tagged
 · P2 · 🤖 Auto. They also appear under their story above; list their IDs here so the lane's
 share of the sprint is visible. If there are none, say why (for example, the routine is
-paused). See [[Autonomous Lane — Design]]. -->
+paused). See [[Autonomous Lane - Design]]. -->
 
 - Auto cards: <IDs, or "none" and the reason>
 - Attended slots freed: <which cards moved off Miguel's days>

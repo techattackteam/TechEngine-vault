@@ -1,9 +1,9 @@
-# 🤖 Auto Run — YYYY-MM-DD HH:MM (Lisbon)
+# 🤖 Auto Run: YYYY-MM-DD HH:MM (Lisbon)
 
-> Written by an unattended cloud routine ([[Autonomous Lane — Design]]).
+> Written by an unattended cloud routine ([[Autonomous Lane - Design]]).
 
 <!-- One note per fire, filed as docs/07 Journal/autoruns/YYYY-MM-DD/YYYY-MM-DD HH-MM Auto Run.md.
-Follow [[Autonomous Lane — Design]]. If nothing changed, no PR opened, and no useful
+Follow [[Autonomous Lane - Design]]. If nothing changed, no PR opened, and no useful
 finding emerged, write no note. Keep the report readable after a working day. -->
 
 ## Needs you
@@ -45,4 +45,4 @@ report any observed CI evidence separately.
 ## Cost
 
 State observed CI cost and estimated review time when available.
-Label estimates and use [[Autonomous Lane — Design]] for the current cost model.
+Label estimates and use [[Autonomous Lane - Design]] for the current cost model.

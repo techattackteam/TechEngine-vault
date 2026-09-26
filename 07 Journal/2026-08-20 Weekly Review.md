@@ -3,10 +3,10 @@ type: weekly-review
 date: 2026-08-20
 ---
 
-# Weekly Review — 2026-08-20 *(catch-up: Aug 3 to 20)*
+# Weekly Review: 2026-08-20 *(catch-up: Aug 3 to 20)*
 
 Three weeks in one entry. The **Aug 8-9 and Aug 15-16 reviews did not run**, because no
-weekend was available. Sprint [[2026-08 Sprint 03 — M1 Enablers]], weeks 2 to 4. Written on a
+weekend was available. Sprint [[2026-08 Sprint 03 - M1 Enablers]], weeks 2 to 4. Written on a
 Thursday under the weekday-fallback rule adopted today.
 
 ## ✅ Completed
@@ -41,10 +41,10 @@ Four findings against the 15 commits since the stamp. **D1 and D2 are live poiso
 
 | # | Where | Drift |
 |---|---|---|
-| **D1** | [[ADR-006 — v2 core architecture & module layout]] header, Aug-2 amendment | Reads §4's field as `IFileAccess& files` and claims the seam is unchanged. S3-T12 **deleted the interface** on Aug 10; `EngineContext.hpp:6` is a concrete `FileAccess&`. Needs a `decision` amendment, not the vocabulary one it carries. |
-| **D2** | [[Profiler — Design]] `:46` *(a Decided row)* and `:200` | Both still cite ADR-013 §6's "under 5%". S3-P1 amended §6 to **+0.1377 µs** today and did not sweep its own note. The hub is read first, so the note overrides the amendment. |
-| **D3** | [[Profiler — Design]] `:59` | The mermaid node says `base/Profile.hpp`; the prose at `:84` says `base/diagnostics/`. The note contradicts itself. |
-| **D4** | [[Game Loop — Frame Flow]] `:102` and `:108` | Says `EngineContext` carries a `const Clock&`. It has one field, and `App.cpp:49` builds a local `Clock`. Written before T13 created the type. |
+| **D1** | [[ADR-006 - v2 core architecture & module layout]] header, Aug-2 amendment | Reads §4's field as `IFileAccess& files` and claims the seam is unchanged. S3-T12 **deleted the interface** on Aug 10; `EngineContext.hpp:6` is a concrete `FileAccess&`. Needs a `decision` amendment, not the vocabulary one it carries. |
+| **D2** | [[Profiler - Design]] `:46` *(a Decided row)* and `:200` | Both still cite ADR-013 §6's "under 5%". S3-P1 amended §6 to **+0.1377 µs** today and did not sweep its own note. The hub is read first, so the note overrides the amendment. |
+| **D3** | [[Profiler - Design]] `:59` | The mermaid node says `base/Profile.hpp`; the prose at `:84` says `base/diagnostics/`. The note contradicts itself. |
+| **D4** | [[Game Loop - Frame Flow]] `:102` and `:108` | Says `EngineContext` carries a `const Clock&`. It has one field, and `App.cpp:49` builds a local `Clock`. Written before T13 created the type. |
 
 > **All four reconciled same day (2026-08-20).** D1 is a `decision` amendment on ADR-006's
 > header plus inline markers at §4 and §5, per the policy S3-P1 landed hours earlier: the ADR
@@ -54,8 +54,8 @@ Four findings against the 15 commits since the stamp. **D1 and D2 are live poiso
 > already drifted 6 lines, and D1's own header entry would have drifted them further, so the
 > line refs are gone and the rule is now "cite the § and the clause".
 
-Clean: [[Logger — Design]] · [[Assert — Design]] · [[Events — Design]] · [[StringId — Design]] ·
-[[File Access — Design]] · [[Math — Design]]. S3-B1's and S3-T10's changes all propagated.
+Clean: [[Logger - Design]] · [[Assert - Design]] · [[Events - Design]] · [[StringId - Design]] ·
+[[File Access - Design]] · [[Math - Design]]. S3-B1's and S3-T10's changes all propagated.
 
 ## 🎯 Objective for next slot
 

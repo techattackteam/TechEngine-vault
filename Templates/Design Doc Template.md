@@ -1,4 +1,4 @@
-# <Name> — Design
+# <Name>: Design
 
 **Module:** <base | platform | core | client | app>
 **Kind:** <utility | system>

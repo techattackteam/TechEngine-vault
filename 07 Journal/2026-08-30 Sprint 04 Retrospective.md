@@ -4,12 +4,12 @@ sprint: Sprint 04
 date: 2026-08-30
 ---
 
-# Retrospective — Sprint 04 (M2 Concurrency & Serialization)
+# Retrospective: Sprint 04 (M2 Concurrency & Serialization)
 
 **Closed 2026-08-30, day 9 of 14.** Goal met in full: both M2 ADRs Accepted on day 1, each
 proven by first code against its real interface. 13 cards, all closed.
 Boundary pulled forward to Aug 29-30 rather than Sep 5-6, so Sprint 05 starts a week early
-([[2026-08 Sprint 05 — M3 Project & M4 Window]]).
+([[2026-08 Sprint 05 - M3 Project & M4 Window]]).
 
 **Kind mix: 7 Dev · 2 Design · 4 Process · 0 Bug.** Process was **31%** of the sprint.
 Weight mix delivered: 5 🟢 · 4 🟠 · 4 🟡, with S4-P4 cut 🟠 and run as a 🟢.

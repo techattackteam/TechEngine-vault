@@ -1,4 +1,4 @@
-# 04 Design Docs — v2
+# 04 Design Docs: v2
 
 Living docs, one per v2 subsystem or utility. Each is filled in as that piece gets built.
 

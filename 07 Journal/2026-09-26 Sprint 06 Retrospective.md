@@ -4,14 +4,14 @@ sprint: Sprint 06
 date: 2026-09-26
 ---
 
-# Retrospective — Sprint 06
+# Retrospective: Sprint 06
 
 ## Outcome
 
 All 12 board cards closed: 9 Dev, 2 Design, 1 Bug and 0 Process. The permanent
-delivery record is in [[2026-09 Sprint 06 — Scene & Scheduling]]. The final week's
+delivery record is in [[2026-09 Sprint 06 - Scene & Scheduling]]. The final week's
 engine history includes Schedule, graph, serial execution, App wiring and the Linux
-TSan workaround in PRs #89–93.
+TSan workaround in PRs #89-93.
 
 Miguel reports that the showcase checked expected values and headless/windowed parity,
 and that logs and Tracy showed systems running in the same order across ticks. This is
