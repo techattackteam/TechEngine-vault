@@ -9,128 +9,57 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## Story A — Ground the ECS port
+## Story A — Finalize Tick-event delivery
 
 
 
-## Story B — Port Scene identity, storage, queries and hierarchy
+## Story B — Deliver Scene events at the Tick barrier
+
+- [ ] **S7-T3** · Construct and describe selected systems before graph build · P1 · 🟢 Deep · 4–6h — persistent instance and own-entry declarations; diagnostic names without temporary construction.
+- [ ] **S7-T4** · Bind ordered event handlers to selected systems · P1 · 🟢 Deep · 3–5h — typed handlers on the persistent instance, recorded in declaration order.
+- [ ] **S7-T5** · Replace event cursors with stable Tick batches · P1 · 🟢 Deep · 4–6h — next-Tick visibility and stable reads during same-type publication.
+- [ ] **S7-T6** · Place registered event streams on Scene · P1 · 🟢 Deep · 3–5h — app registration, per-Scene ownership and isolation.
+- [ ] **S7-T7** · Deliver handlers and advance batches at the Tick barrier · P1 · 🟢 Deep · 4–6h — dispatch before `tick`, retire after successful systems, and replace no-op event flushing.
+- [ ] **S7-T8** · Prove the integrated event path and finish Tick naming · P1 · 🟢 Deep · 3–5h — App-level boundary proof and `Clock::advanceFrame()` rename.
 
 
+## Story C — Deliver engine input events
 
-## Story C — Settle system dependencies and execution
-
-
-
-## Story D — Schedule, graph and serial execution
-
-
-
-## Story E — Scene integration and headless proof
+- [ ] **S7-T9** · Translate GLFW controls to engine identifiers · P1 · 🟢 Deep · 4–6h — known/unknown codes, ordered edges and repeat handling.
+- [ ] **S7-T10** · Deliver input edges to selected systems · P1 · 🟢 Deep · 4–6h — follows T9 and S7-T3; current-Tick delivery at each system slot.
+- [ ] **S7-T11** · Generate held input and handle focus resets · P1 · 🟢 Deep · 3–5h — follows T10; held once per Tick and neutral regain.
+- [ ] **S7-T12** · Prove overflow recovery and runtime delivery · P1 · 🟢 Deep · 4–6h — follows T11; lost-range notice plus headless/windowed witnesses.
 
 
+## Story D — Close other fired decisions and implementation seams
 
-## Story F — Repair bounded documentation drift
+- [ ] **S7-D3** · Decide the public error-handling policy · P2 · 🟢 Deep · 4–6h — settle the open conventions row and `[[nodiscard]]` policy in an ADR.
+- [ ] **S7-T1** · Correct public app dependency and local includes · P3 · 🟠 Moderate · 2–3h — declare the public dependency and correct four local includes.
+- [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟠 Moderate · 3–4h — install and verify the GLFW allocator seam.
 
 
+## Story E — Repair fired process and evidence gaps
 
-## Story G — Protect the Linux TSan signal
-
+- [ ] **S7-P1** · Reconcile build/profiler and App coverage policy · P2 · 🟢 Deep · 4–6h — carry S6-P1 and record the App coverage exclusion.
+- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🟢 Deep · 4–6h — check merged prefixes against card records.
+- [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🟢 Deep · 4–6h — provide a repeatable mechanical check against the reconciliation SHA.
+- [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2–3h — amend ADR-009 and fix the skipped-check comment.
+- [ ] **S7-P5** · Resolve old routine-prompt drift · P3 · 🟡 Light · 2h — check the old routine's status and reconcile prompt guidance.
+- [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h — settle the widened sweep's workflow home.
+- [ ] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🟡 Light · 2h — record comparable cache evidence.
+- [ ] **S7-P8** · Define a small recorded-demo workflow · P3 · 🟡 Light · 2h — record capture storage and sprint-review links.
 
 
 ## 🔨 In Progress
-
-
 
 ## 👀 Review / Demo
 
 
 
-## ✅ Done
+## ✅ Done — Sprint 07
 
-- [x] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h —
-	  Merged as PR #93 (`742fed7e`) on Sep 24. A standalone GLFW program reproduced
-	  Mesa's `lp_fence_destroy` report without TechEngine; [[Window — Design]] records
-	  the narrow Linux TSan workaround. The full WSL suite passed with Mesa workers
-	  disabled, while a deliberately racy test program still reported. Story G is complete.
-	  **Retro:** #93 received only stand-in checks, so the hosted TSan leg has not exercised
-	  the change; manual dispatch skips PR-only sanitizers. The PR also bundled unrelated
-	  `paper-validate` and `AGENTS.md` edits. The CI validation gap is in [[Backlog]].
-- [x] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h —
-	  Merged as PR #92 (`2a50f8cb`). [[Scene — Design]] and [[Task Graph — Execution Flow]]
-	  record the App-owned startup and fixed-tick path. The runtime remains a one-tick demo;
-	  repeated-state and headless/windowed proof remain open in [[Backlog]]. The App-local
-	  no-op barrier adapter also has a next-sprint ownership follow-up there. Story E's
-	  proof is still open.
-	  **Retro:** Linux CI caught a missing `Transform` forward declaration after the Windows
-	  build; the final CI run passed. The PR used `[skip-coverage]`, so changed-line coverage
-	  was not enforced.
-- [x] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h —
-	  Merged as PR #91 (`4da771af`). The executor owns persistent systems and one command
-	  buffer per graph node; it walks cached levels and applies those buffers in graph
-	  order at one deterministic barrier. Type-erased component values own their queued
-	  payloads, while access validation and declared-write stamps establish the seam for
-	  a later parallel executor. This completes Story D and unblocks S6-T9.
-	  **Retro:** the first pending-entity resolver mixed buffer-local indices with the
-	  shared spawned list; the graph-order regression caught the failure before merge.
-- [x] **S6-T7** · Graph builder · P1 · 🟢 Deep · 4–6h —
-	  Merged as PR #90 (`ea5d0c9c`). The implementation follows [[ADR-020 — System
-	  scheduling and task-graph execution]] without changing its scheduling decisions.
-	  Review strengthened exact conflict-log direction and access-mask boundary coverage
-	  before merge. This unblocks S6-T8; Story D remains open for the executor and barrier.
-- [x] **S6-T6** · Schedule and access declarations · P1 · 🟠 Moderate · 3–4h —
-	  Merged as PR #89 (`9be7a8be`). Review narrowed access tracking from components
-	  and shared resources to components only; [[ADR-020 — System scheduling and
-	  task-graph execution]] and [[Task Graph — Execution Flow]] record the deferred
-	  resource seam. Release-critical registration invariants moved from dev-only
-	  assertions to always-on `TE_CHECK`, with rejection tests active in every configuration.
-	  This unblocks S6-T7; Story D remains open for the graph and executor.
-- [x] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h —
-	  Merged as PR #87 (`47bfaefc`). [[ADR-021 — Immediate Scene transform propagation]]
-	  replaced the planned schedule pass with immediate subtree updates; [[Scene — Design]]
-	  records the shipped contract. Review caught a late preserve-world scale rejection and
-	  loss of Scene binding on Transform assignment; both were fixed before merge.
-	  Story B is complete, leaving S6-T9 waiting on T8.
-	  **Retro:** initial green CI missed tiny local scales and bound assignment; focused
-	  regression cases were added before the final green run.
-- [x] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h —
-	  Merged as PR #86 (`5a687af1`). Entity creation now starts in the required
-	  Hierarchy archetype, superseding the empty-entity fixture assumption.
-	  Built-in registration remains in storage until S6-T9 moves it to the app
-	  composition root. This unblocks S6-T5; Story B still awaits Transform.
-	  **Retro:** the local 100% diff-coverage report counted only six changed
-	  lines while Scene files were untracked. CI exposed missing clear and
-	  stale-handle coverage, added before merge.
-- [x] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h —
-	  Merged as PR #85 (`150f8f0d`). Queries cache matching archetypes by revision
-	  while reacquiring current column spans for every iteration. Read/write access,
-	  explicit `eachEntity` traversal, clear invalidation and structural-mutation rejection
-	  are covered by focused tests. Retained queries keep a storage pointer, so storage is
-	  non-movable; an atomic iteration depth also preserves concurrent disjoint-query use
-	  for the future task-graph executor. Story B remains open for hierarchy and transforms.
-- [x] **S6-T2** · Archetype storage and transitions · P1 · 🟢 Deep · 4–6h —
-	  Merged as PR #84 (`4bcc71d0`). Review exposed that default construction and
-	  shared-column copying may throw even though committed row relocation is nothrow;
-	  destination rows now roll back before the source archetype is mutated. Dedicated
-	  archetype tests were added to scrutinize canonical reuse and entity/column alignment.
-	  This unblocks S6-T3, S6-T4 and S6-T8 without completing Story B.
-	  **Retro:** the PR also carried the unrelated member-initializer convention sweep,
-	  broadening a storage card across existing engine files.
-- [x] **S6-T1** · Entity handles and ComponentRegistry · P1 · 🟠 Moderate · 3–5h —
-	  Merged as PR #82 (`9fb6aeaf`). Slot exhaustion was clarified as a fatal `TE_CHECK`,
-	  so it has no null-return recovery path. The registry freeze mechanism shipped, while
-	  composition-root ownership and the actual before-first-tick freeze remain S6-T9
-	  integration. This unblocks S6-T2 and the identity side of S6-T4 without completing Story B.
-	  **Retro:** PR #82 also removed the tracked Codex context-window request; that conflicts
-	  with the repository instructions and needs Miguel's call.
-- [x] **S6-D2** · Task-graph/System ADR and execution design · P1 · 🟢 Deep · 4–6h —
-	  ADR-020 Accepted Sep 12. Three design calls changed during review: conflict direction
-	  uses numeric priority instead of registration order, schedule is fully immutable (not
-	  mutable between ticks) for multiplayer determinism, and the phase model collapsed from
-	  two (Input + FixedUpdate) to one (Tick). Design note reconciled, ADR Index updated,
-	  Stories D/E cut as 4 cards (T6–T9). Sprint DoD line 2 is satisfied.
-- [x] **S6-D1** · Review the v1 ECS and draft Scene — Design · P1 · 🟢 Deep · 4–6h
-
-
+- [x] **S7-D1** · Finalize Tick-event delivery and handler order · P1 · 🟢 Deep · 4–6h — settled declaration order and next-Tick batches; cut Story B cards. Vault changes remain local.
+- [x] **S7-D2** · Review v1 input and settle the engine input contract · P1 · 🟢 Deep · 4–6h — accepted engine codes and same-Tick input notifications; amended ADR-014/019/020, created the Input hub and cut S7-T9–T12. Vault changes remain local.
 
 
 %% kanban:settings

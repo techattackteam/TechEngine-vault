@@ -8,6 +8,10 @@
   resources" → S6-T6–T9 track components only. Shared-resource access is deferred
   until a concrete scheduled resource conflict needs graph ordering or debug
   validation. Trigger: S6-T6 lowers access through `ComponentRegistry`.
+- **Amended 2026-09-26 — decision:** “Input conversion (raw state to game commands)
+  is a regular system” → the current Tick's ordered input batch reaches selected
+  systems as engine-coded input notifications at their scheduled slots. No action
+  map or command component is required for this local input path. Trigger: S7-D2.
 - **Related:** settles the open items ADR-007 §6 deferred to "the task-graph ADR" ·
   builds on ADR-019's fixed-only simulation model · provides ADR-010 §4's terminal slot ·
   design hub: [[Task Graph — Execution Flow]]
@@ -47,6 +51,14 @@ snapshot data (ADR-019 §2).
 ADR-007 §6's `Input` phase is retired. Input conversion (raw state to game commands)
 is a regular system in the Tick phase with declared access on input-related types.
 The graph orders it before consumers by conflict detection or `.before<>()`.
+
+> **Amended 2026-09-26:** The conversion-to-commands requirement above is
+> historical. Before each Tick, simulation detaches the ordered input batch.
+> Each selected system's input handlers receive that Tick's batch at its own
+> scheduled slot before `tick`, under the system's declared component access.
+> Captured transitions retain sequence order; held notifications are generated
+> once per Tick after the captured events. This is separate from ADR-014's
+> next-Tick Scene streams. The network command model in ADR-007 §4 remains.
 
 **Barrier operations**, applied single-threaded in deterministic order: apply
 structural commands (spawn/despawn/add/remove), validate hierarchy constraints at

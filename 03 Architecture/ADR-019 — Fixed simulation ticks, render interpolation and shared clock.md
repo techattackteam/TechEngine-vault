@@ -5,6 +5,11 @@
 - **Deciders:** Miguel (Lead Engineer)
 - **Task:** S5-T14 review, before S5-T15 integration
 - **Design:** [[Simulation Thread — Design]] · [[Game Loop — Frame Flow]] · [[Clock — Design]]
+- **Amended 2026-09-26 — decision:** “Simulation runs input conversion” in §2
+  means any gameplay command formation stays on simulation. Platform translates
+  GLFW controls into engine identifiers before ordered ingress; selected systems
+  receive input notifications during the consuming Tick. Trigger: S7-D2; details
+  in [[Input — Design]].
 - **Partial supersessions:** ADR-007 §5's variable tail and combined time context;
   §6's single simulation/presentation pipeline and Scene-taking presentation interface;
   ADR-006 §4's combined frame context and §5's live-ECS requirement for presentation Systems.
@@ -52,6 +57,12 @@ Simulation runs input conversion and fixed work, with structural/event barriers 
 per tick. The old `Update`, `PostUpdate` and `Present` tail becomes renderer-specific
 preparation, drawing and presentation; it need not retain those phase names or a one-to-one
 mapping. Vsync is optional and can be disabled; render owns its pacing either way.
+
+> **Amended 2026-09-26:** The input-conversion phrase above is historical for
+> local input delivery. Platform translates GLFW control codes before ingress;
+> simulation delivers that Tick's input notifications to selected systems. If
+> gameplay later forms commands from them, it does so on simulation (§4).
+
 Camera, visual animation, culling and presentation transforms operate on
 snapshot data and render-owned state. Root motion, collision poses, gameplay animation
 events and any other authoritative effect stay fixed-tick simulation work.

@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 022 | [[ADR-022 — Project system composition and self-description]] | Accepted | 2026-09 |
 | 021 | [[ADR-021 — Immediate Scene transform propagation]] | Accepted | 2026-09 |
 | 020 | [[ADR-020 — System scheduling and task-graph execution]] | Accepted | 2026-09 |
 | 019 | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted | 2026-09 |
@@ -35,7 +36,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 — Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/` — history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **022** (numbers are never reused).
+> Next number is **023** (numbers are never reused).
 
 ### Partial supersessions
 
@@ -49,9 +50,11 @@ anyone noticed (2026-08-20).
 
 | Clause | Superseded by | Scope |
 | --- | --- | --- |
+| [[ADR-014 — Events (buffered streams) & StringId]] §2 — blanket “no callbacks” clause | [[ADR-022 — Project system composition and self-description]] | Accepted Sep 26: scheduled system-local handlers run at the reader's slot before `tick` under its declared access. Publishing stays buffered; subscriptions and immediate callbacks remain prohibited. |
+| [[ADR-020 — System scheduling and task-graph execution]] §7 and *What would move this* — suggested future live enable/disable command | [[ADR-022 — Project system composition and self-description]] | Accepted Sep 26: the active set stays fixed for a simulation session. A different selection requires stopping that session and building a new graph before the next one. The immutable-graph decision remains. |
 | [[ADR-020 — System scheduling and task-graph execution]] §1 — hierarchy changes propagated on the next tick; §3/§5 — separate `TransformPropagation` schedule entry | [[ADR-021 — Immediate Scene transform propagation]] | Accepted Sep 18: Transform setters and committed hierarchy changes refresh the affected subtree immediately. The next Tick sees barrier changes already propagated; the Tick graph and barrier remain. |
 | ADR-007 §5 — variable tail, simulation alpha and combined FrameContext | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §1–3: fixed simulation context, no-delta publication, render-owned interpolation. Server-master timing and catch-up remain. |
-| ADR-007 §6 — Input → FixedUpdate → Update → PostUpdate → Present as one pipeline; Scene-taking presentation Systems; physics/audio staging example | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §2: per-tick input/fixed phases and barriers; presentation stages use snapshot data on render. Scene-dependent work stays fixed; no cross-thread phase barrier. |
+| ADR-007 §6 — Input → FixedUpdate → Update → PostUpdate → Present as one pipeline; Scene-taking presentation Systems; physics/audio staging example | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §2 keeps fixed simulation work and puts presentation on render snapshots. ADR-020 §1 later folds input delivery into the single Tick; no cross-thread phase barrier remains. |
 | ADR-006 §4 — combined frame-context sketch; §5 — presentation Systems operate on live ECS and share its scheduling interface | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §2: separate simulation/presentation contexts and schedules; presentation operates on snapshots. Replaceable defaults and module boundaries remain. |
 | ADR-011 §9 — app publishes the diagnostic stamp once per frame | [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] | Accepted Sep 10: ADR-019 §5: primary simulation advances and pushes it once per completed fixed tick. App-owned push and correlation-only meaning remain. |
 | [[ADR-015 — Threading (sim on main, render thread owns GL)]] §1 — client and dedicated-server simulation run on main | [[ADR-018 — Main and simulation threads, render-owned GL]] §1 | Accepted Sep 7: main owns window/editor or CLI/control input; simulation has a dedicated thread. GL ownership and phase-barrier rules remain. |
@@ -61,7 +64,7 @@ anyone noticed (2026-08-20).
 | [[ADR-006 — v2 core architecture & module layout]] §5 — the `Profiler` **classification row** (helper *service*, injected via `EngineContext`) | [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §9 | **That row only.** The Profiler is a helper *utility* — global macros, no injection. §5's two-bucket test, the System/helper split, "profiler wraps the executor" and the F19 fix all remain in force. |
 | [[ADR-006 — v2 core architecture & module layout]] §4 — the **`EventBus& events` field** of the `EngineContext` sketch | [[ADR-014 — Events (buffered streams) & StringId]] §5 | **That field only.** Event streams are per-`Scene` state. §4's DI rule, context immutability, "holds no systems", F13 ownership and the `app` composition root all remain in force. |
 | [[ADR-007 — v2 networking & ECS replication foundation]] §6 — the **"or the `EventBus` service"** phrase of the no-locator bullet | [[ADR-014 — Events (buffered streams) & StringId]] §5 | **That phrase only** — read "via components or event streams". "Never a sibling-system ref" remains in force, strengthened. |
-| ADR-007 §6 — five-phase pipeline (`Input → FixedUpdate → Update → PostUpdate → Present`) and `Input` as a separate phase | [[ADR-020 — System scheduling and task-graph execution]] §1 | Accepted Sep 12: ADR-020 §1 collapses to a single `Tick` phase per fixed tick. ADR-019 already removed the variable tail; ADR-020 retires `Input` as a separate concept and the `FixedUpdate` name. System interface, conflict DAG, command buffer and `.after<>()` remain. |
+| ADR-007 §6 — five-phase pipeline (`Input → FixedUpdate → Update → PostUpdate → Present`), `Input` as a separate phase, and required raw-input-to-command conversion | [[ADR-020 — System scheduling and task-graph execution]] §1 | Accepted Sep 12: one `Tick` phase replaces the pipeline. Amended Sep 26: selected systems receive the current Tick's engine-coded input notifications; no action map or command component is required for local input. ADR-007 §4's network command model, the system interface, conflict DAG and structural command buffer remain. |
 | [[ADR-006 — v2 core architecture & module layout]] §1 — the editor row's **"out of the frame loop"** clause | [[ADR-017 — Bootstrapping (editor manifest, fixed runtime layout)]] § *Decision* 3 | **That clause only.** The editor subclasses `App` like every other executable, so it is in the loop. §1's module table, the strict acyclic DAG, the editor's composition and the editor-owned asset pipeline all remain in force. |
 
 ## Statuses

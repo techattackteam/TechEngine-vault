@@ -17,12 +17,12 @@ flowchart TD
 
 ## Phase Matrix
 
-| Version | Focus | Core Capability | Tech Stack (Core) | Input Context | Primary Output |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **v1** | **Theoretical Q&A** | Deep RAG over research papers (Physics, Rendering, ECS, Task Graphs, Audio) | Python 3.11+, ChromaDB, BM25, Gemini / Claude / Local LLM | Research paper PDFs & metadata | Cited academic answers, formulas, trade-off comparisons |
-| **v2** | **C++ Code Gen** | Generates engine-compliant, cache-conscious, modern C++20 code | Python, AST parsers, Clang-Format, Tree-sitter | Paper algorithms + Engine code conventions (`B4`) | Compilable C++ structs, ECS systems, task jobs |
-| **v3** | **Engine Grounding** | Understands the entire engine architecture, ADRs, scene model, and codebase | Python, Codebase Graph Index (LlamaIndex / LangChain), AST | Vault docs (`03 Architecture`, `04 Design Docs`) + engine `src/` | Contextual architectural advice, navigation, PR reviews |
-| **v4** | **Autonomous Agent** | Operates the engine directly via tools, CLI, and editor IPC | Python Agent, JSON-RPC / WebSocket, Engine C++ CLI/Plugin | Live engine state, logs, Tracy profiler traces | Action execution: scene changes, running tests, profiling |
+| Version | Focus                | Core Capability                                                             | Tech Stack (Core)                                          | Input Context                                                    | Primary Output                                            |
+| :------ | :------------------- | :-------------------------------------------------------------------------- | :--------------------------------------------------------- | :--------------------------------------------------------------- | :-------------------------------------------------------- |
+| **v1**  | **Theoretical Q&A**  | Deep RAG over research papers (Physics, Rendering, ECS, Task Graphs, Audio) | Python 3.11+, ChromaDB, BM25, Gemini / Claude / Local LLM  | Research paper PDFs & metadata                                   | Cited academic answers, formulas, trade-off comparisons   |
+| **v2**  | **C++ Code Gen**     | Generates engine-compliant, cache-conscious, modern C++20 code              | Python, AST parsers, Clang-Format, Tree-sitter             | Paper algorithms + Engine code conventions (`B4`)                | Compilable C++ structs, ECS systems, task jobs            |
+| **v3**  | **Engine Grounding** | Understands the entire engine architecture, ADRs, scene model, and codebase | Python, Codebase Graph Index (LlamaIndex / LangChain), AST | Vault docs (`03 Architecture`, `04 Design Docs`) + engine `src/` | Contextual architectural advice, navigation, PR reviews   |
+| **v4**  | **Autonomous Agent** | Operates the engine directly via tools, CLI, and editor IPC                 | Python Agent, JSON-RPC / WebSocket, Engine C++ CLI/Plugin  | Live engine state, logs, Tracy profiler traces                   | Action execution: scene changes, running tests, profiling |
 
 ---
 

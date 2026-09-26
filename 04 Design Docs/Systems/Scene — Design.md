@@ -2,8 +2,8 @@
 
 **Module:** core
 **Kind:** system
-**Status:** implementing — S6-T1–T9 merged by 2026-09-22; repeated Scene proof pending
-**ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] · [[ADR-020 — System scheduling and task-graph execution]] · [[ADR-021 — Immediate Scene transform propagation]]
+**Status:** implementing — S6-T1–T9 merged by 2026-09-22; attended Scene proof reported Sep 26
+**ADRs:** [[ADR-007 — v2 networking & ECS replication foundation]] · [[ADR-016 — Serialization (binary primitives & describe-once seam)]] · [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] · [[ADR-020 — System scheduling and task-graph execution]] · [[ADR-021 — Immediate Scene transform propagation]] · [[ADR-022 — Project system composition and self-description]]
 **Sprint:** [[2026-09 Sprint 06 — Scene & Scheduling]]
 
 ## Purpose
@@ -17,8 +17,9 @@ identity foundation; S6-T2 shipped typed columns, archetypes and cached transiti
 S6-T3 shipped query matching and iteration; S6-T4 added the built-in hierarchy;
 S6-T5 added Transform and immediate propagation; S6-T6 added Schedule declarations.
 S6-T7 added the immutable graph and S6-T8 added serial execution and the structural
-barrier. S6-T9 connected the App-owned Scene and executor to fixed ticks; repeated
-Scene-state and presentation proof remains open.
+barrier. S6-T9 connected the App-owned Scene and executor to fixed ticks. Miguel reports
+that the Sep 26 showcase checked repeated values and headless/windowed parity;
+the committed App test remains narrower.
 
 ## Evidence and freshness
 
@@ -41,6 +42,7 @@ PR #90 as `ea5d0c9c`, PR #91 as `4da771af` and PR #92 as `2a50f8cb`.
 | Disk uses per-scene authoring IDs and remapping; UUIDs are opt-in for cross-document identity. Wire identity is a separate NetId. | ADR-007 §1 |
 | Stable component identity is an author-declared tag hashed to 64-bit StringId; a process-local u16 dense ID serves masks and access sets. | ADR-007 §1 and its Aug 22 amendment; ADR-016 §5 |
 | One ComponentRegistry is owned by the app composition root; registration bridges stable and dense IDs and checks collisions. | ADR-007 §1 |
+| The app owns the component registry and selects systems from an explicit project-contributed catalog before simulation. Selected instances declare access and ordering at startup, before graph build. The active set is fixed for that session. | ADR-007 §1 §6; ADR-020 §7; ADR-022 *Decision* |
 | Retain archetypes, cached transition edges and vector-backed SoA columns behind IComponentStorage; iterate typed spans. | ADR-007 §2 |
 | One registration seam describes identity, disk serialization and replication eligibility. Replicated components are restricted to trivially-copyable data without process-local pointers or handles. | ADR-007 §2; ADR-016 §1–2 |
 | Declared system writes feed per-column change ticks. Structural changes are deferred during system execution and applied after Tick. | ADR-007 §2 and §6; ADR-020 §1 and §8 |
@@ -226,9 +228,13 @@ engine built-ins. Storage factories, stable tags, serialization eligibility and 
 traits are supplied there. Scene, archetype transitions and queries remain generic: adding
 `MyGame.Health` must not require changing a central enum, serializer switch or Scene class.
 
-A project registers stateful systems into the app-composed Schedule. Each declares component
-reads/writes and any semantic ordering. Those declarations include custom component types
-and feed the same graph, debug access validation and change tracking as engine systems.
+A project contributes available system types or factories to the app's catalog. The app
+selects the active set before simulation and owns the persistent instances. Each selected
+instance declares component reads/writes and semantic ordering during startup, before
+the graph is built. Those declarations include custom component types and feed the same
+graph, debug access validation and change tracking as engine systems.
+This is the accepted target in ADR-022; the current app-authored Schedule declarations
+and post-graph instance construction remain shipped behavior until implementation.
 Shared resources are outside S6-T6–T9 access masks; add them when a concrete scheduled
 resource conflict needs graph ordering or debug validation.
 A custom system can query and update both built-in and project components through public APIs.
@@ -240,9 +246,11 @@ Transform propagation dependencies.
 
 Registration closes before the first tick (startup-only). S6-T1 supplies the registry's
 freeze mechanism; S6-T9 added the `App` call that closes registration before execution.
-There is no runtime registration and no engine DLL hot-reload. Editor script
-reload tears down Scene and registry, then re-registers all types from scratch. Archetype
-signatures use sorted vectors of dense IDs.
+The active system set cannot change while simulation runs. A different selection requires
+stopping the session and rebuilding its graph before the next session. There is no runtime
+registration and no engine DLL hot-reload. Editor script reload tears down Scene and
+registry, then re-registers all types from scratch. Archetype signatures use sorted
+vectors of dense IDs.
 Whatever module supplies callbacks must remain loaded until its systems, component values
 and cached metadata have been destroyed. No plugin loader is implied by this contract.
 
@@ -330,8 +338,9 @@ graph node, while `TaskGraph` remains immutable. Scene validates actual accesses
 the active declaration, and the executor stamps every matching declared writable column
 once before a system runs. S6-T9 connected this path to fixed ticks. The barrier service
 interface has `NetId` and event hooks after command application, but `App` currently
-supplies a no-op adapter. Actual assignment, event flushing and engine ownership of the
-adapter remain [[Backlog]] work. The port does not restore v1's `parallelEach` or
+supplies a no-op adapter. Event flushing and barrier ownership are planned in
+[[2026-09 Sprint 07 — Scene Events and Input Boundary]]; `NetId` assignment waits for
+its first networking consumer. The port does not restore v1's `parallelEach` or
 ADR-007's superseded variable-rate tail.
 
 Completed simulation state is extracted into owned presentation values through the
@@ -342,13 +351,13 @@ See [[Game Loop — Frame Flow]] and ADR-019 for delivery and interpolation.
 ## Open implementation gates
 
 - PR #92 (`2a50f8cb`) registered built-ins at the composition root and ran the
-  configured demo through the fixed-tick executor. Repeated expected Scene state,
-  graph reuse at the App boundary and headless/windowed parity remain unproven
-  ([[Backlog]]).
+  configured demo through the fixed-tick executor. Miguel reports repeated expected
+  Scene values and headless/windowed parity from an attended Sep 26 showcase.
+  Automated App tests still cover only one tick and entity count.
 
 S6-T8 shipped deferred structural commands, barrier-service hooks and declared-write
-stamps under ADR-020's Tick barrier. [[Events — Design]] still records the
-unresolved retention anchor after the loop split.
+stamps under ADR-020's Tick barrier. [[Events — Design]] records the accepted
+next-Tick batch rule; the event integration remains unbuilt.
 
 Story B closed with five cards (S6-T1 through S6-T5): entity handles and registry,
 archetype storage and transitions, queries, built-in hierarchy and transform propagation.
@@ -389,8 +398,9 @@ Each includes focused tests. The sprint note holds their acceptance criteria.
 - Serialization round-trip testing is deferred to the resource system.
 - S6-T8 proves deferred mutation visibility, declared-access checks, graph-order buffer
   application and column change ticks in executor tests. PR #92 wires the executor to
-  fixed ticks, but its runtime test observes one entity after one tick. Repeated
-  headless state proof and owned Scene snapshot values remain future work.
+  fixed ticks, but its runtime test observes one entity after one tick. Miguel's
+  attended showcase checked repeated state and headless/windowed parity; owned
+  Scene snapshot values remain future work.
 
 ## References
 

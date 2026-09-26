@@ -14,8 +14,9 @@ stable tag, computed at compile time wherever possible.
 
 **Consumers today:** `ComponentTypeId` and `EventTypeId`, both typed wrappers over it.
 
-**Consumers soon:** input action names (M5 action mapping), cvar and console names (the T1
-lane), and possibly material and shader parameter names.
+**Consumers soon:** cvar and console names (the T1 lane), and possibly material and
+shader parameter names. [[Input — Design]] currently uses engine control identifiers,
+without named actions or a binding map.
 
 **Not consumers:** resources use a UUID model instead (ADR-006 §1). Physics keys off
 `Entity` rather than strings, which is F17's fix.
@@ -58,8 +59,8 @@ following `CONVENTIONS.md` → *Naming*. That is the same precedent that turned 
 There is one canonical path: `constexpr explicit StringId(std::string_view)`.
 
 It runs at compile time inside a constant expression. `constexpr StringId kHit{"Game.Hit"};`
-static-asserts the hash at build time. It runs at runtime for names loaded from config, such
-as input actions and cvars.
+static-asserts the hash at build time. It runs at runtime for names loaded from config,
+such as cvars.
 
 **No macro** (ADR-014 §1). **No user-defined literal for now** either. A `_sid` suffix would
 be a second spelling of the same thing, so add it only if ergonomics demand it.
@@ -176,8 +177,7 @@ the string on every call, and a Debug build folds nothing.
 This is ADR-013 §6's per-frame-names trap wearing a different hat.
 
 The convention is a `static constexpr` local at the call site. What is open is whether that
-needs a CI grep to enforce, or whether the habit is enough. **Owner:** the first hot consumer,
-which is M5 input actions.
+needs a CI grep to enforce, or whether the habit is enough. **Owner:** the first hot consumer.
 
 ### Untrusted ids
 

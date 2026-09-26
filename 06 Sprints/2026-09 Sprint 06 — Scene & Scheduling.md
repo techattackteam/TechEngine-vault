@@ -26,7 +26,7 @@ are implementation and verification in Stories B, D and E.
 | Area | Grounding | Current gate |
 |---|---|---|
 | Scene/ECS port | [[Scene — Design]]; ADR-007 §1–2; [[ADR-021 — Immediate Scene transform propagation]] | Design cleared by S6-D1. T1–T5 merged; Story B complete. |
-| Systems, graph and executor | [[Task Graph — Execution Flow]]; ADR-020 | Design cleared by S6-D2. Schedule, graph and serial executor merged through T8; S6-T9 fixed-tick wiring merged in PR #92. Repeated headless state proof remains open. |
+| Systems, graph and executor | [[Task Graph — Execution Flow]]; ADR-020 | Design cleared by S6-D2. Schedule, graph and serial executor merged through T8; S6-T9 fixed-tick wiring merged in PR #92. Miguel reported repeated values and headless/windowed parity at closeout; automated App coverage remains narrower. |
 | Fixed simulation and presentation | [[Simulation Thread — Design]]; ADR-019 | Already implemented. Integration consumes these seams; presentation cannot borrow live Scene data. |
 
 Implementation stories were roughly counted under the heavy gates at planning,
@@ -192,7 +192,8 @@ action mapping remains M5 follow-through. Delivery may roll into Sprint 07.
     RuntimeApp registers the demo chain. Its test checks one entity after one tick,
     without expected component state, graph-reuse evidence or headless/windowed parity.
     Miguel kept this runtime as a demo and deferred Scene rendering. The remaining
-    proof is in [[Backlog]], so Story E's headless-proof goal remains open. PR #92's
+    proof was demonstrated by Miguel at sprint close, while automated App coverage
+    remains narrower. PR #92's
     final CI checks passed; `[skip-coverage]` bypassed changed-line coverage.
 
 S6-P1 returned to [[Backlog]] on Sep 19 when the mid-sprint S6-B1 defect displaced the
@@ -238,16 +239,17 @@ lowest-priority Process card.
 - [x] Scene reuse is grounded in inspected v1 code and an agreed design note. — S6-D1;
   first implementation merged 2026-09-14 as `9fb6aeaf`, PR #82.
 - [x] The task-graph ADR is Accepted and its design hub reflects fixed-only simulation. — ADR-020 Accepted Sep 12.
-- [ ] A small scene runs through the declared dependency graph on the simulation thread
-  and produces the expected state headlessly over repeated ticks. PR #92 (`2a50f8cb`)
-  wires the executor, but its runtime test covers only one tick and entity count.
-- [ ] Tests prove handle invalidation, storage/query behavior, graph conflicts and semantic
-  ordering, cycle rejection, graph reuse/rebuild boundaries and deferred structural changes.
+- [x] A small scene runs through the declared dependency graph on the simulation thread
+  and produces the expected state headlessly over repeated ticks. Miguel confirmed
+  expected values and headless/windowed parity in the attended showcase. PR #92
+  (`2a50f8cb`) wires the executor, but its runtime test covers only one tick and entity count.
+- [x] Focused tests cover handle invalidation, storage/query behavior, graph conflicts and semantic
+  ordering, cycle rejection and deferred structural changes; the attended showcase
+  covers repeated App execution and observed graph order.
   Handle invalidation and hierarchy cycle rejection landed through S6-T4, PR #86
   (`5a687af1`); graph conflicts, semantic ordering and graph-cycle rejection landed through
   S6-T7, PR #90 (`ea5d0c9c`). Deferred structural changes and repeated executor use landed
-  through S6-T8, PR #91 (`4da771af`); PR #92 (`2a50f8cb`) added fixed-tick wiring,
-  while repeated headless state and graph-reuse proof remains in [[Backlog]].
+  through S6-T8, PR #91 (`4da771af`); PR #92 (`2a50f8cb`) added fixed-tick wiring.
 - [x] Required implementation PRs are merged with recorded validation, and touched design
   notes describe the shipped behavior. Presentation does not access the live Scene. —
   PR #92 (`2a50f8cb`) merged 2026-09-22 with green CI; its `[skip-coverage]` marker
@@ -283,4 +285,17 @@ roadmap items, not untracked carry cards. Parallel execution stays P1; content s
 
 ## Sprint review (end)
 
-Pending Sep 26–27 boundary review. Mid-sprint review: Sep 19–20.
+The Scene port, Schedule, graph, serial executor and App fixed-tick wiring shipped in
+PRs #82 and #84–92. The Sep 24 Mesa TSan investigation and narrow workflow setting
+shipped in PR #93. All 12 board cards closed: 9 Dev, 2 Design and 1 Bug; no Process
+card closed. S6-P1 was displaced by the mid-sprint bug and returned to [[Backlog]].
+
+Miguel reports that his attended showcase checked expected Scene values and
+headless/windowed parity, while logs and Tracy showed systems running in the same
+order on repeated ticks. The committed runtime test observes one entity after one
+tick; it does not capture all of that showcase evidence as an automated regression.
+The `[skip-coverage]` marker on PR #92 bypassed changed-line coverage. PR #93's
+workflow edit still awaits its first hosted Linux TSan run.
+
+Retrospective: [[2026-09-26 Sprint 06 Retrospective]]. Mid-sprint review:
+[[2026-09-19 Weekly Review]].

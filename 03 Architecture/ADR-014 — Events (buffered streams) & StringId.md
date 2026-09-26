@@ -10,6 +10,18 @@
   living *how*: [[Events — Design]] · [[StringId — Design]]
 - **Task:** S3-D2 ([[2026-08 Sprint 03 — M1 Enablers]]) — **gates Story E and closes M1's
   second gate.**
+- **Amended 2026-09-26 — decision:** “consumers read via per-reader cursors” → the
+  executor presents the next Tick's visible batch once to each selected scheduled
+  handler, then discards it after the system phase. The fixed graph and ADR-022's
+  handler contract make reader acknowledgments unnecessary. Trigger: S7-D1.
+- **Amended 2026-09-26 — decision:** “after both one frame boundary and one fixed tick”
+  → events published in Tick N are available during Tick N+1 and retire after its
+  scheduled system phase completes. Scene events are simulation-only; the ADR-019
+  loop split removed the shared frame boundary. Trigger: S7-D1.
+- **Amended 2026-09-26 — decision:** “OS/input events (command/intent components at
+  `Input`)” → input notifications use a separate same-Tick delivery path from the
+  ordered ingress batch. They do not enter Scene event streams or acquire their
+  next-Tick visibility rule. Trigger: S7-D2.
 - **Supersedes (partial):** **ADR-006 §4's `EventBus& events` field only**
   (`:186`) — event streams are `Scene` state, not an `EngineContext` service; every other
   §4 clause (DI rule, immutability, "holds no systems", F13 ownership) remains in force.
@@ -68,6 +80,11 @@ over StringId — no per-type macro. Publishers **write events by value** into t
 stream; consumers **read via per-reader cursors** — each reader sees each retained event
 exactly once.
 
+> **Amended 2026-09-26:** The cursor sentence above describes the original M1
+> mechanism. Scheduled handlers each receive Tick N's visible batch during Tick N+1.
+> The executor discards the batch after all selected systems finish that phase; it
+> needs no per-reader cursor or per-event acknowledgment for this delivery path.
+
 F28 is not fixed; it stops being expressible. No unsubscribe exists because no
 subscriptions exist; no per-event allocation exists because events are values in
 contiguous buffers. Non-trivially-copyable payloads are rejected at registration — a
@@ -91,6 +108,12 @@ string payload carries a `StringId` or a handle (ADR-007 §2's POD discipline, s
   inside the window (disabled, role-gated — ADR-007 §4) misses silently; memory stays
   bounded by event rate × max(frame, tick period). Events never touch disk.
 
+> **Amended 2026-09-26:** The frame-and-tick window above is historical. Scene
+> streams serve scheduled simulation readers only. Events published during Tick N
+> become visible at its barrier, are delivered during Tick N+1, and retire only after
+> that Tick's system phase completes. With no next Tick, the batch remains. A failed
+> system phase does not retire it. No host or render frame anchors its lifetime.
+
 ### 4. Event access is a **third access category** — declared, but outside the conflict rule
 
 `SystemAccess` gains event read/write sets **beside** components and resources. ADR-007
@@ -100,6 +123,10 @@ publish/read race-free by construction. The declaration is not ceremony: the gra
 wires publisher lanes and reader cursors from it, and tooling gets "who publishes/reads
 X" for free.
 
+> **Amended 2026-09-26:** Graph build wires each selected handler to its event type.
+> The executor presents the visible batch once at the handler's scheduled slot;
+> the per-reader cursor wiring above is historical.
+
 ### 5. Residence — streams live on the `Scene`; there is no `EventBus` service
 
 Same argument as sim time not living on the `Clock` ([[Game Loop — Frame Flow]]): a
@@ -107,6 +134,10 @@ process can run more than one sim (tests already run several headless sims — t
 editor's client+server hosting is *not* a v2 scenario), the flip is per-sim tick
 structure, and event buffers are frame-lifetime sim state — the wrong bucket for an
 engine-lifetime `EngineContext` service either way.
+
+> **Amended 2026-09-26:** The frame-lifetime description above is historical.
+> Scene event batches live across simulation Ticks under the amended §3 rule.
+
 Event *type* registration is process-global (mirrors ADR-007 §1: global registry,
 per-`Scene` columns). Hence the two partial supersessions in the header.
 
@@ -129,6 +160,11 @@ linker-stripped). No file-scope statics, and no per-type macro — ADR-007 §1's
   replicated event must survive until the encoder runs → netcode ADR); the script-facing
   API (scripting ADR, on the `te_sdk` façade — the first StringId header in `sdk/include/`
   triggers the smoke gate, ADR-011 §10's mechanic, expected not feared).
+
+> **Amended 2026-09-26:** The command/intent parenthetical above is historical.
+> Host input is delivered to selected simulation systems from the current Tick's
+> ingress batch, outside these Scene streams. A future script façade may consume
+> that input batch; this section's script-facing non-goal concerns Scene streams.
 
 ## Consequences
 

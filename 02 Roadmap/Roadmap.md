@@ -36,7 +36,7 @@ flowchart TB
 | **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a four-worker pool · **binary serialization + ADR-005's trait seam**                                | **threading ADR** — gated on M1's Profiler · **serialization ADR**                                |
 | **M3** | project ‖ M2                | root + `project.toml` (toml++) · path/mount resolution · **the rest of `FileAccess`'s mutating half**: `createDirectory` · `remove` · `copy` · `move` · `rename`. `write` itself shipped at S4-T7 · shader + asset dirs · **`projects/dev/` testbed** | none: toml, not the binary format                                                                 |
 | **M4** | window                      | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                                              | M2's context-ownership call                                                                       |
-| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · input action mapping                            | [[ADR-020 — System scheduling and task-graph execution]] Accepted Sep 12; implementation remains |
+| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · engine-coded input events                            | [[ADR-020 — System scheduling and task-graph execution]] Accepted Sep 12, amended Sep 26; event-barrier and input delivery implementation remain |
 | **M6** | content                     | Resources (CPU/UUID) · project↔scene binding                                                                                                                      | **none** — its seam closed at M2. ⚠️ the only gateless rung; revisit whether Resources owes one   |
 
 ## The lanes
@@ -135,7 +135,8 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 | Aug 1 – Aug 28 | [[2026-08 Sprint 03 — M1 Enablers]] | **M1 ✅** closed Aug 20, 8 days early; both gates Accepted Aug 2. RNG · crash handler **carry** (memory tracking shipped at S3-T5) |
 | Aug 22 to Aug 28 | [[2026-08 Sprint 04 — M2 Concurrency & Serialization]] | **M2 ✅** — threading + serialization ADRs Accepted day 1, first code against each. **Closed Aug 30 on day 9**, and the boundary moved a week early rather than the box running to Sep 4 |
 | Aug 29 to Sep 11 | [[2026-08 Sprint 05 — M3 Project & M4 Window]] | **M3 editor testbed + M4 complete.** Simulation independence also shipped; runtime packaging remains M6. Closed Sep 12. |
-| Sep 12 to Sep 25 | [[2026-09 Sprint 06 — Scene & Scheduling]] | **M5 in progress:** Scene design and ADR-020 cleared Sep 12; T1–T4 merged, while Transform and executor integration remain. |
+| Sep 12 to Sep 25 | [[2026-09 Sprint 06 — Scene & Scheduling]] | **M5 in progress:** Scene and serial scheduling shipped; Miguel reported repeated values and headless/windowed parity in the closeout showcase. |
+| Sep 26 to Oct 9 | [[2026-09 Sprint 07 — Scene Events and Input Boundary]] | **M5 follow-through:** Scene event delivery at the Tick barrier and engine-coded input delivery during the consuming Tick. |
 
 ## Quarters
 

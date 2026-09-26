@@ -108,16 +108,6 @@ groups are kept, because they show where future work will land.
 
 ## core
 
-- #prio/high · **Move Tick barrier service ownership out of App** — `App.cpp` currently
-  creates `NoOpTickBarrierServices` for each tick. Investigate which engine subsystem
-  should own the service, then replace the App adapter while preserving the executor's
-  command-before-services ordering. Coordinate with the event-stream and NetId entries
-  below. **Trigger:** Sprint 07 planning.
-
-- #prio/xhigh · **Integrate event streams with Scene and the Tick barrier** — move
-  `EventStreamManager` into Scene-owned simulation state and make staged events visible at
-  the post-Tick barrier under ADR-014 and ADR-020. **Trigger:** Sprint 07 planning.
-
 - #prio/medium · **Resources — hot-reload / eviction** — candidate ADR; depends on the
   UUID/cache model ported from v1 (F7, F13, F31). **Trigger:** the resource cache being real (M6).
 
@@ -136,23 +126,10 @@ groups are kept, because they show where future work will land.
 
 ## app
 
-- #prio/high · **Prove repeated Scene state and headless parity** — S6-T9's runtime
-  demo observes one entity after one tick. Expected component values across ticks,
-  App-level graph reuse and equal headless/windowed Scene output remain unproven;
-  the last needs Scene state in presentation. **Trigger:** Sprint 07 planning.
-
-- #prio/low · **`engine/app` declares `platform` PRIVATE while its public header uses it** —
-  `engine/app/CMakeLists.txt:6` says `DEPS_PRIVATE platform`, but since #63 the public header
-  `engine/app/include/TechEngine/app/App.hpp` includes `FileAccess.hpp` and `MountTable.hpp`
-  (`:8-9`) and holds `MountTable m_mounts` and `FileAccess m_files` as members (`:16-17`).
-  ADR-008 §8 and `CONVENTIONS.md` § *CMake* both say `PUBLIC` when the dep appears in the
-  target's public headers. It compiles regardless, because `core` links `platform` PUBLIC
-  (`engine/core/CMakeLists.txt:21`) and `app` takes `core` PUBLIC, so every consumer and
-  `TechEngineAppTests` receive platform's include directories through that edge instead.
-  Nothing will ever go red over it, which is why it is worth writing down rather than waiting
-  for it to break. **Trigger:** fired — #65 changed that file on 2026-09-01, about five hours
-  after this entry was written, and the fix did not ride along. `DEPS_PRIVATE platform` is
-  still line 6, so the citation holds.
+- #prio/medium · **Expose project system contribution and pre-session selection** —
+  complete [[ADR-022 — Project system composition and self-description]]'s public
+  catalog boundary beyond App's built-in schedule selection. **Trigger:** the first
+  project-supplied system or project-code loading card.
 
 ## net
 
@@ -197,13 +174,6 @@ groups are kept, because they show where future work will land.
 
 ## etc — cross-cutting
 
-- #prio/medium · **Align the documented build/profiler policy with shipped decisions** —
-  confirm the warning/tidy policy and Tracy pin, apply dated amendments to ADR-005/008/013
-  where needed, and align B3 and Profiler — Design. Preserve enforced formatting and the
-  matching Tracy client/desktop requirement; record unresolved discrepancies rather than
-  making a new policy choice. This was S6-P1 until the Sep 19 S6-B1 TSan defect displaced
-  the sprint's lowest-priority Process card. **Trigger:** the next sprint plan.
-
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly** — report-once is per call site through a function-local static (ADR-011 §5), and
   `catch_discover_tests` hides that by giving every Catch2 case its own process. Two
@@ -214,21 +184,6 @@ groups are kept, because they show where future work will land.
   fire count is asserted at exactly one case per site. **Trigger:** the next card that adds a
   `TE_ENSURE` case, or the first developer confused by a green `ctest` and a red exe.
 
-- #prio/high · **Decide `CONVENTIONS.md`'s Error handling row, as an ADR** — its own "first
-  fallible API" trigger has fired twice without moving the row: `addLogSink` returns a bare bool
-  (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:123`) and `Reader` carries a sticky
-  `ReadStatus` (`engine/core/include/TechEngine/core/serialization/Reader.hpp:15`, per ADR-016).
-  Nothing throws across an API boundary and nothing uses `std::expected`, so it ratifies two
-  existing shapes rather than opening a three-way choice. It also owns the `[[nodiscard]]`
-  revisit (`CONVENTIONS.md` § *Attributes*). **Trigger:** fired — pull at the next
-  `/sprint-plan`.
-
-
-- #prio/medium · **Measure cache refresh and storage after #76** — ccache now saves once per
-  commit and restores compatible older snapshots; Mesa archives are cached separately.
-  The frozen-key mechanism is fixed, but the hit-rate improvement and snapshot growth need
-  observations from successive master runs. **Trigger:** the next weekly review after
-  multiple source revisions have populated the new keys.
 - #prio/low · **Four CI legs can never restore a ccache, and it is scoping, not the key** —
   a cache written on `refs/pull/N/merge` is readable only by that PR; only caches on
   `refs/heads/master` are shared across branches. `sanitizers` and `coverage` are
@@ -243,38 +198,6 @@ groups are kept, because they show where future work will land.
   PR per master merge becomes normal, or a sanitizer leg's cold build gets slow enough to
   notice.
 
-- #prio/medium · **`App.cpp` is excluded from the coverage gate and only a cmake comment says
-  so** — S4-T7 added `engine/app/src/App.cpp` to `diff-cover`'s `--exclude` list
-  (`cmake/coverage_report.cmake`), because no CI job runs the runtime exe and the composition
-  root's demo blocks are uncoverable by construction. The reasoning is real, but it weakens a
-  **required** check and [[B3 — Build & Testing Notes]] § *Code coverage* does not mention it,
-  so the next person to read the gate's story will not know the exclusion exists. Write it
-  there, and decide at the same time whether the exclusion should be the file or only its demo
-  blocks. **Trigger:** fired at S4-T7; pull with the next coverage or B3 work.
-
-- #prio/medium · **Guard the branch-name to card-ID link** — the branch prefix is the only path
-  from a squashed commit back to its board card (ADR-012 § *Consequences*), and it has now
-  broken on three consecutive cards: S4-T5 rode T4's branch, S4-T6 kept the `S4-T2/` prefix
-  after the slip was called out, and S4-T3's correctly-named branch was merged inside an
-  unrelated bug PR (#56). The third one changes the shape of the fix: a pre-push check on the
-  branch name would not have caught it, so the guard has to compare the **merged** commit
-  against the open cards on [[Sprint Board]]. Nothing mechanical checks it today, so the entry
-  is only ever written after the fact.
-  **A merged commit naming a still-open card is legal, so that comparison cannot be an
-  equality test.** #65 merged on branch `S5-T5/demo-mount-removal` while S5-T5 is still in To Do,
-  because the card landed in halves. Four cards have been named correctly since the three
-  misses — #64, #66, #67 and #68 all carry their own prefix — so what the guard must catch is a
-  prefix matching **no** card, not one matching an open card.
-  **Trigger:** fired — pull at the next `/sprint-plan`.
-- #prio/medium · **ADR-009 owes an amendment: a workflow-only PR gets no CI** — § *Consequences*
-  says correctness leans on strict CI plus self-review. Since #54 (2026-08-28) a PR touching only
-  `.github/workflows/**` runs no build at all, so for that one class of change CI is not a
-  backstop and self-review is the whole gate. S4-P4 pre-named this exact test, answered it
-  correctly for docs-only PRs, and nobody re-asked it when the scope widened past docs. The
-  mitigation exists but lives only in `ci.yml`'s header: land workflow edits alone and read the
-  run they produce on `master`. Found at the 2026-08-29 drift check (A3). **Trigger:** fired —
-  Sprint 05 planning ran on 2026-08-30 and passed the entry over, deliberately or not. Pull at
-  the next `/sprint-plan`.
 - #prio/medium · **Make sanitizer workflow edits testable in hosted CI** — PR #93
   changed the Linux TSan test step but received only docs-only stand-in checks.
   A manual `workflow_dispatch` on `master` cannot validate it because `sanitizers`
@@ -282,13 +205,6 @@ groups are kept, because they show where future work will land.
   remains unverified. Find a targeted validation path that preserves the normal
   PR-only sanitizer cost. **Trigger:** before the next sanitizer workflow edit;
   inspect the next code PR's Linux TSan result for #93's first hosted evidence.
-- #prio/low · **`ci.yml`'s `build-test` gate comment is wrong about skipped checks** — it says
-  a required check skipped by an `if:` "never reports its context at all". Measured on #49's
-  push run, a skipped *plain* job does report it (`diff coverage` came back `skipped`); it is
-  the *matrix* job that collapses to a single check named `matrix.name` (S4-P4). The comment
-  is S4-P3's text and reasons about the `needs:` wiring, which is itself fine.
-  **Trigger:** fired — S4-P3 closed 2026-08-30, which was the second half of this entry's own
-  trigger. It stayed unmarked because a card's close does not sweep the entries that name it.
 - #prio/low · **`delete_branch_on_merge` is off** — [[ADR-009 — Branching strategy & merge rules]]
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a
@@ -304,63 +220,17 @@ groups are kept, because they show where future work will land.
   and the tree now carries no committed data asset of any kind, so the entry is entirely
   prospective and further from firing than when it was filed.
   **Trigger:** the first test that reads a committed asset rather than a scratch one.
-- #prio/low · **A CI check that every vault `path:line` citation exists and is in range** —
-  S5-P3's answer to "`/weekly-review` or CI" was to split by failure mode. Exists-and-in-range
-  is mechanical and cheap, and would have caught 3 of the ~14 wrong sites the two sweeps
-  found. Points-at-the-right-thing is a read, and stays with `/weekly-review`. The vault has
-  its own HEAD, so the check resolves against the Dashboard's `Reconciled against` sha, not
-  `master`: it proves "nothing dangles as of the last reconciliation". Citations anchored
-  "at `<sha>`" resolve at that sha. **Trigger:** fired during the Sep 18 vault sweep:
-  [[Known Issues]] D4 still cited the removed `FrameContext.hpp`; the obsolete issue
-  was removed here, but a citation check is still wanted.
-
-- #prio/medium · **Four app-local headers still use quoted `#include`** —
-  `apps/editor/src/main.cpp`, `apps/runtime/src/main.cpp` and the matching app test
-  files include their local headers with quotes. `CONVENTIONS.md` § *Includes* calls for
-  angle brackets throughout; recheck the include paths before changing these four lines.
-  **Trigger:** fired — the Sep 18 vault sweep rechecked the surviving sites.
-
 - #prio/low · **Reconcile ADR-017's `main()` clause** — each executable defines `main()`
   and calls `runApp<AppType>()`; ADR-017 § *Decision* 3 instead places `main()` in a shared
   header. [[Project — Design]] § *Entry point and presentation boundary* records the
   divergence. **Trigger:** the next ADR-017 decision amendment.
 
-- #prio/medium · **A prompt edit in the vault does not reach the running routine, and nothing
-  catches the gap** — `1f4ebfb` updated [[Autonomous Lane — Routine Prompt]] § *The prompt* on
-  Aug 31 at 11:06 Lisbon, and the fire five hours later still received the old four-fire text.
-  Five sentences differed, all of them the fire count, and it was harmless only because the
-  one-PR-per-day cap is worded identically in both. The vault copy is supposed to be the one
-  you edit against, so every prompt change silently owes a manual paste into the routine and a
-  missed paste looks like nothing at all. It is not a card the lane can take: a fire can only
-  see the prompt it received, never the one it should have. Options: a version line at the top
-  of the prompt that each report echoes back, or a step in `/weekly-review` that diffs the two.
-  **Trigger:** fired — found by the 2026-08-31 second fire, carded at S5-P1's close.
-  Recorded as a permanent property in [[Autonomous Lane — Design]] § *State* meanwhile.
-- #prio/low · **An entry whose trigger has already fired is re-checked by nothing, so its
-  witness rots unnoticed** — a trigger sweep reads the *unfired* triggers, because a fired one
-  has nothing left to decide, and grooming reads a fired entry only when it pulls it. Between
-  those two moments the code the entry cites keeps moving. Two entries in this file were
-  invalidated by #65 within hours of being filed: the `DEPS_PRIVATE platform` one, caught on
-  2026-09-03 because its trigger was still unfired, and the `App.cpp` citation one, which the
-  same sweep passed over because its trigger was marked fired and which was still describing a
-  deleted `TODO(S3-T13)` block five days later. The cost is bounded — grooming re-reads the
-  code before it acts — but it acts on a false premise until it does. Fix is one line of scope:
-  a sweep re-resolves a fired entry's citations too, and only skips re-deciding its trigger.
-  **Trigger:** fired — the 2026-09-04 sweep adopted the widened scope and it paid immediately.
-  Re-resolving the fired entries caught the `#prio/high` Error-handling-row entry citing
-  `Log.hpp:116`, a blank line since #66 inserted seven lines above it; `addLogSink` is at `:123`
-  and the entry is corrected. That entry is pulled at the next `/sprint-plan`, so under the old
-  scope grooming would have opened a pointer to nothing. **Keep the widened scope.** What is
-  left to decide is whether it belongs in `/weekly-review` rather than in an ad-hoc sweep.
-
 - #prio/high · **Memory-management design note** — the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
-- #prio/medium · **Point each dep's allocator hook at the profiler** — Jolt
-  (`JPH::Allocate`/`Free`/aligned + `JPH_OVERRIDE_NEW_DELETE`), miniaudio
-  (`ma_allocation_callbacks`), GLFW 3.4 (`glfwInitAllocator`) →
-  [[ADR-013 — Profiler (Tracy-backed instrumentation)]] §7. **Trigger:** the first init of each dep.
-- #prio/medium · **Recorded-demo workflow** — capture + store. **Trigger:** the first demo
-  worth keeping.
+- #prio/medium · **Point later dependency allocator hooks at the profiler** — Jolt
+  (`JPH::Allocate`/`Free`/aligned + `JPH_OVERRIDE_NEW_DELETE`) and miniaudio
+  (`ma_allocation_callbacks`) remain under [[ADR-013 — Profiler (Tracy-backed instrumentation)]]
+  §7. GLFW's fired hook is S7-T2. **Trigger:** the first init of Jolt or miniaudio.
 - #prio/low · **README at repo root** (public-facing). **Trigger:** T2 — the first build that
   runs outside the editor.
 - #prio/xlow · **Retrofit `base` to the spelled-out-names rule** — `loc` / `fmtStr` predate it.

@@ -1,25 +1,27 @@
 # Events — Design
 
 > Living design doc. **Status: active.** This is the hub for the *how*. The decision is
-> [[ADR-014 — Events (buffered streams) & StringId]], accepted 2026-08-02.
+> [[ADR-014 — Events (buffered streams) & StringId]], accepted 2026-08-02,
+> and [[ADR-022 — Project system composition and self-description]], accepted 2026-09-26.
 
 **Module:** `core` (the streams live on `Scene`) · **Kind:** engine mechanism, not a System
 **ADRs:** [[ADR-014 — Events (buffered streams) & StringId]] ·
+[[ADR-022 — Project system composition and self-description]] ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §4 §6 ·
 [[ADR-006 — v2 core architecture & module layout]] §1 §4
 **Id primitive:** [[StringId — Design]]
 
-**Execution status:** stream storage and registry shipped at M1. ADR-020 now specifies one
-Tick barrier; Scene ownership, cursor binding and retention after the ADR-019 loop split
-remain S6-T8/T9 integration work.
+**Execution status:** stream storage and registry shipped at M1 with frame marks and
+per-reader cursors. ADR-014's Sep 26 amendment replaces that delivery rule with a
+next-Tick batch. Scene ownership and scheduled handler delivery remain Sprint 07 work.
 
 ## Purpose
 
 Discrete notifications that cross systems and reach scripts. "Collision entered", "entity
 damaged", and so on.
 
-The point is that none of it uses callbacks. Instead there are per-type buffered streams,
-writes are staged, they become visible at a barrier, and readers hold cursors.
+Per-type buffered streams stage writes until a Tick barrier. Each selected system's
+registered handler receives the visible batch during the next Tick, never on publish.
 
 That fixes **F28** structurally, rather than by convention.
 
@@ -27,12 +29,13 @@ That fixes **F28** structurally, rather than by convention.
 
 | Fact | Where |
 |---|---|
-| Buffered per-type streams. No subscriptions and no callbacks. | ADR-014 §2 |
+| Buffered per-type streams. No subscriptions or immediate callbacks; scheduled system-local handlers drain visible events before `tick`. | ADR-014 §2, partially superseded by ADR-022; ADR-022 *Decision* |
 | An event is a trivially-copyable struct plus a stable tag, which becomes an `EventTypeId` over a `StringId`. | ADR-014 §2 §1 |
 | Events become visible at each Tick barrier. ADR-020 replaced the earlier phase names. | ADR-014 §3; ADR-020 §1 |
 | Merge order is the publisher's schedule position, then FIFO within a publisher. A replay is identical. | ADR-014 §3 |
-| Retention: an event retires only after at least one frame boundary **and** at least one fixed tick. It is reader-independent, so it is lossy for an absent reader. | ADR-014 §3 |
-| Event access is a third `SystemAccess` category, and it creates no conflict edges. | ADR-014 §4 |
+| Tick N's events reach every selected scheduled handler in Tick N+1, then retire after that system phase. No next Tick means no retirement. No per-reader cursor or frame anchor governs scheduled delivery. | ADR-014 §2–4, Sep 26 amendments; ADR-022 Sep 26 amendment |
+| Within one system, handlers run in their startup declaration order. Each handler receives its event type's complete visible batch in publisher schedule order, then FIFO within a publisher. There is no merged order across event types. | S7-D1, Sep 26 design resolution |
+| Event access is a third `SystemAccess` category, and it creates no conflict edges. Selected systems declare handlers and access at startup. | ADR-014 §4; ADR-022 *Decision* |
 | Streams are per-`Scene`. There is no `EventBus` service and no `EngineContext` field. | ADR-014 §5 |
 | Type registration is process-global, invoked from the composition root. Never through file-scope statics. | ADR-014 §6 |
 | No Pool primitive is needed. | ADR-014 §7 |
@@ -44,23 +47,25 @@ That fixes **F28** structurally, rather than by convention.
 |---|---|
 | Physics `OnCollision*` and `OnTrigger*` (`core/src/events/physics/`) | Streams, in the fixed domain. This is the first real consumer, at M5 or later. |
 | Scene lifecycle: `EntityCreated`, `EntityDeleted`, `ComponentAdded`, `ComponentRemoved` | Maybe **not events at all**. Structural changes already flow through the barrier's command buffer (ADR-007 §6). Decide when a consumer appears. |
-| Input events (`client/events/input/`) | **Not event streams.** Input conversion is a regular Tick system (ADR-020 §1). |
-| Resource created and deleted | Editor-side. The editor sits outside the loop, so these stay direct calls rather than streams. |
+| Input events (`client/events/input/`) | **Not Scene event streams.** [[Input — Design]] delivers engine-coded input from the current Tick's ingress batch to selected systems. |
+| Resource created and deleted | Editor-side notifications, not Scene streams. Their delivery waits for an editor consumer. |
 | UI widget events | Client-side, in the frame domain. Later. |
-| The `editorWatchDog` catch-all callback | The editor observes streams after a frame. That needs a read API outside the schedule, which is open below. |
+| The `editorWatchDog` catch-all callback | No host-frame Scene-stream reader is promised. Editor UI and stopped-simulation editing need their own design. |
 
 ## Mechanism
 
 Pinned 2026-08-02, before Story E.
 
-### Stream anatomy
+### Stream anatomy — shipped M1 storage
 
 There is one stream per event type, living on the `Scene`.
 
 A stream is a contiguous buffer of events carrying **absolute `u64` sequence numbers**. Three
 positions cut it up: the retirement head, the visible end, and the staging tail.
 
-ADR-014 calls this "double-buffered". It is realized as one buffer, not two.
+ADR-014 calls this "double-buffered". M1 realizes it as one buffer, not two. The
+Sep 26 amendment changes delivery and retention; the representation can be adapted
+without assuming that frame marks or reader cursors remain.
 
 > Where this note says "ring", read it as the linear compacted buffer described under
 > *Stream storage*. Amended 2026-08-06.
@@ -82,35 +87,47 @@ layout's owner.)
 ### Making events visible
 
 ADR-020 requires the staged batch to become visible at each Tick barrier. The current
-stream code records `{endSeq, frameIndex, tick}`; how Scene supplies the lifetime mark
-after the loop split remains open below.
+stream code records `{endSeq, frameIndex, tick}`. The accepted target needs only the
+batch's Tick identity; `Clock::tick()` is a process-wide diagnostic counter, not its
+lifetime anchor. Its advancing method still has the old `advanceFrame()` name.
 
-This is cheap. Nothing is copied, because the buffer is shared.
+M1 makes events visible by moving sequence bounds without copying payloads. The
+scheduled handler path must also keep the visible batch stable when publication
+grows staging storage; its final buffer operation is implementation work.
 
-### Retiring
+### Scheduled Tick delivery — accepted Sep 26, unbuilt
 
-The M1 driver retired batches once per frame, at frame start and before the former `Input`
-phase. A batch
-goes when `currentFrame > mark.frame` **and** `currentTick > mark.tick`. That is ADR-014 §3's
-rule.
+Tick N's publishers append to staging. Its barrier makes that batch visible. In Tick
+N+1, the executor presents it once to every selected registered handler at its
+system's slot, before `tick` and under the same component access declaration. The
+batch stays intact through all graph levels, including the terminal slot. After a
+successful system phase it retires Tick N's batch, then the barrier makes Tick N+1's
+staged events visible. A failed phase does not retire the old batch.
 
-Both halves of it matter. A fast frame that runs zero ticks leaves `tick` unadvanced, so
-batches survive until a tick actually runs. A slow frame running many ticks retires at the
-next frame boundary.
+The visible batch must remain valid while a handler publishes, including another
+event of the same type. M1's one-buffer `EventStream::stage` can grow storage and
+invalidate a span into that buffer. Separate visible and staging storage, or another
+stable-view mechanism, must close this before scheduled delivery ships.
 
-That retention window was at most the longer of one frame and one tick period. ADR-019
-separated host, simulation and render loops; S6-T8/T9 must choose a current retention
-anchor that preserves ADR-014's minimum lifetime without a simulation frame index.
+An advance with zero ticks performs no delivery or retirement. Several catch-up ticks
+repeat the same rule independently, even if no render frame occurs between them. A
+system that early-outs in `tick` still receives its registered handlers; role-specific
+readers are selected before the immutable graph is built. No per-reader acknowledgment
+or cursor is needed for scheduled delivery.
 
-### Cursors
+Within each selected system, the executor runs handlers in their startup declaration
+order. It drains the complete visible batch for one handler before invoking the next,
+even when the two handlers read different event types. Each type's batch retains
+publisher schedule order and FIFO within each publisher; no global publication order
+across event types is promised. A handler's new publications stay staged for the
+following Tick.
 
-There is one cursor per reader system per stream, and a cursor is a `u64` sequence number.
-
-It is owned by the reader's schedule entry, and wired at graph-build time from the declared
-event access (ADR-014 §4).
-
-A read clamps the cursor forward to the retirement head. So a lagging reader silently misses
-events (ADR-014 §3). It never dangles.
+The selected persistent instance describes its own entry before graph build using a
+constrained, entry-scoped declaration surface. The existing `ScheduleRegistration`
+may be extended for this, but class and method names are provisional. The app still
+chooses which systems enter the schedule. Component schemas and event types are
+registered separately before declarations resolve; graph build creates no temporary
+system just to read a diagnostic name (ADR-022).
 
 ### The registration record
 
@@ -119,12 +136,10 @@ A record holds the tag mapped to its `EventTypeId`, the dense stream index, `siz
 
 The tag arrives as a call argument from the composition root (ADR-014 §6).
 
-### Tooling and editor reads
+### Editor boundary
 
-This covers v1's watchdog use case. It is an ordinary cursor, advanced at the host's
-between-frames point.
-
-Same stream API, and no second access path. The UX question lands at T1.
+Scene streams serve scheduled simulation work. They do not carry editor actions while
+simulation is stopped. Editor UI and edit-mode Scene ownership remain outside S7-D1.
 
 ### Profiler zones
 
@@ -171,7 +186,8 @@ theory.
 
 ## Stream storage
 
-Pinned 2026-08-06, with S3-T9.
+Pinned 2026-08-06, with S3-T9. This section describes the shipped M1 implementation.
+Its cursor and frame-mark behavior must change to implement the Sep 26 contract.
 
 **Storage.** One **type-erased** `EventStream` over a byte buffer, sized from the registry
 record. `EventStreamManager` holds a `std::vector<EventStream>`, indexed by the dense stream
@@ -188,10 +204,11 @@ construction.
 **Reads.** Compaction is **eager, on every retire**. So the visible region is always
 contiguous, and `read<T>` returns a single `std::span`.
 
-**Spelling.** ADR-014 §3's *flip* is spelled **`makeVisible(frame, tick)`** in code, and its
+**Shipped spelling.** ADR-014 §3's *flip* is spelled **`makeVisible(frame, tick)`** in code, and its
 mark is an `EventBatchMark`. "Flip" is GPU page-flip vocabulary, and it implies two buffers
 swapping, which is exactly the mechanism this section replaced. Same refinement precedent as
-`dt` becoming `deltaTime` (`CONVENTIONS.md` → *Names are spelled out*). The ADR is not edited.
+`dt` becoming `deltaTime` (`CONVENTIONS.md` → *Names are spelled out*). The Tick-only
+signature remains implementation work.
 
 ### Compaction replaces the wrap, so the buffer is linear rather than a ring
 
@@ -222,7 +239,10 @@ revisit.
 ADR-014 §7 asks for something contiguous, double-buffered and amortized, with no fixed-size
 node churn. This satisfies that, so nothing here reaches the ADR.
 
-## How one stream works
+## How one stream works — shipped M1 mechanism
+
+The frame marks and cursors below document current code, not the accepted Tick-only
+delivery target in *Scheduled Tick delivery*.
 
 Two members carry everything.
 
@@ -269,8 +289,8 @@ that shared driver. ADR-020's Tick barrier governs the pending Scene integration
 `EventStreamManager` (`core/events/`) owns the `std::vector<EventStream>`, indexed by the
 registry's dense stream index.
 
-It is driver-owned at M1. **This is the object that moves onto `Scene` at M5** (ADR-014 §5),
-and nothing else about its shape changes when it does.
+It is driver-owned at M1. **This is the object that moves onto `Scene` at M5** (ADR-014 §5).
+Its frame marks and cursor API must change with the Sep 26 delivery amendment.
 
 | Call | Shape |
 |---|---|
@@ -303,40 +323,24 @@ Three ordering facts, each of which is a silent bug if reversed.
 
 - **The script façade surface.** Something `onEvent<T>`-shaped, drained by the runner, with
   publishes routed through the façade. **Owner:** the scripting ADR.
-- **Retention after the loop split.** ADR-014 requires at least one frame boundary and one
-  fixed tick before retirement, but ADR-019 removed the simulation's frame boundary.
-  S6-T8/T9 must define the equivalent lifetime before wiring `retire` into Scene.
-- **Binding a cursor to a system is mandatory, not sugar.** Sharpened 2026-08-08, after
-  S3-T10. `read<T>(cursor)` needs the *caller* to hold the cursor, and a system cannot: the
-  cursor lives on its schedule entry. So the executor has to bind the stream and the cursor
-  before the system body sees either. That is a view handed in, or the drain below. It is
-  deferred deliberately until there is a `Schedule` to test it against. **Owner:** the
-  task-graph ADR.
-- **An engine-side `onEvent<T>` for C++ systems.** The executor would drain at the system's
-  slot and call a handler, instead of the system body writing its own `read` loop. Same pull,
-  same barrier, so this is sugar rather than a semantic change. The loop stays the primitive,
-  because batch access and a tight span read are not recoverable from a per-event callback.
-  The payoff is deriving the system's event access set from the registration instead of
-  hand-declaring it. **Owner:** the task-graph ADR, since nothing can invoke it until
-  `Schedule` and `SystemAccess` exist. Raised 2026-08-06 during S3-T9, because the raw call
-  site read badly.
 - **Per-thread staging lanes and their merge.** The semantics are fixed above. **Owner:**
   **P1**, re-scoped by [[ADR-015 — Threading (sim on main, render thread owns GL)]] §5:
   `publish` is sim-thread-only until then.
 - **Rewind truncation for client reconciliation.** ADR-014 §3 asserts that a replayed tick
   reproduces an identical stream, but nothing says how the mispredicted run's events leave.
   `retire` only drops from the front, so a rewind needs a **tail** truncation: drop back to a
-  sequence, erase those marks, and pull any cursor past it backwards. Reader cursors are rewind
-  state too, because a system that already consumed tick N needs its cursor restored or the
-  replay never re-delivers. Replayed side effects such as sound and VFX are a separate problem,
+  sequence and erase those marks. Tick-batch visibility and delivery are rewind state too;
+  replay must not skip or duplicate a batch. Replayed side effects such as sound and VFX
+  are a separate problem,
   which the ADR already names against the v1 shape. It is bounded in practice: ADR-007 §4
   replays unacked commands only, and its *Confirmed forks* section is snapshot plus
   interpolation, not rollback. **Owner:** the netcode transport ADR at M4. Raised 2026-08-06
   during S3-T9.
-- **Editor watchdog UX**, meaning what the editor shows and how it filters. The read path is
-  pinned above. **Owner:** T1.
-- **API spelling**, covering `publish<T>` and `read<T>`'s view type, and the header layout.
-  This is a naming pass rather than a decision. **Owner:** implementation plus
+- **Editor watchdog UX**, meaning what the editor shows and how it filters. No direct
+  host-frame Scene-stream read is part of the Tick contract. **Owner:** later editor design.
+- **API spelling**, covering the entry-scoped declaration method/type names,
+  `publish<T>` and the visible-batch view type, and the header layout. This is a
+  naming pass rather than a decision. **Owner:** implementation plus
   `CONVENTIONS.md`.
 - **Re-registration on DLL reload.** The registry rejects a second `registerEvent<T>`, so a
   reloaded game DLL cannot re-register its types. **The seal added at S3-T10 closes the door
@@ -353,5 +357,5 @@ Three ordering facts, each of which is a silent bug if reversed.
 - [[ADR-014 — Events (buffered streams) & StringId]]: the decision and its alternatives
 - [[Game Loop — Frame Flow]]: the barriers, the N fixed ticks, and where the barrier sits
 - [[v1 Code Audit]] F28 · `EventManager.hpp` at `v1-reference`: the prior art
-- Bevy's `Events<T>` and `EventReader`: the closest prior art for the pull model. The
-  retention rule here differs: it is tick-aware rather than a count of N frames.
+- Bevy's `Events<T>` and `EventReader`: prior art for buffered events. The accepted
+  scheduled path presents one next-Tick batch without per-reader cursor state.

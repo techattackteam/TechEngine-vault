@@ -8,12 +8,13 @@
 > interface and conflict DAG; ADR-020 settles the items §6 deferred. This note is the
 > **execution view**: one end-to-end sequence, not a restatement of the rules.
 
-**Module:** `core` · **Kind:** system · **Status:** implementing (repeated headless proof remains)
+**Module:** `core` · **Kind:** system · **Status:** implementing (attended repeated proof reported Sep 26)
 **Runs inside:** [[Game Loop — Frame Flow]]. This doc covers one Tick and its barrier.
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
 [[ADR-020 — System scheduling and task-graph execution]] *(Accepted)* ·
 [[ADR-021 — Immediate Scene transform propagation]] *(Accepted)* ·
+[[ADR-022 — Project system composition and self-description]] *(Accepted)* ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
 **Roadmap:** [[Roadmap]]. ADR-018 owns the simulation thread; [[Concurrency — Design]]
 shows the topology. **P1** turns parallel graph execution on; **P2** considers
@@ -37,6 +38,8 @@ it, and the executor is what runs it.
 ## Design
 
 ### Stage 1: registration, once, at startup
+
+Current shipped spelling:
 
 ```cpp
 schedule.add<MovementSystem>(DeclareAccess<Write<Transform>, Read<Velocity>>)
@@ -66,11 +69,17 @@ Sep 19 amendment).
 S6-T7 shipped this stage in PR #90 (`ea5d0c9c`). `TaskGraph` stores immutable levels
 of factory, system-type and access nodes. Construction rejects equal-priority conflicts
 and named cycles with `TE_CHECK`, and freezes the schedule only after a successful build.
+It currently constructs a temporary system solely to read its diagnostic name. ADR-022
+requires registration metadata, such as a static per-type name, to replace that lookup.
 
-**Built once, never rebuilt.** The schedule is immutable after this point (ADR-020 §7).
+**Built once per simulation session.** The active set cannot change while that session
+runs. A different selection requires stopping it and building a new graph before the
+next session (ADR-020 §7; ADR-022).
 Graph construction adds no allocation or string work inside a tick, which is F19's fix.
 
 ### Stage 3: per tick, the executor walks the prebuilt graph
+
+Current shipped graph flow:
 
 ```mermaid
 flowchart TD
@@ -95,8 +104,31 @@ S6-T9 connected this path to the simulation thread in PR #92 (`2a50f8cb`). `App`
 registers built-in components, accepts app-specific registration, freezes the registry,
 builds the graph and executor once, then executes that instance on each fixed tick.
 `RuntimeApp` configures a Movement/Gravity/Collision demo. Its current test observes
-one spawned entity after one tick; expected component state over repeated ticks and
-headless/windowed parity remain unverified ([[Backlog]]).
+one spawned entity after one tick. Miguel reports expected component values and
+headless/windowed parity in an attended Sep 26 showcase; those observations are not
+encoded in the current App test.
+
+ADR-022 accepts explicit project contribution and app selection. Each selected
+persistent system gets one startup opportunity to declare access, scheduled event
+handlers and ordering before graph construction. During Tick N+1, the executor
+presents Tick N's visible batch once to each selected handler at its system's slot,
+before `tick` and under the same declared access. After all systems, including the
+terminal slot, finish successfully, it retires Tick N's batch. The barrier makes
+Tick N+1's staged events visible. No per-reader cursor or frame counter governs
+scheduled delivery (ADR-014 and ADR-022, Sep 26 amendments). The same instance
+executes ticks. Current app-authored declarations, post-graph construction and the
+no-op event barrier remain shipped behavior until this contract is implemented.
+
+S7-D1 resolves cross-type delivery at each node: run that system's handlers in their
+startup declaration order, exhausting one handler's visible type batch before the
+next handler, then call `tick`. Each type retains publisher schedule order and FIFO;
+there is no merged order across types. The declaration surface is entry-scoped;
+its class and method names remain implementation choices.
+
+Current-Tick input uses a separate path. Simulation detaches the ordered ingress
+batch before each Tick; selected systems receive its input notifications at their
+scheduled slots before `tick`. It does not wait for the Scene event barrier or
+retire through Scene streams. [[Input — Design]] owns its delivery and reset rules.
 
 Systems perform value reads and writes only. Nothing structural happens here.
 Transform setters refresh their affected subtrees within the calling system, so
@@ -105,8 +137,9 @@ propagation entry is scheduled (ADR-021).
 
 **At the barrier**, per-system command buffers are merged in graph order and applied
 **single-threaded, in deterministic order**, then injected barrier services are called
-for `NetId` assignment and event flushing. `App` currently supplies a no-op adapter, so
-neither service performs its intended work yet ([[Backlog]]). Structural changes land here: spawn,
+for `NetId` assignment and event flushing. `App` currently supplies a no-op adapter.
+Event integration is planned in [[2026-09 Sprint 07 — Scene Events and Input Boundary]];
+`NetId` assignment waits for a networking consumer. Structural changes land here: spawn,
 despawn, add and remove. Pending-entity tokens are local to the buffer that created them.
 Hierarchy constraints are validated at commit time. That is what makes determinism hold
 even once levels run in parallel.

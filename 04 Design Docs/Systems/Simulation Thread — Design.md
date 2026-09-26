@@ -20,7 +20,7 @@ was Accepted during S5-T14 review and implemented by #81. ADR-018 ownership rema
 | Rendering takes the newest completed snapshot, or redraws its current one if none is ready; simulation never waits for presentation. | ADR-018 §2; Miguel's Sep 7 choices |
 | `app` owns both loops and their lifecycle; only one driver advances simulation. | ADR-018 §3 |
 | `JobSystem` provides dedicated-thread creation and registration alongside batch jobs; subsystem owners retain stop/join responsibility. | ADR-018 §4 |
-| Input is consumed before each fixed tick; stalls retain held state, and overflow explicitly resynchronizes it. | Input and control handoffs below; Sep 8 |
+| Input is consumed before each fixed tick; selected systems receive that Tick's input notifications, while stalls retain held state and overflow explicitly resynchronizes it. | [[Input — Design]]; Input and control handoffs below |
 | Keep the value mailbox and publish once after an iteration that advances ticks. | Render handoff and pacing below; Sep 8 |
 | Main and simulation hooks have separate thread affinity and staged failure cleanup. | Lifecycle below; ADR-018 §3 |
 | Simulation executes fixed ticks and a no-delta publication hook; render owns variable presentation work. | ADR-019 §1 §2, Accepted |
@@ -178,9 +178,10 @@ Accepted ADR-019 §4 adds an independent latest-state path from main to render f
 and mouse-look. It does not replace or drain ordered simulation ingress. Cumulative motion,
 focus generations and the consumed-input baseline are specified in [[Game Loop — Frame Flow]].
 
-Raw OS events cross through an ingress buffer, not concurrent calls into the current
-simulation event streams. Simulation owns conversion to gameplay intent and applies edits
-at its safe mutation boundaries. Results and metrics are copied back to main.
+The platform window translates GLFW controls to engine identifiers before publishing
+through ingress. Host callbacks never call simulation systems or Scene event streams.
+Simulation delivers input notifications to selected systems during the consuming Tick;
+[[Input — Design]] owns that delivery contract. Results and metrics are copied back to main.
 
 Main thread callbacks append value events with a monotonic sequence and monotonic capture time.
 The timestamp measures delivery age, not the original physical action during an OS stall.
@@ -193,7 +194,8 @@ Preserve press/release edges, including both edges between two ticks. Start with
 coalescing; later combining must preserve ordering around buttons and focus transitions.
 During a main stall retain the last known held state; do not synthesize timeout releases.
 Focus loss clears held keys/buttons when consumed. Focus regain starts neutral until fresh
-events arrive. Gameplay commands are produced only on simulation, never inside callbacks.
+events arrive. Any gameplay command derived from input is produced only on simulation,
+never inside a host callback.
 
 Use preallocated bounded storage and a configurable capacity, including tiny capacities in
 tests. Queue-full never blocks the main thread waiting for a tick. On raw-input overflow,
@@ -201,7 +203,7 @@ record an out-of-band recovery generation, lost sequence range and latest main h
 Discard the queued raw batch and keep updating that recovery state until the consumer
 atomically takes it. The consumer reports the gap, replaces held state without inventing
 edges, then resumes normal batches. This makes lost transitions explicit and prevents a
-dropped release from sticking; a transient action can be lost during overload, visibly.
+dropped release from sticking; a transient input edge can be lost during overload, visibly.
 
 Editor/CLI commands use separate bounded admission: accepted commands preserve FIFO order;
 full/closed rejects visibly and never evicts accepted commands. They apply at safe mutation

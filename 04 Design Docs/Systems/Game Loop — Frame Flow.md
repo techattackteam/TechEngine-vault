@@ -7,6 +7,8 @@
 **Module:** `app` coordinates simulation; `client` owns presentation.
 **ADRs:** [[ADR-019 — Fixed simulation ticks, render interpolation and shared clock]] ·
 [[ADR-018 — Main and simulation threads, render-owned GL]] ·
+[[ADR-014 — Events (buffered streams) & StringId]] ·
+[[ADR-022 — Project system composition and self-description]] ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §5 §6
 
 ## Decided
@@ -16,13 +18,13 @@
 | Main, simulation and render have independent loops; only simulation mutates live Scene state. | ADR-018 §1 §2, Accepted |
 | Keep fixed ticks, catch-up, the configurable 60 Hz default and 0.25 s clamp. | ADR-007 §5; ADR-019 §1 preserves these |
 | Replace the simulation's variable tail with a publication hook taking no delta or alpha. | ADR-019 §1, Accepted; Miguel's Sep 10 constraint |
-| Input conversion and fixed work run per tick; renderer-specific preparation, drawing and presentation consume snapshots. Vsync can be disabled. | ADR-019 §2, Accepted partial supersession of ADR-007 §5 §6 |
+| Ordered input is consumed before each Tick and reaches selected system input handlers during that Tick; renderer-specific preparation, drawing and presentation consume snapshots. Vsync can be disabled. | ADR-019 §2; ADR-020 §1, Sep 26 amendment; [[Input — Design]] |
 | Fixed context carries tick, fixed step and role; presentation context carries frame delta and per-view alpha. | ADR-019 §2 §3, Accepted |
 | Share the EngineContext Clock; render retains two received snapshots and computes alpha. | ADR-019 §3, Accepted |
 | Gameplay scripts have only fixed updates; presentation scripting needs a separate restricted API. | ADR-019 §2 and revised Proposed ADR-010 §2–4 |
 | Main fans out presentation input without draining simulation ingress. | ADR-019 §4, Accepted |
 | Primary simulation advances and pushes the diagnostic stamp once per completed tick. | ADR-019 §5, Accepted; ADR-011 §9 push retained |
-| Structural commands and staged events settle at tick phase barriers; task-graph levels retain their dependencies. | ADR-007 §6; ADR-014 §3, Accepted |
+| Structural commands apply at each Tick barrier. Tick N's events become visible there, reach selected handlers in Tick N+1, and retire after that system phase. Graph levels do not expose same-tick events. | ADR-014 §3 and ADR-022, Sep 26 amendments; ADR-020 §1 |
 | Tracy's unnamed frame stream has one owner: render in graphical compositions, primary simulation when headless. | ADR-019 §6, Accepted |
 | Main is event-driven; after a stall it processes delivered events and commands without catch-up. | ADR-019 §5, Accepted |
 | App combines copied timing samples; queues preserve individual results and mailboxes publish replaceable state. | ADR-019 §3 §4, Accepted |
@@ -88,6 +90,9 @@ Simulation waits interruptibly for its next deadline. It samples actual elapsed 
 waking, applies the clamp, then executes all due ticks. Ingress precedes every fixed tick;
 ADR-020's terminal slot follows regular Tick systems before the barrier; ADR-010's
 ScriptSystem remains Proposed.
+The captured input batch reaches interested systems at their scheduled slots in that
+same Tick. It does not use the next-Tick Scene event path shown below; see
+[[Input — Design]].
 The publication hook extracts complete state once after catch-up, only if ticks advanced.
 Publish an initial complete state before readiness; no render phase runs on a headless server.
 
@@ -110,21 +115,23 @@ as a transfer arrow because it does not flow through the InputBuffer or mailbox 
 
 ### Event system and task-graph phases
 
-The diagram shows `fixedUpdate` as a single call per tick. When the task-graph executor
-lands (M5), it expands into ordered levels with the EventStream mediating system-to-system
-data within each tick:
+The diagram shows `fixedUpdate` as one call per tick. The accepted Scene event path
+expands it into ordered graph levels and one barrier per Tick:
 
 ```mermaid
 flowchart TB
-    L0["Level 0 systems execute<br/>EventStream::publish"] --> V0["makeVisible"]
-    V0 --> L1["Level 1 systems<br/>read events · publish new"] --> V1["makeVisible"]
-    V1 --> LN["..."] --> PB["Phase barrier<br/>retire events · apply structural changes"]
+    N["Tick N systems<br/>stage events"] --> BN["Tick N barrier<br/>make batch visible"]
+    BN --> R["Tick N+1 levels<br/>deliver N batch before each system tick"]
+    R --> T["Terminal slot<br/>receives N batch"]
+    T --> D["Retire N batch<br/>after successful system phase"]
+    D --> B1["Tick N+1 barrier<br/>make new batch visible"]
 ```
 
 EventStream is single-thread staged publishing (ADR-014). It is not a cross-thread
 mechanism; InputBuffer, SnapshotMailbox and TimingMetrics handle those. Systems within
-a level publish events that become readable only after `makeVisible`, so consumers
-always see a consistent set. `retire` clears consumed events at the phase boundary.
+a Tick may publish events, but no later level in that Tick sees them. They become
+visible only at the barrier and are delivered in the next Tick. The current App
+barrier still has a no-op event service; this diagram is the accepted target.
 
 ## Tick timestamps
 
