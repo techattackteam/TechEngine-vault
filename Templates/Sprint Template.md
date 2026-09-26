@@ -27,6 +27,16 @@ Keep only the stories needed for this sprint. Link rationale rather than repeati
 Do not invent task acceptance criteria before that decision. Remove this example
 if no story needs it. -->
 
+## 🤖 Auto lane
+
+<!-- Cards the unattended lane may take, planned in /sprint-plan's Auto pass and tagged
+· P2 · 🤖 Auto. They also appear under their story above; list their IDs here so the lane's
+share of the sprint is visible. If there are none, say why (for example, the routine is
+paused). See [[Autonomous Lane — Design]]. -->
+
+- Auto cards: <IDs, or "none" and the reason>
+- Attended slots freed: <which cards moved off Miguel's days>
+
 ## Definition of Done
 
 - [ ] State the evidence that demonstrates the sprint goal.

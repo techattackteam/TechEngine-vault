@@ -1,6 +1,7 @@
 # 📓 07 Journal
 
-Weekly reviews, sprint retrospectives and autonomous run reports are dated notes.
+Weekly reviews and sprint retrospectives are dated notes in this folder. Autonomous run
+reports live in `autoruns/`, with one folder per day and one note per fire.
 
 - **Weekly review** (`/weekly-review`) — the mid-sprint entry.
 - **Sprint retro** (`/sprint-plan`) — the boundary entry, with demo + planning. It
@@ -22,6 +23,13 @@ the one home for cadence. Entries appear here as they're written, newest first.
 | 2026-07-25 | [[2026-07-25 Sprint 01 Retrospective]] — Sprint 01 closed: demo, CI thrash post-mortem, "bank the day" rule |
 | 2026-07-25 | [[2026-07-25 Weekly Review]] — scaffold + CI green; 4 artifact-drift findings, all reconciled |
 
-Autonomous run reports: [[2026-08-30 Auto Run]] · [[2026-08-31 Auto Run]] ·
-[[2026-09-01 Auto Run]] · [[2026-09-02 Auto Run]] · [[2026-09-03 Auto Run]] ·
-[[2026-09-04 Auto Run]].
+## Autonomous run reports
+
+| Day | Fires |
+|---|---|
+| 2026-09-04 | [[2026-09-04 09-14 Auto Run\|09:14]] · [[2026-09-04 14-17 Auto Run\|14:17]] |
+| 2026-09-03 | [[2026-09-03 09-13 Auto Run\|09:13]] · [[2026-09-03 14-16 Auto Run\|14:16]] |
+| 2026-09-02 | [[2026-09-02 09-18 Auto Run\|09:18]] · [[2026-09-02 14-15 Auto Run\|14:15]] |
+| 2026-09-01 | [[2026-09-01 09-21 Auto Run\|09:21]] · [[2026-09-01 14-20 Auto Run\|14:20]] |
+| 2026-08-31 | [[2026-08-31 09-36 Auto Run\|09:36]] · [[2026-08-31 14-16 Auto Run\|14:16]] |
+| 2026-08-30 | [[2026-08-30 17-40 Auto Run\|17:40]] (first end-to-end run) |

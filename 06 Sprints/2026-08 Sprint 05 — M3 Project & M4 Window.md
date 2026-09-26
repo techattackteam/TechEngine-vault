@@ -350,7 +350,8 @@ rollover to the next sprint as needed; see the current capacity update.
       never opened a PR, S5-P2 is the card that would, and this card was ordered ahead of it.
       That clause now lives on S5-P2. What closed: **one report note per day with a section
       appended per fire, and each fire reading what the earlier ones did**, both confirmed
-      across four fires on Aug 31 and Sep 1 ([[2026-08-31 Auto Run]], [[2026-09-01 Auto Run]]).
+      across four fires on Aug 31 and Sep 1 ([[2026-08-31 09-36 Auto Run]], [[2026-08-31 14-16 Auto Run]],
+      [[2026-09-01 09-21 Auto Run]], [[2026-09-01 14-20 Auto Run]]).
       Two misbehaviours were found and neither warranted the `B` card the card allowed for.
       **Unblocks S5-P2.** The DST edge it used to carry has its durable home in
       [[Autonomous Lane — Routine Prompt]] § *Routine configuration*.

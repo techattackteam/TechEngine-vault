@@ -40,13 +40,15 @@ capacity table does **not** change.
 
 | # | Question | Decision | Date |
 |---|---|---|---|
-| 1 | How far into code does the lane reach? | **Up to and including small bug fixes.** Mechanical work, plus real logic fixes that are small and well scoped. Not design, and not a card the artifact gate routes to an ADR or a note. | 2026-08-30 |
+| 1 | How far into code does the lane reach? | **Small code changes and behaviour-preserving refactors**, on top of mechanical work and small bug fixes. A change qualifies only when its card fully specifies the behaviour; a refactor only when the existing tests prove it, unedited. Never files an In Progress card or open PR is changing. Not design, and not a card the artifact gate routes to an ADR or a note. Widened from "small bug fixes" on 2026-09-26. | 2026-09-26 |
 | 2 | Does a cloud run build before it opens a PR? | **Yes. Linux presets plus `ctest`, and a red build opens no PR.** CLAUDE.md's "Miguel compiles" rule is about his ownership of the toolchain, and he is not present in this lane, so the rule has no referent here. | 2026-08-30 |
-| 3 | Where does the daily report land? | **A vault note in `docs/07 Journal/`**, falling back to a rolling GitHub issue in the engine repo if a cloud session cannot reach the vault repo. | 2026-08-30 |
+| 3 | Where does the daily report land? | **One vault note per fire, in `docs/07 Journal/autoruns/<date>/`**, falling back to a rolling GitHub issue in the engine repo if a cloud session cannot reach the vault repo. Until 2026-09-26, all of a day's fires appended to one shared note; those were split per fire. | 2026-09-26 |
 | 4 | Does the run get the vault? | **Yes, and it does not clone it.** The routine checks it out as a second `sources` repo, and the session symlinks it to `docs/` as its first act. Proven by the probe; no credential of any kind is involved. | 2026-08-30 |
 | 5 | Does the run watch its own PR? | **Yes. It reports whether its PR is failing CI**, not just that it opened one. Mechanism is unsettled, see § *Watching the PR*. | 2026-08-30 |
 | 6 | Does the lane inherit the attended entry prompt? | **No. It gets its own.** The attended one assumes a human is present to compile, to decide and to answer a question mid-run. | 2026-08-30 |
 | 7 | Does the lane move its card on the [[Sprint Board]]? | **Yes, and the columns are its state.** Done when every clause is met, Review / Demo when a PR is open or what is left needs Miguel. Only the board line; the rest of `/card-close` stays his. | 2026-09-04 |
+| 8 | Does the lane screen papers for the research chatbot? | **Yes, as report-only fallback work, and it never approves.** With no Auto card open, it screens a few cards from [[Research]]'s *TO VALIDATE* column into *MIGUEL REVIEW*: real title, stable link, one-sentence fit. An off-roadmap paper gets a "recommend reject" line; rejecting and approving (`/paper-validate`) stay Miguel's. Which column the chatbot ingests from is still undecided (Sep 19 review). | 2026-09-26 |
+| 9 | Does the lane hunt for unnecessary code? | **Yes: with no Auto card open, the afternoon fire sweeps one module** for duplication, dead code and speculative abstractions, in rotation, and records the module's line count. It fixes only the obvious findings (dead code nothing references, tests included, and exact duplicates within one module), in one PR under ~100 lines titled "Code sweep: <module>" on a `sweep/<module>-<date>` branch. Sweeps have no board card; that branch prefix is the one exception to CLAUDE.md rule 9. Everything else is filed in [[Backlog]]. The morning fire keeps the freshness check and paper screening. | 2026-09-27 |
 
 **Decision 2 is the one to watch.** It is the first carve-out from a CLAUDE.md rule rather
 than an application of one, and it is what makes decision 1 safe. A small logic fix that
@@ -150,9 +152,20 @@ in":
 `· P2 · 🤖 Auto` joins `🟢 Deep` / `🟠 Moderate` / `🟡 Light`.
 
 **Eligible.** Research and technique evaluation. Vault freshness and drift checks. Backlog
-trigger sweeps. CI failure diagnosis. Mechanical code sweeps, of which S4-T2's `detail` to
-`internal` rename across 15 files is the model case. Test scaffolding. Small, well-scoped bug
-fixes with a green Linux build behind them.
+trigger sweeps. Paper screening for [[Research]] (decision 8). Code sweeps for duplication and
+unnecessary code (decision 9). CI failure diagnosis.
+Mechanical code sweeps, of which S4-T2's `detail` to `internal` rename across 15 files is the
+model case. Test scaffolding. Small, well-scoped bug fixes. Behaviour-preserving refactors, and
+small code changes whose card fully specifies the behaviour (decision 1). Every code card needs
+a green Linux build behind it.
+
+**A refactor is proven by the tests as they stand.** If a test has to change for the refactor to
+pass, the behaviour changed, and the card was not a refactor. Code with no test covering it can
+still be refactored, but the PR says so plainly.
+
+**The lane stays off Miguel's files.** A code card whose change would touch a file that an In
+Progress card's branch or an open PR is changing stops before it starts. Two branches editing
+one file is a merge conflict landing on his evening.
 
 **Not eligible.** Anything the artifact gate routes to an ADR or a design note, because
 decisions are Miguel's. Anything touching `.github/workflows/`. Anything whose done-condition
@@ -258,7 +271,7 @@ starts, so they are structural now rather than instructions a run might skip.
   `COMPLETE`. It commits and pushes fine, so nothing is blocked.
 
 **First end-to-end run, 2026-08-30**, `trig_01YLjHhWfxnHepEgEyKDwoAo`, on the real 9-step
-prompt. It landed [[2026-08-30 Auto Run]] and two [[Backlog]] entries, committed and authored as
+prompt. It landed [[2026-08-30 17-40 Auto Run]] and two [[Backlog]] entries, committed and authored as
 `Miguel Faria`, no AI attribution. **The chain works end to end.**
 
 It also earned its keep as a critic. Four corrections came out of it, all now in the prompt.
@@ -287,7 +300,8 @@ create is ignored.
 **Observed across four fires, 2026-08-31 and 2026-09-01** (S5-P1). The report shape holds: one
 note per day, a section appended per fire, and each fire reading what the earlier ones did
 rather than redoing it. The sharpest evidence is the Sep-1 second fire declining to re-enter
-S5-P3, because the morning fire had taken it and left it open.
+S5-P3, because the morning fire had taken it and left it open. Since 2026-09-26 each fire
+writes its own note in a day folder instead (decision 3); reading the earlier fires is unchanged.
 
 **Three gaps the watching found.**
 
@@ -297,9 +311,7 @@ S5-P3, because the morning fire had taken it and left it open.
 | **An empty Auto lane leaves a second fire with no work by construction.** With no card takeable and a static `master`, both report-only fallbacks are exhausted by the first fire. | The fire still spends the weekly usage allowance, which is the cost the schedule was cut on. Pause the routine, or seed the lane, across a gap with no cards. |
 | **The lane read the board and never wrote it.** S5-P2 sat in To Do a day after #66 merged, S5-P3 sat there needing a call, and the Sep 3 and Sep 4 fires all reported an empty lane while refusing both. | A finished or stalled card in To Do is indistinguishable from an untaken one. Decision 7: the lane moves its card, and Review / Demo means "needs Miguel". Prompt step 9. |
 
-One thing left.
-
-1. **The PR path is still unproven.** Every run so far has been report-only, so nothing has yet
-   branched, built and opened a PR unattended. **S5-P2 is that test**, unblocked on 2026-09-01
-   when S5-P1 closed and its ordering clause was discharged. It also inherits S5-P1's dropped
-   clause, the **one-PR-per-day cap**, which only a PR-opening run can observe.
+**The PR path is proven.** S5-P2 branched, built and opened #66 (`S5-P2/log-level-fallback`)
+unattended; Miguel merged it on 2026-09-03 as `0ac1a9b0`. The **one-PR-per-day cap** was
+S5-P2's inherited clause; whether a second PR-eligible fire has tested it since is not recorded
+here.

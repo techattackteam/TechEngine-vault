@@ -27,6 +27,12 @@ sentences. Omit optional sections with nothing useful to record. -->
 State what improved the work and where AI caused rework or missed something.
 Omit this section if there is no useful observation.
 
+## 🤖 Auto lane
+
+State what the lane closed, the PRs it opened and whether they merged, the papers it
+screened, and the runs that stopped, with why. Link the day folders in `autoruns/`.
+If the routine was paused, say so in one line.
+
 ## Sustainability
 
 Describe whether the workload fit the available time and energy.

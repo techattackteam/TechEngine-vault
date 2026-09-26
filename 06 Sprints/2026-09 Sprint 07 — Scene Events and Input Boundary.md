@@ -138,10 +138,13 @@ first scripting consumer and is not part of these cards.
   done: settle `CONVENTIONS.md`'s open Error handling row in an ADR using
   `addLogSink` and `Reader` as current cases; state the `[[nodiscard]]` policy
   without rewriting working APIs speculatively.
-- [ ] **S7-T1** · Correct public app dependency and local includes · P3 · 🟠 Moderate · 2–3h —
-  done: make `platform` a public `engine/app` dependency and change the four
-  app-local quoted includes after checking their include paths; preserve the
-  `sdk-smoke` public-boundary intent.
+- [ ] **S7-T1** · Correct app-local includes · P3 · 🤖 Auto · 2–3h —
+  done: change the four quoted includes in `apps/` to angle brackets (`CONVENTIONS.md`
+  § *Includes*), after checking that each path resolves through the app's include dirs,
+  and include `<string>` directly in `apps/editor/src/EditorApp.hpp`. Preserve the
+  `sdk-smoke` public-boundary intent. `platform` is already a public `engine/app`
+  dependency on `7e52fe3a`; that half of the original card needs no change. Re-tagged
+  Auto on Sep 27.
 - [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟠 Moderate · 3–4h —
   done: install GLFW 3.4's allocator before initialization and check allocation/free
   pairing and disabled-profiler behavior. This is the fired GLFW portion of
@@ -154,14 +157,18 @@ first scripting consumer and is not part of these cards.
   done: carry S6-P1's warning/tidy and Tracy-pin reconciliation into ADR-005/008/013,
   B3 and [[Profiler — Design]]; record the `App.cpp` coverage exclusion and decide
   whether its scope should narrow. Record unresolved decisions rather than inventing policy.
-- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🟢 Deep · 4–6h —
-  done: check a merged commit's card prefix against sprint records without rejecting
-  a still-open card that landed in halves; document or automate the check where it
-  will run at closeout.
-- [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🟢 Deep · 4–6h —
-  done: provide a repeatable check against Dashboard's reconciled engine SHA,
-  including explicit at-SHA citations; distinguish mechanical validity from whether
-  a line supports its claim.
+- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4–6h —
+  done: add a gate step to `.claude/commands/card-close.md` that checks the merged
+  commit's branch prefix against the card being closed, without rejecting a still-open
+  card that landed in halves. Branches named `sweep/…` belong to the lane's code sweep,
+  have no card, and pass. Re-tagged Auto on Sep 27, with the check's home pinned to
+  `/card-close`.
+- [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🤖 Auto · 4–6h —
+  done: a Python 3 script at `tools/check-vault-citations.py` in the engine repo that
+  resolves the vault's `file:line` citations against the Dashboard's reconciled engine
+  SHA, including explicit at-SHA citations, and reports each broken path or out-of-range
+  line. It checks mechanical validity only and says so; whether a line supports its claim
+  stays a human read. Re-tagged Auto on Sep 27, with the check pinned as a script.
 - [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2–3h —
   done: amend ADR-009 for workflow-only PRs receiving no build, verify the stated
   master-run mitigation, and correct `ci.yml`'s skipped-check comment without
@@ -172,13 +179,44 @@ first scripting consumer and is not part of these cards.
 - [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h —
   done: decide whether the widened witness check belongs in `$weekly-review`, then
   update that workflow or record why the existing sweep is sufficient.
-- [ ] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🟡 Light · 2h —
+- [ ] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🤖 Auto · 2h —
   done: record cache hits and snapshot growth from comparable recent runs, or name
-  the missing evidence without claiming the policy improved hit rate.
+  the missing evidence without claiming the policy improved hit rate. Report-only.
+  Re-tagged Auto on Sep 27.
 - [ ] **S7-P8** · Define a small recorded-demo workflow · P3 · 🟡 Light · 2h —
   done: specify where a capture, Tracy trace and observed behavior are stored and
   linked from a sprint review, using the Sprint 06 showcase to identify what was
   observed and what was not captured.
+
+### Story F — Backlog code hygiene for the Auto lane
+
+Pulled from [[Backlog]] on Sep 27 as Auto work. None of their triggers had fired; they
+use the lane's capacity, not Miguel's, and none touches a Story B or C file.
+
+- [ ] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h —
+  done: `cmake --preset linux-debug -DTE_LOG_ACTIVE_LEVEL=3` builds and its tests pass.
+  Fix the unused `position` local at `engine/base/tests/math/MathFormatTests.cpp:47`
+  without weakening the case, and fix any other site the same build exposes.
+- [ ] **S7-T13** · Give `techengine_app()` a `LIBS_PRIVATE` · P3 · 🤖 Auto · 2h —
+  done: `cmake/techengine_app.cmake` splits `LIBS` and `LIBS_PRIVATE` the way
+  `techengine_module()` does, and the editor's toml++ moves to `LIBS_PRIVATE`. The Linux
+  build and tests pass unedited.
+- [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h —
+  done: a test TU that `#undef`s `TE_LOG_ACTIVE_LEVEL` before including `Log.hpp`, plus
+  its CMake entry, proves the fallback's level in both `linux-debug` and `linux-release`.
+- [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1–2h —
+  done: rename the `loc` and `fmtStr` parameters in `base` to spelled-out names
+  (`CONVENTIONS.md`). They are parameter names, so no caller changes; tests pass unedited.
+## 🤖 Auto lane
+
+- Auto cards: S7-T1, S7-P2, S7-P3, S7-P7 (re-tagged Sep 27) and S7-B1, S7-T13, S7-T14,
+  S7-T15 (pulled from [[Backlog]] Sep 27). Seven open a PR; S7-P7 is report-only. With no
+  Auto card open, the morning fire screens papers for [[Research]] and the afternoon fire
+  sweeps one module for unnecessary code, on `sweep/` branches with no card.
+- Attended slots freed: two 🟢 Deep (S7-P2, S7-P3), one 🟠 Moderate (S7-T1) and one
+  🟡 Light (S7-P7).
+- The lane runs only once Miguel pastes the current [[Autonomous Lane — Routine Prompt]]
+  into the paused routine and resumes it.
 
 ## Definition of Done
 
@@ -210,8 +248,13 @@ Miguel explicitly chose this oversized sprint, including the four input Dev
 cards. Both implementation stories are committed; no card is pre-deferred.
 Eight of the original 13 fixed cards are Process work. Run the event and input
 goal first, then lower-priority Process work. If capacity forces rollover,
-name each affected card at review. Keep a rest day despite the overfill. No
-Codex Auto lane is assumed available, so these cards are sized as attended work.
+name each affected card at review. Keep a rest day despite the overfill.
+
+**Scope change, Sep 27: the Auto lane returns.** Four cards moved to the lane and four
+were pulled in for it (§ *🤖 Auto lane*). The attended lane drops to 14 Deep, two
+Moderate and three Light sessions. The lane is not free: seven PRs at about 15 minutes of
+review each is roughly 1h45 of Miguel's time, best spent on Light days. At one PR per
+weekday, the ten weekdays left fit all seven only if the routine resumes early in week 1.
 
 The Sprint 06 Scene-proof backlog entry is removed based on Miguel's reported
 showcase, with the automated-test limit retained in the Sprint 06 review. No

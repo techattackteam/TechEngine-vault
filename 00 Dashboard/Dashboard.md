@@ -1,6 +1,7 @@
 # 🎛️ TechEngine Dashboard
 
-> The one page you open first. Keep it short. Update it during the weekly review.
+> The one page you open first. Keep it short. `/card-close` keeps *Now* current; the weekly
+> review owns the rest.
 
 ## Now
 
@@ -25,7 +26,7 @@ git log --oneline 01ed7a30..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
-so when grounding an answer (`AGENTS.md` § *Design and evidence*). Distance is a signal, not
+so when grounding an answer (`CLAUDE.md` § *How to work here*, rule 2). Distance is a signal, not
 proof: it cannot tell you *which* note drifted, only that nobody has looked.
 
 **Latest targeted check: Sep 26, 2026**, after fetching `origin/master` at `742fed7e`.
@@ -34,7 +35,7 @@ their design notes. Miguel supplied attended showcase evidence for repeated Scen
 and headless/windowed parity. At that boundary, event lifetime/cursor binding and input
 translation remained design work; the Sep 26 amendments later settled the event rule.
 The wider vault reconciliation did not run, so **the stamp is unchanged**.
-No build, test, live CI check or demo was run by Codex in this planning session.
+No build, test, live CI check or demo was run by the AI in this planning session.
 
 ## 🗓️ Rhythm
 
@@ -136,7 +137,7 @@ _Tasks → [[Sprint Board]]._
 - 📌 [[Roadmap]] · [[2026-Q3]]
 - 🏃 [[Sprint Board]] · [[Backlog]]
 - 🏛️ [[ADR Index]] · [[Known Issues]] · [[v1 Code Audit]] · [[Lessons from v1 (reference prototype)]]
-- 🧠 [[Technical Lead Charter]] · [[Working with Codex — Operating Guide]] · [[Working with Claude — Operating Guide]]
+- 🧠 [[Technical Lead Charter]] · [[Working with Claude — Operating Guide]]
 - 📓 Journal: [[07 Journal]]
 - 🔗 [[Research]] · [[References]]
 
@@ -171,9 +172,10 @@ Recently locked — full set in [[ADR Index]]:
   "editor out of the frame loop" clause. It cut **Story F** into Sprint 05 and rewrote three
   Story B cards, which is where the 🟠 overload came from. The original implementation diverged on optional hooks and the entry point. #81 supplies optional hooks; the per-executable `main()` / `runApp<>()` wording still needs reconciliation ([[Backlog]]).
 - [x] **Claude autonomous lane:** S5-P1, P2 and P3 are closed. The first code PR (#66)
-  merged Sep 3. This provider-specific lane is now historical. PR #88 migrated attended
-  guidance to Codex but created no OpenAI schedule or remote environment; that lane remains
-  missing. The old scheduler was not inspected during this review.
+  merged Sep 3. PR #88 moved attended work to OpenAI Codex; on Sep 26 the project returned
+  to Claude and the Codex files were removed. The routine is paused, not deleted;
+  Miguel will resume it with the current [[Autonomous Lane — Routine Prompt]]. Its reports now
+  land one note per fire in `07 Journal/autoruns/<date>/`.
 - [ ] renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20** — § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.

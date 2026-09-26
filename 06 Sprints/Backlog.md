@@ -38,20 +38,6 @@ groups are kept, because they show where future work will land.
   is the only reason it is there, and `<chrono>` costs ~1200 ms and 73k preprocessed lines per
   TU on MSVC (S4-T1's numbers, [[B3 — Build & Testing Notes]]). It is the engine's most widely
   included header. **Trigger:** a full-rebuild time that actually hurts, measured not guessed.
-- #prio/low · **Setting `TE_LOG_ACTIVE_LEVEL` above Info fails the build** — `TE_LOGGER_*`
-  expands to `TE_LOG_PRIVATE_DISCARD`, which drops its arguments unevaluated by design, so a
-  local that only a discarded call site reads becomes unused and `-Werror` kills the leg.
-  `engine/base/tests/math/MathFormatTests.cpp:47`'s `position` is the one site today, found at
-  S5-P2 with `cmake --preset linux-debug -DTE_LOG_ACTIVE_LEVEL=3`. The cache variable is
-  offered in `engine/base/CMakeLists.txt:18`, and no CI leg sets it, so nothing catches this.
-  **Trigger:** the first build that sets the gate explicitly — a shipping Release config is
-  the likely one.
-- #prio/low · **`Log.hpp`'s `NDEBUG` fallback has no test.** No TU in the tree includes the
-  header without linking `base`, so the branch #66 (S5-P2) added is reached by nothing and is
-  correct by inspection only. The config-table case that shipped proves the linked gate.
-  Covering the fallback needs its own TU that `#undef`s `TE_LOG_ACTIVE_LEVEL` before the
-  include, plus a `CMakeLists` entry, for a branch nothing reaches today. **Trigger:** the
-  first TU that includes `Log.hpp` without linking `base`, or a bug traced to the fallback.
 - #prio/medium · **Allocators** — a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 — Events (buffered streams) & StringId]] §7 — contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
@@ -158,21 +144,6 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
-- #prio/xlow · **Include `<string>` directly in `EditorApp.hpp`.** PR #81 added
-  `std::string m_appliedTitle` at `apps/editor/src/EditorApp.hpp:16`, but the header receives
-  `<string>` transitively through `Project.hpp`. The build is green, so this is header hygiene
-  rather than a current defect. **Trigger:** the next edit to `EditorApp.hpp` or its include set.
-
-- #prio/low · **`techengine_app()` has no `LIBS_PRIVATE`, so every third-party dep an app links
-  is PUBLIC on its object library** — `cmake/techengine_app.cmake:36` puts `LIBS` on the PUBLIC
-  side with the `DEPS`, and its sibling `techengine_module()` carries both `LIBS` and
-  `LIBS_PRIVATE` (`cmake/techengine_module.cmake:58-59`). Found at S5-T4, where toml++ is an
-  implementation detail of one `.cpp` and now reaches the editor exe and `TechEngineEditorTests`
-  as well. Nothing misbehaves: it widens an include path and a link line, and the acid test for
-  a leaking private type is `sdk-smoke`, which does not cover apps. **Trigger:** the second
-  third-party dep an app links, or the next edit to that helper — the asymmetry between two
-  sibling helpers is the part that will confuse someone.
-
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI** — list, open and create projects inside the
@@ -240,8 +211,6 @@ groups are kept, because they show where future work will land.
   §7. GLFW's fired hook is S7-T2. **Trigger:** the first init of Jolt or miniaudio.
 - #prio/low · **README at repo root** (public-facing). **Trigger:** T2 — the first build that
   runs outside the editor.
-- #prio/xlow · **Retrofit `base` to the spelled-out-names rule** — `loc` / `fmtStr` predate it.
-  **Trigger:** the next PR that touches those signatures for another reason.
 - #prio/xlow · **Command `/catch-up`** — session re-entry after a multi-day gap. **Trigger:**
   the first session that opens with "where was I".
 

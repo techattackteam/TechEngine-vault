@@ -73,9 +73,10 @@ context rot and sloppy changes come from.
 
 ## Writing style (notes)
 
-Keep vault notes token-lean — read by you AND Claude every session. Tables/bullets
-over prose, caveman style OK, one topic per note, link don't duplicate. Full rule:
-repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
+Vault notes are read by you and by Claude, often months later. Use tables and bullets
+over prose, but write them as real sentences: no dropped articles and no keyword shorthand.
+Keep one topic per note, and link instead of duplicating. Full rules: repo-root `CLAUDE.md`
+→ *Token economy* → *The vault*.
 
 ## Slash commands (in `.claude/commands/`)
 
@@ -86,9 +87,11 @@ repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
 | `/arch-review <area>`          | Technical-lead review of a system (analysis, no edits)    |
 | `/feature-breakdown <feature>` | Epic → Story → session-sized Tasks                        |
-| `/card-start [card]`           | **Before building:** freshness check, design note, open defects, then the branch |
-| `/card-close [card]`           | **After the merge:** board entry, design note, [[Known Issues]], [[Backlog]] |
+| `/card-start [card]`           | **After you branch and move the card:** checks both, grounds the card, then scaffolds a Dev card or proposes a solution for a planning card |
+| `/card-review [card]`          | Review a card's implementation against its `done:` clauses, correctness, conventions and architecture |
+| `/card-close [card]`           | **After the merge:** board entry, design note, [[Known Issues]], [[Backlog]], [[Dashboard]] *Now* |
 | `/te-review [target]`          | House-rules review — `CONVENTIONS.md`'s judgment rows + the ADR structural invariants |
+| `/paper-validate [papers]`     | Record papers you approved in `Paper.md` and move their [[Research]] cards |
 | `/vault-clean [folder]`        | Sweep the vault for stale / redundant / malformed / orphaned content and tidy it |
 
 Built-in ones worth habituating: **plan mode** for design, **`/code-review`**
@@ -103,7 +106,8 @@ flowchart TD
   SYS["Assess a built system"] --> AR["/arch-review<br/>analysis only"]
   AR -. may surface .-> DEC
   FB --> TASK["A sprint task"]
-  TASK --> CS["/card-start<br/>ground it, then branch"]
+  TASK --> GO["You cut the branch<br/>and move the card"]
+  GO --> CS["/card-start<br/>ground it, then scaffold or propose"]
   CS --> LOOP["Core loop<br/>design → you implement → verify"]
   LOOP --> CR["/code-review<br/>before every commit"]
   LOOP --> TR["/te-review<br/>house rules with no gate"]
@@ -125,8 +129,8 @@ flowchart TD
   friction, which the split removed. `/card-start`'s freshness check exists **because of** that
   same split, and `/card-close` automates the annotation this note already asked for by hand.
   Branch discipline is still CLAUDE.md rule 9: cut from a **freshly fetched `origin/master`**,
-  name it `<card ID>/<slug>` — `/card-start` offers exactly that command and cuts it only when
-  you say so. **You open the PR**, and a merged branch is dead (squash + linear history), never
+  name it `<card ID>/<slug>`. **You cut it and move the card to In Progress**; `/card-start`
+  treats both as gates and stops if either is missing. **You open the PR**, and a merged branch is dead (squash + linear history), never
   reused. The card's annotation is the retro's raw material, and it is a vault commit that needs
   no PR.
 - **`/card-close` reads the PR conversation, not just the diff.** A merged diff is an end state,

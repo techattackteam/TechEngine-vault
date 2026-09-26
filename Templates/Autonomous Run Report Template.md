@@ -1,6 +1,8 @@
-# Auto Run — YYYY-MM-DD
+# 🤖 Auto Run — YYYY-MM-DD HH:MM (Lisbon)
 
-<!-- File in docs/07 Journal/ as YYYY-MM-DD Auto Run.md.
+> Written by an unattended cloud routine ([[Autonomous Lane — Design]]).
+
+<!-- One note per fire, filed as docs/07 Journal/autoruns/YYYY-MM-DD/YYYY-MM-DD HH-MM Auto Run.md.
 Follow [[Autonomous Lane — Design]]. If nothing changed, no PR opened, and no useful
 finding emerged, write no note. Keep the report readable after a working day. -->
 
@@ -27,6 +29,12 @@ Omit this section when nothing changed. Do not list every file touched.
 Link relevant [[Backlog]] entries created during the run, with their priority.
 Include a trigger when a concrete event matters. Omit this section when there
 were no findings outside the card's work.
+
+## Code sweep
+
+For an afternoon sweep only: name the module, its line count (source and tests) next to
+the previous sweep's count, what the PR removed, and each finding filed in [[Backlog]].
+Omit this section on any other fire.
 
 ## Unverified
 

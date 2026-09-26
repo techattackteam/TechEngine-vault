@@ -301,8 +301,15 @@ Ask these in order. A **no** anywhere means the card is not Auto.
 | 4 | Does it avoid `.github/workflows/`? | The routine's token cannot push there. |
 
 **Typical passes:** research, vault freshness and drift checks, backlog trigger sweeps, CI
-failure diagnosis, mechanical code sweeps, test scaffolding, and small well-scoped bug fixes.
-S4-T2's `detail` to `internal` rename across 15 files is the model case.
+failure diagnosis, mechanical code sweeps, test scaffolding, small well-scoped bug fixes,
+behaviour-preserving refactors, and small code changes whose done-condition fully specifies the
+behaviour. S4-T2's `detail` to `internal` rename across 15 files is the model case. Paper
+screening and the afternoon code sweep need no card; the lane does them when no Auto card is
+open ([[Autonomous Lane — Design]] decisions 8 and 9).
+
+**Plan around attended work.** Do not tag a code card Auto if it touches files an attended card
+in the same sprint will change. The lane checks this again at run time and stops, but a card
+that always stops wastes its slot.
 
 **An Auto card is not free.** It produces a PR to review, roughly 15 minutes, and a code card
 costs 16.1 billed CI minutes. Budget the review on a 🟡 day and cap code cards at one per

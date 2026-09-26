@@ -53,9 +53,10 @@ There is now **one narrow exception** to "Claude does not implement", and it is 
 written here rather than buried, because it is the only place this charter bends.
 
 In an **unattended weekday cloud routine**, Claude works cards that pass the artifact gate's
-§ *The 🤖 Auto gate*: research, freshness checks, CI diagnosis, mechanical sweeps, test
-scaffolding, and **small well-scoped bug fixes**. It builds and tests them on Linux, opens a
-PR, and stops. Full model in [[Autonomous Lane — Design]].
+§ *The 🤖 Auto gate*: research, freshness checks, paper screening, code sweeps for duplication
+and dead code, CI diagnosis, mechanical sweeps, test scaffolding, **small well-scoped bug fixes**, and (since 2026-09-26)
+**behaviour-preserving refactors and small fully specified code changes**. It builds and tests
+them on Linux, opens a PR, and stops. Full model in [[Autonomous Lane — Design]].
 
 What did **not** change, and what keeps the exception narrow:
 

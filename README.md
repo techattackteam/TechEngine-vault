@@ -28,7 +28,7 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 | Think | Obsidian (this vault) | Vision, architecture, research, planning |
 | Execute | Obsidian Sprint board | Epics → Stories → Tasks |
 | History | Git | What actually changed |
-| Technical Lead | Codex (Claude Code backup) | Architecture reviews, trade-off analysis, research |
+| Technical Lead | Claude Code | Architecture reviews, trade-off analysis, research |
 | Studio Director + Lead Engineer | You | Direction and implementation |
 
 > Planning happens in dedicated planning sessions. Implementation happens in
