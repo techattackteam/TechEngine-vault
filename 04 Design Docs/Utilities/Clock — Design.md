@@ -28,10 +28,10 @@ the two sections below explain why.
 |---|---|
 | The composition root owns one time source; `EngineContext` carries `const Clock&` to all three lanes. | ADR-006 §4; ADR-019 §3; shipped in #81 |
 | It lives in **`base`**, with no `platform` seam. `steady_clock` is standard, and it is QPC-backed on Windows. | This note. The profiler puts no pressure on it ([[ADR-013 — Profiler (Tracy-backed instrumentation)]] §5). |
-| It owns a monotonic `now()`, a wall-clock stamp, `totalTime`, and a **diagnostic** frame counter. | [[Game Loop — Frame Flow]] (2026-07-24) |
+| It owns a monotonic `now()`, a wall-clock stamp, `totalTime`, and a **diagnostic** tick counter. | [[Game Loop — Frame Flow]] (2026-07-24) |
 | It does not own delta, fixed step, tick, alpha or role. Fixed state stays per simulation; render computes alpha from its private snapshot history. | ADR-019 §2 §3, Accepted context split |
 | Monotonic time is for **durations**. Wall-clock time is for **stamps only**. | This note. It is a local call, so no ADR owes it. |
-| `app` **pushes** the frame stamp into diagnostics. `base` holds no `Clock` reference. | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
+| `app` **pushes** the tick stamp into diagnostics. `base` holds no `Clock` reference. | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
 | `timeScale`, pause and slow motion are **loop policy**, not Clock knobs. | [[Game Loop — Frame Flow]] |
 | **There is no testability seam.** The loop takes its delta as a parameter, so nothing needs to fake the Clock. | S2-T7 (2026-07-30), below |
 | Only the app-designated primary simulation advances the diagnostic counter, once per completed fixed tick; it pushes the result to diagnostics. | ADR-019 §5, Accepted; ADR-011 §9 push retained |
@@ -100,14 +100,15 @@ Alpha stays render-local initially and can be published later if a diagnostic vi
 Main's deadline/wait behavior is specified in [[Game Loop — Frame Flow]]; it needs no TPS
 counter or catch-up accumulator. Tracy host zones provide the initial host-work measurements.
 
-### The frame counter is for correlation only
+### The tick counter is for correlation only
 
 This is the Logger's ambient stamp. It is not Tracy's frame number: Tracy receives explicit
 frame markers, with stream ownership defined in [[Profiler — Design]] and ADR-019 §6.
 
-The Logger's `[f 1043]` stamp and the profiler's zones are **global macros**. A macro does
-not receive a simulation context, so it needs an ambient frame number from somewhere. The Clock
-keeps one for exactly that.
+The Logger's `[t 1043]` stamp and the profiler's zones are **global macros**. A macro does
+not receive a simulation context, so it needs an ambient tick number from somewhere. The Clock
+keeps one for exactly that. S7-T3 (#94) renamed it from frame to tick vocabulary
+(`frame()`→`tick()`, `advanceFrame()`→`advanceTick()`, `[f N]`→`[t N]`).
 
 That number is **approximate when two sims share a process**, for the reason above. It is
 never the simulation's source of truth. Anything that has to be exact reads
@@ -115,7 +116,7 @@ the relevant simulation's tick instead.
 
 **The Clock owns the counter, but it never hands itself to the Logger.** Under Accepted
 ADR-019, the app-designated primary simulation advances it after each completed tick,
-reads `frame()` and pushes the value into diagnostics. Other simulations never advance it.
+reads `tick()` and pushes the value into diagnostics. Other simulations never advance it.
 Neither host wakes nor render swaps change this counter. It is not an FPS measure.
 
 The alternative would be an ambient global `Clock*` that a log macro reads directly. That is
@@ -131,12 +132,12 @@ This is the shape, not a specification. The implementation decides the details.
 | `now()` | A monotonic `TimePoint` | Durations, and the loop's `dt` |
 | `totalTime()` | Seconds since start | Ambient elapsed time |
 | `wallClock()` | A `system_clock` stamp | Log timestamps only |
-| `frame()` | The diagnostic counter | Logger and profiler correlation |
+| `tick()` | The diagnostic counter | Logger and profiler correlation |
 
 Host, simulation and render sample the same Clock through read-only references. Its start
 time is initialized before threads start and never changes. Only the primary simulation
 gets diagnostic-counter write access through app wiring; use an atomic counter or equivalent
-synchronization for concurrent `frame()` reads. The existing plain integer is not sufficient.
+synchronization for concurrent `tick()` reads. The existing plain integer is not sufficient.
 Clock outlives all three loops; no global service pointer or per-loop Clock is introduced.
 
 ### There is no testability seam
@@ -190,6 +191,6 @@ the profiler can measure any new problem.
 ## References
 
 - [[Game Loop — Frame Flow]]: where simulation time lives, and why it is not here
-- [[Logger — Design]]: the consumer of the `[f N]` stamp
+- [[Logger — Design]]: the consumer of the `[t N]` stamp
 - Code: `engine/base/include/TechEngine/base/time/Clock.hpp` ·
   `engine/base/src/time/Clock.cpp` · current writer `engine/app/src/SimulationThread.cpp`

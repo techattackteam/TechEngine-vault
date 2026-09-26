@@ -42,7 +42,7 @@ reference is given and the rationale is not copied. Go to the ADR for the *why*.
 | The file sink is **synchronous**. Async is a later change behind the façade. | ADR-011 §3 |
 | The editor ring-buffer sink is **excluded**, because there is no consumer yet. | ADR-011 §3 |
 | Each config has a compile-time level gate. Trace is off in RelWithDebInfo. Trace and Debug are off in Release. | ADR-011 §4 |
-| The frame stamp is **pushed by `app`**. `base` holds no `Clock` reference. | ADR-011 §9 |
+| The tick stamp is **pushed by `app`**. `base` holds no `Clock` reference. | ADR-011 §9 |
 | Diagnostics state is process-global by design, and it is **not** a service locator. | ADR-011 §8 |
 | SDK exposure is **deferred** to the scripting ADR. | ADR-011 §10 |
 
@@ -178,7 +178,7 @@ TE_LOGGER_WARN_CH(kNetChannel, "peer {0}", id); // → net, by exception
 The editor sink stores **records**, not strings. A filter then reads a field, and nothing ever
 re-parses a rendered line.
 
-A record is `{ time, frame#, level, channel (plus module), file, function, line, message }`.
+A record is `{ time, tick, level, channel (plus module), file, function, line, message }`.
 
 The file and console sinks flatten a record into a line. The editor keeps the struct.
 
@@ -212,11 +212,11 @@ end of the table.
 ### The rendered format (file and console)
 
 ```
-[14:32:07.412][f 1043][client/render][renderer.cpp:88:renderScene()][INFO] swapchain 1920x1080
+[14:32:07.412][t 1043][client/render][renderer.cpp:88:renderScene()][INFO] swapchain 1920x1080
 ```
 
 The format string lives in `Log.cpp` (S2-T3):
-`[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] {11}`
+`[{0:02}:{1:02}:{2:02}.{3:03}][t {4}][{5}/{6}][{7}:{8}:{9}()][{10}] {11}`
 
 **The field order is the contract**, because a grep reads positionally. The spacing is not.
 
@@ -230,9 +230,10 @@ dispatcher trims it down to the identifier, and the sink adds the `()` back. ADR
 example predates that trim, so the layout shown there is illustrative rather than a frozen
 decision.
 
-The timestamp is wall-clock time plus the **engine frame number**. The frame number is what
-lets a log line be lined up against a profiler capture of the same frame. It comes from the
-`base` Clock.
+The timestamp is wall-clock time plus the **primary simulation's tick number**. That number
+lets a log line be lined up against a profiler capture of the same tick. It comes from the
+`base` Clock. S7-T3 (#94) renamed the stamp from `[f N]` and `LogRecord::frame` to `[t N]`
+and `LogRecord::tick`; the field order is unchanged.
 
 ## Level usage rules
 
@@ -288,7 +289,7 @@ which had both been justified by this note's unmeasured question.
 - [[ADR-005 — v2 tech stack & toolchain]] ·
   [[ADR-006 — v2 core architecture & module layout]] §5 §6
 - [[Assert — Design]]: shares the seam and the fail-to-log path
-- [[Clock — Design]]: the source of the `[f N]` stamp, pushed by `app` (ADR-011 §9)
+- [[Clock — Design]]: the source of the `[t N]` stamp, pushed by `app` (ADR-011 §9)
 - [[v1 Code Audit]]: F20, F10, F16, F4
 - [[Profiler — Design]]: the sibling utility. It shares the editor-panel and frame-number
   patterns.

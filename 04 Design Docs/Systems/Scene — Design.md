@@ -233,8 +233,9 @@ selects the active set before simulation and owns the persistent instances. Each
 instance declares component reads/writes and semantic ordering during startup, before
 the graph is built. Those declarations include custom component types and feed the same
 graph, debug access validation and change tracking as engine systems.
-This is the accepted target in ADR-022; the current app-authored Schedule declarations
-and post-graph instance construction remain shipped behavior until implementation.
+S7-T3 (#94) shipped startup declaration by the persistent instance for app-selected
+systems ([[Task Graph — Execution Flow]] § Stage 1). The project catalog is not built yet;
+it waits in [[Backlog]] under app.
 Shared resources are outside S6-T6–T9 access masks; add them when a concrete scheduled
 resource conflict needs graph ordering or debug validation.
 A custom system can query and update both built-in and project components through public APIs.

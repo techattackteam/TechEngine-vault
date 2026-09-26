@@ -89,7 +89,9 @@ layout's owner.)
 ADR-020 requires the staged batch to become visible at each Tick barrier. The current
 stream code records `{endSeq, frameIndex, tick}`. The accepted target needs only the
 batch's Tick identity; `Clock::tick()` is a process-wide diagnostic counter, not its
-lifetime anchor. Its advancing method still has the old `advanceFrame()` name.
+lifetime anchor. S7-T3 (#94) renamed its advancing method to `advanceTick()` and dropped
+the frame argument from `TickBarrierServices::flushEvents`; the stream's `frameIndex`
+marks remain until S7-T5 removes them.
 
 M1 makes events visible by moving sequence bounds without copying payloads. The
 scheduled handler path must also keep the visible batch stable when publication

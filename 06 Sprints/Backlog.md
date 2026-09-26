@@ -116,6 +116,13 @@ groups are kept, because they show where future work will land.
   fails and costs a CI timeout to catch. **Trigger:** a test helper that can fail a case on a
   deadline.
 
+- #prio/low · **Remove call-site access and ordering from `Schedule::add`** — S7-T3 moves
+  declarations into `ISystem::init`, but `add<T>(DeclareAccess<…>)` and the returned
+  registration's `setPriority`, `setSlot`, `before` and `after` still work. They run after
+  `init`, so they silently merge with or override a system's own declaration. The schedule
+  and graph tests use them heavily. **Trigger:** a bug where a call-site declaration hides a
+  system's own, or the next rewrite of those tests.
+
 - #prio/low · **Intra-system chunking for heavy systems** — parallelize a system's entity
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
   parallel executor shows one system node dominates a tick.

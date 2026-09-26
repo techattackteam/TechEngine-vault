@@ -47,12 +47,15 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
 
 ### Story B — Deliver Scene events at the Tick barrier · six Dev tasks
 
-- [ ] **S7-T3** · Construct and describe selected systems before graph build · P1 · 🟢 Deep · 4–6h —
+- [x] **S7-T3** · Construct and describe selected systems before graph build · P1 · 🟢 Deep · 4–6h —
   done: construct one persistent instance per selected entry before graph build; let it
   declare component access, priority, slot and ordering through an entry-scoped surface;
   use registration name metadata instead of a temporary system for diagnostics. Migrate
   the runtime demo declarations and prove one construction, one startup pass, and safe
-  failure on an invalid graph. API names remain provisional.
+  failure on an invalid graph. API names remain provisional. Also finish the Clock's
+  frame-to-Tick rename, including `advanceFrame()`, and drop the frame argument from
+  `TickBarrierServices::flushEvents`. This was moved from S7-T8 on Sep 26 because T3's
+  branch had already started it.
 - [ ] **S7-T4** · Bind ordered event handlers to selected systems · P1 · 🟢 Deep · 3–5h —
   done: collect typed event handlers on the same persistent instance in startup
   declaration order, resolve only registered event types before graph freeze, and carry
@@ -74,12 +77,11 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   system phase succeeds, then expose current-Tick publications at the barrier. Replace
   the no-op event service while leaving NetId assignment deferred. Prove failure
   retains the batch and discards pending structural commands.
-- [ ] **S7-T8** · Prove the integrated event path and finish Tick naming · P1 · 🟢 Deep · 3–5h —
+- [ ] **S7-T8** · Prove the integrated event path · P1 · 🟢 Deep · 3–5h —
   done: add a runtime or App-level publisher/reader witness and prove no same-Tick
   delivery, all selected handlers next Tick, zero-Tick preservation and multi-Tick
-  catch-up in headless execution; record the windowed observation separately. Rename
-  `Clock::advanceFrame()` to Tick vocabulary and remove frame-shaped event-barrier
-  arguments and call sites. Update touched design notes with shipped evidence.
+  catch-up in headless execution; record the windowed observation separately. Update
+  touched design notes with shipped evidence.
 
 T3 and T5 can start independently; T6 follows T5, T4 needs T3 and T6, T7 follows
 T4, and T8 finishes the App-level proof. T5 is the highest-risk card because M1's

@@ -15,12 +15,11 @@ kanban-plugin: board
 
 ## Story B — Deliver Scene events at the Tick barrier
 
-- [ ] **S7-T3** · Construct and describe selected systems before graph build · P1 · 🟢 Deep · 4–6h — persistent instance and own-entry declarations; diagnostic names without temporary construction.
 - [ ] **S7-T4** · Bind ordered event handlers to selected systems · P1 · 🟢 Deep · 3–5h — typed handlers on the persistent instance, recorded in declaration order.
 - [ ] **S7-T5** · Replace event cursors with stable Tick batches · P1 · 🟢 Deep · 4–6h — next-Tick visibility and stable reads during same-type publication.
 - [ ] **S7-T6** · Place registered event streams on Scene · P1 · 🟢 Deep · 3–5h — app registration, per-Scene ownership and isolation.
 - [ ] **S7-T7** · Deliver handlers and advance batches at the Tick barrier · P1 · 🟢 Deep · 4–6h — dispatch before `tick`, retire after successful systems, and replace no-op event flushing.
-- [ ] **S7-T8** · Prove the integrated event path and finish Tick naming · P1 · 🟢 Deep · 3–5h — App-level boundary proof and `Clock::advanceFrame()` rename.
+- [ ] **S7-T8** · Prove the integrated event path · P1 · 🟢 Deep · 3–5h — App-level boundary proof.
 
 
 ## Story C — Deliver engine input events
@@ -52,14 +51,19 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+
+
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done — Sprint 07
 
+- [x] **S7-T3** · Construct and describe selected systems before graph build · P1 · 🟢 Deep · 4–6h — #94 `7e52fe3a`, Sep 26. `Schedule::add<T>()` constructs the instance and calls `ISystem::init(ScheduleRegistration&)`; the schedule owns instances and the executor borrows them. Deleted before shipping: a `SystemCatalog` (project contribution stays parked in [[Backlog]]) and a `SystemDeclaration` wrapper that only forwarded to `ScheduleRegistration`. Diagnostic names are cached from the persistent instance's `name()`, not a static per-type field. Absorbed S7-T8's frame→Tick rename, including the log stamp `[f N]`→`[t N]`. Call-site declarations still override `init` → [[Backlog]] § core. **Retro:** the card opened on static self-registration, which ADR-022 had rejected that morning; the ADR was reopened and re-accepted unchanged the same day. Unblocks S7-T4 and S7-T10.
 - [x] **S7-D1** · Finalize Tick-event delivery and handler order · P1 · 🟢 Deep · 4–6h — settled declaration order and next-Tick batches; cut Story B cards. Vault changes remain local.
 - [x] **S7-D2** · Review v1 input and settle the engine input contract · P1 · 🟢 Deep · 4–6h — accepted engine codes and same-Tick input notifications; amended ADR-014/019/020, created the Input hub and cut S7-T9–T12. Vault changes remain local.
+
+
 
 
 %% kanban:settings

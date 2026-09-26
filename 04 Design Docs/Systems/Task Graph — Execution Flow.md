@@ -42,8 +42,11 @@ it, and the executor is what runs it.
 Current shipped spelling:
 
 ```cpp
-schedule.add<MovementSystem>(DeclareAccess<Write<Transform>, Read<Velocity>>)
-        .priority(10);
+schedule.add<MovementSystem>();
+
+void MovementSystem::init(ScheduleRegistration& registration) {
+    registration.access(DeclareAccess<Write<Transform>, Read<Velocity>>{}).setPriority(10);
+}
 ```
 
 Register each system for the single Tick phase with component-access declarations, a priority
@@ -56,6 +59,13 @@ type constraints and terminal-slot metadata. Duplicate registration, post-freeze
 mutation, a second terminal entry and unregistered component access are fatal
 `TE_CHECK`s in every configuration.
 
+S7-T3 moved declaration into the system in PR #94 (`7e52fe3a`). `Schedule::add<T>()`
+now constructs the persistent instance, caches its `name()`, and calls
+`ISystem::init(ScheduleRegistration&)`. If `init` throws, the entry is removed. `init`
+resolves access immediately, so component types must be registered before `add`. The
+call-site `DeclareAccess` argument and chained setters still work and run after `init`;
+removing them is a [[Backlog]] entry under core.
+
 ### Stage 2: build the graph, once, at simulation start
 
 Lower the component declarations to dense-ID masks, derive conflict and explicit-order edges,
@@ -67,10 +77,10 @@ scheduled resource conflict needs graph ordering or debug validation (ADR-020's
 Sep 19 amendment).
 
 S6-T7 shipped this stage in PR #90 (`ea5d0c9c`). `TaskGraph` stores immutable levels
-of factory, system-type and access nodes. Construction rejects equal-priority conflicts
+of system-pointer, system-type and access nodes. Construction rejects equal-priority conflicts
 and named cycles with `TE_CHECK`, and freezes the schedule only after a successful build.
-It currently constructs a temporary system solely to read its diagnostic name. ADR-022
-requires registration metadata, such as a static per-type name, to replace that lookup.
+Since S7-T3, diagnostics read each entry's cached name, so graph build constructs no
+temporary system.
 
 **Built once per simulation session.** The active set cannot change while that session
 runs. A different selection requires stopping it and building a new graph before the
@@ -83,7 +93,7 @@ Current shipped graph flow:
 
 ```mermaid
 flowchart TD
-  A["schedule.add&lt;Sys&gt;(DeclareAccess&lt;…&gt;).priority(N)"] --> B["lower component access to dense-ID bitmasks"]
+  A["schedule.add&lt;Sys&gt;() → Sys::init declares access and order"] --> B["lower component access to dense-ID bitmasks"]
   B --> C["conflict edges (priority) + explicit .before/.after edges"]
   C --> D["topological levels = TASK GRAPH (cached)"]
   D --> E["Tick ×N (accumulator)"]
@@ -94,9 +104,10 @@ flowchart TD
 have disjoint writes, so they are safe to run in parallel. The serial executor (ADR-020 §8)
 runs them one at a time. The parallel executor at P1 dispatches each level to workers.
 
-S6-T8 shipped the serial path in PR #91 (`4da771af`). `SerialExecutor` owns persistent
-system instances, one reusable command buffer per graph node and the barrier's spawned-
-entity output. It consumes the graph's immutable cached levels, runs nodes serially, then
+S6-T8 shipped the serial path in PR #91 (`4da771af`). `SerialExecutor` owns one reusable
+command buffer per graph node and the barrier's spawned-entity output. Since S7-T3 the
+schedule owns the persistent system instances and the executor borrows them; `App`
+destroys the executor before the schedule. It consumes the graph's immutable cached levels, runs nodes serially, then
 merges their buffers in graph order. Keeping runtime state outside `TaskGraph` preserves
 the same graph and per-node buffer boundary for the later parallel executor.
 
@@ -116,8 +127,8 @@ before `tick` and under the same declared access. After all systems, including t
 terminal slot, finish successfully, it retires Tick N's batch. The barrier makes
 Tick N+1's staged events visible. No per-reader cursor or frame counter governs
 scheduled delivery (ADR-014 and ADR-022, Sep 26 amendments). The same instance
-executes ticks. Current app-authored declarations, post-graph construction and the
-no-op event barrier remain shipped behavior until this contract is implemented.
+executes ticks. S7-T3 shipped startup declaration and pre-graph construction; handler
+delivery and the no-op event barrier remain until S7-T4–T7.
 
 S7-D1 resolves cross-type delivery at each node: run that system's handlers in their
 startup declaration order, exhausting one handler's visible type batch before the
