@@ -73,7 +73,7 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   give each Scene its own streams, and expose the simulation-only publish/read seam.
   Prove two Scenes sharing type identity do not share event contents and late type
   registration is rejected without corrupting either Scene.
-- [ ] **S7-T7** · Deliver handlers and advance batches at the Tick barrier · P1 · 🟢 Deep · 4-6h ·
+- [x] **S7-T7** · Deliver handlers and advance batches at the Tick barrier · P1 · 🟢 Deep · 4-6h ·
   done: run each system's handlers in declaration order on the previous Tick's batches
   before its `tick`, including the terminal slot; retire that batch only after the
   system phase succeeds, then expose current-Tick publications at the barrier. Replace
@@ -82,7 +82,7 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   read path: `Scene::read` stops being callable from `tick` and only the executor reads
   a batch for handlers. Move S7-T6's `SceneEventTests` readers from `tick` to handlers.
   Agreed Sep 27 at S7-T6's review and moved here from S7-T4 the same day; record it in
-  [[Events - Design]] at close.
+  [[Events - Design]] at close. Shipped in #100 (`82bf3f72`, Sep 27).
 - [ ] **S7-T8** · Prove the integrated event path · P1 · 🟢 Deep · 3-5h ·
   done: add a runtime or App-level publisher/reader witness and prove no same-Tick
   delivery, all selected handlers next Tick, zero-Tick preservation and multi-Tick

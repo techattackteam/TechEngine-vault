@@ -130,7 +130,8 @@ scheduled delivery (ADR-014 and ADR-022, Sep 26 amendments). The same instance
 executes ticks. S7-T3 shipped startup declaration and pre-graph construction. S7-T4
 (#99 `0218571e`) added handler declarations, which `TaskGraph` resolves against the
 `EventRegistry` it now takes and carries on each node; [[Events - Design]] § *Handler
-declaration* has the rules. Handler delivery and the no-op event barrier remain until S7-T7.
+declaration* has the rules. S7-T7 (#100 `82bf3f72`) added handler dispatch and the event
+barrier; [[Events - Design]] § *Scheduled Tick delivery* has its calls.
 
 S7-D1 resolves cross-type delivery at each node: run that system's handlers in their
 startup declaration order, exhausting one handler's visible type batch before the
@@ -149,10 +150,10 @@ world reads later in that system see current values. No separate transform
 propagation entry is scheduled (ADR-021).
 
 **At the barrier**, per-system command buffers are merged in graph order and applied
-**single-threaded, in deterministic order**, then injected barrier services are called
-for `NetId` assignment and event flushing. `App` currently supplies a no-op adapter.
-Event integration is planned in [[2026-09 Sprint 07 - Scene Events and Input Boundary]];
-`NetId` assignment waits for a networking consumer. Structural changes land here: spawn,
+**single-threaded, in deterministic order**. Then the injected barrier service assigns
+`NetId`s; `App` supplies a no-op adapter, because `NetId` assignment waits for a networking
+consumer. Last, the executor retires the Scene's old event batch and makes this Tick's
+publications visible. Since S7-T7 that step is the executor's own, not an injected service. Structural changes land here: spawn,
 despawn, add and remove. Pending-entity tokens are local to the buffer that created them.
 Hierarchy constraints are validated at commit time. That is what makes determinism hold
 even once levels run in parallel.

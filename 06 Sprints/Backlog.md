@@ -134,7 +134,20 @@ groups are kept, because they show where future work will land.
   from the schedule, would remove the duplicate `ScheduleAccess` and handler copies. Analyse
   the options, including the executor-before-graph lifetime in `App` and the tests, and
   implement the better one if borrowing wins. Found at S7-T4, Sep 27. **Trigger:** S7-T7's
-  handler dispatch, or the parallel executor at P1.
+  handler dispatch, or the parallel executor at P1. **Fired Sep 27:** #100 dispatches handlers
+  from the executor's copied nodes.
+
+- #prio/low · **Events published in a failed Tick stay staged**: a failed phase discards its
+  structural commands but not its publications, so a retried Tick would make them visible
+  alongside the retry's own. Today a failed phase ends the simulation, so nothing retries.
+  S7-T7's failure test publishes nothing in the failing Tick, so no test pins either answer.
+  Found at S7-T7, Sep 27. **Trigger:** the first path that re-executes a Tick after a failure.
+
+- #prio/low · **Should `Scene::makeEventsVisible` and `retireEvents` stay public?**: since
+  S7-T7 the executor, which is `Scene`'s friend, calls them at the barrier. Only tests call
+  them from outside, and a `TE_CHECK` rejects them inside a system. Making them private removes
+  that runtime gate along with its two `SceneEventTests` cases. Found at S7-T7, Sep 27.
+  **Trigger:** a second caller outside the executor, or the next `Scene` API pass.
 
 - #prio/low · **Intra-system chunking for heavy systems**: parallelize a system's entity
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the

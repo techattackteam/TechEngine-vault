@@ -15,8 +15,8 @@
 M1's frame marks and per-reader cursors with a two-buffer stream that holds one Tick batch.
 S7-T6 (#98 `745f067a`, Sep 27) put the streams on `Scene` (*Scene residence*). S7-T4 (#99
 `0218571e`, Sep 27) added handler declaration and its resolution at graph build
-(*Handler declaration*). Scheduled
-handler delivery remains Sprint 07 work.
+(*Handler declaration*). S7-T7 (#100 `82bf3f72`, Sep 27) delivers handlers and advances
+the batches at the Tick barrier (*Scheduled Tick delivery*).
 
 ## Purpose
 
@@ -107,13 +107,9 @@ S7-T6 made these calls; no artifact had decided them.
 | Call | Shape |
 |---|---|
 | **When streams are built** | `Scene` keeps its constructor and holds an optional `EventStreamManager`. `App::finalizeSimulation()` calls `buildEventStreams(m_eventRegistry)` after `configureSimulation()`, because `App` constructs its Scene before any registration runs (`engine/app/src/App.cpp:113`). A second build is a `TE_VERIFY` reject that keeps the existing streams and their events. |
-| **Simulation-only** | `publish<T>` and `read<T>` work only while a system of **that** Scene is executing. Outside one, a `TE_CHECK` fires, `publish` drops and `read` returns empty (`engine/core/src/scene/Scene.cpp:528`). |
+| **Simulation-only** | `publish<T>` works only while a system of **that** Scene is executing. Outside one, a `TE_CHECK` fires and the event is dropped (`engine/core/src/scene/Scene.cpp:528`). `Scene` has no public read since S7-T7 (*Scheduled Tick delivery*). |
 | **Barrier calls** | `makeEventsVisible(tick)` and `retireEvents()` are the inverse: a `TE_CHECK` rejects them while a system is executing (`engine/core/src/scene/Scene.cpp:536`). |
-| **A Scene without streams** | `publish` and `read` inside a system fire a `TE_VERIFY`, because an event would be lost. The barrier calls are a silent no-op, because nothing can be lost; every Scene in the executor tests is in this state. |
-
-Until S7-T7 lands, `read` is also callable from `tick`. S7-T7's card makes handlers the only
-read path. The clause moved there from S7-T4 on Sep 27, because S7-T7 is the first card
-that runs a handler.
+| **A Scene without streams** | `publish` inside a system and each handler's batch read fire a `TE_VERIFY`, because an event would be lost. The barrier calls are a silent no-op, because nothing can be lost; every Scene in the executor tests is in this state. |
 
 ### Handler declaration: shipped Sep 27
 
@@ -129,7 +125,18 @@ S7-T4 made these calls; no artifact had decided them.
 | **A late declaration** | A handler declared through a registration handle kept past `freeze()` is a `TE_CHECK`, like the other setters. Before the freeze, a handle declaration is appended after the `init` handlers. |
 | **Conflict edges** | None. Handlers live outside `ScheduleAccess`, so two systems handling one type at equal priority share a level. |
 
-### Scheduled Tick delivery: accepted Sep 26, unbuilt
+### Scheduled Tick delivery: accepted Sep 26, shipped Sep 27
+
+S7-T7 made these calls; no artifact had decided them.
+
+| Call | Shape |
+|---|---|
+| **Who runs the barrier** | `SerialExecutor::execute` calls `retireEvents()` and then `makeEventsVisible(tick)` on the Scene, after applying commands and `assignNetIds` (`engine/core/src/systems/SerialExecutor.cpp:89`). `TickBarrierServices` no longer has an event hook. A failed phase throws before this point, which is what retains the batch. |
+| **The only read path** | The executor reads each handler's batch as bytes through a private `Scene::readEventBytes(EventTypeId)`, reachable only by its friend `SerialExecutor`. The public `Scene::read<T>` is gone, so a system cannot read a batch from `tick`. |
+| **A quiet Tick** | A handler whose type has an empty visible batch is not called. |
+| **A Scene without streams** | The batch read fires a `TE_VERIFY` and returns empty, so the handler is skipped. That is one fire per handler per Tick. |
+
+The rest of this section is the accepted contract that these calls implement.
 
 Tick N's publishers append to staging. Its barrier makes that batch visible. In Tick
 N+1, the executor presents it once to every selected registered handler at its
