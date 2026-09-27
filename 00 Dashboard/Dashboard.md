@@ -10,7 +10,7 @@
 | **Quarter** | 2026 Q3 (Jul-Sep) |
 | **Sprint** | [[2026-09 Sprint 07 - Scene Events and Input Boundary]] *(Sep 26-Oct 9)* |
 | **Sprint goal** | Deliver Scene events at the Tick barrier and engine-coded input notifications during the consuming Tick. |
-| **Current focus** | Story B: S7-T7 delivers handlers at the Tick barrier (#100); S7-T8's App-level proof closes the story. Story C input delivery starts at S7-T9. |
+| **Current focus** | Story B is complete: S7-T8 proved the event path through the runtime demo (#101). Story C's input delivery starts at S7-T9. |
 | **Top blocker** | S7-T10 needs S7-T3's persistent-system startup seam and S7-T9's engine control identifiers. |
 | **Next milestone** | Complete M5 event and input seams before M6 content. |
 | **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |

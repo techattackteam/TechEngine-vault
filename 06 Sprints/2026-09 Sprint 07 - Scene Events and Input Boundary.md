@@ -83,11 +83,17 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   a batch for handlers. Move S7-T6's `SceneEventTests` readers from `tick` to handlers.
   Agreed Sep 27 at S7-T6's review and moved here from S7-T4 the same day; record it in
   [[Events - Design]] at close. Shipped in #100 (`82bf3f72`, Sep 27).
-- [ ] **S7-T8** · Prove the integrated event path · P1 · 🟢 Deep · 3-5h ·
+- [x] **S7-T8** · Prove the integrated event path · P1 · 🟢 Deep · 3-5h ·
   done: add a runtime or App-level publisher/reader witness and prove no same-Tick
   delivery, all selected handlers next Tick, zero-Tick preservation and multi-Tick
   catch-up in headless execution; record the windowed observation separately. Update
-  touched design notes with shipped evidence.
+  touched design notes with shipped evidence. Scope added Sep 27 at `/card-start`, by
+  Miguel's choice over a separate card: an `EventType` concept (trivially copyable plus a
+  `static constexpr tag`) constrains `registerEvent`, `Scene::publish` and `onEvent`;
+  `registerEvent<T>(wire)` reads `T::tag`; `publish<Event>(arguments...)` constructs the
+  event; and `on` becomes `onEvent`. A virtual `IEvent` base was rejected because it breaks
+  ADR-014 §2's trivially copyable payload. Record the API in [[Events - Design]] at close.
+  Shipped in #101 (`63b437d5`, Sep 27).
 
 T3 and T5 can start independently; T6 follows T5, T4 needs T3 and T6, T7 follows
 T4, and T8 finishes the App-level proof. T5 is the highest-risk card because M1's
@@ -226,10 +232,13 @@ use the lane's capacity, not Miguel's, and none touches a Story B or C file.
 
 ## Definition of Done
 
-- [ ] An event published by a scheduled system becomes visible after that Tick's
+- [x] An event published by a scheduled system becomes visible after that Tick's
   barrier, reaches every selected registered handler during the next Tick, and retires
   after that system phase. Prove zero-tick, multi-tick, failed-phase and same-type
-  handler-publication boundaries.
+  handler-publication boundaries. Evidence: failed-phase and same-type publication in
+  `SceneEventTests` (#100, `82bf3f72`, Sep 27); next-Tick delivery, zero-Tick and
+  multi-Tick catch-up through `RuntimeApp`'s demo systems in `RuntimeAppTests` (#101,
+  `63b437d5`, Sep 27), plus Miguel's windowed run of the same day (S7-T8's Done entry).
 - [x] The input boundary has an accepted contract and an Input design hub grounded in
   current code and v1 prior art. Implementation follow-ups were cut after acceptance.
 - [ ] GLFW controls reach simulation as engine identifiers. Selected systems receive

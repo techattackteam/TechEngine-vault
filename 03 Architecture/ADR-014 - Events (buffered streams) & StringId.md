@@ -22,6 +22,13 @@
   `Input`)” → input notifications use a separate same-Tick delivery path from the
   ordered ingress batch. They do not enter Scene event streams or acquire their
   next-Tick visibility rule. Trigger: S7-D2.
+- **Amended 2026-09-27, correction:** §5's rationale “a process can run more than one sim
+  (tests already run several headless sims …)” → streams live on the `Scene` because
+  events are world data, because the Scene's execution scope is where publishing and the
+  barrier are enforced, and because their lifetime is the world's. The residence decision is
+  unchanged; it now holds with one simulation per process, which is what the runtime and the
+  editor each run. The *Alternatives* `EventBus` bullet leaned on the same argument. Trigger:
+  the Sep 27 ownership review of `App`, `Scene` and `EngineContext`.
 - **Supersedes (partial):** **ADR-006 §4's `EventBus& events` field only**
   (`:186`): event streams are `Scene` state, not an `EngineContext` service; every other
   §4 clause (DI rule, immutability, "holds no systems", F13 ownership) remains in force.
@@ -138,6 +145,22 @@ engine-lifetime `EngineContext` service either way.
 > **Amended 2026-09-26:** The frame-lifetime description above is historical.
 > Scene event batches live across simulation Ticks under the amended §3 rule.
 
+> **Amended 2026-09-27:** The multi-sim argument above is not why residence holds: the
+> runtime and the editor each run one simulation. Three reasons hold with one.
+>
+> 1. **Events are world data.** A payload carries `Entity` handles that resolve only in the
+>    Scene that published it. That Scene's systems publish it, and that Scene's barrier makes
+>    it visible. This is the same split as components (ADR-007 §1): the type registry is
+>    global, and the values belong to one Scene.
+> 2. **The Scene is where the rules are enforced.** `publish` is legal only inside a system
+>    executing on that Scene, and the barrier calls only outside one
+>    (`engine/core/src/scene/Scene.cpp:528`, `:536`). Systems already receive `Scene&`, so
+>    publishing needs no second path. The only other path to every system is
+>    `EngineContext`, which is the `EventBus` service rejected in *Alternatives*.
+> 3. **The lifetime is the world's.** Pending events mean nothing once the entities they name
+>    are gone. Clearing the Scene, ending a session (ADR-022) and restoring a rewound Tick
+>    (§3) must take the events with the world, and that is simplest when the world owns them.
+
 Event *type* registration is process-global (mirrors ADR-007 §1: global registry,
 per-`Scene` columns). Hence the two partial supersessions in the header.
 
@@ -211,6 +234,8 @@ linker-stripped). No file-scope statics, and no per-type macro; ADR-007 §1's
   order nondeterminism under parallelism, mid-phase writes outside declared access (§3).
 - **`EventBus` as an `EngineContext` service** (ADR-006 §4's sketch), rejected:
   multi-sim cross-talk (§5); the sketch predates the multi-sim argument.
+  > **Amended 2026-09-27:** read the rejection as §5's three corrected reasons, not
+  > multi-sim cross-talk.
 - **Interned-pointer `StringId`** (pointer into a global table): cheap compares.
   Rejected: registration-order dependence (a mild F1) plus a lock on first intern; a hash
   gives client/server identity by math.

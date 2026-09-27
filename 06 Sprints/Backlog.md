@@ -106,9 +106,31 @@ groups are kept, because they show where future work will land.
   declarations into `ISystem::init`, but `add<T>(DeclareAccess<…>)` and the returned
   registration's `setPriority`, `setSlot`, `before` and `after` still work. They run after
   `init`, so they silently merge with or override a system's own declaration. The schedule
-  and graph tests use them heavily. S7-T4 added `on<Event>` to the same handle, and a
-  `ScheduleTests` case now pins a handle declaration after the `init` handlers. **Trigger:** a bug where a call-site declaration hides a
-  system's own, or the next rewrite of those tests.
+  and graph tests use them heavily. S7-T4 added `onEvent<Event>` to the same handle, and a
+  `ScheduleTests` case now pins a handle declaration after the `init` handlers. The
+  constructor-injection entry below depends on removing this parameter. **Trigger:** a bug
+  where a call-site declaration hides a system's own, or the next rewrite of those tests.
+
+- #prio/medium · **Systems cannot receive services through their constructor**:
+  `Schedule::add` requires `std::default_initializable<T>` and builds the instance with
+  `std::make_unique<T>()` (`engine/core/include/TechEngine/core/systems/Schedule.hpp:55`,
+  `:74`), and `ISystem::init` receives only the registration. ADR-006 §4 and ADR-022
+  *Decision* both name constructor injection as the way services reach systems, so the only
+  path left is `SimulationContext::engine` during `tick`, which hands every system the whole
+  context. A system that needs a service at startup, such as a physics system creating its
+  Jolt world with the `JobSystem`, has to defer that setup to its first Tick. Letting `add<T>`
+  forward constructor arguments collides with the call-site `DeclareAccess` parameter, so this
+  depends on the entry above. Found at the ownership review, Sep 27. **Trigger:** the first
+  system that needs a service, S1's physics system at the latest.
+
+- #prio/low · **Rename `EngineContext` to `EngineServices`**: the struct holds only
+  process-lifetime services (`FileAccess`, `JobSystem`, `Clock`), but its name makes it look
+  like the same kind of thing as the per-Tick `SimulationContext`. The new name would make the
+  split between engine services and per-Tick values visible in the code. ADR-006 §4 and several
+  later ADRs use the current name, so the rename needs a naming amendment in ADR-006's header,
+  like its Jul 24 vocabulary amendment. Proposed by Miguel at the ownership review, Sep 27.
+  **Trigger:** before an SDK surface exposes the name to project code, because a rename after
+  that breaks projects.
 
 - #prio/medium · **Declare the event types a system publishes**: ADR-014 §4 makes event
   access a declared `SystemAccess` category, and only the reader side was amended to
@@ -118,13 +140,12 @@ groups are kept, because they show where future work will land.
   S7-T6's review, Sep 27. **Trigger:** S7-T4 landing its declaration surface. **Fired Sep
   27:** #99 shipped `ScheduleRegistration::on<Event>`.
 
-- #prio/low · **ADR-014 §5 overstates multi-simulation**: it says "a process can run more
-  than one sim", but the only case it names is tests. The runtime and the editor each run one
-  simulation, and [[Clock - Design]] already says the v2 editor hosts a client only. The
-  per-Scene stream residence still holds, so this narrows the rationale, not the decision; the
-  amendment should record why residence holds with one simulation per process.
-  [[Events - Design]]'s *Registry* row and [[Clock - Design]] repeat the same argument. Found
-  at S7-T6, Sep 27. **Trigger:** the next ADR-014 amendment, or `/weekly-review`'s drift check.
+- #prio/low · **[[Clock - Design]] still argues from several simulations per process**: its
+  *Why simulation time is not here* says tests run several headless sims side by side. ADR-014
+  §5 made the same argument and was corrected on Sep 27, because the runtime and the editor
+  each run one simulation. Clock's conclusion rests on ADR-019, not ADR-014, so its reasons
+  need their own check rather than a copy of ADR-014's. Found at S7-T6, Sep 27. **Trigger:**
+  the next edit to that section, or `/weekly-review`'s drift check.
 
 - #prio/medium · **Should `SerialExecutor` borrow the graph instead of copying it?**: its
   constructor copies each `TaskGraphNode`'s access mask and system pointer into its own node,
@@ -149,6 +170,12 @@ groups are kept, because they show where future work will land.
   that runtime gate along with its two `SceneEventTests` cases. Found at S7-T7, Sep 27.
   **Trigger:** a second caller outside the executor, or the next `Scene` API pass.
 
+- #prio/low · **Component registration still takes its tag as an argument**: since S7-T8,
+  `registerEvent<T>()` reads `T::tag`, while `registerComponent<T>(T::tag)` still passes a tag
+  that every component already carries as `T::tag`, so the two registries differ. Aligning
+  components would also let a component concept reject a type with no tag. Found at S7-T8,
+  Sep 27. **Trigger:** the next change to `ComponentRegistry`'s registration call.
+
 - #prio/low · **Intra-system chunking for heavy systems**: parallelize a system's entity
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
   parallel executor shows one system node dominates a tick.
@@ -163,6 +190,30 @@ groups are kept, because they show where future work will land.
   complete [[ADR-022 - Project system composition and self-description]]'s public
   catalog boundary beyond App's built-in schedule selection. **Trigger:** the first
   project-supplied system or project-code loading card.
+
+- #prio/medium · **No object owns one simulation session**: `App` builds the simulation once
+  per lifetime. `finalizeSimulation` returns early after its first run
+  (`engine/app/src/App.cpp:99`), `Schedule::freeze` has no inverse, the registries stay
+  frozen, and `Scene` rejects a second stream build (`engine/core/src/scene/Scene.cpp:496`).
+  ADR-022 *Decision* requires stopping a session, destroying its executor and graph, selecting
+  again and rebuilding, but no object has that lifetime: `Scene` and `Schedule` live as long
+  as `App`, while the graph and executor are `unique_ptr`s built once. The `Scene` without
+  streams until `finalizeSimulation` and the `m_simulationFinalized` flag are symptoms of the
+  same gap. What survives between editor sessions (Scene contents, event streams, system
+  state) is load-bearing and likely needs an ADR. Found at the ownership review, Sep 27.
+  **Trigger:** the project-contribution entry above, or the first editor Play and Stop.
+
+- #prio/medium · **Both threads can reach `App::m_scene`**: `m_scene` is `protected`
+  (`engine/app/include/TechEngine/app/App.hpp:42`), so a subclass's main-thread hooks can touch
+  the Scene while the simulation thread owns it. `Scene`'s execution guards are `thread_local`
+  (`engine/core/src/scene/Scene.cpp:28`), so on the main thread it believes no system is
+  running and allows everything, including immediate structural mutation. **Silent**: only
+  the TSan leg could catch the race, and only if a test exercised it.
+  [[Scene - Design]] § *Ownership and lifetime* forbids main-thread borrowing, but nothing
+  enforces it. Making `m_scene` private and passing `Scene` to the simulation-thread hooks
+  would; `RuntimeAppTests` reads it through a probe that would need a replacement. Found at the
+  ownership review, Sep 27. **Trigger:** the editor inspector on rung T1, or any main-thread
+  hook that wants Scene data.
 
 ## net
 

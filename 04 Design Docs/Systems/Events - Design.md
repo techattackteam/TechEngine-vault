@@ -16,7 +16,9 @@ M1's frame marks and per-reader cursors with a two-buffer stream that holds one 
 S7-T6 (#98 `745f067a`, Sep 27) put the streams on `Scene` (*Scene residence*). S7-T4 (#99
 `0218571e`, Sep 27) added handler declaration and its resolution at graph build
 (*Handler declaration*). S7-T7 (#100 `82bf3f72`, Sep 27) delivers handlers and advances
-the batches at the Tick barrier (*Scheduled Tick delivery*).
+the batches at the Tick barrier (*Scheduled Tick delivery*). S7-T8 (#101 `63b437d5`, Sep 27)
+proved the path through `RuntimeApp`'s demo systems in `apps/runtime/tests/RuntimeAppTests.cpp`
+and changed the declaration surface (*Event type and publish API*).
 
 ## Purpose
 
@@ -39,7 +41,7 @@ That fixes **F28** structurally, rather than by convention.
 | Tick N's events reach every selected scheduled handler in Tick N+1, then retire after that system phase. No next Tick means no retirement. No per-reader cursor or frame anchor governs scheduled delivery. | ADR-014 §2-4, Sep 26 amendments; ADR-022 Sep 26 amendment |
 | Within one system, handlers run in their startup declaration order. Each handler receives its event type's complete visible batch in publisher schedule order, then FIFO within a publisher. There is no merged order across event types. | S7-D1, Sep 26 design resolution |
 | Event access is a third `SystemAccess` category, and it creates no conflict edges. Selected systems declare handlers and access at startup. | ADR-014 §4; ADR-022 *Decision* |
-| Streams are per-`Scene`. There is no `EventBus` service and no `EngineContext` field. | ADR-014 §5 |
+| Streams are per-`Scene`. There is no `EventBus` service and no `EngineContext` field. | ADR-014 §5, rationale corrected Sep 27 |
 | Type registration is process-global, invoked from the composition root. Never through file-scope statics. | ADR-014 §6 |
 | No Pool primitive is needed. | ADR-014 §7 |
 | Out of scope: OS and input events · editor notifications · the wire RPC channel · the script façade API. | ADR-014 §7 |
@@ -117,7 +119,7 @@ S7-T4 made these calls; no artifact had decided them.
 
 | Call | Shape |
 |---|---|
-| **Declaration** | `registration.on<Event>(handler)` inside `ISystem::init`, where the handler is a lambda taking `(Scene&, std::span<const Event>)`. It gets no `SimulationContext`. The handler is stored type-erased, and the entry keeps its handlers in declaration order, duplicate types included (`engine/core/include/TechEngine/core/systems/ScheduleRegistration.hpp:76`). |
+| **Declaration** | `registration.onEvent<Event>(handler)` inside `ISystem::init`, where the handler is a lambda taking `(Scene&, std::span<const Event>)`. It gets no `SimulationContext`. The handler is stored type-erased, and the entry keeps its handlers in declaration order, duplicate types included (`engine/core/include/TechEngine/core/systems/ScheduleRegistration.hpp:76`). S7-T4 shipped it as `on<Event>`; S7-T8 renamed it. |
 | **Same instance** | Binding to the persistent instance is a convention: the lambda captures `this`. Nothing stops a lambda from capturing something else. |
 | **When the type resolves** | At graph build, not at declaration, because `configureSimulation()` can add a system before it registers the event type. The declaration keeps a pointer to `eventTypeId<Event>` and calls it then. |
 | **Which registry** | `TaskGraph` takes the `EventRegistry` as a constructor argument (`engine/core/src/systems/TaskGraph.cpp:170`). A type counts as registered only if that registry's `find` knows it, because `eventTypeId<T>()` is one process-wide slot that any registry writes. |
@@ -169,12 +171,24 @@ chooses which systems enter the schedule. Component schemas and event types are
 registered separately before declarations resolve; graph build creates no temporary
 system just to read a diagnostic name (ADR-022).
 
+### Event type and publish API: shipped Sep 27
+
+S7-T8 made these calls at Miguel's request; no artifact had decided them.
+
+| Call | Shape |
+|---|---|
+| **What an event is** | A type satisfying the `EventType` concept: trivially copyable, with a `static constexpr tag` convertible to `std::string_view` (`engine/core/include/TechEngine/core/events/EventTypeId.hpp:14`). `registerEvent`, `Scene::publish` and `onEvent` require it. `EventStream` and `EventStreamManager` stay unconstrained. |
+| **Where the tag lives** | On the type. `registerEvent<T>(wire)` reads `T::tag`, still invoked from the composition root. ADR-014 §6 still describes the tag as a call argument; see *Open*. |
+| **Publishing** | `Scene::publish<Event>(arguments...)` constructs `Event{arguments...}` (`engine/core/include/TechEngine/core/scene/Scene.hpp:139`). The braces reject narrowing, and a literal arrives inside the template as a non-constant `int`, so `publish<Hit>(100)` into a `std::uint32_t` field fails to compile; write `100U`. |
+| **Rejected: a base class** | A virtual `IEvent` like v1's makes every event non-trivially-copyable, which breaks the memcpy into the stream, the typed span over the batch and plain wire bytes (ADR-014 §2: no base class). An empty non-virtual base keeps the type trivially copyable, but becomes the aggregate's first element, so `Landed(entity)` needs a constructor, and it needs an ADR-014 §2 amendment. |
+
 ### The registration record
 
 A record holds the tag mapped to its `EventTypeId`, the dense stream index, `sizeof` and
-`alignof`, a compile-time trivially-copyable check, and a reserved wire flag.
+`alignof`, the `EventType` concept's compile-time check, and a reserved wire flag.
 
-The tag arrives as a call argument from the composition root (ADR-014 §6).
+The tag comes from the type's `tag` member, and the registration call is made from the
+composition root (ADR-014 §6).
 
 ### Editor boundary
 
@@ -198,7 +212,7 @@ place, not now.
 
 | Call | Shape |
 |---|---|
-| **Residence** | An app-owned `EventRegistry` object, **not a singleton**. §5's multi-sim argument applies here unchanged, and ADR-014 §6's "process-global" describes identity scope rather than storage. Tests build one per case, so no test-only reset hook exists. |
+| **Residence** | An app-owned `EventRegistry` object, **not a singleton**, like `ComponentRegistry`. Tests build one per case, so no test-only reset hook exists. ADR-014 §6's "process-global" describes identity scope rather than storage. |
 | **Type to id** | An `internal` inline variable per `T`, written by `registerEvent<T>` and read by `eventTypeId<T>()`. It holds the **id only**. The id is a pure function of the tag, so two registries agree on it. The dense index is registry state, resolved by lookup. It is not a self-registering static, so §6 still holds. |
 | **Tag storage** | An owning `std::string`. A `string_view` would dangle the moment a game DLL unloads. |
 | **Wire flag** | `EventWire{Local, Replicated}`, defaulting to `Local`. Nothing reads it at M1. A bare `bool` at the call site would read as nothing at all. |
@@ -353,10 +367,13 @@ Three ordering facts, each of which is a silent bug if reversed.
   during S3-T9.
 - **Editor watchdog UX**, meaning what the editor shows and how it filters. No direct
   host-frame Scene-stream read is part of the Tick contract. **Owner:** later editor design.
-- **API spelling**, covering `publish<T>` and the header layout. The declaration method
-  shipped as `on<Event>` and the batch view as `std::span<const Event>` (S7-T4). This is a
-  naming pass rather than a decision. **Owner:** implementation plus
-  `CONVENTIONS.md`.
+- **API spelling**, now only the header layout. S7-T8 settled `publish<Event>(arguments...)`
+  and `onEvent<Event>`; the batch view is `std::span<const Event>` (S7-T4). This is a naming
+  pass rather than a decision. **Owner:** implementation plus `CONVENTIONS.md`.
+- **ADR-014 §6's tag wording.** It says the tag "is an argument at the registration call",
+  and since S7-T8 the tag is `T::tag`. The section's load-bearing rule, registration invoked
+  from the composition root with no file-scope statics, still holds. Either §6 gets a dated
+  amendment, or its call shape is read as illustrative spelling. **Owner:** Miguel.
 - **Re-registration on DLL reload.** The registry rejects a second `registerEvent<T>`, so a
   reloaded game DLL cannot re-register its types. **The seal added at S3-T10 closes the door
   further:** once the streams are built, *no* registration is accepted, reload or not. Both are
