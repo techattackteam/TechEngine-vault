@@ -56,15 +56,13 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   frame-to-Tick rename, including `advanceFrame()`, and drop the frame argument from
   `TickBarrierServices::flushEvents`. This was moved from S7-T8 on Sep 26 because T3's
   branch had already started it.
-- [ ] **S7-T4** · Bind ordered event handlers to selected systems · P1 · 🟢 Deep · 3-5h ·
+- [x] **S7-T4** · Bind ordered event handlers to selected systems · P1 · 🟢 Deep · 3-5h ·
   done: collect typed event handlers on the same persistent instance in startup
   declaration order, resolve only registered event types before graph freeze, and carry
   handler metadata to the executor without creating event conflict edges. Prove
   duplicate-type handlers and invalid or late declarations behave deterministically.
-  Make handlers the only read path: `Scene::read` stops being callable from `tick` and
-  only the executor reads a batch for handlers. Move S7-T6's `SceneEventTests` readers
-  from `tick` to handlers. Agreed Sep 27 at S7-T6's review; record it in
-  [[Events - Design]] at close.
+  Shipped in #99 (`0218571e`, Sep 27). The read-path clause moved to S7-T7 at
+  `/card-start` on Sep 27, because nothing runs a handler until S7-T7.
 - [x] **S7-T5** · Replace event cursors with stable Tick batches · P1 · 🟢 Deep · 4-6h ·
   done: remove M1 frame marks and scheduled-reader cursors; expose Tick N's immutable
   visible batch during Tick N+1 and retire it only when asked after that phase. Prove
@@ -80,7 +78,11 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   before its `tick`, including the terminal slot; retire that batch only after the
   system phase succeeds, then expose current-Tick publications at the barrier. Replace
   the no-op event service while leaving NetId assignment deferred. Prove failure
-  retains the batch and discards pending structural commands.
+  retains the batch and discards pending structural commands. Make handlers the only
+  read path: `Scene::read` stops being callable from `tick` and only the executor reads
+  a batch for handlers. Move S7-T6's `SceneEventTests` readers from `tick` to handlers.
+  Agreed Sep 27 at S7-T6's review and moved here from S7-T4 the same day; record it in
+  [[Events - Design]] at close.
 - [ ] **S7-T8** · Prove the integrated event path · P1 · 🟢 Deep · 3-5h ·
   done: add a runtime or App-level publisher/reader witness and prove no same-Tick
   delivery, all selected handlers next Tick, zero-Tick preservation and multi-Tick

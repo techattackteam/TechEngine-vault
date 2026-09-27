@@ -127,8 +127,10 @@ before `tick` and under the same declared access. After all systems, including t
 terminal slot, finish successfully, it retires Tick N's batch. The barrier makes
 Tick N+1's staged events visible. No per-reader cursor or frame counter governs
 scheduled delivery (ADR-014 and ADR-022, Sep 26 amendments). The same instance
-executes ticks. S7-T3 shipped startup declaration and pre-graph construction; handler
-delivery and the no-op event barrier remain until S7-T4-T7.
+executes ticks. S7-T3 shipped startup declaration and pre-graph construction. S7-T4
+(#99 `0218571e`) added handler declarations, which `TaskGraph` resolves against the
+`EventRegistry` it now takes and carries on each node; [[Events - Design]] § *Handler
+declaration* has the rules. Handler delivery and the no-op event barrier remain until S7-T7.
 
 S7-D1 resolves cross-type delivery at each node: run that system's handlers in their
 startup declaration order, exhausting one handler's visible type batch before the

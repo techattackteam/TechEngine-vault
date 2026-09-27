@@ -106,7 +106,8 @@ groups are kept, because they show where future work will land.
   declarations into `ISystem::init`, but `add<T>(DeclareAccess<…>)` and the returned
   registration's `setPriority`, `setSlot`, `before` and `after` still work. They run after
   `init`, so they silently merge with or override a system's own declaration. The schedule
-  and graph tests use them heavily. **Trigger:** a bug where a call-site declaration hides a
+  and graph tests use them heavily. S7-T4 added `on<Event>` to the same handle, and a
+  `ScheduleTests` case now pins a handle declaration after the `init` handlers. **Trigger:** a bug where a call-site declaration hides a
   system's own, or the next rewrite of those tests.
 
 - #prio/medium · **Declare the event types a system publishes**: ADR-014 §4 makes event
@@ -114,7 +115,8 @@ groups are kept, because they show where future work will land.
   handlers. `Scene::publish` accepts any registered type from any system, and no card owns
   the publish declaration. The shape is a publish declaration on S7-T4's entry-scoped
   surface, checked in `Scene::publish` the way `validateWrite` checks components. Found at
-  S7-T6's review, Sep 27. **Trigger:** S7-T4 landing its declaration surface.
+  S7-T6's review, Sep 27. **Trigger:** S7-T4 landing its declaration surface. **Fired Sep
+  27:** #99 shipped `ScheduleRegistration::on<Event>`.
 
 - #prio/low · **ADR-014 §5 overstates multi-simulation**: it says "a process can run more
   than one sim", but the only case it names is tests. The runtime and the editor each run one
@@ -123,6 +125,16 @@ groups are kept, because they show where future work will land.
   amendment should record why residence holds with one simulation per process.
   [[Events - Design]]'s *Registry* row and [[Clock - Design]] repeat the same argument. Found
   at S7-T6, Sep 27. **Trigger:** the next ADR-014 amendment, or `/weekly-review`'s drift check.
+
+- #prio/medium · **Should `SerialExecutor` borrow the graph instead of copying it?**: its
+  constructor copies each `TaskGraphNode`'s access mask and system pointer into its own node,
+  then drops the graph (`engine/core/src/systems/SerialExecutor.cpp:29`). Only per-node runtime
+  state, such as the command buffer, has to live in the executor; the parallel executor needs
+  that split, but not the copy. Borrowing a `const TaskGraph*`, as it already borrows systems
+  from the schedule, would remove the duplicate `ScheduleAccess` and handler copies. Analyse
+  the options, including the executor-before-graph lifetime in `App` and the tests, and
+  implement the better one if borrowing wins. Found at S7-T4, Sep 27. **Trigger:** S7-T7's
+  handler dispatch, or the parallel executor at P1.
 
 - #prio/low · **Intra-system chunking for heavy systems**: parallelize a system's entity
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the

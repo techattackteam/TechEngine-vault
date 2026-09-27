@@ -13,7 +13,9 @@
 
 **Execution status:** the registry shipped at M1. S7-T5 (#97 `1f5dda4d`, Sep 27) replaced
 M1's frame marks and per-reader cursors with a two-buffer stream that holds one Tick batch.
-S7-T6 (#98 `745f067a`, Sep 27) put the streams on `Scene` (*Scene residence*). Scheduled
+S7-T6 (#98 `745f067a`, Sep 27) put the streams on `Scene` (*Scene residence*). S7-T4 (#99
+`0218571e`, Sep 27) added handler declaration and its resolution at graph build
+(*Handler declaration*). Scheduled
 handler delivery remains Sprint 07 work.
 
 ## Purpose
@@ -109,8 +111,23 @@ S7-T6 made these calls; no artifact had decided them.
 | **Barrier calls** | `makeEventsVisible(tick)` and `retireEvents()` are the inverse: a `TE_CHECK` rejects them while a system is executing (`engine/core/src/scene/Scene.cpp:536`). |
 | **A Scene without streams** | `publish` and `read` inside a system fire a `TE_VERIFY`, because an event would be lost. The barrier calls are a silent no-op, because nothing can be lost; every Scene in the executor tests is in this state. |
 
-Until S7-T4 lands, `read` is also callable from `tick`. S7-T4's card makes handlers the only
-read path.
+Until S7-T7 lands, `read` is also callable from `tick`. S7-T7's card makes handlers the only
+read path. The clause moved there from S7-T4 on Sep 27, because S7-T7 is the first card
+that runs a handler.
+
+### Handler declaration: shipped Sep 27
+
+S7-T4 made these calls; no artifact had decided them.
+
+| Call | Shape |
+|---|---|
+| **Declaration** | `registration.on<Event>(handler)` inside `ISystem::init`, where the handler is a lambda taking `(Scene&, std::span<const Event>)`. It gets no `SimulationContext`. The handler is stored type-erased, and the entry keeps its handlers in declaration order, duplicate types included (`engine/core/include/TechEngine/core/systems/ScheduleRegistration.hpp:76`). |
+| **Same instance** | Binding to the persistent instance is a convention: the lambda captures `this`. Nothing stops a lambda from capturing something else. |
+| **When the type resolves** | At graph build, not at declaration, because `configureSimulation()` can add a system before it registers the event type. The declaration keeps a pointer to `eventTypeId<Event>` and calls it then. |
+| **Which registry** | `TaskGraph` takes the `EventRegistry` as a constructor argument (`engine/core/src/systems/TaskGraph.cpp:170`). A type counts as registered only if that registry's `find` knows it, because `eventTypeId<T>()` is one process-wide slot that any registry writes. |
+| **An unregistered type** | A `TE_CHECK` that names the system, and the schedule stays unfrozen, like an order constraint on an unregistered system. If the check is allowed to continue, that handler is skipped. |
+| **A late declaration** | A handler declared through a registration handle kept past `freeze()` is a `TE_CHECK`, like the other setters. Before the freeze, a handle declaration is appended after the `init` handlers. |
+| **Conflict edges** | None. Handlers live outside `ScheduleAccess`, so two systems handling one type at equal priority share a level. |
 
 ### Scheduled Tick delivery: accepted Sep 26, unbuilt
 
@@ -140,7 +157,7 @@ following Tick.
 
 The selected persistent instance describes its own entry before graph build using a
 constrained, entry-scoped declaration surface. The existing `ScheduleRegistration`
-may be extended for this, but class and method names are provisional. The app still
+was extended for this; S7-T4 shipped the handler half (*Handler declaration*). The app still
 chooses which systems enter the schedule. Component schemas and event types are
 registered separately before declarations resolve; graph build creates no temporary
 system just to read a diagnostic name (ADR-022).
@@ -329,8 +346,8 @@ Three ordering facts, each of which is a silent bug if reversed.
   during S3-T9.
 - **Editor watchdog UX**, meaning what the editor shows and how it filters. No direct
   host-frame Scene-stream read is part of the Tick contract. **Owner:** later editor design.
-- **API spelling**, covering the entry-scoped declaration method/type names,
-  `publish<T>` and the visible-batch view type, and the header layout. This is a
+- **API spelling**, covering `publish<T>` and the header layout. The declaration method
+  shipped as `on<Event>` and the batch view as `std::span<const Event>` (S7-T4). This is a
   naming pass rather than a decision. **Owner:** implementation plus
   `CONVENTIONS.md`.
 - **Re-registration on DLL reload.** The registry rejects a second `registerEvent<T>`, so a
