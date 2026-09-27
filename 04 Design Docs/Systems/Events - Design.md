@@ -13,7 +13,8 @@
 
 **Execution status:** the registry shipped at M1. S7-T5 (#97 `1f5dda4d`, Sep 27) replaced
 M1's frame marks and per-reader cursors with a two-buffer stream that holds one Tick batch.
-Scene ownership and scheduled handler delivery remain Sprint 07 work.
+S7-T6 (#98 `745f067a`, Sep 27) put the streams on `Scene` (*Scene residence*). Scheduled
+handler delivery remains Sprint 07 work.
 
 ## Purpose
 
@@ -96,6 +97,20 @@ during Tick N+1 therefore survive the retirement of Tick N's batch.
 a caller bug: it fires a `TE_VERIFY` and changes nothing, so the old batch, the staged events
 and the recorded Tick all stay as they were. The executor cannot reach this path, because a
 failed phase throws before the barrier and ends the simulation.
+
+### Scene residence: shipped Sep 27
+
+S7-T6 made these calls; no artifact had decided them.
+
+| Call | Shape |
+|---|---|
+| **When streams are built** | `Scene` keeps its constructor and holds an optional `EventStreamManager`. `App::finalizeSimulation()` calls `buildEventStreams(m_eventRegistry)` after `configureSimulation()`, because `App` constructs its Scene before any registration runs (`engine/app/src/App.cpp:113`). A second build is a `TE_VERIFY` reject that keeps the existing streams and their events. |
+| **Simulation-only** | `publish<T>` and `read<T>` work only while a system of **that** Scene is executing. Outside one, a `TE_CHECK` fires, `publish` drops and `read` returns empty (`engine/core/src/scene/Scene.cpp:528`). |
+| **Barrier calls** | `makeEventsVisible(tick)` and `retireEvents()` are the inverse: a `TE_CHECK` rejects them while a system is executing (`engine/core/src/scene/Scene.cpp:536`). |
+| **A Scene without streams** | `publish` and `read` inside a system fire a `TE_VERIFY`, because an event would be lost. The barrier calls are a silent no-op, because nothing can be lost; every Scene in the executor tests is in this state. |
+
+Until S7-T4 lands, `read` is also callable from `tick`. S7-T4's card makes handlers the only
+read path.
 
 ### Scheduled Tick delivery: accepted Sep 26, unbuilt
 
@@ -264,7 +279,7 @@ that shared driver. ADR-020's Tick barrier governs the pending Scene integration
 `EventStreamManager` (`core/events/`) owns the `std::vector<EventStream>`, indexed by the
 registry's dense stream index.
 
-It is driver-owned at M1. **This is the object that moves onto `Scene` at M5** (ADR-014 §5).
+It was driver-owned at M1. S7-T6 moved it onto `Scene` (ADR-014 §5; *Scene residence*).
 S7-T5 removed its frame marks and cursor API; it now forwards `makeVisible(tick)` and
 `retire()` to every stream.
 

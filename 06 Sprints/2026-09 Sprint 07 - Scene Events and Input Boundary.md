@@ -61,12 +61,16 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   declaration order, resolve only registered event types before graph freeze, and carry
   handler metadata to the executor without creating event conflict edges. Prove
   duplicate-type handlers and invalid or late declarations behave deterministically.
+  Make handlers the only read path: `Scene::read` stops being callable from `tick` and
+  only the executor reads a batch for handlers. Move S7-T6's `SceneEventTests` readers
+  from `tick` to handlers. Agreed Sep 27 at S7-T6's review; record it in
+  [[Events - Design]] at close.
 - [x] **S7-T5** · Replace event cursors with stable Tick batches · P1 · 🟢 Deep · 4-6h ·
   done: remove M1 frame marks and scheduled-reader cursors; expose Tick N's immutable
   visible batch during Tick N+1 and retire it only when asked after that phase. Prove
   quiet and consecutive Ticks, publisher order and FIFO, and a stable view when a
   handler publishes the same type and staging grows. Start with the invalidation case.
-- [ ] **S7-T6** · Place registered event streams on Scene · P1 · 🟢 Deep · 3-5h ·
+- [x] **S7-T6** · Place registered event streams on Scene · P1 · 🟢 Deep · 3-5h ·
   done: register event types at the app composition root before stream construction,
   give each Scene its own streams, and expose the simulation-only publish/read seam.
   Prove two Scenes sharing type identity do not share event contents and late type

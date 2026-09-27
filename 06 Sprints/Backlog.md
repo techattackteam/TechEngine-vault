@@ -109,6 +109,21 @@ groups are kept, because they show where future work will land.
   and graph tests use them heavily. **Trigger:** a bug where a call-site declaration hides a
   system's own, or the next rewrite of those tests.
 
+- #prio/medium · **Declare the event types a system publishes**: ADR-014 §4 makes event
+  access a declared `SystemAccess` category, and only the reader side was amended to
+  handlers. `Scene::publish` accepts any registered type from any system, and no card owns
+  the publish declaration. The shape is a publish declaration on S7-T4's entry-scoped
+  surface, checked in `Scene::publish` the way `validateWrite` checks components. Found at
+  S7-T6's review, Sep 27. **Trigger:** S7-T4 landing its declaration surface.
+
+- #prio/low · **ADR-014 §5 overstates multi-simulation**: it says "a process can run more
+  than one sim", but the only case it names is tests. The runtime and the editor each run one
+  simulation, and [[Clock - Design]] already says the v2 editor hosts a client only. The
+  per-Scene stream residence still holds, so this narrows the rationale, not the decision; the
+  amendment should record why residence holds with one simulation per process.
+  [[Events - Design]]'s *Registry* row and [[Clock - Design]] repeat the same argument. Found
+  at S7-T6, Sep 27. **Trigger:** the next ADR-014 amendment, or `/weekly-review`'s drift check.
+
 - #prio/low · **Intra-system chunking for heavy systems**: parallelize a system's entity
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
   parallel executor shows one system node dominates a tick.

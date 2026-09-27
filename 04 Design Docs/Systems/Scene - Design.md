@@ -358,7 +358,8 @@ See [[Game Loop - Frame Flow]] and ADR-019 for delivery and interpolation.
 
 S6-T8 shipped deferred structural commands, barrier-service hooks and declared-write
 stamps under ADR-020's Tick barrier. [[Events - Design]] records the accepted
-next-Tick batch rule; the event integration remains unbuilt.
+next-Tick batch rule. S7-T6 (#98) put the event streams on Scene; handler delivery at the
+barrier remains unbuilt.
 
 Story B closed with five cards (S6-T1 through S6-T5): entity handles and registry,
 archetype storage and transitions, queries, built-in hierarchy and transform propagation.
