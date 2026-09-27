@@ -33,7 +33,6 @@ kanban-plugin: board
 ## Story D: Close other fired decisions and implementation seams
 
 - [ ] **S7-D3** · Decide the public error-handling policy · P2 · 🟢 Deep · 4-6h: settle the open conventions row and `[[nodiscard]]` policy in an ADR.
-- [ ] **S7-T1** · Correct app-local includes · P3 · 🤖 Auto · 2-3h: four quoted includes in `apps/` to angle brackets, plus `<string>` in `EditorApp.hpp`; `platform` is already public.
 - [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟠 Moderate · 3-4h: install and verify the GLFW allocator seam.
 
 
@@ -62,6 +61,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S7-T1** · Correct app-local includes · P3 · 🤖 Auto · 2-3h: PR #96 on `S7-T1/app-local-includes`, opened by the autonomous lane Sep 27. The linux-debug build and all 428 tests pass under Xvfb. Miguel reviews and merges.
 
 
 ## ✅ Done: Sprint 07

@@ -152,6 +152,15 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/medium · **The autonomous lane's test line fails without a display**: step 6 of
+  [[Autonomous Lane - Routine Prompt]] runs a bare `ctest --preset linux-debug`. The cloud
+  sandbox has no `DISPLAY`, so 18 of 428 cases (every Window, Client, renderer and
+  editor case that opens a window) fail on GLFW error 65550. Under
+  `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug`, which matches `ci.yml`,
+  all 428 pass. Xvfb is already installed in the image. The note's measured "200/200" row is
+  stale for the same reason. Found by the Sep 27 fire on S7-T1. **Trigger:** the next time
+  the routine prompt is pasted into the routine.
+
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly**: report-once is per call site through a function-local static (ADR-011 §5), and
   `catch_discover_tests` hides that by giving every Catch2 case its own process. Two
