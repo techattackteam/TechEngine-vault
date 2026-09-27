@@ -61,7 +61,7 @@ accepted in S7-D2. Both event and input delivery are sprint implementation work.
   declaration order, resolve only registered event types before graph freeze, and carry
   handler metadata to the executor without creating event conflict edges. Prove
   duplicate-type handlers and invalid or late declarations behave deterministically.
-- [ ] **S7-T5** · Replace event cursors with stable Tick batches · P1 · 🟢 Deep · 4-6h ·
+- [x] **S7-T5** · Replace event cursors with stable Tick batches · P1 · 🟢 Deep · 4-6h ·
   done: remove M1 frame marks and scheduled-reader cursors; expose Tick N's immutable
   visible batch during Tick N+1 and retire it only when asked after that phase. Prove
   quiet and consecutive Ticks, publisher order and FIFO, and a stable view when a
@@ -138,7 +138,7 @@ first scripting consumer and is not part of these cards.
   done: settle `CONVENTIONS.md`'s open Error handling row in an ADR using
   `addLogSink` and `Reader` as current cases; state the `[[nodiscard]]` policy
   without rewriting working APIs speculatively.
-- [ ] **S7-T1** · Correct app-local includes · P3 · 🤖 Auto · 2-3h ·
+- [x] **S7-T1** · Correct app-local includes · P3 · 🤖 Auto · 2-3h ·
   done: change the four quoted includes in `apps/` to angle brackets (`CONVENTIONS.md`
   § *Includes*), after checking that each path resolves through the app's include dirs,
   and include `<string>` directly in `apps/editor/src/EditorApp.hpp`. Preserve the
@@ -173,7 +173,7 @@ first scripting consumer and is not part of these cards.
   done: amend ADR-009 for workflow-only PRs receiving no build, verify the stated
   master-run mitigation, and correct `ci.yml`'s skipped-check comment without
   changing the working gate.
-- [ ] **S7-P5** · Resolve old routine-prompt drift · P3 · 🟡 Light · 2h ·
+- [x] **S7-P5** · Resolve old routine-prompt drift · P3 · 🟡 Light · 2h ·
   done: establish whether the old Claude routine still runs and reconcile its
   prompt-sync guidance with the vault, or record that the old routine is retired.
 - [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h ·

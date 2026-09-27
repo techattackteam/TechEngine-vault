@@ -11,9 +11,9 @@
 [[ADR-006 - v2 core architecture & module layout]] §1 §4
 **Id primitive:** [[StringId - Design]]
 
-**Execution status:** stream storage and registry shipped at M1 with frame marks and
-per-reader cursors. ADR-014's Sep 26 amendment replaces that delivery rule with a
-next-Tick batch. Scene ownership and scheduled handler delivery remain Sprint 07 work.
+**Execution status:** the registry shipped at M1. S7-T5 (#97 `1f5dda4d`, Sep 27) replaced
+M1's frame marks and per-reader cursors with a two-buffer stream that holds one Tick batch.
+Scene ownership and scheduled handler delivery remain Sprint 07 work.
 
 ## Purpose
 
@@ -56,19 +56,14 @@ That fixes **F28** structurally, rather than by convention.
 
 Pinned 2026-08-02, before Story E.
 
-### Stream anatomy: shipped M1 storage
+### Stream anatomy
 
 There is one stream per event type, living on the `Scene`.
 
-A stream is a contiguous buffer of events carrying **absolute `u64` sequence numbers**. Three
-positions cut it up: the retirement head, the visible end, and the staging tail.
-
-ADR-014 calls this "double-buffered". M1 realizes it as one buffer, not two. The
-Sep 26 amendment changes delivery and retention; the representation can be adapted
-without assuming that frame marks or reader cursors remain.
-
-> Where this note says "ring", read it as the linear compacted buffer described under
-> *Stream storage*. Amended 2026-08-06.
+A stream is two contiguous buffers: the **visible** batch that handlers read, and the
+**staging** buffer that publishers append to. This is ADR-014's "double-buffered" taken
+literally. M1 had used one compacted buffer with sequence numbers instead; S7-T5 replaced it
+(see *Stream storage*).
 
 ### Staging, at M1
 
@@ -86,16 +81,21 @@ layout's owner.)
 
 ### Making events visible
 
-ADR-020 requires the staged batch to become visible at each Tick barrier. The current
-stream code records `{endSeq, frameIndex, tick}`. The accepted target needs only the
-batch's Tick identity; `Clock::tick()` is a process-wide diagnostic counter, not its
-lifetime anchor. S7-T3 (#94) renamed its advancing method to `advanceTick()` and dropped
-the frame argument from `TickBarrierServices::flushEvents`; the stream's `frameIndex`
-marks remain until S7-T5 removes them.
+ADR-020 requires the staged batch to become visible at each Tick barrier.
+`makeVisible(tick)` swaps the two buffers and records the Tick, so no payload is copied
+(`engine/core/src/events/EventStream.cpp:18`). The recorded Tick is only the batch's identity,
+readable through `visibleTick()`; nothing about its lifetime depends on it. `Clock::tick()`
+is a process-wide diagnostic counter, not that anchor. S7-T3 (#94) renamed its advancing
+method to `advanceTick()` and dropped the frame argument from
+`TickBarrierServices::flushEvents`.
 
-M1 makes events visible by moving sequence bounds without copying payloads. The
-scheduled handler path must also keep the visible batch stable when publication
-grows staging storage; its final buffer operation is implementation work.
+`retire()` empties the visible batch and leaves staging alone. A handler's publications
+during Tick N+1 therefore survive the retirement of Tick N's batch.
+
+**Only one batch is ever visible.** A `makeVisible` before the previous batch was retired is
+a caller bug: it fires a `TE_VERIFY` and changes nothing, so the old batch, the staged events
+and the recorded Tick all stay as they were. The executor cannot reach this path, because a
+failed phase throws before the barrier and ends the simulation.
 
 ### Scheduled Tick delivery: accepted Sep 26, unbuilt
 
@@ -107,9 +107,8 @@ successful system phase it retires Tick N's batch, then the barrier makes Tick N
 staged events visible. A failed phase does not retire the old batch.
 
 The visible batch must remain valid while a handler publishes, including another
-event of the same type. M1's one-buffer `EventStream::stage` can grow storage and
-invalidate a span into that buffer. Separate visible and staging storage, or another
-stable-view mechanism, must close this before scheduled delivery ships.
+event of the same type. The two-buffer stream guarantees this by construction: growth only
+ever reallocates staging, so a span into the visible batch cannot move until `retire`.
 
 An advance with zero ticks performs no delivery or retirement. Several catch-up ticks
 repeat the same rule independently, even if no render frame occurs between them. A
@@ -188,100 +187,74 @@ theory.
 
 ## Stream storage
 
-Pinned 2026-08-06, with S3-T9. This section describes the shipped M1 implementation.
-Its cursor and frame-mark behavior must change to implement the Sep 26 contract.
+Pinned 2026-08-06, with S3-T9. Rewritten 2026-09-27 for S7-T5's two-buffer stream.
 
-**Storage.** One **type-erased** `EventStream` over a byte buffer, sized from the registry
-record. `EventStreamManager` holds a `std::vector<EventStream>`, indexed by the dense stream
-index, and the driver owns the manager (see *Container and loop wiring*). `publish<T>`
-memcpys, because registration already guaranteed the type is trivially copyable. `read<T>`
-asserts that the stream's id is `eventTypeId<T>()`, so type safety here is a runtime check
-rather than one the compiler makes.
+**Storage.** One **type-erased** `EventStream` over two byte buffers, sized from the registry
+record (`engine/core/include/TechEngine/core/events/EventStream.hpp:14`). `EventStreamManager`
+holds a `std::vector<EventStream>`, indexed by the dense stream index. `publish<T>` memcpys,
+because registration already guaranteed the type is trivially copyable. `read<T>` asserts
+that the stream's id is `eventTypeId<T>()`, so type safety here is a runtime check rather
+than one the compiler makes.
 
-**Overflow.** A capacity hint is given at registration, and growth is **geometric**. In steady
-state nothing allocates, which is the property the card's `operator new` count asserts. A leak
-then shows up as growth rather than as silent loss. This is bounded in practice, not by
-construction.
+**Overflow.** A capacity hint is given at construction, and growth is **geometric**. Only the
+staging buffer ever grows. The two buffers swap every Tick, so each one grows on its own, and
+a burst can cost two regrowths before the stream settles. Once both have settled, nothing
+allocates. This is bounded in practice, not by construction. `capacity()` reports the
+staging buffer only.
 
-**Reads.** Compaction is **eager, on every retire**. So the visible region is always
-contiguous, and `read<T>` returns a single `std::span`.
+**Reads.** The visible batch is always the whole of one buffer, so `read<T>` returns a single
+`std::span` with no compaction step.
 
-**Shipped spelling.** ADR-014 §3's *flip* is spelled **`makeVisible(frame, tick)`** in code, and its
-mark is an `EventBatchMark`. "Flip" is GPU page-flip vocabulary, and it implies two buffers
-swapping, which is exactly the mechanism this section replaced. Same refinement precedent as
-`dt` becoming `deltaTime` (`CONVENTIONS.md` → *Names are spelled out*). The Tick-only
-signature remains implementation work.
+**Shipped spelling.** ADR-014 §3's *flip* is spelled **`makeVisible(tick)`** in code. The name
+predates the two buffers and is kept: it says what the caller gets, while "flip" says how the
+stream happens to do it. Same refinement precedent as `dt` becoming `deltaTime`
+(`CONVENTIONS.md` → *Names are spelled out*).
 
-### Compaction replaces the wrap, so the buffer is linear rather than a ring
+### Why two buffers replaced M1's compacted buffer
 
-Retire drops the retired batches, then memmoves what is left down to the front. Publishes only
-ever append at the tail.
+M1 kept every event in one linear buffer and memmoved the survivors to the front on each
+retire. Under the Sep 26 contract a handler publishes while it reads the visible batch, and
+a publish that grew that buffer reallocated it, leaving the handler's span dangling.
 
-That has four consequences.
+Two options were weighed on 2026-09-27:
 
-- **The head's *index* is always 0**, while its *sequence* still climbs with every retire. So
-  no head index is stored, there is no compact-or-grow decision to make, and free space is
-  always at the tail. That is one fewer state variable and one fewer branch than the lazy
-  variant below.
-- An index is `seq − retireHeadSeq`, with **no modulo anywhere**. The arithmetic gets simpler,
-  not harder.
-- Growth is the *only* overflow path, since a compaction that just ran frees nothing.
-- The cost is one `O(retained)` move per frame per stream, paid unconditionally. It happens
-  whether or not anything would have wrapped, and whether or not the buffer is near full.
+| Option | Why it lost or won |
+|---|---|
+| **One buffer, old allocations kept alive until `retire`** | Keeping only the previous allocation is not enough: a `read` after one growth points into the second allocation, which a second growth in the same Tick frees. So every allocation from the Tick must be held, peak memory grows with each burst, and the per-Tick memmove stays. Rejected. |
+| **Two buffers, swapped at the barrier** | Stability is structural: nothing writes to or reallocates the visible buffer between `makeVisible` and `retire`. `retire` becomes O(1) and the memmove disappears. The cost is a second allocation per stream. **Chosen.** |
 
-**Lazy compaction was weighed and dropped** on 2026-08-06.
-
-Compacting only when the tail hits capacity would make retire an O(1) index advance, and it
-would still keep single-span reads. The cost is a buffer sized for the retained events *plus*
-everything published between compactions, along with the extra state listed above.
-
-It was chosen against deliberately. Simplicity now, with the profiler as the trigger to
-revisit.
+The M1 sequence numbers went with the compacted buffer. The rewind work in *Open* may want
+absolute sequences again; a counter can be added back then.
 
 ADR-014 §7 asks for something contiguous, double-buffered and amortized, with no fixed-size
-node churn. This satisfies that, so nothing here reaches the ADR.
+node churn. This satisfies it more literally than M1 did, so nothing here reaches the ADR.
 
-## How one stream works: shipped M1 mechanism
+## How one stream works
 
-The frame marks and cursors below document current code, not the accepted Tick-only
-delivery target in *Scheduled Tick delivery*.
-
-Two members carry everything.
+Two `Buffer`s carry everything. Each holds its own storage, capacity and count, and the stream
+also records the Tick that made the visible batch visible.
 
 | Member | Holds |
 |---|---|
-| `m_storage` | The events, as one flat byte array of `capacity × elementSize`. Index 0 is **always** the oldest retained event. |
-| `m_marks` | One entry per batch made visible: `{endSequence, frameIndex, tick}`. These are not events. They are the bookkeeping that lets `retire` apply ADR-014 §3's rule, because that rule is about *when* a run of events became visible. |
-
-Three `u64` positions cut the storage into three regions. They are **absolute sequence numbers,
-never indices**. An index is `seq − m_retireHeadSequence`, so sequences keep counting up forever
-while indices stay small.
-
-| Region | From | To | Who sees it |
-|---|---|---|---|
-| **Visible** | `m_retireHeadSequence` | `m_visibleEndSequence` | Readers, through their cursors |
-| **Staged** | `m_visibleEndSequence` | `m_stagingTailSequence` | Nobody yet |
-| **Free** | `m_stagingTailSequence` | `m_capacity` | Nobody |
+| `m_visible` | Tick N's batch while Tick N+1 runs. Nothing writes to it until `retire`. |
+| `m_staging` | Everything published since the last barrier. Appends and growth happen only here. |
+| `m_visibleTick` | The Tick passed to the last successful `makeVisible`. |
 
 | Call | What moves |
 |---|---|
-| `publish<T>` | Writes one element at the end of the staged region and increments `m_stagingTailSequence`. It grows the buffer only if the tail hit capacity. **Readers observe no change.** |
-| `makeVisible(f, t)` | Sets `m_visibleEndSequence = m_stagingTailSequence`, so the staged region joins the visible one, and pushes a mark `{that sequence, f, t}`. **No bytes move.** It is a no-op when nothing was staged, so a quiet sub-step records no mark. |
-| `retire(f, t)` | Walks `m_marks` from the front while `f > mark.frameIndex && t > mark.tick`. It takes the last such `endSequence` as the new head, erases those marks, then memmoves what survives down to index 0. |
+| `publish<T>` | Appends one element to staging, growing staging if it is full. **Readers observe no change.** |
+| `makeVisible(tick)` | Swaps the two buffers and records the Tick. **No bytes move.** A quiet Tick swaps too, so the visible batch is empty rather than a replay. It refuses with a `TE_VERIFY` if the visible batch was never retired. |
+| `retire()` | Sets the visible count to 0. Staging is untouched. |
 
 ```mermaid
 flowchart LR
-    A["publish<br/>written at the tail"] --> B["staged<br/>invisible to readers"]
-    B -->|"makeVisible(f, t)"| C["visible<br/>cursors can read it"]
-    C -->|"retire(f, t)<br/>only after a frame AND a tick"| D["gone<br/>space reclaimed by compaction"]
+    A["publish<br/>appended to staging"] --> B["staged<br/>invisible to readers"]
+    B -->|"makeVisible(tick)<br/>swap buffers"| C["visible<br/>every handler reads the same batch"]
+    C -->|"retire()<br/>after the system phase succeeds"| D["empty buffer<br/>becomes staging at the next swap"]
 ```
 
-A cursor is one `u64`. Reading hands back everything from the cursor up to
-`m_visibleEndSequence`, then parks the cursor there. That is exactly-once delivery by
-construction.
-
-A cursor older than `m_retireHeadSequence` is clamped forward to it. That is how a lagging
-reader misses silently instead of dangling.
+There is no cursor. Every reader gets the whole visible batch, as often as it asks, until
+`retire`. Exactly-once delivery is the executor's job: it presents the batch once per handler.
 
 ## Container and loop wiring: historical M1 driver
 
@@ -292,7 +265,8 @@ that shared driver. ADR-020's Tick barrier governs the pending Scene integration
 registry's dense stream index.
 
 It is driver-owned at M1. **This is the object that moves onto `Scene` at M5** (ADR-014 §5).
-Its frame marks and cursor API must change with the Sep 26 delivery amendment.
+S7-T5 removed its frame marks and cursor API; it now forwards `makeVisible(tick)` and
+`retire()` to every stream.
 
 | Call | Shape |
 |---|---|
