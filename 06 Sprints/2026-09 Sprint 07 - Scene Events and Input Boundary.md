@@ -169,7 +169,7 @@ first scripting consumer and is not part of these cards.
   done: carry S6-P1's warning/tidy and Tracy-pin reconciliation into ADR-005/008/013,
   B3 and [[Profiler - Design]]; record the `App.cpp` coverage exclusion and decide
   whether its scope should narrow. Record unresolved decisions rather than inventing policy.
-- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h ·
+- [x] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h ·
   done: add a gate step to `.claude/commands/card-close.md` that checks the merged
   commit's branch prefix against the card being closed, without rejecting a still-open
   card that landed in halves. Branches named `sweep/…` belong to the lane's code sweep,
@@ -199,6 +199,9 @@ first scripting consumer and is not part of these cards.
   done: specify where a capture, Tracy trace and observed behavior are stored and
   linked from a sprint review, using the Sprint 06 showcase to identify what was
   observed and what was not captured.
+- [x] **S7-P9** · Make `ci-docs.yml` parse again · P1 · 🟡 Light · 1h ·
+  done: the workflow parses, and a docs-only PR reports the nine required contexts again.
+  Pulled from [[Backlog]] on Sep 28 after the lane found the break; it blocked S7-P2.
 
 ### Story F: Backlog code hygiene for the Auto lane
 
