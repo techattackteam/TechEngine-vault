@@ -1,7 +1,8 @@
 # Input: Design
 
 > Living design doc. S7-D2 settled the local input contract on 2026-09-26.
-> The ordered ingress exists; engine codes and scheduled input delivery are unbuilt.
+> The ordered ingress and engine control identifiers exist (S7-T9, #105); scheduled
+> input delivery is unbuilt.
 
 **Module:** `platform` captures and normalizes controls; `app` owns ingress;
 `core` schedules simulation readers. **Kind:** engine input mechanism.
@@ -24,6 +25,7 @@ command component belongs to this local input slice.
 | Rule | Source |
 |---|---|
 | `platform` translates supported GLFW key and mouse-button values into separate engine-owned identifiers before ingress. Unknown controls produce no gameplay notification. | ADR-006 §1; S7-D2 |
+| `Key` covers all 120 named GLFW 3.4 keys and `MouseButton` all 8 GLFW buttons. Both are numbered densely in GLFW's order, which is the "ascending engine key order" below. Each ends with an `Unknown` value outside `KEY_COUNT` / `MOUSE_BUTTON_COUNT`; the window callbacks drop it before `publish`, so it takes no sequence number, and `InputState` ignores it. `InputEvent` carries typed `key` and `button` fields; `InputState::isHeld` takes either type. | S7-T9 `/card-start`, Sep 28; `engine/platform/src/window/GlfwControls.cpp` |
 | The host publishes value events with capture sequence and monotonic time. `InputBuffer` remains the bounded, ordered cross-thread handoff. | ADR-018 §2; [[Simulation Thread - Design]] |
 | Simulation detaches a batch before each fixed Tick. Every interested selected system receives that Tick's input at its scheduled slot before `tick`, under its declared component access. | ADR-020 §1, Sep 26 amendment |
 | Press and release retain capture order, even when both occur between ticks. GLFW repeat does not create gameplay presses. | S7-D2; [[Simulation Thread - Design]] |
@@ -46,7 +48,7 @@ flowchart LR
 For example, a GLFW W press becomes an engine W-key press in ingress. In the
 first Tick that consumes it, a selected movement system sees that press before
 its `tick`. That Tick and later Ticks report held while W stays down; the captured release
-ends that held state. The names of the C++ types and handler API remain open.
+ends that held state. The handler API's names remain open.
 
 The input batch is read-only for the duration of its Tick. Each selected system
 sees the same captured events in sequence order, across key, button, motion and
@@ -93,6 +95,10 @@ raw code-indexed state; `InputBuffer.cpp:10-57` preserves order and recovery;
 notification path or script consumer exists. S7-D2 changes design only; no
 build, test or demo verified the future delivery.
 
+At `7b410b61` (#105), the key and button callbacks translate through
+`engine/platform/src/window/GlfwControls.cpp` and publish engine identifiers, so
+the raw-integer grounding above is historical. Delivery to systems is still unbuilt.
+
 ## Development cards
 
 [[2026-09 Sprint 07 - Scene Events and Input Boundary]] records S7-T9-T12 as
@@ -102,7 +108,7 @@ overflow plus runtime proof. Script delivery awaits the first scripting consumer
 
 ## Open
 
-- Exact type and registration names are implementation choices.
+- Input handler registration names are S7-T10's implementation choice.
 - Scroll and text input need their own consumers; the current `Window` has no
   scroll or character callback. Text must not be inferred from key presses.
 - Editor viewport capture needs a reset when ownership leaves gameplay, so

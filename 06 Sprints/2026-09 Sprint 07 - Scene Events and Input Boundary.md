@@ -116,19 +116,20 @@ consumer-triggered work is parked in [[Backlog]].
 
 #### Dev cards: input implementation
 
-- [ ] **S7-T9** · Translate GLFW controls to engine identifiers · P1 · 🟢 Deep · 4-6h ·
+- [x] **S7-T9** · Translate GLFW controls to engine identifiers · P1 · 🟢 Deep · 4-6h ·
   done: define separate engine key and mouse-button identifiers; translate known
   GLFW values at the platform callback before publishing to `InputBuffer` and
   ignore unsupported values. Keep raw GLFW codes out of the simulation-facing
   event and held-state contract. Prove known and unknown controls, press/release
   order, ignored GLFW repeat, and the independent presentation input copy.
-- [ ] **S7-T10** · Deliver input edges to selected systems · P1 · 🟢 Deep · 4-6h ·
+  Shipped in #105 (`7b410b61`, Sep 28).
+- [ ] **S7-T10** · Deliver input edges to selected systems · P1 · 🟠 Moderate · 2-3h ·
   done: let each persistent selected system declare an input handler at startup.
   Deliver the consuming Tick's captured key, button, motion and focus events in
   sequence order at that system's scheduled slot before `tick`, under its declared
   component access. Prove press and release between two Ticks, two readers,
   declaration order, no delivery without a Tick, and multiple catch-up Ticks.
-- [ ] **S7-T11** · Generate held input and handle focus resets · P1 · 🟢 Deep · 3-5h ·
+- [ ] **S7-T11** · Generate held input and handle focus resets · P1 · 🟠 Moderate · 2-3h ·
   done: generate one held notification per held key or button after captured events
   in each Tick. Clear held controls and pointer baseline on focus transition;
   regain starts neutral. Prove press-plus-release in one Tick, quiet held Ticks,
@@ -157,7 +158,7 @@ first scripting consumer and is not part of these cards.
   `sdk-smoke` public-boundary intent. `platform` is already a public `engine/app`
   dependency on `7e52fe3a`; that half of the original card needs no change. Re-tagged
   Auto on Sep 27.
-- [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟠 Moderate · 3-4h ·
+- [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟡 Light · 1-2h ·
   done: install GLFW 3.4's allocator before initialization and check allocation/free
   pairing and disabled-profiler behavior. This is the fired GLFW portion of
   [[ADR-013 - Profiler (Tracy-backed instrumentation)]] §7; Jolt and miniaudio wait
@@ -273,6 +274,13 @@ were pulled in for it (§ *🤖 Auto lane*). The attended lane drops to 14 Deep,
 Moderate and three Light sessions. The lane is not free: seven PRs at about 15 minutes of
 review each is roughly 1h45 of Miguel's time, best spent on Light days. At one PR per
 weekday, the ten weekdays left fit all seven only if the routine resumes early in week 1.
+
+**Retag, Sep 28:** S7-T9 took about a 🟡 Light session against its 🟢 Deep estimate. So
+S7-T10 and S7-T11 went from 🟢 Deep to 🟠 Moderate (2-3h each), and S7-T2 went from
+🟠 Moderate to 🟡 Light (1-2h). The code each card needs already exists in part. Story B's
+five Deep cards merged in one day (Sep 27), and Claude wrote large parts of three of them.
+The estimates assume Miguel writes everything. That sizing rule is for the Oct 3-4
+weekly review.
 
 The Sprint 06 Scene-proof backlog entry is removed based on Miguel's reported
 showcase, with the automated-test limit retained in the Sprint 06 review. No

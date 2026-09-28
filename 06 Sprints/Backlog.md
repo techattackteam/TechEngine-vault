@@ -122,6 +122,15 @@ groups are kept, because they show where future work will land.
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
   that section.
 
+- #prio/low · **`InputState` leftovers from S7-T9's review**: `isHeld` checks `focused`
+  although `apply` already keeps both bitsets empty while unfocused
+  (`engine/platform/src/input/InputState.cpp:36`, `:43`). The two copies of that rule could
+  disagree silently if S7-T11 reads the bits directly for held notifications. The same file
+  casts to an unqualified `size_t`, and no test covers the `Unknown` guards in `apply` and
+  `isHeld`. **Trigger:** S7-T11, which edits this file.
+- #prio/low · **`inputKindLabel` has no caller**: `engine/platform/src/window/Window.cpp:178`,
+  a `static` function unused since #92. **Trigger:** the next edit to `Window.cpp`.
+
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
