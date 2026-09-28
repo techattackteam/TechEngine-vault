@@ -34,7 +34,6 @@ kanban-plugin: board
 ## Story E: Repair fired process and evidence gaps
 
 - [ ] **S7-P1** · Reconcile build/profiler and App coverage policy · P2 · 🟢 Deep · 4-6h: carry S6-P1 and record the App coverage exclusion.
-- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h: a `/card-close` gate step checking the merged branch prefix.
 - [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🤖 Auto · 4-6h: `tools/check-vault-citations.py` against the reconciliation SHA.
 - [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h: amend ADR-009 and fix the skipped-check comment.
 - [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h: settle the widened sweep's workflow home.
@@ -56,6 +55,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h: #103 on `S7-P2/card-close-branch-gate`, opened by the lane Sep 28. It changes only `.claude/commands/card-close.md`. Yours to review and merge.
 
 
 ## ✅ Done: Sprint 07
