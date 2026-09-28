@@ -55,7 +55,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h: #103 on `S7-P2/card-close-branch-gate`, opened by the lane Sep 28. It changes only `.claude/commands/card-close.md`. Yours to review and merge.
+- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h: #103 on `S7-P2/card-close-branch-gate`, opened by the lane Sep 28. It changes only `.claude/commands/card-close.md`. Yours to review and merge. **It cannot merge yet:** `ci-docs.yml` does not parse, so its required checks never report (Sep 28 afternoon fire, [[Backlog]] § *etc*).
 
 
 ## ✅ Done: Sprint 07
