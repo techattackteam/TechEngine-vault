@@ -277,17 +277,6 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
-- #prio/xhigh · **`ci-docs.yml` does not parse, so no docs-only PR can merge**: #95
-  (`0d0ecea`, Sep 27) replaced an em dash with a colon in the `stand-in` step, and
-  `run: echo "Docs-only change: …"` (`.github/workflows/ci-docs.yml:108`) is now a plain
-  YAML scalar that contains `: `. PyYAML rejects it: "mapping values are not allowed here",
-  line 108, column 36. Every `ci-docs` run checked (115-118) failed at once with its file path
-  as its name and no jobs, and the nine required contexts never report on a
-  docs-only or `.claude/**`-only PR. #103 has had no check since Sep 28 08:10 UTC. Code PRs are
-  not affected, because `ci.yml` reports for them, but every push to `master` also shows a
-  red `ci-docs` run. The fix is to quote the whole `run:` value or use a `|` block. It is
-  outside the autonomous lane because it touches `.github/workflows/`. Found by the Sep 28
-  afternoon fire. **Trigger:** fired; #103 cannot merge until it lands.
 - #prio/medium · **The autonomous lane's test line fails without a display**: step 6 of
   [[Autonomous Lane - Routine Prompt]] runs a bare `ctest --preset linux-debug`. The cloud
   sandbox has no `DISPLAY`, so 18 of 428 cases (every Window, Client, renderer and

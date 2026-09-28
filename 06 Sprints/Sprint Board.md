@@ -51,11 +51,12 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S7-P9** · Make `ci-docs.yml` parse again · P1 · 🟡 Light · 1h: #95 (`0d0ecea`, Sep 27) replaced an em dash with a colon in the `stand-in` step, so `run: echo "Docs-only change: …"` (`.github/workflows/ci-docs.yml:108`) became a plain YAML scalar containing `: `. PyYAML rejects it ("mapping values are not allowed here", line 108, column 36). Every `ci-docs` run since failed with no jobs, so the nine required contexts never report on a docs-only PR, and every push to `master` shows a red `ci-docs` run. `ci.yml` parses, so code PRs are unaffected. Fix: the `run:` value becomes a `|` block, like the `scope` step's. Found by the lane's Sep 28 afternoon fire; pulled from [[Backlog]] the same day. Unblocks S7-P2 (#103).
 
 
 ## 👀 Review / Demo
 
-- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h: #103 on `S7-P2/card-close-branch-gate`, opened by the lane Sep 28. It changes only `.claude/commands/card-close.md`. Yours to review and merge. **It cannot merge yet:** `ci-docs.yml` does not parse, so its required checks never report (Sep 28 afternoon fire, [[Backlog]] § *etc*).
+- [ ] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h: #103 on `S7-P2/card-close-branch-gate`, opened by the lane Sep 28. It changes only `.claude/commands/card-close.md`. Yours to review and merge. **It cannot merge yet:** `ci-docs.yml` does not parse, so its required checks never report (Sep 28 afternoon fire). Waits on S7-P9.
 
 
 ## ✅ Done: Sprint 07
