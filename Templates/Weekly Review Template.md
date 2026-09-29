@@ -3,7 +3,7 @@ type: weekly-review
 date: YYYY-MM-DD
 ---
 
-# Weekly Review — YYYY-MM-DD
+# Weekly Review: YYYY-MM-DD
 
 <!-- Use short bullets for outcomes and blockers. Link existing records instead
 of recapping them. Preserve explicit drift and verification results. -->

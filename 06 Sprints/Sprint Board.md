@@ -9,32 +9,42 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## Story A — Ground the ECS port
+## Story A: Finalize Tick-event delivery
 
 
 
-## Story B — Port Scene identity, storage, queries and hierarchy
+## Story B: Deliver Scene events at the Tick barrier
 
 
 
-## Story C — Settle system dependencies and execution
+## Story C: Deliver engine input events
+
+- [ ] **S7-T10** · Deliver input edges to selected systems · P1 · 🟠 Moderate · 2-3h: follows T9 and S7-T3; current-Tick delivery at each system slot.
+- [ ] **S7-T11** · Generate held input and handle focus resets · P1 · 🟠 Moderate · 2-3h: follows T10; held once per Tick and neutral regain.
+- [ ] **S7-T12** · Prove overflow recovery and runtime delivery · P1 · 🟢 Deep · 4-6h: follows T11; lost-range notice plus headless/windowed witnesses.
 
 
+## Story D: Close other fired decisions and implementation seams
 
-## Story D — Schedule, graph and serial execution
-
-
-
-## Story E — Scene integration and headless proof
+- [ ] **S7-D3** · Decide the public error-handling policy · P2 · 🟢 Deep · 4-6h: settle the open conventions row and `[[nodiscard]]` policy in an ADR.
+- [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟡 Light · 1-2h: install and verify the GLFW allocator seam.
 
 
+## Story E: Repair fired process and evidence gaps
 
-## Story F — Repair bounded documentation drift
+- [ ] **S7-P1** · Reconcile build/profiler and App coverage policy · P2 · 🟢 Deep · 4-6h: carry S6-P1 and record the App coverage exclusion.
+- [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h: amend ADR-009 and fix the skipped-check comment.
+- [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h: settle the widened sweep's workflow home.
+- [ ] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🤖 Auto · 2h: record comparable cache evidence; report-only.
+- [ ] **S7-P8** · Define a small recorded-demo workflow · P3 · 🟡 Light · 2h: record capture storage and sprint-review links.
 
 
+## Story F: Backlog code hygiene for the Auto lane
 
-## Story G — Protect the Linux TSan signal
-
+- [ ] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h: `-DTE_LOG_ACTIVE_LEVEL=3` builds; fix `MathFormatTests.cpp:47`.
+- [ ] **S7-T13** · Give `techengine_app()` a `LIBS_PRIVATE` · P3 · 🤖 Auto · 2h: mirror `techengine_module()`; toml++ goes private.
+- [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h: a TU that undefines the gate, in debug and release.
+- [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h: parameter renames only; tests unedited.
 
 
 ## 🔨 In Progress
@@ -43,92 +53,24 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🤖 Auto · 4-6h: #106, branch `S7-P3/vault-citation-check`. Opened by the lane on Sep 29 and yours to review and merge. Confirm one reading: a sha or tag in a code span earlier in the same paragraph anchors the citations after it.
 
 
-## ✅ Done
+## ✅ Done: Sprint 07
 
-- [x] **S6-B1** · Investigate intermittent llvmpipe synchronization teardown race · P1 · 🟠 Moderate · 2–4h —
-	  Merged as PR #93 (`742fed7e`) on Sep 24. A standalone GLFW program reproduced
-	  Mesa's `lp_fence_destroy` report without TechEngine; [[Window — Design]] records
-	  the narrow Linux TSan workaround. The full WSL suite passed with Mesa workers
-	  disabled, while a deliberately racy test program still reported. Story G is complete.
-	  **Retro:** #93 received only stand-in checks, so the hosted TSan leg has not exercised
-	  the change; manual dispatch skips PR-only sanitizers. The PR also bundled unrelated
-	  `paper-validate` and `AGENTS.md` edits. The CI validation gap is in [[Backlog]].
-- [x] **S6-T9** · Wire executor into the simulation tick · P1 · 🟠 Moderate · 3–4h —
-	  Merged as PR #92 (`2a50f8cb`). [[Scene — Design]] and [[Task Graph — Execution Flow]]
-	  record the App-owned startup and fixed-tick path. The runtime remains a one-tick demo;
-	  repeated-state and headless/windowed proof remain open in [[Backlog]]. The App-local
-	  no-op barrier adapter also has a next-sprint ownership follow-up there. Story E's
-	  proof is still open.
-	  **Retro:** Linux CI caught a missing `Transform` forward declaration after the Windows
-	  build; the final CI run passed. The PR used `[skip-coverage]`, so changed-line coverage
-	  was not enforced.
-- [x] **S6-T8** · Serial executor and barrier · P1 · 🟢 Deep · 4–6h —
-	  Merged as PR #91 (`4da771af`). The executor owns persistent systems and one command
-	  buffer per graph node; it walks cached levels and applies those buffers in graph
-	  order at one deterministic barrier. Type-erased component values own their queued
-	  payloads, while access validation and declared-write stamps establish the seam for
-	  a later parallel executor. This completes Story D and unblocks S6-T9.
-	  **Retro:** the first pending-entity resolver mixed buffer-local indices with the
-	  shared spawned list; the graph-order regression caught the failure before merge.
-- [x] **S6-T7** · Graph builder · P1 · 🟢 Deep · 4–6h —
-	  Merged as PR #90 (`ea5d0c9c`). The implementation follows [[ADR-020 — System
-	  scheduling and task-graph execution]] without changing its scheduling decisions.
-	  Review strengthened exact conflict-log direction and access-mask boundary coverage
-	  before merge. This unblocks S6-T8; Story D remains open for the executor and barrier.
-- [x] **S6-T6** · Schedule and access declarations · P1 · 🟠 Moderate · 3–4h —
-	  Merged as PR #89 (`9be7a8be`). Review narrowed access tracking from components
-	  and shared resources to components only; [[ADR-020 — System scheduling and
-	  task-graph execution]] and [[Task Graph — Execution Flow]] record the deferred
-	  resource seam. Release-critical registration invariants moved from dev-only
-	  assertions to always-on `TE_CHECK`, with rejection tests active in every configuration.
-	  This unblocks S6-T7; Story D remains open for the graph and executor.
-- [x] **S6-T5** · Transform component and propagation · P1 · 🟢 Deep · 3–4h —
-	  Merged as PR #87 (`47bfaefc`). [[ADR-021 — Immediate Scene transform propagation]]
-	  replaced the planned schedule pass with immediate subtree updates; [[Scene — Design]]
-	  records the shipped contract. Review caught a late preserve-world scale rejection and
-	  loss of Scene binding on Transform assignment; both were fixed before merge.
-	  Story B is complete, leaving S6-T9 waiting on T8.
-	  **Retro:** initial green CI missed tiny local scales and bound assignment; focused
-	  regression cases were added before the final green run.
-- [x] **S6-T4** · Built-in hierarchy · P1 · 🟢 Deep · 3–4h —
-	  Merged as PR #86 (`5a687af1`). Entity creation now starts in the required
-	  Hierarchy archetype, superseding the empty-entity fixture assumption.
-	  Built-in registration remains in storage until S6-T9 moves it to the app
-	  composition root. This unblocks S6-T5; Story B still awaits Transform.
-	  **Retro:** the local 100% diff-coverage report counted only six changed
-	  lines while Scene files were untracked. CI exposed missing clear and
-	  stale-handle coverage, added before merge.
-- [x] **S6-T3** · Queries and iteration · P1 · 🟠 Moderate · 3–4h —
-	  Merged as PR #85 (`150f8f0d`). Queries cache matching archetypes by revision
-	  while reacquiring current column spans for every iteration. Read/write access,
-	  explicit `eachEntity` traversal, clear invalidation and structural-mutation rejection
-	  are covered by focused tests. Retained queries keep a storage pointer, so storage is
-	  non-movable; an atomic iteration depth also preserves concurrent disjoint-query use
-	  for the future task-graph executor. Story B remains open for hierarchy and transforms.
-- [x] **S6-T2** · Archetype storage and transitions · P1 · 🟢 Deep · 4–6h —
-	  Merged as PR #84 (`4bcc71d0`). Review exposed that default construction and
-	  shared-column copying may throw even though committed row relocation is nothrow;
-	  destination rows now roll back before the source archetype is mutated. Dedicated
-	  archetype tests were added to scrutinize canonical reuse and entity/column alignment.
-	  This unblocks S6-T3, S6-T4 and S6-T8 without completing Story B.
-	  **Retro:** the PR also carried the unrelated member-initializer convention sweep,
-	  broadening a storage card across existing engine files.
-- [x] **S6-T1** · Entity handles and ComponentRegistry · P1 · 🟠 Moderate · 3–5h —
-	  Merged as PR #82 (`9fb6aeaf`). Slot exhaustion was clarified as a fatal `TE_CHECK`,
-	  so it has no null-return recovery path. The registry freeze mechanism shipped, while
-	  composition-root ownership and the actual before-first-tick freeze remain S6-T9
-	  integration. This unblocks S6-T2 and the identity side of S6-T4 without completing Story B.
-	  **Retro:** PR #82 also removed the tracked Codex context-window request; that conflicts
-	  with the repository instructions and needs Miguel's call.
-- [x] **S6-D2** · Task-graph/System ADR and execution design · P1 · 🟢 Deep · 4–6h —
-	  ADR-020 Accepted Sep 12. Three design calls changed during review: conflict direction
-	  uses numeric priority instead of registration order, schedule is fully immutable (not
-	  mutable between ticks) for multiplayer determinism, and the phase model collapsed from
-	  two (Input + FixedUpdate) to one (Tick). Design note reconciled, ADR Index updated,
-	  Stories D/E cut as 4 cards (T6–T9). Sprint DoD line 2 is satisfied.
-- [x] **S6-D1** · Review the v1 ECS and draft Scene — Design · P1 · 🟢 Deep · 4–6h
+- [x] **S7-T9** · Translate GLFW controls to engine identifiers · P1 · 🟢 Deep · 4-6h: #105 `7b410b61`, Sep 28. All seven build legs, clang-format and diff coverage passed on the PR. **A decision no artifact made, settled at `/card-start`:** [[Input - Design]] said "supported" GLFW values translate but never said which keys were supported, and the order is behaviour because S7-T11 emits held notifications in ascending key order. Miguel chose all 120 GLFW 3.4 keys, numbered densely in GLFW's order, carried as typed `Key key` and `MouseButton button` fields with `isHeld` overloads; now in [[Input - Design]] § *Decided*. **Changed during the card:** the first scaffold returned `std::optional`. Miguel replaced it with `Key::Unknown` and `MouseButton::Unknown` as the last values, outside `KEY_COUNT`, so they have no held bit, and the callbacks drop `Unknown` before `publish`. Before this card, `GLFW_KEY_UNKNOWN` was published as a Key event with code -1 and took a sequence number. **The in-session `/card-review` caught two things, fixed before merge:** `isHeld` and `apply` threw `std::out_of_range` for `Unknown`, because the bitsets have no bit for it; and the "one publishing thread" gotcha comment on `InputBuffer::publish` had been deleted and was restored. Two low findings were logged, not fixed, in [[Backlog]] § *platform*; neither is a defect. The PR carries no body or review conversation, so this entry is the only record of that review. **Retro:** Claude wrote the scaffold, the tests and, at Miguel's request, both translation tables; Miguel wrote `apply`, `isHeld` and the callbacks. **Retro:** the card was sized 🟢 Deep, 4-6h, but it took about a 🟡 Light session, or a very small 🟠 Moderate one. Claude writing the scaffold, the tests and the two tables probably explains part of the gap, so the estimate is not evidence that the other input cards are oversized. It freed a Deep slot. Unblocks S7-T10; Story C stays open.
+- [x] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h: #103 `152b781c`, Sep 28. The lane opened the PR and Miguel merged it, after S7-P9 made its checks report. The gate's first use was its own close: `S7-P2/…` on #103 and `S7-P9/…` on #104 both passed. The halves and `sweep/` cases have not been exercised yet. **Retro:** #103's body ended with a "Generated by Claude Code" footer and a session link, although the routine prompt bans AI attribution in a PR body. The squashed commit message is clean, so only the PR page carries it → [[Backlog]] § *etc*.
+- [x] **S7-P9** · Make `ci-docs.yml` parse again · P1 · 🟡 Light · 1h: #104 `bbdef2d0`, Sep 28. Pulled in mid-sprint from the lane's fired [[Backlog]] entry. #95 (`0d0ecea`, Sep 27) replaced an em dash with a colon in the `stand-in` step, so its `run:` value became a plain YAML scalar containing `: `, and the file stopped parsing. The `run:` value is now a `|` block. The PR's own `ci-docs` run reported all nine contexts, and the push runs on `master` are green again. **Retro:** a mechanical dash replacement changed the meaning of a YAML file, and nothing caught it. #95 also touched `.clang-format`, so `ci.yml` reported the required contexts, and the unparsed `ci-docs` run (named after its file path, not a required context) did not block the merge → [[Backlog]] § *etc*. Unblocked S7-P2.
+- [x] **S7-T8** · Prove the integrated event path · P1 · 🟢 Deep · 3-5h: #101 `63b437d5`, Sep 27. **A clause had no referent:** "a runtime or App-level publisher/reader witness" named nothing, because no demo system published or handled an event and `RuntimeApp` registered none. Miguel chose the witness at `/card-start`: `CollisionSystem` publishes `Landed`, `GravitySystem` (regular slot) and `EntitySpawnSystem` (terminal) handle it, and each handler records its batch sizes so a multi-Tick advance leaves one record per Tick. The headless proof runs through `RuntimeProbe`, which finalizes the simulation without `init()`, so no GLFW client starts. The demo grew three more types during the card: `EntitySpawned` (terminal publisher to a regular handler), `EntityDespawned` (published from a handler, so it chains across Ticks) and `Pulse` (500 per Tick against a 64-event initial capacity). **Scope added at `/card-start`, by Miguel's choice over a separate card:** the `EventType` concept, the tag read from `T::tag`, a `publish<Event>(arguments...)` that constructs the event, and the `on` to `onEvent` rename; all now in [[Events - Design]] § *Event type and publish API*. A virtual `IEvent` base like v1's was rejected, because it breaks ADR-014 §2's trivially copyable payload. **Windowed observation, Miguel's `runtime.exe` run, Sep 27:** one landing and one destroy per Tick, a reused index returning with the next generation, the last destroy at `[t 101]` and quiet Ticks after it, and four two-Tick catch-ups (first at `[t 19]`/`[t 20]`), each delivering its own landing. Not observed there: the three later types, whose handlers do not log, and a clean shutdown, since the run ended with Ctrl+C. **Retro:** the first test run failed two cases with batches of `{1, 2, 2, …}`: `CollisionSystem` published on every grounded Tick, not on the transition, so a landed entity was published again in the Tick its despawn was still pending. The despawn-on-landing demo is what exposed it; a despawn of a dead entity is a silent no-op. **Retro:** Miguel asked Claude to write the whole card, API change and demo included, so it is Claude-written and Miguel-reviewed. The PR carries no body or review conversation. Completes Story B; unblocks nothing else in the sprint.
+- [x] **S7-T7** · Deliver handlers and advance batches at the Tick barrier · P1 · 🟢 Deep · 4-6h: #100 `82bf3f72`, Sep 27. `SerialExecutor` now runs each node's handlers before `tick`, then retires the old batch and makes the new one visible after `assignNetIds`. Three calls that no artifact made were settled at `/card-start` and are now in [[Events - Design]] § *Scheduled Tick delivery*: the executor drives the event barrier itself, so `TickBarrierServices::flushEvents` is deleted and the service keeps only `assignNetIds`; a handler whose type has no visible events is not called; and a handler on a Scene without streams fires a `TE_VERIFY`, once per handler per Tick. **A clause had no referent:** "only the executor reads a batch" had nothing to read with, because nothing could read a batch by `EventTypeId`. The card added an untyped read from `EventStream` up to a private `Scene` accessor and deleted the public `Scene::read<T>`, so the compiler now enforces the clause; the "reading outside a system" test went with it. **Deleted before shipping:** a barrier draft that called `context.engine.events.makeVisible`; `EngineContext` has no such field, and the streams are Scene-owned (ADR-014 §5). **Review caught, fixed before merge:** `Scene::readEventBytes` ignored its `TE_VERIFY` result and dereferenced the empty stream container on a Scene without streams, and the first dispatch called handlers on an empty batch. The PR carries no review conversation, so this entry is the only record of that review. **Retro:** as on S7-T4, Miguel asked Claude to implement the review fixes and the barrier, so those lines are Claude-written and Miguel-reviewed. **Retro:** the first local test run failed almost wholesale because the tests had not been rebuilt, and Claude's full rewrite of `SceneEventTests.cpp` had left CLion's temporary run configuration with no target. Unblocks S7-T8; Story B stays open until S7-T8 ships.
+- [x] **S7-T4** · Bind ordered event handlers to selected systems · P1 · 🟢 Deep · 3-5h: #99 `0218571e`, Sep 27. A system declares `on<Event>(handler)` in `init`, and `TaskGraph` now takes the `EventRegistry` and resolves each declaration onto its node. The last `done:` clause could not ship in this card: making handlers the only read path needs something to run them, and dispatch is S7-T7's first clause. Miguel moved it to S7-T7 at `/card-start`, so `Scene::read` stays callable from `tick` until then. Three calls that no artifact made were settled at `/card-start` and are now in [[Events - Design]] § *Handler declaration*: the handler shape (a lambda taking `(Scene&, std::span<const Event>)`, with no `SimulationContext`), a `TE_CHECK` at graph build for a type this registry never registered, and the registry as a `TaskGraph` constructor argument. Deleted before shipping: a first `addEventHandler` that skipped the append on a frozen schedule but fired nothing, so a late handler vanished silently; it now checks like its sibling setters. `SerialExecutor`'s node already carries the handlers, unused until S7-T7; whether it should borrow the graph rather than copy it is now a [[Backlog]] entry. **Retro:** Miguel asked Claude to implement this card's TODOs, so the handler wrapping and the resolution are Claude-written and Miguel-reviewed. **Retro:** Claude's rewrite for the new constructor argument matched only graphs named `graph`, missed `writeGraph` and `readGraph` in `SerialExecutorTests`, and broke Miguel's local MSVC build; the PR's second commit fixed it. Unblocks S7-T7; Story B stays open.
+- [x] **S7-T6** · Place registered event streams on Scene · P1 · 🟢 Deep · 3-5h: #98 `745f067a`, Sep 27. The first `done:` clause collided with the code: `App` built `m_scene` in its constructor, events register later in `configureSimulation()`, and `EventStreamManager` seals the registry when it is built. No artifact decided when a Scene builds its streams, and "simulation-only" had no mechanical meaning either. Miguel settled both at `/card-start`: a separate `buildEventStreams` step in `finalizeSimulation()`, and publish/read gated to a running system of that Scene. Both calls, plus the no-streams behaviour, are now in [[Events - Design]] § *Scene residence*. The in-session `/card-review` added three tests for the no-streams paths, which S7-T7 will lean on; its two design gaps went to [[Backlog]] (publish declarations) and to S7-T4's `done:` (handlers become the only read path). **Retro:** the first test draft counted a fire from the registry's report-once `TE_ENSURE`, which `EventRegistryTests` already counts in the same exe, so it would pass under `ctest` and fail when run directly; caught before commit, and the [[Backlog]] trap entry still stands. **Retro:** grounding explained per-Scene residence with ADR-014 §5's "more than one sim" and invented two product cases for it; the ADR names only tests. The wording is now a [[Backlog]] entry. Unblocks S7-T4; Story B stays open.
+- [x] **S7-T5** · Replace event cursors with stable Tick batches · P1 · 🟢 Deep · 4-6h: #97 `1f5dda4d`, Sep 27. The stream is now two buffers swapped at the barrier, which makes ADR-014's "double-buffered" literal. The design note had left the stable-view mechanism open; the rejected option (one buffer that keeps old allocations alive until `retire`) is in [[Events - Design]] § *Why two buffers replaced M1's compacted buffer*. Two calls no artifact made, both now in § *Making events visible*: `makeVisible` before `retire` is a `TE_VERIFY` reject that changes nothing, and the Tick stays readable through `visibleTick()`. Deleted before shipping, in review cleanup: the `ByteRange` indirection, `grow`'s misleading parameter, the unread `m_alignment` member, the unused `id()`, and `getStream`'s duplicated body (now the engine's first `const_cast`, through `std::as_const`). The win ASan leg ran the invalidation case. **Retro:** the session first opened S7-T4, whose order gate failed on S7-T6, because Story B's board cards carried no `follows` hints; they were added Sep 27. **Retro:** the squash also carries the `/card-start` change that makes it write full tests; Miguel kept it here deliberately. Unblocks S7-T6; Story B stays open.
+- [x] **S7-T1** · Correct app-local includes · P3 · 🤖 Auto · 2-3h: #96 `7ef6140c`, Sep 27. The first card the autonomous lane took end to end: it opened the PR, Miguel reviewed and merged. The PR's linux-debug run passed 428/428 under Xvfb; Windows was not built. The lane's bare `ctest` fails 18 window cases without a display → [[Backlog]] § *autonomous lane's test line*.
+- [ ] **S7-P5** · Resolve old routine-prompt drift · P3 · 🟡 Light · 2h: check the old routine's status and reconcile prompt guidance.
+- [x] **S7-T3** · Construct and describe selected systems before graph build · P1 · 🟢 Deep · 4-6h: #94 `7e52fe3a`, Sep 26. `Schedule::add<T>()` constructs the instance and calls `ISystem::init(ScheduleRegistration&)`; the schedule owns instances and the executor borrows them. Deleted before shipping: a `SystemCatalog` (project contribution stays parked in [[Backlog]]) and a `SystemDeclaration` wrapper that only forwarded to `ScheduleRegistration`. Diagnostic names are cached from the persistent instance's `name()`, not a static per-type field. Absorbed S7-T8's frame→Tick rename, including the log stamp `[f N]`→`[t N]`. Call-site declarations still override `init` → [[Backlog]] § core. **Retro:** the card opened on static self-registration, which ADR-022 had rejected that morning; the ADR was reopened and re-accepted unchanged the same day. Unblocks S7-T4 and S7-T10.
+- [x] **S7-D1** · Finalize Tick-event delivery and handler order · P1 · 🟢 Deep · 4-6h: settled declaration order and next-Tick batches; cut Story B cards. Vault changes remain local.
+- [x] **S7-D2** · Review v1 input and settle the engine input contract · P1 · 🟢 Deep · 4-6h: accepted engine codes and same-Tick input notifications; amended ADR-014/019/020, created the Input hub and cut S7-T9-T12. Vault changes remain local.
 
 
 

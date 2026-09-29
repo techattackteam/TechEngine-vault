@@ -1,4 +1,4 @@
-# ADR-NNN — <title>
+# ADR-NNN: <title>
 
 - **Status:** Proposed
 - **Date:** YYYY-MM

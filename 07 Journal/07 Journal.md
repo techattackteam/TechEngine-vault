@@ -1,27 +1,35 @@
 # 📓 07 Journal
 
-Weekly reviews, sprint retrospectives and autonomous run reports are dated notes.
+Weekly reviews and sprint retrospectives are dated notes in this folder. Autonomous run
+reports live in `autoruns/`, with one folder per day and one note per fire.
 
-- **Weekly review** (`/weekly-review`) — the mid-sprint entry.
-- **Sprint retro** (`/sprint-plan`) — the boundary entry, with demo + planning. It
+- **Weekly review** (`/weekly-review`): the mid-sprint entry.
+- **Sprint retro** (`/sprint-plan`): the boundary entry, with demo + planning. It
   **replaces** that weekend's weekly review, so a boundary weekend writes one entry.
 
-When each runs, and what happens when a weekend is lost, is [[Dashboard]] § *Rhythm* —
+When each runs, and what happens when a weekend is lost, is [[Dashboard]] § *Rhythm*,
 the one home for cadence. Entries appear here as they're written, newest first.
 
 | Date | Entry |
 |---|---|
-| 2026-09-19 | [[2026-09-19 Weekly Review]] — Story B closed; T6–T9 remain; OpenAI lane and paper-review integration stay unscheduled |
-| 2026-09-12 | [[2026-09-12 Sprint 05 Retrospective]] — Sprint 05 closed; M3, M4 and simulation independence shipped |
-| 2026-09-05 | [[2026-09-05 Weekly Review]] — F and B closed; S5-B1 first, M4 remains a stretch; artifact reconciliation deferred |
-| 2026-08-30 | [[2026-08-30 Sprint 04 Retrospective]] — M2 goal met and Sprint 05 opened early |
-| 2026-08-29 | [[2026-08-29 Weekly Review]] — Sprint 04 mid-sprint checkpoint **passed**; 8 of 13 cards closed in week 1; 3 drift findings, all open, all from #54 |
-| 2026-08-22 | [[2026-08-22 Sprint 03 Retrospective]] — Sprint 03 closed; Sprint 04 planned on the moved-up boundary; first 2-week sprint opens |
-| 2026-08-20 | [[2026-08-20 Weekly Review]] — **catch-up, Aug 3 to 20** (two reviews missed); Sprint 03 complete 8 days early; 4 drift findings; sprint length cut to 2 weeks |
-| 2026-08-02 | [[2026-08-02 Sprint 02 Retrospective]] — Sprint 02 closed **4 weeks early**; first reconciliation-stamp advance; `S2-B1` found evaporated |
-| 2026-07-25 | [[2026-07-25 Sprint 01 Retrospective]] — Sprint 01 closed: demo, CI thrash post-mortem, "bank the day" rule |
-| 2026-07-25 | [[2026-07-25 Weekly Review]] — scaffold + CI green; 4 artifact-drift findings, all reconciled |
+| 2026-09-19 | [[2026-09-19 Weekly Review]]: Story B closed; T6-T9 remain; OpenAI lane and paper-review integration stay unscheduled |
+| 2026-09-12 | [[2026-09-12 Sprint 05 Retrospective]]: Sprint 05 closed; M3, M4 and simulation independence shipped |
+| 2026-09-05 | [[2026-09-05 Weekly Review]]: F and B closed; S5-B1 first, M4 remains a stretch; artifact reconciliation deferred |
+| 2026-08-30 | [[2026-08-30 Sprint 04 Retrospective]]: M2 goal met and Sprint 05 opened early |
+| 2026-08-29 | [[2026-08-29 Weekly Review]]: Sprint 04 mid-sprint checkpoint **passed**; 8 of 13 cards closed in week 1; 3 drift findings, all open, all from #54 |
+| 2026-08-22 | [[2026-08-22 Sprint 03 Retrospective]]: Sprint 03 closed; Sprint 04 planned on the moved-up boundary; first 2-week sprint opens |
+| 2026-08-20 | [[2026-08-20 Weekly Review]]: **catch-up, Aug 3 to 20** (two reviews missed); Sprint 03 complete 8 days early; 4 drift findings; sprint length cut to 2 weeks |
+| 2026-08-02 | [[2026-08-02 Sprint 02 Retrospective]]: Sprint 02 closed **4 weeks early**; first reconciliation-stamp advance; `S2-B1` found evaporated |
+| 2026-07-25 | [[2026-07-25 Sprint 01 Retrospective]]: Sprint 01 closed: demo, CI thrash post-mortem, "bank the day" rule |
+| 2026-07-25 | [[2026-07-25 Weekly Review]]: scaffold + CI green; 4 artifact-drift findings, all reconciled |
 
-Autonomous run reports: [[2026-08-30 Auto Run]] · [[2026-08-31 Auto Run]] ·
-[[2026-09-01 Auto Run]] · [[2026-09-02 Auto Run]] · [[2026-09-03 Auto Run]] ·
-[[2026-09-04 Auto Run]].
+## Autonomous run reports
+
+| Day | Fires |
+|---|---|
+| 2026-09-04 | [[2026-09-04 09-14 Auto Run\|09:14]] · [[2026-09-04 14-17 Auto Run\|14:17]] |
+| 2026-09-03 | [[2026-09-03 09-13 Auto Run\|09:13]] · [[2026-09-03 14-16 Auto Run\|14:16]] |
+| 2026-09-02 | [[2026-09-02 09-18 Auto Run\|09:18]] · [[2026-09-02 14-15 Auto Run\|14:15]] |
+| 2026-09-01 | [[2026-09-01 09-21 Auto Run\|09:21]] · [[2026-09-01 14-20 Auto Run\|14:20]] |
+| 2026-08-31 | [[2026-08-31 09-36 Auto Run\|09:36]] · [[2026-08-31 14-16 Auto Run\|14:16]] |
+| 2026-08-30 | [[2026-08-30 17-40 Auto Run\|17:40]] (first end-to-end run) |

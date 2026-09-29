@@ -70,7 +70,7 @@ Rather than using an oversized all-in-one framework (which obscures retrieval in
 
 ### Proposed File Structure (Version 1 Only)
 
-Keep it lean and direct. No micro-packages or premature abstractions—just 4 core files in `src/` to handle ingestion, retrieval, LLM generation, and terminal chat:
+Keep it lean and direct. No micro-packages or premature abstractions: just 4 core files in `src/` to handle ingestion, retrieval, LLM generation, and terminal chat:
 
 ```text
 techengine-agent/
@@ -103,7 +103,7 @@ techengine-agent/
 *   **`papers/`:** Raw PDF storage, organized into topic subfolders.
 *   **`data/`:** Persistent local artifact directory created when you run `ingest.py`. Contains your vector database and keyword cache.
 *   **`src/ingest.py`:** Run once (or whenever you add new papers). Walks through `papers/`, parses pages with PyMuPDF, chunks text by section headers, builds the ChromaDB embeddings, and serializes the BM25 index.
-*   **`src/retriever.py`:** Contains your hybrid search class. Given a query string, it asks ChromaDB for semantic neighbors, asks BM25 for keyword matches, merges ranks with Reciprocal Rank Fusion (RRF), and returns the top 4–6 chunks.
+*   **`src/retriever.py`:** Contains your hybrid search class. Given a query string, it asks ChromaDB for semantic neighbors, asks BM25 for keyword matches, merges ranks with Reciprocal Rank Fusion (RRF), and returns the top 4-6 chunks.
 *   **`src/engine.py`:** Contains the system prompt, formats retrieved chunks with `[Paper, Section, Page]` headers, and sends the payload to the LLM (Gemini/OpenAI) with temperature set near 0.
 *   **`src/cli.py`:** Terminal entry point. A clean loop prompting user input, calling `engine.py`, and rendering the response in markdown with syntax highlighting.
 *   **`test_queries.py`:** Verification script with the 5 golden evaluation questions to test accuracy before considering v1 done.
@@ -138,8 +138,8 @@ Academic papers present specific challenges that break standard generic RAG load
     *   Identify section headers (e.g., regex pattern matching `1. Introduction`, `IV. METHODS`, `3.1 Algorithm`).
     *   Attach the current section name as metadata to all subsequent paragraphs.
 *   **Chunk Sizing Strategy:**
-    *   Target **500 to 700 tokens** (approx. 300–450 words) per chunk.
-    *   Use an overlap of **10% to 15%** (approx. 50–75 words) so that context spanning boundary sentences is preserved.
+    *   Target **500 to 700 tokens** (approx. 300-450 words) per chunk.
+    *   Use an overlap of **10% to 15%** (approx. 50-75 words) so that context spanning boundary sentences is preserved.
     *   Discard the bibliography / reference section at the end of papers; otherwise, keyword search will heavily retrieve citation lists instead of actual technical explanations.
 *   **Metadata Schema:** For every indexed chunk, store:
     *   `paper_title`: Clean title or file slug.
@@ -181,7 +181,7 @@ $$RRF(d) = \sum_{m \in \{\text{Dense}, \text{BM25}\}} \frac{1}{k + \text{rank}_m
 
 ### Context Assembly Guidelines
 *   **Deduplication:** Multiple chunks may come from consecutive paragraphs of the same section. If two chunks are adjacent, merge them or choose the higher-scoring one to maximize diversity of context.
-*   **Token Budgeting:** Keep total retrieved context under 3,000–4,000 tokens to ensure the model focuses sharply on the retrieved text without drowning in context.
+*   **Token Budgeting:** Keep total retrieved context under 3,000-4,000 tokens to ensure the model focuses sharply on the retrieved text without drowning in context.
 
 ---
 
@@ -206,7 +206,7 @@ Your system prompt dictates the persona, mathematical precision, and hallucinati
 ### CLI Interface Principles (Terminal REPL)
 *   **Streaming Output:** Stream tokens as they arrive from the LLM for a responsive feel.
 *   **Source Inspection Flag:** Provide an interactive toggle or command-line flag (e.g., `--show-sources` or typing `/sources`) to let the user inspect the exact raw chunks passed to the LLM.
-*   **Session History:** Maintain a rolling conversational memory of the last 2–3 turns so users can ask follow-up questions (e.g., *"How does this affect the pop operation instead?"*), but prune older turns to avoid prompt drift.
+*   **Session History:** Maintain a rolling conversational memory of the last 2-3 turns so users can ask follow-up questions (e.g., *"How does this affect the pop operation instead?"*), but prune older turns to avoid prompt drift.
 
 ### Alternative: Lightweight Web Interface
 *   If you build a web UI using `streamlit`:

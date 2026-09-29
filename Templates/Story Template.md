@@ -1,4 +1,4 @@
-# Story — <name>
+# Story: <name>
 
 - **Epic:** <epic>
 - **Sprint:** [[Active sprint note]]
@@ -13,11 +13,11 @@ Explain the outcome and why it matters in a few sentences.
 
 ## Tasks
 
-<!-- Each task fits one 2–6 hour session. Use the card kinds, priorities, and
-weights in [[Planning Workflow — Artifact Gate]]. Put required artifacts first. -->
+<!-- Each task fits one 2-6 hour session. Use the card kinds, priorities, and
+weights in [[Planning Workflow - Artifact Gate]]. Put required artifacts first. -->
 
-- [ ] SN-T1 — <task> · P1 · 🟢 Deep — done: <observable condition>
-- [ ] SN-T2 — <task> · P2 · 🟡 Light — done: <observable condition>
+- [ ] **SN-T1** · <task> · P1 · 🟢 Deep · done: <observable condition>
+- [ ] **SN-T2** · <task> · P2 · 🟡 Light · done: <observable condition>
 
 ## Done when
 

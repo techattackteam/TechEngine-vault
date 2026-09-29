@@ -3,11 +3,11 @@ type: weekly-review
 date: 2026-09-05
 ---
 
-# Weekly Review — 2026-09-05
+# Weekly Review: 2026-09-05
 
 ## Completed this week
 
-- The editor loads `projects/dev/project.toml` and mounts its content. Application lifecycle, app test targets, executable-path lookup and file operations also shipped. Runtime packaging remains M6 work. See [[Sprint Board]], S5-T1–T5 and S5-T10–T11.
+- The editor loads `projects/dev/project.toml` and mounts its content. Application lifecycle, app test targets, executable-path lookup and file operations also shipped. Runtime packaging remains M6 work. See [[Sprint Board]], S5-T1-T5 and S5-T10-T11.
 - The autonomous lane delivered its first merged code PR, the logging-default fix. S5-P1 and S5-P3 also closed. See [[Sprint Board]] for delivery and prior validation records.
 
 ## Blockers
@@ -35,7 +35,7 @@ stamp stays at `01ed7a30` because reconciliation is unfinished.
 ## Objective for next week
 
 Fix S5-B1, then work toward M4's render-thread triangle through T6 → P4 → T7 → T8, with
-raw input remaining optional until the September 12–13 sprint-planning weekend.
+raw input remaining optional until the September 12-13 sprint-planning weekend.
 
 ## Sustainability
 

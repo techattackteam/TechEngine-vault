@@ -3,19 +3,19 @@ type: weekly-review
 date: 2026-08-29
 ---
 
-# Weekly Review — 2026-08-29
+# Weekly Review: 2026-08-29
 
-Sprint [[2026-08 Sprint 04 — M2 Concurrency & Serialization]], week 1 of 2. Also the
+Sprint [[2026-08 Sprint 04 - M2 Concurrency & Serialization]], week 1 of 2. Also the
 **mid-sprint checkpoint, and it passes**: both M2 ADRs were Accepted on day 1, no story is cut.
 
 ## ✅ Completed this week
 
 **8 of 13 sized cards closed, plus 2 merged and held in Review.** 8 PRs, 4 working days.
 
-- **Sat Aug 22** · S4-D1 · S4-D2 — both M2 ADRs Accepted, both design notes created as hubs.
-- **Mon Aug 24** · S4-T4 · S4-T5 · S4-P2 — `a0d1d1b3` (#46), the job system and its capture.
-- **Thu Aug 27** · S4-T2 · S4-T6 · S4-P3 — `4928447c` · `1ca9ae9c` · `a8aee849` (#47 to #49).
-- **Fri Aug 28** · S4-P4 · S4-P1 — `fdca32c8` + `753a7c08` · `50ca9360`. Plus `e7562bf5`
+- **Sat Aug 22** · S4-D1 · S4-D2: both M2 ADRs Accepted, both design notes created as hubs.
+- **Mon Aug 24** · S4-T4 · S4-T5 · S4-P2: `a0d1d1b3` (#46), the job system and its capture.
+- **Thu Aug 27** · S4-T2 · S4-T6 · S4-P3: `4928447c` · `1ca9ae9c` · `a8aee849` (#47 to #49).
+- **Fri Aug 28** · S4-P4 · S4-P1: `fdca32c8` + `753a7c08` · `50ca9360`. Plus `e7562bf5`
   (#54), unplanned.
 
 ## 🚧 In progress
@@ -40,11 +40,11 @@ widened the CI skip list after S4-P4 had closed and documented the old scope.
 
 | # | Where | Drift |
 |---|---|---|
-| **A1** | [[ADR-008 — v2 build & testing baseline]] header, 2026-08-28 amendment | Names the exclusion as `**.md` or `.claude/**`. `ci.yml` has a third entry, `.github/workflows/**`. An Accepted ADR understating its own gate. |
-| **A2** | [[B3 — Build & Testing Notes]] § *Docs-only PRs* | **Actively false, not just stale.** It says the workflow files "still run the full matrix". They are the one thing that no longer does. A reader grounding here concludes the opposite of the truth. |
-| **A3** | [[ADR-009 — Branching strategy & merge rules]] § *Consequences* | "Correctness leans on strict CI" now has an uncovered exception. S4-P4 pre-named this test, answered it correctly for docs, and nobody re-asked it when #54 widened the scope past docs. |
+| **A1** | [[ADR-008 - v2 build & testing baseline]] header, 2026-08-28 amendment | Names the exclusion as `**.md` or `.claude/**`. `ci.yml` has a third entry, `.github/workflows/**`. An Accepted ADR understating its own gate. |
+| **A2** | [[B3 - Build & Testing Notes]] § *Docs-only PRs* | **Actively false, not just stale.** It says the workflow files "still run the full matrix". They are the one thing that no longer does. A reader grounding here concludes the opposite of the truth. |
+| **A3** | [[ADR-009 - Branching strategy & merge rules]] § *Consequences* | "Correctness leans on strict CI" now has an uncovered exception. S4-P4 pre-named this test, answered it correctly for docs, and nobody re-asked it when #54 widened the scope past docs. |
 
-Clean: [[Concurrency — Design]] and [[Serialization — Design]] both match shipped code.
+Clean: [[Concurrency - Design]] and [[Serialization - Design]] both match shipped code.
 
 **Reconciled same day.** A1 and A2 are edits, no decision moved: ADR-008's amendment names the
 third path and carries a *Corrected* marker, and B3's section is rewritten with the workflow
