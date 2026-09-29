@@ -135,28 +135,6 @@ groups are kept, because they show where future work will land.
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
 
-- #prio/low · **`copy` and `move` open with the same 19 lines**:
-  `engine/platform/src/files/FileAccess.cpp:213-231` and `:242-260` resolve the source with
-  `resolveExisting`, resolve the destination with `resolveForCreate`, and return
-  `AlreadyExists` or `NotFound` for the destination in the same order. The simpler shape is one
-  `static` function in the same `.cpp` that fills both paths and returns the first failure.
-  That removes about 15 lines, adds no header and changes no behaviour. The sweep did not fix
-  it only because that day's PR slot was already used. Found by the code sweep on Sep 29, 2026.
-  **Trigger:** the next edit to `copy` or `move`, such as the cross-device entry above, or a
-  lane sweep with a free PR slot.
-- #prio/low · **`MountTable::clear()` has no caller, not even a test**:
-  `engine/platform/include/TechEngine/platform/files/MountTable.hpp:29`, defined at
-  `engine/platform/src/files/MountTable.cpp:60`. It has been unused since #39 added it, and no
-  design note names it. `unmount` covers the one case a caller has. Either delete it (5 lines)
-  or give it a test. It was not fixed by the sweep because it is public API. Found by the code
-  sweep on Sep 29, 2026. **Trigger:** the next `MountTable` API edit.
-- #prio/low · **Five `FileAccessTests` cases rebuild the same two-mount overlay by hand**:
-  `engine/platform/tests/files/FileAccessTests.cpp:303`, `:319`, `:337` and two later cases.
-  Each one declares two `ScratchDirectory`s, a `MountTable`, mounts `assets` at priority 0 and
-  100, and builds a `FileAccess`. The simpler shape is an `OverlayScratch` fixture beside the
-  file's `MountedScratch`. That removes about 20 lines. Found by the code sweep on Sep 29,
-  2026. **Trigger:** the `remove` overlay entry above, which would add a sixth case.
-
 ## core
 
 - #prio/medium · **Resources: hot-reload / eviction**: candidate ADR; depends on the
