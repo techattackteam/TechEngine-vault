@@ -33,7 +33,6 @@ kanban-plugin: board
 ## Story E: Repair fired process and evidence gaps
 
 - [ ] **S7-P1** · Reconcile build/profiler and App coverage policy · P2 · 🟢 Deep · 4-6h: carry S6-P1 and record the App coverage exclusion.
-- [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🤖 Auto · 4-6h: `tools/check-vault-citations.py` against the reconciliation SHA.
 - [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h: amend ADR-009 and fix the skipped-check comment.
 - [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h: settle the widened sweep's workflow home.
 - [ ] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🤖 Auto · 2h: record comparable cache evidence; report-only.
@@ -54,6 +53,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🤖 Auto · 4-6h: #106, branch `S7-P3/vault-citation-check`. Opened by the lane on Sep 29 and yours to review and merge. Confirm one reading: a sha or tag in a code span earlier in the same paragraph anchors the citations after it.
 
 
 ## ✅ Done: Sprint 07
