@@ -48,7 +48,7 @@ capacity table does **not** change.
 | 6 | Does the lane inherit the attended entry prompt? | **No. It gets its own.** The attended one assumes a human is present to compile, to decide and to answer a question mid-run. | 2026-08-30 |
 | 7 | Does the lane move its card on the [[Sprint Board]]? | **Yes, and the columns are its state.** Done when every clause is met, Review / Demo when a PR is open or what is left needs Miguel. Only the board line; the rest of `/card-close` stays his. | 2026-09-04 |
 | 8 | Does the lane screen papers for the research chatbot? | **Yes, as report-only fallback work, and it never approves.** With no Auto card open, it screens a few cards from [[Research]]'s *TO VALIDATE* column into *MIGUEL REVIEW*: real title, stable link, one-sentence fit. An off-roadmap paper gets a "recommend reject" line; rejecting and approving (`/paper-validate`) stay Miguel's. Which column the chatbot ingests from is still undecided (Sep 19 review). | 2026-09-26 |
-| 9 | Does the lane hunt for unnecessary code? | **Yes: with no Auto card open, the afternoon fire sweeps one module** for duplication, dead code and speculative abstractions, in rotation, and records the module's line count. It fixes only the obvious findings (dead code nothing references, tests included, and exact duplicates within one module), in one PR under ~100 lines titled "Code sweep: <module>" on a `sweep/<module>-<date>` branch. Sweeps have no board card; that branch prefix is the one exception to CLAUDE.md rule 9. Everything else is filed in [[Backlog]]. The morning fire keeps the freshness check and paper screening. | 2026-09-27 |
+| 9 | Does the lane hunt for unnecessary code? | **Yes: with no Auto card open, the afternoon fire sweeps one module** for duplication, dead code and speculative abstractions, in rotation, and records the module's line count. It fixes every finding that needs no design decision: dead code nothing references (tests included, public API allowed, `sdk/` never), duplicates anywhere in one module, and copied test code. The fixes go in one PR with no size cap, one commit per finding, titled "Code sweep: <module>" on a `sweep/<module>-<date>` branch. Sweeps have no board card; that branch prefix is the one exception to CLAUDE.md rule 9. What is left goes into one rolled-up [[Backlog]] entry per module. The morning fire keeps the freshness check and paper screening. Widened from "obvious findings under ~100 lines, one entry each" on 2026-10-01. | 2026-10-01 |
 
 **Decision 2 is the one to watch.** It is the first carve-out from a CLAUDE.md rule rather
 than an application of one, and it is what makes decision 1 safe. A small logic fix that
@@ -185,7 +185,7 @@ since an unattended lane cannot be a dependency.
   so the author field is the one place this lane breaks the rule **by default rather than by
   slipping**. The environment's `GIT_AUTHOR_*` variables override it and step 1 of the prompt
   sets it again per repo, belt and braces, because losing either would be silent.
-- **One PR-producing card per weekday, maximum.** See the cost model.
+- **One PR per fire, so at most two per weekday.** See the cost model.
 
 ## Cost model
 
@@ -194,14 +194,16 @@ An Auto card costs zero of Miguel's day capacity and is **not free**.
 | Cost | Amount | Notes |
 |---|---|---|
 | PR review | ~15 min each | Real capacity. Budget it on a 🟡 day, not on top of a 🟢 evening. |
-| CI, code card | 16.1 billed min | Measured, ADR-008 §9. At one per weekday that is ~320 min/month against the ~2k budget, so about 16%. |
+| CI, code card | 16.1 billed min | Measured, ADR-008 §9. At two per weekday that is ~650 min/month against the ~2k budget, about a third; at one, ~320 and about 16%. |
 | CI, vault or report card | 0 | Vault commits take no PR, and a docs-only or `.claude/**` PR draws no CI since #54. |
 | **Claude weekly usage** | the binding one | Every fire spends the weekly allowance whether or not it opens a PR, so a report-only day is **not** free here the way it is on the CI row. This is what cut the schedule from four fires to two on 2026-08-31. |
 
-**The cap is one PR per day, not one per fire, and the routine fires twice.** Two code cards a
-day would be ~650 CI minutes a month, a third of the budget for one lane. The day's report note
-is what carries that state between fires: a fire that reads a PR already recorded there takes
-report-only work instead.
+**The cap is one PR per fire, so two a day** (2026-10-01). Until then it was one per day
+across both fires, and that rule turned out to block the wrong thing. On Oct 1 the morning's
+#108 merged at 13:01, and the afternoon fire still could not open its sweep PR, so it filed
+eight Backlog entries instead. Miguel accepted the worst case of ~650 CI minutes a month to
+remove that. A morning PR still guards the afternoon through the file check in
+§ *Eligibility*, because it is an open PR.
 
 **Two fires, not four, since 2026-08-31, and the reason is the usage row rather than the CI
 row.** Four fires a weekday spent enough of the weekly Claude allowance to compete with
@@ -312,6 +314,6 @@ writes its own note in a day folder instead (decision 3); reading the earlier fi
 | **The lane read the board and never wrote it.** S5-P2 sat in To Do a day after #66 merged, S5-P3 sat there needing a call, and the Sep 3 and Sep 4 fires all reported an empty lane while refusing both. | A finished or stalled card in To Do is indistinguishable from an untaken one. Decision 7: the lane moves its card, and Review / Demo means "needs Miguel". Prompt step 9. |
 
 **The PR path is proven.** S5-P2 branched, built and opened #66 (`S5-P2/log-level-fallback`)
-unattended; Miguel merged it on 2026-09-03 as `0ac1a9b0`. The **one-PR-per-day cap** was
-S5-P2's inherited clause; whether a second PR-eligible fire has tested it since is not recorded
-here.
+unattended; Miguel merged it on 2026-09-03 as `0ac1a9b0`. The **one-PR-per-day cap** first
+bound on 2026-10-01, blocking an afternoon sweep after the morning PR had already merged, and
+it became one per fire the same day (§ *Cost model*).

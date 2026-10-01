@@ -1,8 +1,9 @@
 # Input: Design
 
 > Living design doc. S7-D2 settled the local input contract on 2026-09-26.
-> The ordered ingress and engine control identifiers exist (S7-T9, #105); scheduled
-> input delivery is unbuilt.
+> The ordered ingress and engine control identifiers exist (S7-T9, #105). Edges reach
+> selected systems (S7-T10, #109), and holds and focus resets follow them (S7-T11, #111).
+> Overflow recovery notices and the windowed witness are S7-T12's.
 
 **Module:** `platform` captures and normalizes controls; `app` owns ingress;
 `core` schedules simulation readers. **Kind:** engine input mechanism.
@@ -31,6 +32,8 @@ command component belongs to this local input slice.
 | Press and release retain capture order, even when both occur between ticks. GLFW repeat does not create gameplay presses. | S7-D2; [[Simulation Thread - Design]] |
 | Held notifications are generated once per Tick from the resulting held state, after captured events. A press then release in one Tick yields both edges and no held notification. | S7-D2 |
 | Focus loss clears held controls; regain starts neutral. Overflow reports a gap and replaces held state without inventing presses or releases. | [[Simulation Thread - Design]]; S7-D2 |
+| A system declares input interest with `ScheduleRegistration::onInput` in `init`. The handler takes `(Scene&, const InputNotification&)` and is called once per notification, unlike `onEvent`'s batch span. `InputNotification` is a core-side copy of `InputEvent` without `capturedAt`. Handlers run inside the system's execution scope, after its Scene event handlers and before `tick`. | S7-T10, #109 (`dcc09531`) |
+| A captured event reaches handlers only if it changed the held state: `InputState::apply` returns whether it did, and `InputBuffer::consume` keeps only those events. This one rule drops GLFW's post-loss synthetic releases, presses and motion while unfocused, and duplicate focus values, which no longer reset held state. Kept events keep their capture sequence. Hold notifications are `InputNotificationKind::KeyHold` and `ButtonHold`, which the executor appends after the captured events. | S7-T11 `/card-start`, Oct 1 |
 | Input notifications are separate from Scene event streams. They have current-Tick delivery, no Tick-barrier staging, and no Scene `EventTypeId` registration. | ADR-014 §7 and ADR-020 §1, Sep 26 amendments |
 | The render-owned presentation input copy remains independent of simulation ingress. Network commands remain ADR-007 §4's separate authority seam. | ADR-019 §4; ADR-007 §4 |
 
@@ -48,7 +51,7 @@ flowchart LR
 For example, a GLFW W press becomes an engine W-key press in ingress. In the
 first Tick that consumes it, a selected movement system sees that press before
 its `tick`. That Tick and later Ticks report held while W stays down; the captured release
-ends that held state. The handler API's names remain open.
+ends that held state.
 
 The input batch is read-only for the duration of its Tick. Each selected system
 sees the same captured events in sequence order, across key, button, motion and
@@ -97,7 +100,11 @@ build, test or demo verified the future delivery.
 
 At `7b410b61` (#105), the key and button callbacks translate through
 `engine/platform/src/window/GlfwControls.cpp` and publish engine identifiers, so
-the raw-integer grounding above is historical. Delivery to systems is still unbuilt.
+the raw-integer grounding above is historical.
+
+At `a07a3d28` (#111), `engine/platform/src/input/InputBuffer.cpp:50-59` keeps only the
+events that changed held state, and `engine/core/src/systems/SerialExecutor.cpp:76-94`
+builds the Tick's holds, which are delivered after the captured events.
 
 ## Development cards
 
@@ -108,7 +115,6 @@ overflow plus runtime proof. Script delivery awaits the first scripting consumer
 
 ## Open
 
-- Input handler registration names are S7-T10's implementation choice.
 - Scroll and text input need their own consumers; the current `Window` has no
   scroll or character callback. Text must not be inferred from key presses.
 - Editor viewport capture needs a reset when ownership leaves gameplay, so

@@ -293,32 +293,35 @@ That second row is the useful one: real work on this codebase clears the 85% bar
 being written for it. **The CI minute cost is still unmeasured**, because the job has not run
 yet. It belongs in this section once it has.
 
-## ccache keys (S4-P1, 2026-08-28)
+## ccache keys (S4-P1, #76, S7-P10)
 
-`hendrikmuhs/ccache-action` appends a timestamp to the key by default, so every run saved
-under a fresh name and nothing ever replaced anything. Restores were fine throughout, via the
-prefix match, at 100% hits. The growth was pure write-side: **111 entries and 3.62 GB in four
-days**, roughly 1.2 to 1.6 GB per active dev day, against GitHub's 10 GB repo cap.
+The key is `v2-<leg>-<hash of cmake/deps.cmake>-<sha>` with `append-timestamp: false`, and it
+restores by the `v2-<leg>-<deps hash>` prefix. Every run saves a fresh snapshot, so engine
+TUs stay warm as well as dependencies. That makes storage the cost, and two pieces bound it:
 
-The key is now `v1-<leg>-<hash of cmake/deps.cmake>` with `append-timestamp: false`. GitHub
-cache entries are immutable, so a stable key means an unchanged-deps run hits the primary key
-and skips the save. A new entry appears only when a dependency actually moves. This is the
-same content-addressed shape the `deps-*` cache has used from the start, which is why that one
-has always sat at two entries per OS.
+- **`cache-prune` in `ci.yml`** keeps the newest entry per key family on the run's own ref and
+  deletes the rest. A family is the key without its trailing hash, sha and `-` segments.
+- **`cache-cleanup.yml`** deletes every entry on `refs/pull/N/merge` when the PR closes.
 
-**Why it is keyed on deps and not on sources.** 140 of the 183 cacheable compilations are
-dependencies (Jolt, glfw, spdlog, tomlplusplus, glm, Catch2), and those only change when
-`deps.cmake` does. The other 43 are engine TUs, which stop being cached across runs and
-recompile every time, worst case all 43 when a common header moves. **Revisit when engine TUs
-stop being a small minority of the total.** Today it is 43 against 140.
+**Why per ref.** A PR can read caches from its own merge ref and from `master`, nothing else.
+A closed PR's entries are therefore unreadable, and only the newest `master` snapshot per leg
+is ever restored. On a dry run on Oct 1, 2026, the steady state on `master` was eight
+entries and about 730 MB, and an open PR adds at most one entry per leg.
 
-### The failure mode it cannot recover from
+### How it got here
 
-ccache hashes the compiler internally, so a runner image bumping clang or MSVC invalidates
-every entry. Because the save is skipped, nothing repopulates it, and every run then compiles
-cold under a key that still looks valid. **The symptom is the `ccache stats` step falling from
-high hits to near zero**, and the fix is bumping the `v1` segment in the key. That segment
-exists only so the recovery is a one-character edit rather than a redesign under pressure.
+| Shape | What went wrong |
+|---|---|
+| Timestamped key (default) | Every run saved under a fresh name: 111 entries and 3.62 GB in four days. |
+| `v1-<leg>-<deps hash>` (S4-P1, Aug 28) | The count held, but entries were write-once and froze at 21% hits. |
+| `v2-...-<sha>` (#76, Sep 6) | Hits recovered, but nothing deleted old snapshots. The cap filled on Oct 1 with 10.77 GB, of which 6.2 GB sat on closed PRs. |
+
+### Recovery
+
+A runner image that bumps clang or MSVC invalidates every entry. That now heals itself: one
+cold run per leg saves a fresh snapshot. Bump `v2` to `v3` only to discard entries that are
+known to be bad. The prune treats `v2` and `v3` as different families, so after a bump the
+old `v2` entries on `master` have to be deleted by hand.
 
 ## Docs-only PRs (S4-P4, 2026-08-28)
 

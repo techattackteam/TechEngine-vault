@@ -123,17 +123,20 @@ consumer-triggered work is parked in [[Backlog]].
   event and held-state contract. Prove known and unknown controls, press/release
   order, ignored GLFW repeat, and the independent presentation input copy.
   Shipped in #105 (`7b410b61`, Sep 28).
-- [ ] **S7-T10** · Deliver input edges to selected systems · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S7-T10** · Deliver input edges to selected systems · P1 · 🟠 Moderate · 2-3h ·
   done: let each persistent selected system declare an input handler at startup.
   Deliver the consuming Tick's captured key, button, motion and focus events in
   sequence order at that system's scheduled slot before `tick`, under its declared
   component access. Prove press and release between two Ticks, two readers,
   declaration order, no delivery without a Tick, and multiple catch-up Ticks.
-- [ ] **S7-T11** · Generate held input and handle focus resets · P1 · 🟠 Moderate · 2-3h ·
+  Merged as #109 (`dcc09531`, Oct 1).
+- [x] **S7-T11** · Generate held input and handle focus resets · P1 · 🟠 Moderate · 2-3h ·
   done: generate one held notification per held key or button after captured events
   in each Tick. Clear held controls and pointer baseline on focus transition;
   regain starts neutral. Prove press-plus-release in one Tick, quiet held Ticks,
   duplicate focus, and GLFW's post-loss synthetic releases without a stuck key.
+  Merged as #111 (`a07a3d28`, Oct 1). Diff coverage was not enforced on it; see S7-T11's
+  Done entry on [[Sprint Board]].
 - [ ] **S7-T12** · Prove overflow recovery and runtime delivery · P1 · 🟢 Deep · 4-6h ·
   done: give input handlers a visible recovery notice with the lost sequence range
   and recovered held/focus state, without inventing missing edges. Prove tiny-buffer
@@ -205,6 +208,14 @@ first scripting consumer and is not part of these cards.
 - [x] **S7-P9** · Make `ci-docs.yml` parse again · P1 · 🟡 Light · 1h ·
   done: the workflow parses, and a docs-only PR reports the nine required contexts again.
   Pulled from [[Backlog]] on Sep 28 after the lane found the break; it blocked S7-P2.
+- [x] **S7-P10** · Bound Actions cache storage per ref · P2 · 🟡 Light · 1-2h ·
+  done: `ci.yml` keeps the newest cache per key family on each ref, `cache-cleanup.yml`
+  drops a PR's caches when it closes, and a `workflow_dispatch` run on `master` shows the
+  prune job deleting stale entries. Pulled in on Oct 1 when the repo hit the 10 GB cap
+  (10.77 GB, 123 of 190 entries on closed PRs). The closed-PR entries were deleted by hand
+  the same day, which left 64 entries and 4.1 GB. Every remaining cache was then deleted on
+  Miguel's call. Merged as #110 (`16b934d6`, Oct 1). The prune-job clause is still unverified;
+  see S7-P10's Done entry on [[Sprint Board]].
 
 ### Story F: Backlog code hygiene for the Auto lane
 
@@ -215,6 +226,12 @@ use the lane's capacity, not Miguel's, and none touches a Story B or C file.
   done: `cmake --preset linux-debug -DTE_LOG_ACTIVE_LEVEL=3` builds and its tests pass.
   Fix the unused `position` local at `engine/base/tests/math/MathFormatTests.cpp:47`
   without weakening the case, and fix any other site the same build exposes.
+  Test policy, decided Oct 1 after the Sep 30 stop: the 13 `LogTests.cpp` cases that use
+  `TE_LOGGER_INFO` only to produce a record move to `TE_LOGGER_WARN`. Each case must still
+  prove the same thing; "per-channel level filters independently" raises its quiet channel
+  to Error, so its "dropped" record still drops. `TaskGraphTests.cpp:466` keeps the Info
+  log at `TaskGraph.cpp:76` and gates its count on `TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_INFO`,
+  the way `LogTests.cpp:177` does.
 - [ ] **S7-T13** · Give `techengine_app()` a `LIBS_PRIVATE` · P3 · 🤖 Auto · 2h ·
   done: `cmake/techengine_app.cmake` splits `LIBS` and `LIBS_PRIVATE` the way
   `techengine_module()` does, and the editor's toml++ moves to `LIBS_PRIVATE`. The Linux

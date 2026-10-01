@@ -134,10 +134,10 @@ note in it first: they record what today's earlier fires did, and you never redo
 or re-report their findings.
 STOP AND CHANGE NOTHING if the newest note in today's folder is under 30 minutes old. That is
 a double fire, which has been observed, and not a new slot.
-ONE PR PER DAY, ACROSS BOTH FIRES. If any note in today's folder records a PR already opened, this fire
-takes report-only work instead: research, a freshness check, backlog grooming, or reading that
-PR's CI. A code card costs 16.1 billed CI minutes against a budget of about 2000 a month, so
-two code cards a day would be about 650 a month, a third of it, for one lane.
+ONE PR PER FIRE, SO AT MOST TWO A DAY. A PR an earlier fire opened today does not block this
+one. It is an open PR, so step 5's file check keeps you off every file it changed. A code PR
+costs 16.1 billed CI minutes against a budget of about 2000 a month; two a day is about 650 a
+month, and Miguel accepted that cost.
 
 STEP 3: READ IN.
 Read, in order: CLAUDE.md, CONVENTIONS.md, docs/00 Dashboard/Dashboard.md,
@@ -194,22 +194,32 @@ parameter no caller varies, a wrapper that only forwards); and code much longer 
 Style and formatting are not findings: .clang-format, .clang-tidy and /te-review own those.
 A symbol is NOT dead if a design note, an open card or a TODO(<card ID>) names it: that is a
 seam built ahead of its consumer. Read docs/06 Sprints/Backlog.md first and never file twice.
-FIX ONLY THE OBVIOUS FINDINGS. A finding is obvious only when ALL of these hold:
-  - It is dead code with no reference anywhere in engine/, apps/, sdk/, tests/ or projects/,
-    tests included (tested code is not dead, and deleting it is a decision); or it is an exact
-    duplicate inside one module, fixed by reusing an existing function or by adding a `static`
-    function in the same .cpp.
-  - The fix adds no header and no public API, and removes nothing under sdk/ or under any
-    module's public include/ directory.
-  - The tests pass unedited, and the whole diff stays under about 100 lines.
+FIX EVERY FINDING THAT NEEDS NO DESIGN DECISION. A finding is fixable when ALL of these hold:
+  - It is one of these three kinds:
+    - Dead code: nothing references it anywhere in engine/, apps/, sdk/, tests/ or projects/,
+      tests included. Code a test exercises is not dead, and deleting it is a decision. Dead
+      public API counts: you may delete it from a module's include/ directory.
+    - A duplicate inside one module, in one file or across several, fixed by reusing an
+      existing function or by extracting one helper. Follow CONVENTIONS.md's Internal linkage
+      rows: a helper that serves a class is a private member function, and a helper no class
+      owns is `static` in its .cpp.
+    - Copied test code: a case or file rebuilding what a shared fixture or helper would hold.
+  - The fix removes nothing under sdk/, adds no new header file and no new public symbol.
+  - Source refactors pass the tests unedited. A test-only cleanup changes only test files and
+    keeps every TEST_CASE and SECTION.
   - Step 5's check of Miguel's files passes.
-Bundle the obvious fixes into ONE PR titled "Code sweep: <module>", on a branch named
-sweep/<module>-<today's date> (for example sweep/base-2026-10-01). A sweep has no board card,
-and this is the one branch name without a card ID. Follow steps 6 to 8, and skip step 9. If
-today's notes already record a PR, file the fixes instead of making them.
-Every other finding becomes a Backlog entry under the module's heading: `#prio/low`, or
-`#prio/medium` when it would remove more than about 50 lines; "Found by the code sweep on
-<date>"; the file:line; the simpler shape; and roughly how many lines it would remove.
+There is no size cap. Bundle the fixes into ONE PR titled "Code sweep: <module>", on a branch
+named sweep/<module>-<today's date> (for example sweep/base-2026-10-01), with ONE COMMIT PER
+FINDING, so Miguel can drop one by reverting its commit. List every deleted public symbol in
+the PR body on its own line. A sweep has no board card, and this is the one branch name
+without a card ID. Follow steps 6 to 8, and skip step 9.
+Every finding you did not fix goes into ONE Backlog entry for this sweep, under the module's
+heading: `#prio/low`, or `#prio/medium` when together they would remove more than about 50
+lines; titled "Code sweep leftovers: <module>"; "Found by the code sweep on <date>" with a
+link to your report note; then one sub-bullet per finding with its file:line, the simpler
+shape and roughly how many lines it would remove. The reasoning lives in the report, not the
+entry. If the module already has a leftovers entry, update it in place instead: drop what is
+now fixed, add what is new, and change the date.
 
 STEP 5: DO THE WORK.
 Follow CLAUDE.md and CONVENTIONS.md exactly. Rule 0 is match the surrounding file.
@@ -219,7 +229,8 @@ change would touch any of them, stop before editing and report it: two branches 
 file is a merge conflict that lands on Miguel's evening.
 A REFACTOR MUST PASS THE TESTS AS THEY STAND. If you have to edit a test to make a refactor
 pass, the behaviour changed: undo it and report the card as mis-scoped. If no test covers the
-code you refactor, say so plainly in the PR body.
+code you refactor, say so plainly in the PR body. A sweep's test-only cleanup (step 4) is the
+one exception, because the tests are what it refactors.
 A code change is in scope only when the card's done-condition fully specifies the behaviour.
 If you find yourself choosing how something should behave, that is a decision, and it is
 Miguel's.
@@ -246,7 +257,7 @@ in a commit message or PR body. Write in Miguel's voice: what changed and why.
 THE AUTHOR FIELD COUNTS AS ATTRIBUTION TOO. Before committing, confirm with
 `git log -1 --format='%an <%ae> / %cn <%ce>'` that both are Miguel Faria. Step 1 sets it; this
 is the check that it held.
-ONE PR-PRODUCING CARD PER DAY, not per fire. Step 2 is where you check that.
+ONE PR PER FIRE, AT MOST TWO A DAY. Step 2 is where you check that.
 
 STEP 8: CHECK CI LAST.
 After the work is done, read the PR's checks. They have been running while you worked.
@@ -303,9 +314,18 @@ thing this lane can produce.
   *REJECTED* would forge that judgement.
 - **The afternoon code sweep exists to keep the codebase from growing waste** (2026-09-27):
   duplication, dead code and speculative abstractions. It fixes only what needs no design
-  call. Dead code with a test, or a duplicate that needs a new shared function, is a decision
-  about the engine's shape, so it is filed for Miguel. The per-module line count makes growth
-  visible from one sweep to the next.
+  call. Dead code with a test, or a duplicate that needs a new header, is a decision about the
+  engine's shape, so it is filed for Miguel. The per-module line count makes growth visible
+  from one sweep to the next.
+- **The sweep's bar was widened on 2026-10-01**, after two sweeps filed fixes Miguel then
+  wanted made. On Sep 29 he turned three `engine/platform` entries into #107 by hand; on Oct 1
+  the `engine/core` sweep filed eight entries (78 Backlog lines), two of which met the old bar.
+  Cross-file duplicates, dead public API and test-only cleanups are now in, and the ~100-line
+  cap is gone. One commit per finding replaces the cap as the way to keep the PR reviewable.
+- **Leftovers are one Backlog entry per module**, updated in place (2026-10-01). One entry per
+  finding grew the Backlog by a screen per sweep, and the report already holds the reasoning.
+- **The cap is per fire, not per day** (2026-10-01). Per day, a morning PR blocked the
+  afternoon even after it had merged, which is what happened to #108 on Oct 1.
 - **Sweep PRs have no card, on purpose** (2026-09-27). The `sweep/` branch prefix and the
   "Code sweep" title identify them, and the run report is their record. They are the one
   exception to CLAUDE.md rule 9's `<card ID>/<slug>` branch names.
