@@ -64,6 +64,13 @@ opinions about*) fired on S2-T2.
   `modernize-use-default-member-init` is not in `.clang-tidy`, so no gate re-adds braces.
   `base`/`core`/`app` swept the same day (13 files); member-init lists left alone. Driver: Miguel.
 
+- **2026-09-29, a class's helper is a private member, not a `static` function.** A `.cpp`
+  helper that serves a class's member functions becomes a private member of that class, in a
+  trailing `private:` section, even when the header is public. `static` stays for a free
+  function no class owns. It landed with the `engine/platform` code sweep (#107, `99c17745`),
+  whose `FileAccess::resolveTransfer` was the trigger. About 22 older `static` helpers across 11
+  files predate the rule; some serve no class and stay `static`. Driver: Miguel.
+
 ## Open: local ergonomics (not a code rule)
 
 - If CLion still has `EnableClangFormatSupport=false`, turn it **on** so the IDE and CI agree;

@@ -394,7 +394,22 @@ groups are kept, because they show where future work will land.
   [[Autonomous Lane - Routine Prompt]] bans AI attribution in a PR body. The squashed commit
   message was clean. The footer is probably added by the cloud harness and not by the prompt,
   so another prompt line may not stop it. Found at S7-P2's close on Sep 28, 2026.
-  **Trigger:** the lane's next PR.
+  **Fired Sep 29:** the lane's next PR, #106 (S7-P3), ends in the same footer and session
+  link. The sweep PR #107 the same day does not.
+- #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
+  (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
+  that serves a class's member functions a private member. About 22 older `static` helpers
+  across 11 source files predate it, and some serve no class and correctly stay `static`.
+  Convert one when its file is next touched, not in a rename pass. Found by the
+  `engine/platform` code sweep on Sep 29, 2026. **Trigger:** the next edit to a file that
+  has one.
+- #prio/low · **Nothing runs the vault citation checker**: S7-P3 (#106) shipped
+  `tools/check-vault-citations.py`, but neither `/weekly-review`'s drift check nor CI calls
+  it. Its first run reported 158 of 290 citations, most of them expected (a stale stamp,
+  [[v1 Code Audit]] with no `v1-reference` anchor, shas lost in the August rewrite). Until
+  that noise is cut down with `--exclude` or anchors, its output is not a usable gate.
+  Decide whether the drift check runs it, and with which excludes. Found at S7-P3's close on
+  Oct 1, 2026. **Trigger:** the next `/weekly-review`.
 - #prio/medium · **The autonomous lane's test line fails without a display**: step 6 of
   [[Autonomous Lane - Routine Prompt]] runs a bare `ctest --preset linux-debug`. The cloud
   sandbox has no `DISPLAY`, so 18 of 428 cases (every Window, Client, renderer and

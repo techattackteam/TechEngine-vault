@@ -176,12 +176,14 @@ first scripting consumer and is not part of these cards.
   card that landed in halves. Branches named `sweep/…` belong to the lane's code sweep,
   have no card, and pass. Re-tagged Auto on Sep 27, with the check's home pinned to
   `/card-close`.
-- [ ] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🤖 Auto · 4-6h ·
+- [x] **S7-P3** · Validate vault code citation paths and line bounds · P3 · 🤖 Auto · 4-6h ·
   done: a Python 3 script at `tools/check-vault-citations.py` in the engine repo that
   resolves the vault's `file:line` citations against the Dashboard's reconciled engine
   SHA, including explicit at-SHA citations, and reports each broken path or out-of-range
   line. It checks mechanical validity only and says so; whether a line supports its claim
   stays a human read. Re-tagged Auto on Sep 27, with the check pinned as a script.
+  Shipped in #106 (`5f2da623`, Sep 29). An at-SHA citation is a sha or tag in a code span
+  earlier in the same paragraph, list item, table row or heading (S7-P3's Done entry).
 - [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h ·
   done: amend ADR-009 for workflow-only PRs receiving no build, verify the stated
   master-run mitigation, and correct `ci.yml`'s skipped-check comment without
