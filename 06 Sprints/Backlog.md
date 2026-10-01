@@ -223,6 +223,84 @@ groups are kept, because they show where future work will land.
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
   parallel executor shows one system node dominates a tick.
 
+- #prio/low · **Three public symbols in core have no caller and no test**: `toString(Role)`
+  (`engine/core/include/TechEngine/core/SimulationContext.hpp:13-23`, the only reason the header
+  includes `<string>`), `ComponentRegistry::tagOf`
+  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:56`, defined at
+  `engine/core/src/scene/ComponentRegistry.cpp:42`) and `Writer::size()`
+  (`engine/core/include/TechEngine/core/serialization/Writer.hpp:87`). `toString(Role)` lost its
+  last callers when the log lines from #63 went away. Every serialization test reads the
+  buffer's own `size()`. `EventRegistry::tagOf` is tested and stays. The simpler shape deletes all three, about
+  25 lines. The sweep did not fix this, because the three are public API. Found by the code sweep on
+  Oct 1, 2026. **Trigger:** the next edit to any of the three headers.
+
+- #prio/low · **Two Scene paths re-implement `ComponentRegistry::denseId`**:
+  `Scene::addComponentInternal` and `Scene::removeComponentInternal`
+  (`engine/core/src/scene/Scene.cpp:593-603`) and `ArchetypeStorage::denseId<T>`
+  (`engine/core/src/scene/ArchetypeStorage.hpp:154-158`) each write `find`, the same
+  "Component type is not registered" `TE_CHECK`, and `->denseId`. That is exactly the body of
+  `ComponentRegistry::denseId` (`engine/core/src/scene/ComponentRegistry.cpp:24-28`). The
+  simpler shape calls `m_registry->denseId(type)`, which removes about 8 lines. This fix met the
+  sweep's bar, but today's PR slot was already used. Found by the code sweep on Oct 1, 2026.
+
+- #prio/low · **`ArchetypeStorage::componentRaw` is written twice**: the const and non-const
+  overloads (`engine/core/src/scene/ArchetypeStorage.cpp:82-109`) have the same 12-line body.
+  The simpler shape is the `std::as_const` plus `const_cast` forwarding that
+  `EventStreamManager::getStream` already uses (`engine/core/src/events/EventStreamManager.cpp:45-47`).
+  It removes about 10 lines. This fix met the sweep's bar, but today's PR slot was already used.
+  Found by the code sweep on Oct 1, 2026.
+
+- #prio/low · **`Scene::unparent` repeats `setParent`'s detach**: `setParent` validates the old
+  parent and siblings and then unlinks the child (`engine/core/src/scene/Scene.cpp:301-316` and
+  `:351-361`). `unparent` performs the same validation and the same unlink
+  (`engine/core/src/scene/Scene.cpp:417-435`). The simpler shape is one private member that
+  validates and unlinks a child, and both callers use it. It would remove about 20 lines. The
+  `HierarchyTests` cases cover both paths. Found by the code sweep on Oct 1, 2026.
+  **Trigger:** the next change to hierarchy linking.
+
+- #prio/low · **The schedule's bitmask and entry guards are written several times**:
+  `ScheduleAccess`'s constructor sets bits with two identical loops, and `reads` and `writes`
+  each repeat the word and bit arithmetic (`engine/core/src/systems/ScheduleAccess.cpp:22-63`).
+  `Schedule::addAccess` merges the two masks with two identical resize-and-OR blocks
+  (`engine/core/src/systems/Schedule.cpp:50-67`). Five `Schedule` setters open with the same
+  two `TE_CHECK` lines, and each one then calls `.at()` on an index it has just checked
+  (`engine/core/src/systems/Schedule.cpp:44-94`). The simpler shape is one private static mask
+  helper for set, test and merge, plus one private member that checks the index and returns
+  the entry. Together they would remove about 25 lines. The *Remove call-site access* entry
+  above may delete `addAccess`'s merge first. Found by the code sweep on Oct 1, 2026.
+  **Trigger:** the next change to `ScheduleAccess` or the `Schedule` setters.
+
+- #prio/low · **`SceneCommandBuffer` writes its pending-entity check four times**: the same
+  bufferId and epoch `TE_CHECK` appears in `despawn`, `queueAdd`, `queueRemove` and
+  `apply`'s `resolveTarget` (`engine/core/src/scene/SceneCommandBuffer.cpp:105`, `:114`,
+  `:123`, `:134`). The `Entity` and `PendingEntity` overloads of the private `addComponent` and
+  `removeComponent` templates also have identical bodies
+  (`engine/core/include/TechEngine/core/scene/SceneCommandBuffer.hpp:108-130`). The simpler shape
+  is one check on `Impl`, which lives in the `.cpp`, plus one template per operation over the
+  target type. It would remove about 15 lines. Found by the code sweep on Oct 1, 2026.
+
+- #prio/low · **`ArchetypeStorage`'s typed mutations exist only for tests**: the
+  `addComponent<T>` and `removeComponent<T>` templates
+  (`engine/core/src/scene/ArchetypeStorage.hpp:55-90`) repeat the type-erased
+  `addComponent` and `removeComponent` that `Scene` uses (`engine/core/src/scene/ArchetypeStorage.cpp:49-76`).
+  `ComponentStorage::set` (`engine/core/include/TechEngine/core/scene/ComponentStorage.hpp:107`)
+  exists only for the typed path and one `ArchetypeStorageTests` case. The simpler shape keeps
+  the type-erased path and makes the typed one a two-line forward, or deletes it. That would
+  remove about 30 lines, but the scene tests call it about 85 times, so the choice is yours.
+  Found by the code sweep on Oct 1, 2026. **Trigger:** the next `ArchetypeStorage` API change.
+
+- #prio/low · **Two core test fixtures build the same engine context by hand**:
+  `ExecutorFixture` (`engine/core/tests/systems/SerialExecutorTests.cpp:234-251`) and
+  `SceneEventFixture` (`engine/core/tests/scene/SceneEventTests.cpp:180-218`) declare the same
+  seven members: `MountTable`, `FileAccess`, `JobSystem`, `Clock`, `EngineContext`,
+  `InputFrame` and `SimulationContext`. They initialize them the same way. Their state guards
+  (`SerialExecutorTests.cpp:45-59`, `SceneEventTests.cpp:63-77`) are the same class.
+  `amountsOf` is written in both `EventStreamTests.cpp:26-32` and `SceneEventTests.cpp:79-86`.
+  `registerMaskComponents` (`ScheduleTests.cpp:196-199`) is `registerGraphComponents`
+  (`TaskGraphTests.cpp:162-165`) under another name. The simpler shape is one core test header
+  beside `SceneTestRegistry.hpp`. It would remove about 40 lines. Found by the code sweep on
+  Oct 1, 2026. **Trigger:** a third test file that needs a running `SimulationContext`.
+
 ## client
 
 - *(none)*
