@@ -40,7 +40,6 @@ kanban-plugin: board
 
 ## Story F: Backlog code hygiene for the Auto lane
 
-- [ ] **S7-T13** · Give `techengine_app()` a `LIBS_PRIVATE` · P3 · 🤖 Auto · 2h: mirror `techengine_module()`; toml++ goes private.
 - [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h: a TU that undefines the gate, in debug and release.
 - [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h: parameter renames only; tests unedited.
 
@@ -51,6 +50,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S7-T13** · Give `techengine_app()` a `LIBS_PRIVATE` · P3 · 🤖 Auto · 2h: **PR #108, `S7-T13/app-libs-private`, Oct 1.** `techengine_app()` parses `LIBS_PRIVATE` and links it PRIVATE; the editor's toml++ moved there. linux-debug passed 477/477 locally with tests unedited. Yours to review and merge. See [[2026-10-01 09-09 Auto Run]].
 - [ ] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h: **stopped Sep 30, no PR.** The level-3 build compiles, and `MathFormatTests.cpp:47` is its only new warning. But 14 tests fail under it, because they assert on Trace/Debug/Info records that the gate compiles out (13 in `LogTests.cpp`, plus `TaskGraphTests.cpp:466`, which reads `TaskGraph.cpp:76`'s Info log). **Decide:** should those tests gate on `TE_LOG_ACTIVE_LEVEL` the way `LogTests.cpp:177` already does, move to Warn-level macros, or should the card drop "its tests pass"? See [[2026-09-30 14-08 Auto Run]].
 
 
