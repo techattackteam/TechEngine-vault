@@ -38,7 +38,6 @@ kanban-plugin: board
 
 ## Story F: Backlog code hygiene for the Auto lane
 
-- [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h: a TU that undefines the gate, in debug and release.
 - [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h: parameter renames only; tests unedited.
 
 
@@ -48,11 +47,12 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h: #113, branch `S7-B1/log-gate-above-info`, opened Oct 2 by the lane. Applies the Oct 1 test policy. The level-3 build also exposed three unused `InputLogSystem` parameters and `countExactLog`, which the new gate orphans; all four got `[[maybe_unused]]`. Linux debug passed 506 of 506 at level 3 and at the default level. Yours to review and merge.
+- [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h: #114, branch `S7-T14/log-ndebug-fallback`, opened Oct 2 by the lane. A new `LogFallbackTests.cpp` undefines the gate before including `Log.hpp` and asserts Info under `NDEBUG`, else Trace. `linux-debug` and `linux-release` each passed 507 of 507. Yours to review and merge.
 
 
 ## ✅ Done: Sprint 07
 
+- [x] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h: #113 `2b9c921f`, **Oct 2**. The lane opened the PR in the morning, and Miguel merged it at 12:54 the same day, with every CI check green and `matrix.context` skipped. `linux-debug` now builds at `TE_LOG_ACTIVE_LEVEL=3` with no new warnings and passes its tests; the Oct 1 test policy moved 13 `LogTests.cpp` cases to Warn, and four sites got `[[maybe_unused]]`. Left out: no CI leg builds at level 3, so nothing keeps this from regressing.
 - [x] **S7-T11** · Generate held input and handle focus resets · P1 · 🟠 Moderate · 2-3h: #111 `a07a3d28`, **Oct 1**. All seven build legs and clang-format passed. **Diff coverage was not enforced:** the PR body is only `[skip-coverage]`, with no reason recorded. Three calls that no artifact made were settled at `/card-start`, and they are now in [[Input - Design]] § *Decided*. First, a captured event reaches handlers only if `InputState::apply` reports that it changed held state. Second, `InputBuffer::consume` does that filtering, not the executor. Third, holds are new kinds, `KeyHold` and `ButtonHold`; Miguel chose those names over the proposed `KeyHeld`. **The code contradicted the design note:** a duplicate focus value reset held state, although the note said it creates no transition, and `Window::setInputBuffer` makes duplicates happen for real. T10's delivery also forwarded GLFW's post-loss synthetic releases and unfocused motion to handlers. **Half a clause already existed:** the pointer-baseline reset was already in `Window.cpp` and `InputState` before the card. **T10's tests changed:** two `SimulationThreadTests` cases pressed W while unfocused, so the filter now drops that press, and they publish focus first. **Added:** `InputLogSystem` in the runtime demo logs press, hold, release and focus. No windowed run of it is recorded, so the windowed witness stays with S7-T12. The PR carries no review conversation, so this entry is the only record of the review. Unblocks S7-T12; Story C stays open. **Retro:**
 	  - The branch was cut from T10's branch while #109 ran CI, by Miguel's choice. T10 merged unchanged, so the squash carries only T11's files, but its message also lists T10's commit headlines.
 	  - Claude wrote the scaffold and the tests. Then, at Miguel's request, it implemented the TODOs and wrote the demo system. Miguel's first hold collector used a range-for over a `std::bitset`, which does not compile, and it cast the bit's value instead of its index.

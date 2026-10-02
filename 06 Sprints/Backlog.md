@@ -394,6 +394,9 @@ groups are kept, because they show where future work will land.
   so another prompt line may not stop it. Found at S7-P2's close on Sep 28, 2026.
   **Fired Sep 29:** the lane's next PR, #106 (S7-P3), ends in the same footer and session
   link. The sweep PR #107 the same day does not.
+  **Workaround found Oct 2:** #113 carried it too. On #114 the footer was appended when the PR
+  was created, and one body update through the GitHub MCP tool with the same text removed it.
+  A routine-prompt line could make that update a standard step.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers
