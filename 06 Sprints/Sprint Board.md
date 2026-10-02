@@ -38,7 +38,6 @@ kanban-plugin: board
 
 ## Story F: Backlog code hygiene for the Auto lane
 
-- [ ] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h: back from Review on Oct 1 with the test policy decided. The 13 `LogTests.cpp` cases move to `TE_LOGGER_WARN`, and the TaskGraph conflict-log test gates its count on `TE_LOG_ACTIVE_LEVEL`. See the card in the sprint note.
 - [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h: a TU that undefines the gate, in debug and release.
 - [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h: parameter renames only; tests unedited.
 
@@ -49,6 +48,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h: #113, branch `S7-B1/log-gate-above-info`, opened Oct 2 by the lane. Applies the Oct 1 test policy. The level-3 build also exposed three unused `InputLogSystem` parameters and `countExactLog`, which the new gate orphans; all four got `[[maybe_unused]]`. Linux debug passed 506 of 506 at level 3 and at the default level. Yours to review and merge.
 
 
 ## ✅ Done: Sprint 07
