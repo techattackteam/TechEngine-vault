@@ -38,7 +38,6 @@ kanban-plugin: board
 
 ## Story F: Backlog code hygiene for the Auto lane
 
-- [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h: parameter renames only; tests unedited.
 
 
 ## 🔨 In Progress
@@ -47,6 +46,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h: #115, branch `S7-T15/spell-out-loc-fmtstr`, opened Oct 5 by the lane. `loc` became `location` and `fmtStr` became `formatString` in the log and assert dispatch functions, four files. `linux-debug` passed 506 of 506 with no test edited. Yours to review and merge.
 - [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h: #114, branch `S7-T14/log-ndebug-fallback`, opened Oct 2 by the lane. A new `LogFallbackTests.cpp` undefines the gate before including `Log.hpp` and asserts Info under `NDEBUG`, else Trace. `linux-debug` and `linux-release` each passed 507 of 507. Yours to review and merge.
 
 
