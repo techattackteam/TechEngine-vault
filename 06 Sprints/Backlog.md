@@ -303,7 +303,18 @@ groups are kept, because they show where future work will land.
 
 ## client
 
-- *(none)*
+- #prio/low · **Code sweep leftovers: client**: Found by the code sweep on Oct 5, 2026
+  ([[2026-10-05 14-08 Auto Run]]). Each fix needs a new `te_test_support` header, which the
+  sweep may not add.
+  - `FrameRendererWindowScope` (`engine/client/tests/render/FrameRendererTests.cpp:13-17`),
+    `RenderWindowTestScope` (`engine/client/tests/render/RenderThreadTests.cpp:14-18`) and
+    `PlatformWindowTestScope` (`engine/platform/tests/window/WindowTests.cpp:17-21`) are the
+    same guard that calls `Window::terminate()`. One shared guard would remove about 10 lines.
+  - The three `ClientTests.cpp` cases (`:11-16`, `:31-36`, `:51-56`) build the same
+    `JobSystem`, `Clock`, `MountTable`, `FileAccess`, `EngineContext` and `InputBuffer` by
+    hand. The same set is in core's fixtures (the *Two core test fixtures* entry above), so
+    one shared engine-services helper would serve both modules. Here it would remove about
+    10 lines.
 
 ## app
 
