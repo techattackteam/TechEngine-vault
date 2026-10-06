@@ -10,8 +10,8 @@
 | **Quarter** | 2026 Q3 (Jul-Sep) |
 | **Sprint** | [[2026-09 Sprint 07 - Scene Events and Input Boundary]] *(Sep 26-Oct 9)* |
 | **Sprint goal** | Deliver Scene events at the Tick barrier and engine-coded input notifications during the consuming Tick. |
-| **Current focus** | Story C: S7-T12, overflow recovery and the runtime witnesses, is in progress and closes the story. Story F, the Auto lane's hygiene cards, closed on Oct 6 with #114 and #115. |
-| **Top blocker** | None. S7-T12's prerequisite, S7-T11, has merged. |
+| **Current focus** | Both implementation stories are done: S7-T12 (#117) closed Story C on Oct 6, after Story B closed on Sep 27. Story F closed the same day with #114 and #115. Still open: S7-D3 and S7-T2 in Story D, and S7-P1, S7-P4, S7-P6 and S7-P8 in Story E. |
+| **Top blocker** | None. |
 | **Next milestone** | Complete M5 event and input seams before M6 content. |
 | **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 | **Reconciled against** | engine `01ed7a30` (2026-08-30) |

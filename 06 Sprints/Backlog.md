@@ -416,6 +416,16 @@ groups are kept, because they show where future work will land.
   minutes and is outside the Auto lane. Policy in [[Logger - Design]] § *Tests under the
   level gate*. Found at S7-B1's close on Oct 2, 2026. **Trigger:** the next CI-matrix card,
   or the first time a level-3 build breaks again.
+  **Near miss Oct 6:** #117 added `InputLogSystem::onRecovered`, whose parameter only an Info
+  log reads. It got `[[maybe_unused]]` by hand before the commit; nothing would have caught it.
+- #prio/low · **Undriven demo code counts against diff coverage**: the runtime test binary
+  compiles `apps/runtime`'s demo systems, so `cmake/coverage_report.cmake` measures their
+  changed lines, but no test publishes input into `RuntimeApp`. `InputLogSystem`'s lines are
+  never run. #111, which added it, and #117 both shipped with `[skip-coverage]`; #117's body
+  names those lines as the reason. A headless `RuntimeAppTests` input case would cover them;
+  Miguel kept S7-T12 without one on Oct 6. Related: S7-P1's `App.cpp` coverage exclusion.
+  Found at S7-T12's close on Oct 6, 2026. **Trigger:** the next card that changes an undriven
+  demo system.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers

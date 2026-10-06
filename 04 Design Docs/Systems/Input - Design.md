@@ -3,7 +3,7 @@
 > Living design doc. S7-D2 settled the local input contract on 2026-09-26.
 > The ordered ingress and engine control identifiers exist (S7-T9, #105). Edges reach
 > selected systems (S7-T10, #109), and holds and focus resets follow them (S7-T11, #111).
-> Overflow recovery notices and the windowed witness are S7-T12's.
+> An overflow reaches handlers as a recovery notice (S7-T12, #117).
 
 **Module:** `platform` captures and normalizes controls; `app` owns ingress;
 `core` schedules simulation readers. **Kind:** engine input mechanism.
@@ -34,6 +34,7 @@ command component belongs to this local input slice.
 | Focus loss clears held controls; regain starts neutral. Overflow reports a gap and replaces held state without inventing presses or releases. | [[Simulation Thread - Design]]; S7-D2 |
 | A system declares input interest with `ScheduleRegistration::onInput` in `init`. The handler takes `(Scene&, const InputNotification&)` and is called once per notification, unlike `onEvent`'s batch span. `InputNotification` is a core-side copy of `InputEvent` without `capturedAt`. Handlers run inside the system's execution scope, after its Scene event handlers and before `tick`. | S7-T10, #109 (`dcc09531`) |
 | A captured event reaches handlers only if it changed the held state: `InputState::apply` returns whether it did, and `InputBuffer::consume` keeps only those events. This one rule drops GLFW's post-loss synthetic releases, presses and motion while unfocused, and duplicate focus values, which no longer reset held state. Kept events keep their capture sequence. Hold notifications are `InputNotificationKind::KeyHold` and `ButtonHold`, which the executor appends after the captured events. | S7-T11 `/card-start`, Oct 1 |
+| On a recovered Tick, every input handler first receives one `InputNotificationKind::Recovered` notice, before any captured event or hold, even when nothing is held. It carries the lost range in `firstLostSequence` and `lastLostSequence`; its `sequence` is 0, as on a hold, and `pressed` carries the recovered focus, as on `Focus`. The notice copies no held state: the `KeyHold` and `ButtonHold` notifications after it in the same Tick are the recovered held set, so a reader clears its own held state on the notice and rebuilds it from them. Copying a whole `InputState` into the notice was rejected, because it grows every notification for a rare case and repeats the holds. | S7-T12 `/card-start`, Oct 1; #117 (`4af869ec`) |
 | Input notifications are separate from Scene event streams. They have current-Tick delivery, no Tick-barrier staging, and no Scene `EventTypeId` registration. | ADR-014 §7 and ADR-020 §1, Sep 26 amendments |
 | The render-owned presentation input copy remains independent of simulation ingress. Network commands remain ADR-007 §4's separate authority seam. | ADR-019 §4; ADR-007 §4 |
 
@@ -76,7 +77,7 @@ release notifications after the reset. Duplicate focus values do not create
 another transition. Focus regain begins neutral until new presses arrive.
 
 On overflow, `InputFrame` reports the lost sequence range and latest held/focus
-state. Readers receive a recovery notice and resynchronize their own held state.
+state. Readers receive a `Recovered` notice and resynchronize their own held state.
 They receive no invented press or release for the missing events. A transient
 edge can therefore be lost visibly under overload. Held notifications reflect
 the recovered state from that Tick onward.
@@ -106,12 +107,17 @@ At `a07a3d28` (#111), `engine/platform/src/input/InputBuffer.cpp:50-59` keeps on
 events that changed held state, and `engine/core/src/systems/SerialExecutor.cpp:76-94`
 builds the Tick's holds, which are delivered after the captured events.
 
+At `4af869ec` (#117), `engine/core/src/systems/SerialExecutor.cpp:78-85` builds the
+recovery notice from the frame, and `:129-148` delivers it before the captured events
+and the holds.
+
 ## Development cards
 
-[[2026-09 Sprint 07 - Scene Events and Input Boundary]] records S7-T9-T12 as
-committed Dev cards with done conditions, estimates and ordering. They cover
-control translation, scheduled edge delivery, held and focus behavior, and
-overflow plus runtime proof. Script delivery awaits the first scripting consumer.
+[[2026-09 Sprint 07 - Scene Events and Input Boundary]] cut S7-T9-T12, which shipped as
+#105, #109, #111 and #117. They cover control translation, scheduled edge delivery, held
+and focus behavior, and overflow plus runtime proof. That sprint note's Definition of Done
+records the headless tests and the windowed run separately. Script delivery awaits the
+first scripting consumer.
 
 ## Open
 

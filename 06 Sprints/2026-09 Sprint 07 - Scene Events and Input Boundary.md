@@ -137,12 +137,12 @@ consumer-triggered work is parked in [[Backlog]].
   duplicate focus, and GLFW's post-loss synthetic releases without a stuck key.
   Merged as #111 (`a07a3d28`, Oct 1). Diff coverage was not enforced on it; see S7-T11's
   Done entry on [[Sprint Board]].
-- [ ] **S7-T12** · Prove overflow recovery and runtime delivery · P1 · 🟢 Deep · 4-6h ·
+- [x] **S7-T12** · Prove overflow recovery and runtime delivery · P1 · 🟢 Deep · 4-6h ·
   done: give input handlers a visible recovery notice with the lost sequence range
   and recovered held/focus state, without inventing missing edges. Prove tiny-buffer
   overflow and resumed held delivery, then record a windowed runtime witness for
   press, held, release and focus loss. Record headless behavior separately and keep
-  headless composition free of a GLFW source.
+  headless composition free of a GLFW source. Merged as #117 (`4af869ec`, Oct 6).
 
 T9 precedes T10; T10 precedes T11; T12 follows T11. S7-T10 also needs the
 persistent selected-system startup seam from S7-T3. Script delivery awaits its
@@ -267,10 +267,17 @@ use the lane's capacity, not Miguel's, and none touches a Story B or C file.
   `63b437d5`, Sep 27), plus Miguel's windowed run of the same day (S7-T8's Done entry).
 - [x] The input boundary has an accepted contract and an Input design hub grounded in
   current code and v1 prior art. Implementation follow-ups were cut after acceptance.
-- [ ] GLFW controls reach simulation as engine identifiers. Selected systems receive
+- [x] GLFW controls reach simulation as engine identifiers. Selected systems receive
   captured transitions during the consuming Tick and held notifications once per Tick;
   focus loss and overflow recover without stuck controls or invented edges. Prove
-  headless and windowed paths separately.
+  headless and windowed paths separately. Evidence: engine identifiers in #105
+  (`7b410b61`, Sep 28); edges, holds and focus resets in #109 (`dcc09531`) and #111
+  (`a07a3d28`), both Oct 1; the overflow recovery notice in #117 (`4af869ec`, Oct 6).
+  Headless: the `[overflow]` cases in `SimulationThreadTests`, which overflow a two-event
+  buffer with no window, and in `InputDeliveryTests`, beside both suites' earlier input
+  cases. Windowed: Miguel's `runtime.exe` run of Oct 6 logged press, one hold per Tick,
+  release, and a focus loss that cleared two held keys without a stuck key (S7-T12's
+  Done entry). No overflow was observed in a window; recovery rests on the tests.
 - [ ] Touched ADRs and design notes describe the shipped behavior; validation records
   distinguish tests, CI, attended demonstrations and unrun checks.
 
