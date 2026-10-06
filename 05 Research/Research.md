@@ -6,11 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://graphics.stanford.edu/courses/cs468-03-winter/Papers/ibsrb.pdf (Physics)
-- [ ] https://www.cs.toronto.edu/~jacobson/seminar/mueller-et-al-2007.pdf (Physics)
-- [ ] **MuJoCo: A physics engine for model-based control** | IROS 2012 (Physics)
-- [ ] https://arxiv.org/abs/2103.16021 (Physics)
-- [ ] https://arxiv.org/abs/2106.13281 (Physics)
 - [ ] https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=10589638 (Physics)
 - [ ] https://arxiv.org/html/2312.03297v4
 	(Physics)
@@ -48,6 +43,16 @@ kanban-plugin: board
 
 ## TO VALIDATE - MIGUEL REVIEW🔍
 
+- [ ] https://graphics.stanford.edu/courses/cs468-03-winter/Papers/ibsrb.pdf - **Impulse-based Simulation of Rigid Bodies** | ACM I3D 1995 (Physics)
+	Mirtich and Canny model every contact as collision impulses; background for the S1 lane, since Jolt will own the solver and TechEngine will not write one.
+- [ ] https://www.cs.toronto.edu/~jacobson/seminar/mueller-et-al-2007.pdf - **Position Based Dynamics** | JVCIR 2007 (Physics)
+	The original PBD paper, which projects constraints on positions directly; background for S1 and for Jolt's soft bodies, not something the engine will implement itself.
+- [ ] https://doi.org/10.1109/IROS.2012.6386109 - **MuJoCo: A physics engine for model-based control** | IROS 2012 (Physics)
+	Recommend reject: MuJoCo is a generalized-coordinate engine built for robotics control and optimization, while S1 is Jolt running authoritative game physics in the fixed phase.
+- [ ] https://arxiv.org/abs/2103.16021 - **Fast and Feature-Complete Differentiable Physics for Articulated Rigid Bodies with Contact** | arXiv preprint 2021 (Physics)
+	Recommend reject: Nimble makes DART differentiable for robotics learning, and no roadmap item needs gradients through the simulation.
+- [ ] https://arxiv.org/abs/2106.13281 - **Brax: A Differentiable Physics Engine for Large Scale Rigid Body Simulation** | NeurIPS Datasets and Benchmarks 2021 (Physics)
+	Recommend reject: Brax is a JAX simulator for reinforcement learning on accelerators, which does not match S1's Jolt-based authoritative physics.
 - [ ] http://mmacklin.com/smallsteps.pdf (Physics)
 	**Small Steps in Physics Simulation**: fixed-step substeps and XPBD stability; useful for the planned physics lane.
 - [ ] https://www.highperformancegraphics.org/previous/www_2012/media/Papers/HPG2012_Papers_Olsson.pdf (Rendering)

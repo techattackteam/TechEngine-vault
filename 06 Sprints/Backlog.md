@@ -492,6 +492,15 @@ groups are kept, because they show where future work will land.
   runs outside the editor.
 - #prio/xlow · **Command `/catch-up`**: session re-entry after a multi-day gap. **Trigger:**
   the first session that opens with "where was I".
+- #prio/low · **The vault does not record #112's CI install change, and the CI cost figure predates it**:
+  #112 (`8c32ea7b`, Oct 1) replaced the three `apt-get update` plus `apt-get install` steps in
+  `ci.yml` with the third-party `awalsh128/cache-apt-pkgs-action@v1`, and it swapped `xorg-dev`
+  for an explicit list of X11 packages. [[B3 - Build & Testing Notes]] has no line on either
+  change, and no note says whether a third-party action should be pinned by tag or by sha. The
+  16.1 billed minutes per code PR (measured on #52 and recorded in B3) also predates #110 and #112,
+  and [[Autonomous Lane - Design]] § *Cost model* still prices the lane with it. Found by the
+  freshness check in [[2026-10-06 09-09 Auto Run]]. **Trigger:** the next `/weekly-review`, or
+  the next change to the lane's PR cap.
 
 ## Ideas (unsorted)
 
