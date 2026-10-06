@@ -318,6 +318,17 @@ groups are kept, because they show where future work will land.
 
 ## app
 
+- #prio/low · **Code sweep leftovers: app**: Found by the code sweep on Oct 6, 2026
+  ([[2026-10-06 14-09 Auto Run]]).
+  - `MemoryTracking.cpp` writes the `new_handler` retry loop twice (`techEngineAllocate`,
+    `:35-50`, and `techEngineAllocateAligned`, `:52-73`) and the throwing wrapper twice
+    (`:75-89`). One retry helper that takes the allocation call would remove about 15 lines,
+    but this is the global allocator replacement and no test covers it.
+  - `LoopInputBarrier` (`engine/app/tests/SimulationThreadTests.cpp:84-88`) is the same no-op
+    `TickBarrierServices` as `NoOpTickBarrierServices` (`engine/app/src/App.cpp:16-20`) and
+    core's `SceneEventBarrier` (`engine/core/tests/scene/SceneEventTests.cpp:174-178`). A shared
+    no-op barrier needs a new header. It would remove about 10 lines.
+
 - #prio/medium · **Expose project system contribution and pre-session selection**:
   complete [[ADR-022 - Project system composition and self-description]]'s public
   catalog boundary beyond App's built-in schedule selection. **Trigger:** the first
