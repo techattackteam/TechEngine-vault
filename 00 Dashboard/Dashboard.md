@@ -10,7 +10,7 @@
 | **Quarter** | 2026 Q3 (Jul-Sep) |
 | **Sprint** | [[2026-09 Sprint 07 - Scene Events and Input Boundary]] *(Sep 26-Oct 9)* |
 | **Sprint goal** | Deliver Scene events at the Tick barrier and engine-coded input notifications during the consuming Tick. |
-| **Current focus** | Story C: S7-T10 delivered input edges (#109) and S7-T11 added holds and focus resets (#111). S7-T12, overflow recovery and the runtime witnesses, is next and closes the story. |
+| **Current focus** | Story C: S7-T12, overflow recovery and the runtime witnesses, is in progress and closes the story. Story F, the Auto lane's hygiene cards, closed on Oct 6 with #114 and #115. |
 | **Top blocker** | None. S7-T12's prerequisite, S7-T11, has merged. |
 | **Next milestone** | Complete M5 event and input seams before M6 content. |
 | **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
@@ -60,7 +60,7 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **Oct 3-4, 2026**: `$weekly-review`, Sprint 07 midpoint.
+→ **Next ceremony:** **Oct 10-11, 2026**: `$sprint-plan`, the Sprint 07 boundary.
 The Sprint 06 boundary is recorded in [[2026-09-26 Sprint 06 Retrospective]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*

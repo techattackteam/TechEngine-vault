@@ -54,8 +54,8 @@ opinions about*) fired on S2-T2.
 - **2026-07-30, names are spelled out.** `deltaTime`, not `dt`; the loop's `dt`/`fixedDt` were
   the trigger (S2-T7). Rule + its carve-outs (acronyms, domain notation, terms of art) live in
   `CONVENTIONS.md` → *Names are spelled out*; the ADRs' `dt`/`kFixedDt` spelling is read through
-  it, not edited. `base` predates the rule and still carries `loc`/`fmtStr`; retrofit is a
-  [[Backlog]] entry with a next-time-you-touch-it trigger, not a rename pass. Same day,
+  it, not edited. `base` predated the rule and carried `loc`/`fmtStr` until S7-T15 renamed
+  them to `location`/`formatString` (#115, `f853cdab`, Oct 6). Same day,
   `.clang-format` went `ColumnLimit: 380 → 280` with argument bin-packing off. Driver: Miguel.
 
 - **2026-08-08, initialization is `= value`, not `{value}`.** `std::uint32_t m_alignment = 0;`.

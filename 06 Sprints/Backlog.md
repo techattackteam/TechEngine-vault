@@ -408,6 +408,14 @@ groups are kept, because they show where future work will land.
   **Workaround found Oct 2:** #113 carried it too. On #114 the footer was appended when the PR
   was created, and one body update through the GitHub MCP tool with the same text removed it.
   A routine-prompt line could make that update a standard step.
+- #prio/low · **No CI leg builds with the log gate above Info**: S7-B1 (#113, `2b9c921f`)
+  made `-DTE_LOG_ACTIVE_LEVEL=3` build cleanly and pass, but only on a local Linux debug run.
+  The CI matrix builds every leg at its default level, so a new test that asserts on an Info
+  record, or a parameter only an Info log reads, breaks that build unseen. MSVC has never
+  built at level 3. The fix is a leg or a step in `.github/workflows/ci.yml`, which costs CI
+  minutes and is outside the Auto lane. Policy in [[Logger - Design]] § *Tests under the
+  level gate*. Found at S7-B1's close on Oct 2, 2026. **Trigger:** the next CI-matrix card,
+  or the first time a level-3 build breaks again.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers

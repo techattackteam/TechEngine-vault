@@ -197,10 +197,10 @@ first scripting consumer and is not part of these cards.
 - [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h ·
   done: decide whether the widened witness check belongs in `$weekly-review`, then
   update that workflow or record why the existing sweep is sufficient.
-- [ ] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🤖 Auto · 2h ·
+- [x] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🤖 Auto · 2h ·
   done: record cache hits and snapshot growth from comparable recent runs, or name
   the missing evidence without claiming the policy improved hit rate. Report-only.
-  Re-tagged Auto on Sep 27.
+  Re-tagged Auto on Sep 27. Reported on Sep 30 with no PR (S7-P7's Done entry).
 - [ ] **S7-P8** · Define a small recorded-demo workflow · P3 · 🟡 Light · 2h ·
   done: specify where a capture, Tracy trace and observed behavior are stored and
   linked from a sprint review, using the Sprint 06 showcase to identify what was
@@ -222,7 +222,7 @@ first scripting consumer and is not part of these cards.
 Pulled from [[Backlog]] on Sep 27 as Auto work. None of their triggers had fired; they
 use the lane's capacity, not Miguel's, and none touches a Story B or C file.
 
-- [ ] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h ·
+- [x] **S7-B1** · Build with the log gate above Info · P3 · 🤖 Auto · 2h ·
   done: `cmake --preset linux-debug -DTE_LOG_ACTIVE_LEVEL=3` builds and its tests pass.
   Fix the unused `position` local at `engine/base/tests/math/MathFormatTests.cpp:47`
   without weakening the case, and fix any other site the same build exposes.
@@ -231,17 +231,20 @@ use the lane's capacity, not Miguel's, and none touches a Story B or C file.
   prove the same thing; "per-channel level filters independently" raises its quiet channel
   to Error, so its "dropped" record still drops. `TaskGraphTests.cpp:466` keeps the Info
   log at `TaskGraph.cpp:76` and gates its count on `TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_INFO`,
-  the way `LogTests.cpp:177` does.
-- [ ] **S7-T13** · Give `techengine_app()` a `LIBS_PRIVATE` · P3 · 🤖 Auto · 2h ·
+  the way `LogTests.cpp:177` does. Merged as #113 (`2b9c921f`, Oct 2).
+- [x] **S7-T13** · Give `techengine_app()` a `LIBS_PRIVATE` · P3 · 🤖 Auto · 2h ·
   done: `cmake/techengine_app.cmake` splits `LIBS` and `LIBS_PRIVATE` the way
   `techengine_module()` does, and the editor's toml++ moves to `LIBS_PRIVATE`. The Linux
-  build and tests pass unedited.
-- [ ] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h ·
+  build and tests pass unedited. Merged as #108 (`fb4df6e9`, Oct 1).
+- [x] **S7-T14** · Test `Log.hpp`'s `NDEBUG` fallback · P3 · 🤖 Auto · 2h ·
   done: a test TU that `#undef`s `TE_LOG_ACTIVE_LEVEL` before including `Log.hpp`, plus
   its CMake entry, proves the fallback's level in both `linux-debug` and `linux-release`.
-- [ ] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h ·
+  Merged as #114 (`bf79486b`, Oct 6).
+- [x] **S7-T15** · Spell out `loc` and `fmtStr` in `base` · P3 · 🤖 Auto · 1-2h ·
   done: rename the `loc` and `fmtStr` parameters in `base` to spelled-out names
   (`CONVENTIONS.md`). They are parameter names, so no caller changes; tests pass unedited.
+  Merged as #115 (`f853cdab`, Oct 6).
+
 ## 🤖 Auto lane
 
 - Auto cards: S7-T1, S7-P2, S7-P3, S7-P7 (re-tagged Sep 27) and S7-B1, S7-T13, S7-T14,
@@ -250,8 +253,8 @@ use the lane's capacity, not Miguel's, and none touches a Story B or C file.
   sweeps one module for unnecessary code, on `sweep/` branches with no card.
 - Attended slots freed: two 🟢 Deep (S7-P2, S7-P3), one 🟠 Moderate (S7-T1) and one
   🟡 Light (S7-P7).
-- The lane runs only once Miguel pastes the current [[Autonomous Lane - Routine Prompt]]
-  into the paused routine and resumes it.
+- All eight Auto cards are done; the last two merged on Oct 6. Since then the lane runs
+  paper screens and module sweeps only (#107 platform, #116 app).
 
 ## Definition of Done
 

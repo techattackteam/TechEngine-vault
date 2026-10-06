@@ -56,9 +56,11 @@ reference is given and the rationale is not copied. Go to the ADR for the *why*.
 - The header's fallback when `TE_LOG_ACTIVE_LEVEL` never arrives, which only a TU that includes
   `Log.hpp` without linking `base` sees: Info under `NDEBUG`, else Trace. RelWithDebInfo lands
   on Info there, one step quieter than the linked gate gives it. S5-P2, `0ac1a9b0` (#66).
+  `LogFallbackTests.cpp` proves both levels since S7-T14 (#114, `bf79486b`).
 - The per-TU `TE_LOG_CHANNEL`, and the `_CH` escape hatch. Both are below.
 - Math formatters live with math, not here (ADR-006 §6).
 - The level-usage table below.
+- How a test survives a build with the gate above Info. § *Tests under the level gate*, S7-B1.
 
 ## Design
 
@@ -256,6 +258,24 @@ bug", and it has four tiers ([[ADR-011 - Diagnostics (Logger & Assert)]] §5,
 A missing file is an Error. A null pointer where null is impossible is an assert.
 
 These rules may move to the root `CONVENTIONS.md` when B4 lands.
+
+### Tests under the level gate
+
+A build with `-DTE_LOG_ACTIVE_LEVEL=3` compiles Trace, Debug and Info out, and the suite must
+still pass there. Miguel set the policy on Oct 1, and S7-B1 (#113, `2b9c921f`) applied it.
+
+- **A test that only needs a record logs at Warn.** Every config keeps Warn, so the gate
+  cannot remove the record the test reads. A case that needs a record to *drop* raises its
+  filter instead, as `LogTests.cpp`'s "per-channel level filters independently" does with
+  Error.
+- **A test that reads a production log below Warn gates its assertions** on
+  `TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_INFO`, and above that asserts nothing was logged. The
+  production log keeps its level. `TaskGraphTests.cpp`'s "every conflict-derived edge is
+  logged" is the case.
+- **A local, parameter or helper that only a gated macro reads gets `[[maybe_unused]]`.**
+  This applies to engine and demo code, not only tests.
+
+No CI leg builds above Info, so nothing enforces this yet ([[Backlog]] § *etc*).
 
 ## Open questions
 
