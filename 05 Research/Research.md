@@ -6,12 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=10589638 (Physics)
-- [ ] https://arxiv.org/html/2312.03297v4
-	(Physics)
-- [ ] https://arxiv.org/abs/2509.20917 (Physics)
-- [ ] https://research.nvidia.com/labs/prl/publication/zesch2023ncf/ (Physics)
-- [ ] https://sites.google.com/view/diffsim/ (Physics) (Nao encontrei paper mas achei interessante)
 - [ ] https://gpuopen.com/download/lightweight_attention-based_indirect_illumination.pdf (Rendering)
 - [ ] https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques (Rendering)
 - [ ] https://graphics.stanford.edu/papers/rigid_bodies-sig03/rigid_bodies.pdf (Physics)
@@ -59,6 +53,16 @@ kanban-plugin: board
 	**Clustered Deferred and Forward Shading**: light assignment for a future forward renderer.
 - [ ] https://arxiv.org/abs/2011.05538 - **Sound Synthesis, Propagation, and Rendering: A Survey** | Survey preprint 2020 (Audio)
 	Broad map of game and VR audio techniques before selecting specialized audio papers.
+- [ ] https://ieeexplore.ieee.org/document/10589638 - **A Review of Differentiable Simulators** | IEEE Access 2024 (Physics)
+	Recommend reject: a survey of simulators that compute gradients for robotics and learning, and S1's Jolt-based authoritative physics needs no gradients through the simulation.
+- [ ] https://arxiv.org/abs/2312.03297 - **SoftMAC: Differentiable Soft Body Simulation with Forecast-based Contact Model and Two-way Coupling with Articulated Rigid Bodies and Clothes** | IROS 2024 (Physics)
+	Recommend reject: an MPM soft-body simulator made differentiable for robotic manipulation, which matches neither S1's rigid-body Jolt lane nor any roadmap need for gradients.
+- [ ] https://arxiv.org/abs/2509.20917 - **Efficient Differentiable Contact Model with Long-range Influence** | arXiv preprint 2025 (Physics)
+	Recommend reject: a contact model shaped for well-behaved gradients in differentiable rigid-body control, while S1 delegates contact to Jolt and needs no gradients.
+- [ ] https://research.nvidia.com/labs/prl/zesch2023ncf/neuralcollision2023.pdf - **Neural Collision Fields for Triangle Primitives** | SIGGRAPH Asia 2023 (Physics)
+	A learned 6D field that integrates triangle-triangle contact instead of sampling contact points; background reading at most for S1, because Jolt owns collision and a neural primitive does not fit an authoritative fixed-step server.
+- [ ] https://sites.google.com/view/diffsim/ (Physics) (Nao encontrei paper mas achei interessante)
+	Could not resolve: the Google Sites page is blocked by this session's network policy, and web searches for the URL found no paper, title or authors behind it.
 
 
 ## Rendering 👽
