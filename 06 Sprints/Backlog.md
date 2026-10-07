@@ -372,6 +372,18 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
   editor executable. [[Project - Design]] records the placement and open storage choice.
   **Trigger:** the first editor UI card.
+- #prio/medium · **Code sweep leftovers: apps**: Found by the code sweep on Oct 7, 2026
+  ([[2026-10-07 14-08 Auto Run]]). This covers both `apps/runtime` and `apps/editor`.
+  - `RuntimeApp.cpp:26-98` and `EditorApp.cpp:28-85` host the client the same way: starting
+    it, `publishSnapshot`, `mainThreadUpdate` (only the title prefix differs),
+    `wakeMainThread`, `renderTiming`, `shutdown` and `shouldClose`. The simpler shape is one
+    client-hosting `App` subclass that takes the window title. It would remove about 45 lines.
+  - `RuntimeApp::runtimeRole()` (`RuntimeApp.cpp:100`) and `EditorApp::editorRole()`
+    (`EditorApp.cpp:87`) are public statics that only return `Role::Client` for the
+    constructor. Passing `Role::Client` directly would remove about 8 lines.
+  - `CollisionSystem.cpp:19` names an unused `context` and `GravitySystem.cpp:26` an unused
+    `entity`, which are 2 of the build's 10 warnings. Leaving them unnamed, as
+    `EntitySpawnSystem::tick` and `MovementSystem`'s lambda do, removes no lines.
 
 ## etc: cross-cutting
 
