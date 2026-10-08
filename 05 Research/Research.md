@@ -6,11 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://gpuopen.com/download/lightweight_attention-based_indirect_illumination.pdf (Rendering)
-- [ ] https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques (Rendering)
-- [ ] https://graphics.stanford.edu/papers/rigid_bodies-sig03/rigid_bodies.pdf (Physics)
-- [ ] https://gamma.cs.unc.edu/BVH/ (Rendering)
-- [ ] https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf (Rendering)
 - [ ] https://research.nvidia.com/labs/rtr/publication/bitterli2020spatiotemporal/ (Rendering)
 - [ ] https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf (Rendering)
 - [ ] https://arxiv.org/abs/2004.10908 - **Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System** | IEEE TPDS 2021 (Multi-threading/task graph)
@@ -63,6 +58,16 @@ kanban-plugin: board
 	A learned 6D field that integrates triangle-triangle contact instead of sampling contact points; background reading at most for S1, because Jolt owns collision and a neural primitive does not fit an authoritative fixed-step server.
 - [ ] https://sites.google.com/view/diffsim/ (Physics) (Nao encontrei paper mas achei interessante)
 	Could not resolve: the Google Sites page is blocked by this session's network policy, and web searches for the URL found no paper, title or authors behind it.
+- [ ] https://gpuopen.com/download/lightweight_attention-based_indirect_illumination.pdf - **Lightweight Attention-Based Indirect Illumination** | SIGGRAPH 2026 (Rendering)
+	Recommend reject: a 2.2M-parameter neural network that predicts indirect light from reflective shadow maps, and no R1-R3 rung has global illumination or neural inference in it.
+- [ ] https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques - **Volume Rendering Techniques** | GPU Gems 2004 (Rendering)
+	A book chapter on texture-slice volume rendering of 3D data; background at most for R3's volumetric fog, which is more likely to march a froxel grid than to slice a volume texture.
+- [ ] https://graphics.stanford.edu/papers/rigid_bodies-sig03/rigid_bodies.pdf - **Nonconvex Rigid Bodies with Stacking** | ACM SIGGRAPH 2003 (Physics)
+	Guendelman, Bridson and Fedkiw stack nonconvex bodies with signed distance fields and shock propagation; background for S1, since Jolt owns contact and stacking.
+- [ ] https://gamma.cs.unc.edu/BVH/ (Rendering)
+	Could not resolve: the host is blocked by this session's network policy, and a web search found no paper behind the URL, only the GAMMA group's newer site at gamma.web.unc.edu.
+- [ ] https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf - **Microfacet Models for Refraction through Rough Surfaces** | EGSR 2007 (Rendering)
+	The paper that introduced the GGX distribution and extended microfacet models to transmission; a direct reference for R1's material model, where GGX is the usual specular term.
 
 
 ## Rendering 👽
