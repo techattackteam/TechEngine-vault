@@ -62,6 +62,11 @@ are accepting, and it is why call sites should prefer the aliases over `glm::` s
 
 `Vec2/3/4` · `IVec2/3/4` · `UVec2/3/4` · `Mat3` · `Mat4` · `Quat`, in namespace `TechEngine`.
 
+`Math.hpp` also carries `Mat2` and every non-square shape (`Mat2x3` to `Mat4x3`). **Keep the
+whole matrix set even where nothing uses an alias yet.** It is a complete set built ahead of
+its consumers, so a code sweep must not delete an alias for having no reference. Miguel
+decided this on 2026-10-08, after the `engine/base` sweep had removed five of them in #119.
+
 > **This is an explicit exception to `CONVENTIONS.md` → *Names are spelled out*.**
 > `Vec3` is not a shortened `Vector3`. It is the domain's own term, and it is what the
 > literature, glm, GLSL and every other engine call it. `Vector3` would read as a different
