@@ -42,40 +42,18 @@ groups are kept, because they show where future work will land.
   declined it ([[ADR-014 - Events (buffered streams) & StringId]] §7, contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
   ADR).
-- #prio/low · **The format-with-fallback block is written twice**: `internal::logDispatch`
-  (`engine/base/src/diagnostics/Log.cpp:355-372`) and `internal::assertDispatch`
-  (`engine/base/src/diagnostics/Assert.cpp:130-149`) carry the same `vformat_to` into a
-  `FormatBuffer`, the same `catch` that writes `<format error: …>`, and the same
-  `markTruncated()`. The simpler shape is one inline `internal` helper in the private
-  `src/diagnostics/FormatBuffer.hpp` that both call. It would remove about 12 lines. It was not
-  fixed by the sweep because the two copies are in different `.cpp` files. Found by the code
-  sweep on Sep 28, 2026. **Trigger:** the next edit to either dispatch function.
-- #prio/low · **The version anchors no longer anchor anything**: `baseVersion()`
-  (`engine/base/include/TechEngine/base/Base.hpp:4`), `platformVersion()`
-  (`engine/platform/src/Platform.cpp:7`) and `coreVersion()` (`engine/core/src/Core.cpp:8`)
-  are the S1 skeleton's link-order stubs. Each one calls the one below it, and nothing calls
-  `coreVersion()` at all. Every module now has real symbols that prove the link. The simpler
-  shape deletes the three functions, `Base.hpp` and `Base.cpp`, and `BaseTests.cpp`'s
-  "version anchor" case. Its glm case duplicates `MathTests.cpp` too. That removes about 35
-  lines. It was not fixed by the sweep because it removes public headers and a tested symbol.
-  Found by the code sweep on Sep 28, 2026. **Trigger:** the next change to a module's
-  `CMakeLists.txt` source list.
-- #prio/low · **`moduleLevel()` has no caller, not even a test**:
-  `engine/base/include/TechEngine/base/diagnostics/Log.hpp:115`, defined at
-  `engine/base/src/diagnostics/Log.cpp:277`. Its three siblings (`setModuleLevel`,
-  `channelLevel`, `setChannelLevel`) all have test cases. Either delete it (6 lines) or give it
-  a case beside `setModuleLevel`'s. It was not fixed by the sweep because it is public API.
-  Found by the code sweep on Sep 28, 2026. **Trigger:** the next Logger API edit.
-- #prio/low · **Three test files each write their own log-capture sink and guard**:
-  `SinkGuard` (`engine/base/tests/diagnostics/LogTests.cpp:36-68`), `LogCaptureGuard`
-  (`engine/base/tests/diagnostics/AssertTests.cpp:60-82`) and `GraphLogCaptureGuard`
-  (`engine/core/tests/systems/TaskGraphTests.cpp:134-160`). Each one copies the record into a
-  vector, calls `addLogSink` in its constructor and `removeLogSink` in its destructor, and two
-  of them also save and restore `minLevel`. The simpler shape is one guard in
-  `te_test_support`, next to `AssertCapture.hpp`. It would remove about 30 lines. The copied
-  fields differ between the three, so which fields the shared record keeps is a choice. Found
-  by the code sweep on Sep 28, 2026. **Trigger:** a fourth test file that needs to capture
-  log output.
+- #prio/medium · **Code sweep leftovers: base**: Found by the code sweep on Oct 8, 2026
+  ([[2026-10-08 14-08 Auto Run]]). It folds in the two Sep 28 entries that #119 did not fix.
+  - The version anchors: `baseVersion()` (`engine/base/include/TechEngine/base/Base.hpp:4`),
+    `platformVersion()` (`engine/platform/src/Platform.cpp:7`) and `coreVersion()`
+    (`engine/core/src/Core.cpp:8`) are the S1 link-order stubs, and nothing calls
+    `coreVersion()`. Delete them, `Base.hpp`, `Base.cpp` and `BaseTests.cpp`, whose glm case
+    repeats `MathTests.cpp`. About 35 lines. A test covers `baseVersion()`, so it is not dead.
+  - The log-capture guards: `SinkGuard` (`engine/base/tests/diagnostics/LogTests.cpp:50-70`),
+    `LogCaptureGuard` (`engine/base/tests/diagnostics/AssertTests.cpp:68-83`) and
+    `GraphLogCaptureGuard` (`engine/core/tests/systems/TaskGraphTests.cpp:140-160`). Use one
+    guard in `te_test_support`. About 30 lines. It needs a new header, and which record fields
+    the shared guard copies is a choice.
 
 ## platform
 
