@@ -205,11 +205,13 @@ end of the table.
 - **Editor console.** Parked until an editor exists (ADR-011 §3). It would be a lock-free ring
   feeding an ImGui log panel, the twin of the [[Profiler - Design|Profiler]] panel.
 - **Registration is fallible and the boot path says so** (S4-T3). The table is a fixed 8 slots,
-  so `addLogSink` returns `false` on a full table or a null sink. `initLogging` checks it and
-  prints to stderr, because a `false` there means the console and file sink never registered and
-  nothing else would report it. `shutdownLogging` discards `removeLogSink`'s bool through an
-  explicit `(void)`: a sink already gone is the end state it wanted. What that `bool` should
-  have *been* is the open [[Backlog]] § *etc* entry on `CONVENTIONS.md`'s Error handling row.
+  so `addLogSink` reports a full table or a null sink. `initLogging` checks it and prints the
+  error's message to stderr, because a failure there means the console and file sink never
+  registered and nothing else would report it. `shutdownLogging` checks `removeLogSink` the same
+  way. Both return a `std::error_code` in the `LogError` category (`NullSink`, `SinkTableFull`,
+  `SinkNotRegistered`) since 2026-10-09, per [[ADR-023 - Public error handling]].
+  A null sink stays a code rather than an assert, because the Logger never calls Assert
+  (ADR-011 §7).
 
 ### The rendered format (file and console)
 

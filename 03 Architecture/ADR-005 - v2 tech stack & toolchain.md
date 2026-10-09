@@ -10,6 +10,12 @@
   **OS-independent by design, Windows primary/reference** (Portability row + rationale).
   No technical choice changed; the *no-speculative-OS-abstraction-layer* decision
   stands; only scope/positioning clarified.
+- **Amended 2026-10-09, correction:** "C++23 *library* features (`std::expected`,
+  `std::print`, deducing-this) may be used where MSVC ships them" → C++23 library features are
+  unavailable while the project builds as C++20 (`CMakeLists.txt:18`, and `cxx_std_20` PUBLIC
+  on every module). MSVC's STL, libstdc++ and libc++ all gate `<expected>` and `<print>` on
+  C++23, and deducing-this is a language feature. No code used them, so nobody builds
+  differently. S7-D3 ([[ADR-023 - Public error handling]]).
 
 ## Context
 

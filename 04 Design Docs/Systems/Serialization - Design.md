@@ -26,6 +26,7 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 | Type tags are macro-free `constexpr` strings hashed with `StringId` (FNV-1a/64). | ADR-016 §5, ADR-007 §1 as amended |
 | Primitives and seam live in `core`; document schemas belong to their consumers. | ADR-016 §6, ADR-006 §1 |
 | Disk identity (authoring-id + remap, opt-in UUID) is ADR-007's, not re-opened here. | ADR-007 §1 |
+| `Reader`'s sticky failure is a `std::error_code` in the `ReadError` category (`ReadStatus` until 2026-10-09). The sticky shape stays. | [[ADR-023 - Public error handling]] §2 |
 
 ## Design
 
@@ -42,9 +43,10 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 
 ### Error surface (decided at S4-T6, 2026-08-27)
 
-`Reader` carries its own `ReadStatus`: `Ok`, `Truncated`, `BadMagic`, `BadVersion`. It does
-not reuse `FileResult`. That enum's vocabulary belongs to `platform`'s mount layer
-(`NoMount`, `IsADirectory`) and says nothing useful about a memory buffer.
+`Reader` carries its own error, a `std::error_code` in the `ReadError` category: `Truncated`,
+`BadMagic`, `BadVersion`. It does not reuse `FileError`. That enum's vocabulary belongs to
+`platform`'s mount layer (`NoMount`, `IsADirectory`) and says nothing useful about a memory
+buffer. Both travel as the same `std::error_code` type ([[ADR-023 - Public error handling]]).
 
 The status is **sticky**. The first failure latches, every later read is a no-op, and out
 params keep whatever the caller left in them. Reads return `void`, so the caller checks
@@ -140,7 +142,8 @@ fills a `std::vector<std::byte>` and `Reader` takes a `std::span<const std::byte
 
 ```cpp
 std::vector<std::byte> bytes;
-if (engine.files.read("assets://level.bin", bytes) != FileResult::Ok) {
+const std::error_code readError = engine.files.read("assets://level.bin", bytes);
+if (readError) {
     return;                            // the file never opened
 }
 
@@ -153,12 +156,12 @@ reader.read(entityCount);
 // ... more reads, none of them checked individually
 
 if (!reader.ok()) {
-    return;                            // reader.status() names which of the four
+    return;                            // reader.error() names which of the three
 }
 ```
 
-There are two failure surfaces and they stay separate on purpose. `FileResult` answers "did
-the file open", `ReadStatus` answers "did the bytes make sense". Checking the first is not
+There are two failure surfaces and they stay separate on purpose. `FileError` answers "did
+the file open", `ReadError` answers "did the bytes make sense". Checking the first is not
 optional. On `NoMount`, `NotFound` or `IsADirectory` the out-param is left untouched, so a
 reused buffer still holds the previous file's bytes. A read that *succeeds* replaces the
 vector's contents, so reusing one across loads needs no `clear()`.

@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 023 | [[ADR-023 - Public error handling]] | Accepted | 2026-10 |
 | 022 | [[ADR-022 - Project system composition and self-description]] | Accepted | 2026-09 |
 | 021 | [[ADR-021 - Immediate Scene transform propagation]] | Accepted | 2026-09 |
 | 020 | [[ADR-020 - System scheduling and task-graph execution]] | Accepted | 2026-09 |
@@ -36,7 +37,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 - Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/`, history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **023** (numbers are never reused).
+> Next number is **024** (numbers are never reused).
 
 ### Partial supersessions
 

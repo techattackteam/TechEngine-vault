@@ -50,11 +50,11 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Filename** | Fixed. `project.toml`, never a scan for an extension. | Fixes v1's two sources of truth for the name |
 | **Schema** | `name`. Nothing else. Supersedes [[Roadmap]] `Roadmap.md:112`, which still lists four keys. | See *The manifest* |
 | **Root** | Derived from the manifest's own location. Never stored inside it. | See *The manifest* |
-| **Errors** | A `ProjectResult` enum, returned. No exceptions, no silent defaults. | Mirrors `FileResult`, [[File Access - Design]] § *Resolution* |
+| **Errors** | A `std::error_code`, returned: `ProjectError` for the manifest's own failures, and `FileError` passed through unchanged for file failures. No exceptions, no silent defaults. `ProjectResult` until 2026-10-09. | [[ADR-023 - Public error handling]] §2, [[File Access - Design]] § *Resolution* |
 | **Load and save** | Both owned by `Project`, both through `FileAccess`. | Fixes v1's split |
 | **Toolchain paths** | Not on `Project` and not in the manifest. | See *Why the CMake paths are gone* |
 | **Mount authority** | Only the composition root mounts, and `Project` carries no mount knowledge at all. | See *Why `Project` does not mount* |
-| **New `FileResult` values** | `AlreadyExists` and `NotEmpty`. | See *The five mutating calls* |
+| **New `FileResult` values** (now `FileError`) | `AlreadyExists` and `NotEmpty`. | See *The five mutating calls* |
 | **Missing parents** | `write` does not create them and returns `NotFound`. `createDirectory` does create them. | Answers [[File Access - Design]] § *Open questions* |
 | **Layout** | The root holds `project.toml`, `shaders/` and an `assets/` split into `common`, `client` and `server`. | See *The project layout* |
 | **Which roots a role mounts** | Derived from the root, not configured. `shaders/`, then `assets/common` at priority 0 and `assets/<side>` at 100. | See *The project layout* |
@@ -317,7 +317,7 @@ mounts an exported fixed layout and reads no manifest (ADR-017 § *Decision* 1).
 
 ### The five mutating calls
 
-All five land on `FileAccess` and all return `FileResult`. **Destinations** resolve through
+All five land on `FileAccess` and all return a `std::error_code` in the `FileError` category. **Destinations** resolve through
 `MountTable::resolveForCreate`. That is the write path, so the highest-priority mount for the
 alias wins and existence is never probed ([[File Access - Design]] § *Resolution*).
 
@@ -371,12 +371,12 @@ want the tree has a one-line way to say so, and the intent is visible at the cal
 ### Load and save
 
 ```cpp
-enum class ProjectResult : std::uint8_t { Ok, ReadFailed, WriteFailed, ParseFailed, SchemaInvalid };
+enum class ProjectError : std::uint8_t { ParseFailed = 1, SchemaInvalid };   // + a category
 
 class Project {
 public:
-    ProjectResult load(const FileAccess& files, std::string_view manifestPath);
-    ProjectResult save(FileAccess& files, std::string_view manifestPath) const;
+    std::error_code load(const FileAccess& files, std::string_view manifestPath);
+    std::error_code save(FileAccess& files, std::string_view manifestPath) const;
 
     const std::filesystem::path& root() const;
     const std::string& name() const;
@@ -397,12 +397,12 @@ it compiles, never fires, and `parse()` throws instead. Wired at S5-T4 on 2026-0
 `TechEngine::tomlplusplus` in `cmake/deps.cmake`, an INTERFACE wrapper carrying
 `TOML_EXCEPTIONS=0`. Consumers link the wrapper, never the upstream target.
 
-**The four failure results are distinguishable on purpose.** `ReadFailed` means `FileAccess`
-could not produce bytes, which also covers a `manifestPath` the mount table refuses.
-`WriteFailed` is its mirror on `save`, added at S5-T4 because the original four had no value
-for a failed write and `save` would otherwise have reported a read error. `ParseFailed` means
-the bytes are not TOML. `SchemaInvalid` means it is valid TOML with `name` missing or not a
-string. An editor reports these four very differently.
+**The failures are distinguishable on purpose.** A file failure comes back as the
+`FileError` that `FileAccess` reported, unchanged: `NotFound` for a missing manifest,
+`InvalidPath` for a `manifestPath` the mount table refuses, and the same codes from `save`.
+Until 2026-10-09 these were folded into `ReadFailed` and `WriteFailed`. `ParseFailed` means the
+bytes are not TOML. `SchemaInvalid` means it is valid TOML with `name` missing or not a
+string. An editor reports each of these very differently.
 
 **An empty file is not a parse error.** It is valid TOML and parses to an empty table, so it
 lands on `SchemaInvalid` for the missing `name`.

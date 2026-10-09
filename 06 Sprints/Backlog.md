@@ -57,6 +57,11 @@ groups are kept, because they show where future work will land.
 
 ## platform
 
+- #prio/low · **Log the OS detail where `FileAccess` maps a filesystem error**: `CONVENTIONS.md`
+  § *Error handling* says the mapping site logs it, but every `ec` in `FileAccess.cpp` and
+  `MountTable.cpp` collapses to `FileError::IoError` or `NotFound` with nothing logged.
+  **Trigger:** the first `IoError` that someone has to diagnose.
+
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
   [[ADR-014 - Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
@@ -114,6 +119,14 @@ groups are kept, because they show where future work will land.
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
 
 ## core
+
+- #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
+  `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
+  `fromWorldToLocal`, `setLocal` and `setWorld` are the known exception to
+  [[ADR-023 - Public error handling]]. One `false` covers a dead entity, a cycle, a position out
+  of range, a singular transform and corrupt sibling links. Each reason needs its lane (assert or
+  `std::error_code`) before a `SceneError` can exist. **Trigger:** the first caller that has to
+  tell two of those reasons apart, likely the editor's hierarchy panel.
 
 - #prio/medium · **Resources: hot-reload / eviction**: candidate ADR; depends on the
   UUID/cache model ported from v1 (F7, F13, F31). **Trigger:** the resource cache being real (M6).
@@ -364,6 +377,11 @@ groups are kept, because they show where future work will land.
     `EntitySpawnSystem::tick` and `MovementSystem`'s lambda do, removes no lines.
 
 ## etc: cross-cutting
+
+- #prio/low · **A `CONVENTIONS.md` gotcha for `bool` to `std::error_code` migrations**: a
+  caller that tests the result (`REQUIRE(f())`, `if (!f())`) still compiles and silently
+  inverts, because an empty code is false. S7-D3's rebase caught seven such sites; the
+  compiler caught none. One bullet in § *Error handling* § *Gotchas*.
 
 - #prio/medium · **Jolt's precompiled header probably makes all 138 Jolt TUs uncacheable**: every
   `ccache stats` step on the last three `master` runs reports 139 uncacheable calls out of 386 on

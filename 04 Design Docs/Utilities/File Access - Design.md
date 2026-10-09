@@ -46,7 +46,7 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **Wiring** | `EngineContext` carries `FileAccess& files`. | ADR-006 §4 (F13) |
 | **Path scheme** | `alias://relative/path`, kept from v1. Mount priority is an `int`, highest first. | v1 `FileSystem.cpp:8-17` |
 | **Case** | Case-sensitive on every platform. The resolver never case-folds. | See *Case sensitivity* |
-| **Errors** | A `FileResult` enum is the return value. Data comes back through an out-param. No exceptions. | See *Resolution* |
+| **Errors** | A `std::error_code` in the `FileError` category is the return value; `{}` is success. Data comes back through an out-param. No exceptions. OS errors are mapped to `FileError` codes. `FileResult` until 2026-10-09. | See *Resolution* · [[ADR-023 - Public error handling]] §2 |
 | **Path validation** | A malformed path is rejected before it reaches a mount. | S3-T11 |
 | **Alias validation** | `mount()` rejects an empty alias, a `/` and a `:` with fatal checks, so the two ends cannot disagree about what an alias is. The rules mirror `splitVirtualPath`'s. | S5-T2 |
 | **Async** | None. Every call is synchronous. | See *Open questions* |
@@ -161,9 +161,9 @@ that would become the interface.
 ### The read surface
 
 ```cpp
-enum class FileResult : std::uint8_t { Ok, InvalidPath, NoMount, NotFound,
-                                       IsADirectory, NotADirectory, AlreadyExists, NotEmpty,
-                                       AccessDenied, IoError };
+enum class FileError : std::uint8_t { InvalidPath = 1, NoMount, NotFound,
+                                      IsADirectory, NotADirectory, AlreadyExists, NotEmpty,
+                                      AccessDenied, IoError };   // + a std::error_category
 
 struct FileStatus {
     std::filesystem::path physicalPath;
@@ -174,11 +174,11 @@ struct FileStatus {
 
 class FileAccess {                    // ctor takes const MountTable&, stores a non-owning ptr
 public:
-    FileResult read(std::string_view virtualPath, std::vector<std::byte>& out) const;
-    FileResult status(std::string_view virtualPath, FileStatus& out) const;
-    FileResult list(std::string_view virtualPath, bool recursive,
-                    std::vector<std::string>& out) const;
-    FileResult resolve(std::string_view virtualPath, std::filesystem::path& out) const;
+    std::error_code read(std::string_view virtualPath, std::vector<std::byte>& out) const;
+    std::error_code status(std::string_view virtualPath, FileStatus& out) const;
+    std::error_code list(std::string_view virtualPath, bool recursive,
+                         std::vector<std::string>& out) const;
+    std::error_code resolve(std::string_view virtualPath, std::filesystem::path& out) const;
 };
 ```
 
@@ -200,7 +200,7 @@ way.
 
 **`FileStatus` keeps four fields.** v1's version also carried `alias`, `virtualPath`, `name`
 and `extension`. The caller already passed the virtual path in, and the other three come out
-of `physicalPath`. v1's `exists` flag is what `FileResult` replaced.
+of `physicalPath`. v1's `exists` flag is what the error code replaced.
 
 ### `list` returns one mount, not the union
 
@@ -214,7 +214,7 @@ that today. Revisit at M6 if the resource scan does.
 ### The write surface
 
 ```cpp
-FileResult write(std::string_view virtualPath, std::span<const std::byte> bytes);
+std::error_code write(std::string_view virtualPath, std::span<const std::byte> bytes);
 ```
 
 **`write` shipped at S4-T7 (2026-08-30)**, ahead of the M3 plan this section used to carry.
@@ -233,7 +233,7 @@ Three calls it makes, each pinned by a Catch2 case:
 than on `write()`.
 
 **The rest of the mutating half shipped at S5-T3 (2026-09-03)**: `createDirectory`, `remove`,
-`copy`, `move` and `rename`, over both files and directories, on the same `FileResult`
+`copy`, `move` and `rename`, over both files and directories, on the same error
 convention. Their semantics live in [[Project - Design]] § *The five mutating calls*, which is
 where M3's real writes shaped them.
 
@@ -259,7 +259,7 @@ correct only because `mount()` keeps the vector in descending priority order. No
 function itself checks that, so the invariant lives in `mount()` and the ordering case in
 `MountTableTests.cpp` is what holds it up.
 
-**Telling `NoMount` and `NotFound` apart is why `FileResult` is an enum at all.** v1 returned
+**Telling `NoMount` and `NotFound` apart is why the error carries a code at all.** v1 returned
 a `bool` and logged through `TE_LOGGER_ERROR` on failure. Looking for an *optional* file
 therefore printed an error every time it was absent, which is the normal path.
 
@@ -393,7 +393,7 @@ two failure surfaces a caller has to check, is in [[Serialization - Design]] §
   `runtime/editor/src/fileSystem/FileSystem.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp:262-271`
 - Code: headers in `engine/platform/include/TechEngine/platform/files/` are `FileAccess.hpp`
-  · `MountTable.hpp` · `VirtualPath.hpp` · `FileResult.hpp`. Implementations are under
+  · `MountTable.hpp` · `VirtualPath.hpp` · `FileError.hpp`. Implementations are under
   `src/files/`. Catch2 cases are in `tests/files/` (`TechEnginePlatformTests`, new at
   S3-T11).
 - Wiring: `engine/core/include/TechEngine/core/EngineContext.hpp` and

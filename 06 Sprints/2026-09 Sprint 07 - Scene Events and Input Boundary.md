@@ -150,10 +150,15 @@ first scripting consumer and is not part of these cards.
 
 ### Story D: Close other fired decisions and implementation seams
 
-- [ ] **S7-D3** · Decide the public error-handling policy · P2 · 🟢 Deep · 4-6h ·
+- [x] **S7-D3** · Decide the public error-handling policy · P2 · 🟢 Deep · 4-6h ·
   done: settle `CONVENTIONS.md`'s open Error handling row in an ADR using
   `addLogSink` and `Reader` as current cases; state the `[[nodiscard]]` policy
   without rewriting working APIs speculatively.
+  Scope added Oct 9, by Miguel's choice after [[ADR-023 - Public error handling]] was
+  accepted: the same PR migrates the existing public error shapes to `std::error_code` and
+  takes `std::optional` out of signatures, which reverses the "without rewriting" clause above
+  (ADR-023 §6, amended). Scene's and `Transform`'s `bool` mutators stay `bool` until their
+  failure reasons are classified. Merged as #124 (`bd5788cd`, Oct 9).
 - [x] **S7-T1** · Correct app-local includes · P3 · 🤖 Auto · 2-3h ·
   done: change the four quoted includes in `apps/` to angle brackets (`CONVENTIONS.md`
   § *Includes*), after checking that each path resolves through the app's include dirs,
