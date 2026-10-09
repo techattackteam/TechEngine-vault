@@ -31,30 +31,16 @@ kanban-plugin: board
 	Mirtich and Canny model every contact as collision impulses; background for the S1 lane, since Jolt will own the solver and TechEngine will not write one.
 - [ ] https://www.cs.toronto.edu/~jacobson/seminar/mueller-et-al-2007.pdf - **Position Based Dynamics** | JVCIR 2007 (Physics)
 	The original PBD paper, which projects constraints on positions directly; background for S1 and for Jolt's soft bodies, not something the engine will implement itself.
-- [ ] https://doi.org/10.1109/IROS.2012.6386109 - **MuJoCo: A physics engine for model-based control** | IROS 2012 (Physics)
-	Recommend reject: MuJoCo is a generalized-coordinate engine built for robotics control and optimization, while S1 is Jolt running authoritative game physics in the fixed phase.
-- [ ] https://arxiv.org/abs/2103.16021 - **Fast and Feature-Complete Differentiable Physics for Articulated Rigid Bodies with Contact** | arXiv preprint 2021 (Physics)
-	Recommend reject: Nimble makes DART differentiable for robotics learning, and no roadmap item needs gradients through the simulation.
-- [ ] https://arxiv.org/abs/2106.13281 - **Brax: A Differentiable Physics Engine for Large Scale Rigid Body Simulation** | NeurIPS Datasets and Benchmarks 2021 (Physics)
-	Recommend reject: Brax is a JAX simulator for reinforcement learning on accelerators, which does not match S1's Jolt-based authoritative physics.
 - [ ] http://mmacklin.com/smallsteps.pdf (Physics)
 	**Small Steps in Physics Simulation**: fixed-step substeps and XPBD stability; useful for the planned physics lane.
 - [ ] https://www.highperformancegraphics.org/previous/www_2012/media/Papers/HPG2012_Papers_Olsson.pdf (Rendering)
 	**Clustered Deferred and Forward Shading**: light assignment for a future forward renderer.
 - [ ] https://arxiv.org/abs/2011.05538 - **Sound Synthesis, Propagation, and Rendering: A Survey** | Survey preprint 2020 (Audio)
 	Broad map of game and VR audio techniques before selecting specialized audio papers.
-- [ ] https://ieeexplore.ieee.org/document/10589638 - **A Review of Differentiable Simulators** | IEEE Access 2024 (Physics)
-	Recommend reject: a survey of simulators that compute gradients for robotics and learning, and S1's Jolt-based authoritative physics needs no gradients through the simulation.
-- [ ] https://arxiv.org/abs/2312.03297 - **SoftMAC: Differentiable Soft Body Simulation with Forecast-based Contact Model and Two-way Coupling with Articulated Rigid Bodies and Clothes** | IROS 2024 (Physics)
-	Recommend reject: an MPM soft-body simulator made differentiable for robotic manipulation, which matches neither S1's rigid-body Jolt lane nor any roadmap need for gradients.
-- [ ] https://arxiv.org/abs/2509.20917 - **Efficient Differentiable Contact Model with Long-range Influence** | arXiv preprint 2025 (Physics)
-	Recommend reject: a contact model shaped for well-behaved gradients in differentiable rigid-body control, while S1 delegates contact to Jolt and needs no gradients.
 - [ ] https://research.nvidia.com/labs/prl/zesch2023ncf/neuralcollision2023.pdf - **Neural Collision Fields for Triangle Primitives** | SIGGRAPH Asia 2023 (Physics)
 	A learned 6D field that integrates triangle-triangle contact instead of sampling contact points; background reading at most for S1, because Jolt owns collision and a neural primitive does not fit an authoritative fixed-step server.
 - [ ] https://sites.google.com/view/diffsim/ (Physics) (Nao encontrei paper mas achei interessante)
 	Could not resolve: the Google Sites page is blocked by this session's network policy, and web searches for the URL found no paper, title or authors behind it.
-- [ ] https://gpuopen.com/download/lightweight_attention-based_indirect_illumination.pdf - **Lightweight Attention-Based Indirect Illumination** | SIGGRAPH 2026 (Rendering)
-	Recommend reject: a 2.2M-parameter neural network that predicts indirect light from reflective shadow maps, and no R1-R3 rung has global illumination or neural inference in it.
 - [ ] https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques - **Volume Rendering Techniques** | GPU Gems 2004 (Rendering)
 	A book chapter on texture-slice volume rendering of 3D data; background at most for R3's volumetric fog, which is more likely to march a froxel grid than to slice a volume texture.
 - [ ] https://graphics.stanford.edu/papers/rigid_bodies-sig03/rigid_bodies.pdf - **Nonconvex Rigid Bodies with Stacking** | ACM SIGGRAPH 2003 (Physics)
@@ -64,12 +50,8 @@ kanban-plugin: board
 - [ ] https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf - **Microfacet Models for Refraction through Rough Surfaces** | EGSR 2007 (Rendering)
 	The paper that introduced the GGX distribution and extended microfacet models to transmission; a direct reference for R1's material model, where GGX is the usual specular term.
 
-- [ ] https://research.nvidia.com/labs/rtr/publication/bitterli2020spatiotemporal/ - **Spatiotemporal Reservoir Resampling for Real-Time Ray Tracing with Dynamic Direct Lighting** | ACM SIGGRAPH 2020 (Rendering)
-	Recommend reject: ReSTIR resamples light samples across space and time for ray-traced direct lighting from millions of lights, and no rendering rung (R1 to R3) includes ray tracing.
 - [ ] https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf - **High Quality Temporal Supersampling** | ACM SIGGRAPH 2014 Advances in Real-Time Rendering course (Rendering)
 	Karis's talk slides on Unreal Engine 4's temporal anti-aliasing (jitter, reprojection, neighbourhood clamping); a direct reference if R2's post stack gets TAA. It is a talk, not a paper.
-- [ ] https://arxiv.org/abs/2004.10908 - **Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System** | IEEE TPDS 2021 (Multi-threading/task graph)
-	Recommend reject: a duplicate, because this paper is already approved in Paper.md and sits in the Multi-threading/task graph column.
 - [ ] https://www.di.ens.fr/~zappa/readings/ppopp13.pdf - **Correct and Efficient Work-Stealing for Weak Memory Models** | PPoPP 2013 (Multi-threading/task graph)
 	Lê, Pop, Cohen and Zappa Nardelli prove an optimized Chase-Lev deque correct on ARM and POWER and give a C11 version; the reference for P2's work-stealing deque memory orders.
 - [ ] https://dl.acm.org/doi/10.1145/1073970.1073974 - **Dynamic Circular Work-Stealing Deque** | SPAA 2005 (Multi-threading/task graph)
@@ -102,6 +84,22 @@ kanban-plugin: board
 
 ## REJECTED
 
+- [ ] https://doi.org/10.1109/IROS.2012.6386109 (Physics)
+	**MuJoCo: A physics engine for model-based control**: MuJoCo is a generalized-coordinate engine built for robotics control and optimization, while S1 is Jolt running authoritative game physics in the fixed phase.
+- [ ] https://arxiv.org/abs/2103.16021 (Physics)
+	**Fast and Feature-Complete Differentiable Physics for Articulated Rigid Bodies with Contact**: Nimble makes DART differentiable for robotics learning, and no roadmap item needs gradients through the simulation.
+- [ ] https://arxiv.org/abs/2106.13281 (Physics)
+	**Brax: A Differentiable Physics Engine for Large Scale Rigid Body Simulation**: Brax is a JAX simulator for reinforcement learning on accelerators, which does not match S1's Jolt-based authoritative physics.
+- [ ] https://ieeexplore.ieee.org/document/10589638 (Physics)
+	**A Review of Differentiable Simulators**: a survey of simulators that compute gradients for robotics and learning, and S1's Jolt-based authoritative physics needs no gradients through the simulation.
+- [ ] https://arxiv.org/abs/2312.03297 (Physics)
+	**SoftMAC: Differentiable Soft Body Simulation with Forecast-based Contact Model and Two-way Coupling with Articulated Rigid Bodies and Clothes**: an MPM soft-body simulator made differentiable for robotic manipulation, which matches neither S1's rigid-body Jolt lane nor any roadmap need for gradients.
+- [ ] https://arxiv.org/abs/2509.20917 (Physics)
+	**Efficient Differentiable Contact Model with Long-range Influence**: a contact model shaped for well-behaved gradients in differentiable rigid-body control, while S1 delegates contact to Jolt and needs no gradients.
+- [ ] https://gpuopen.com/download/lightweight_attention-based_indirect_illumination.pdf (Rendering)
+	**Lightweight Attention-Based Indirect Illumination**: a 2.2M-parameter neural network that predicts indirect light from reflective shadow maps, and no R1-R3 rung has global illumination or neural inference in it.
+- [ ] https://research.nvidia.com/labs/rtr/publication/bitterli2020spatiotemporal/ (Rendering)
+	**Spatiotemporal Reservoir Resampling for Real-Time Ray Tracing with Dynamic Direct Lighting**: ReSTIR resamples light samples across space and time for ray-traced direct lighting from millions of lights, and no rendering rung (R1 to R3) includes ray tracing.
 - [ ] https://arxiv.org/abs/2204.07137 (Physics)
 	**Accelerated Policy Learning with Parallel Differentiable Simulation**: centered on reinforcement-learning policy training, outside the engine roadmap.
 - [ ] https://la.disneyresearch.com/publication/doc-differentiable-optimal-control-for-retargeting-motions-onto-legged-robots/ (Physics)
