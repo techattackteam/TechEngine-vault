@@ -242,8 +242,8 @@ should be what the log reports, not an automatic fallback that happened to fire 
 **Test sources only.** `coverage_report.cmake` drops them twice: by llvm-cov's filename regex
 and by name in `diff-cover`'s `--exclude`.
 
-**`engine/app/src/App.cpp` was the one other exclusion, and S7-P1 removes it (decided
-2026-10-09).** #59 added it while `App.cpp` still held the demo blocks, which no CI job runs,
+**`engine/app/src/App.cpp` was the one other exclusion, removed by #125 (`82d7a11c`,
+2026-10-09, S7-P1).** #59 added it while `App.cpp` still held the demo blocks, which no CI job runs,
 and a card that shipped one landed near 55% ([[Window - Design]]). #63 then moved the demos to
 `apps/runtime/src/demo/`. Since then `App.cpp` holds only the lifecycle, which
 `engine/app/tests/AppTests.cpp` drives, so the exclusion was hiding tested code from the gate.

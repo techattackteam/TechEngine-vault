@@ -423,7 +423,9 @@ groups are kept, because they show where future work will land.
   changed lines, but no test publishes input into `RuntimeApp`. `InputLogSystem`'s lines are
   never run. #111, which added it, and #117 both shipped with `[skip-coverage]`; #117's body
   names those lines as the reason. A headless `RuntimeAppTests` input case would cover them;
-  Miguel kept S7-T12 without one on Oct 6. Related: S7-P1's `App.cpp` coverage exclusion.
+  Miguel kept S7-T12 without one on Oct 6. Related: #125 (S7-P1) removed the `App.cpp`
+  exclusion on Oct 9 and added no exclusion for the demos; [[B3 - Build & Testing Notes]]
+  § *What the gate excludes*.
   Found at S7-T12's close on Oct 6, 2026. **Trigger:** the next card that changes an undriven
   demo system.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule

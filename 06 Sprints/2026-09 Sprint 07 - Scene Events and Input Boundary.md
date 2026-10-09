@@ -175,10 +175,13 @@ first scripting consumer and is not part of these cards.
 
 ### Story E: Repair fired process and evidence gaps
 
-- [ ] **S7-P1** · Reconcile build/profiler and App coverage policy · P2 · 🟢 Deep · 4-6h ·
+- [x] **S7-P1** · Reconcile build/profiler and App coverage policy · P2 · 🟢 Deep · 4-6h ·
   done: carry S6-P1's warning/tidy and Tracy-pin reconciliation into ADR-005/008/013,
   B3 and [[Profiler - Design]]; record the `App.cpp` coverage exclusion and decide
   whether its scope should narrow. Record unresolved decisions rather than inventing policy.
+  Merged as #125 (`82d7a11c`, Oct 9), with the vault half in `6b3cea6`. Miguel confirmed the
+  advisory warning policy as permanent, and the `App.cpp` exclusion was removed rather than
+  narrowed (S7-P1's Done entry).
 - [x] **S7-P2** · Guard the merged branch-to-card link · P3 · 🤖 Auto · 4-6h ·
   done: add a gate step to `.claude/commands/card-close.md` that checks the merged
   commit's branch prefix against the card being closed, without rejecting a still-open
@@ -209,7 +212,7 @@ first scripting consumer and is not part of these cards.
   done: record cache hits and snapshot growth from comparable recent runs, or name
   the missing evidence without claiming the policy improved hit rate. Report-only.
   Re-tagged Auto on Sep 27. Reported on Sep 30 with no PR (S7-P7's Done entry).
-- [ ] ~~**S7-P8** · Define a small recorded-demo workflow~~ · P3 · 🟡 Light · 2h ·
+- [x] ~~**S7-P8** · Define a small recorded-demo workflow~~ · P3 · 🟡 Light · 2h ·
   **Dropped Oct 9 by Miguel**, not returned to [[Backlog]]. The card came from a single card
   that needed a recorded demo, and that need was an exception, so no workflow is owed.
   [[Principles]] rule 7 dropped its recorded-demo half the same day; demos stay informal. Its
@@ -291,7 +294,7 @@ use the lane's capacity, not Miguel's, and none touches a Story B or C file.
   cases. Windowed: Miguel's `runtime.exe` run of Oct 6 logged press, one hold per Tick,
   release, and a focus loss that cleared two held keys without a stuck key (S7-T12's
   Done entry). No overflow was observed in a window; recovery rests on the tests.
-- [ ] Touched ADRs and design notes describe the shipped behavior; validation records
+- [x] Touched ADRs and design notes describe the shipped behavior; validation records
   distinguish tests, CI, attended demonstrations and unrun checks.
 
 ## Capacity note
