@@ -212,8 +212,8 @@ Landed at S3-T3. `TE_PROFILE=OFF` is the default, and it fetches nothing.
 | Piece | Where |
 |---|---|
 | `option(TE_PROFILE … OFF)` | `CMakeLists.txt:16` |
-| Tracy `v0.13.1`, with the fetch guarded by `if(TE_PROFILE)` | `cmake/deps.cmake:91` |
-| `Tracy::TracyClient` PUBLIC, plus `TE_PROFILE_ENABLED`, on `TechEngineBase` | `engine/base/CMakeLists.txt:36-37` |
+| Tracy `v0.14.1` (ADR-013 §1, amended 2026-10-09), with the fetch guarded by `if(TE_PROFILE)` | `cmake/deps.cmake:110-120` |
+| `Tracy::TracyClient` PUBLIC, plus `TE_PROFILE_ENABLED`, on `TechEngineBase` | `engine/base/CMakeLists.txt:39-42` |
 | The `windows-profile` and `linux-profile` presets (RelWithDebInfo) | `CMakePresets.json` |
 
 The S3-T3 card expected two pieces of work that the build did not need.
@@ -221,8 +221,8 @@ The S3-T3 card expected two pieces of work that the build did not need.
 Tracy declares its own include directory as `SYSTEM`, so there is **no manual re-export** to
 write, and no CMake 3.25 problem to work around.
 
-CMake emits `-external:W0` alongside `-external:I` on MSVC, so `/W4 /WX` needs **no change**
-to `te_warnings`.
+CMake emits `-external:W0` alongside `-external:I` on MSVC, so Tracy's headers raise no
+warnings in our targets and `te_warnings` needs **no change**.
 
 ### Coverage, said out loud because the automation does not say it
 
@@ -323,5 +323,5 @@ thousands of small tasks is a measurement, and Story D takes it against §6's bu
   `engine/platform/src/window/Window.cpp` (GLFW's allocator) ·
   `.github/workflows/ci.yml` (the Tracy-spelling grep) ·
   `engine/base/tests/diagnostics/ProfileTests.cpp` (the OFF-path case) ·
-  `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:36-37` · `CMakeLists.txt:16` ·
+  `cmake/deps.cmake:110-120` · `engine/base/CMakeLists.txt:39-42` · `CMakeLists.txt:16` ·
   `CMakePresets.json` (build wiring)

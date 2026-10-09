@@ -49,6 +49,15 @@
   > `ci.yml` is never tested by its own PR.** §9's "correctness leans on a red check" therefore
   > has an exception it does not name, filed on [[Backlog]] against
   > [[ADR-009 - Branching strategy & merge rules]].
+- **Amended 2026-10-09, decision:** §5's `te_warnings` "`/W4 /WX` (MSVC) and `-Wall -Wextra
+  -Wpedantic -Werror` (Clang)" → `/W4` and `-Wall -Wextra -Wpedantic`, with **no
+  warnings-as-errors** and no `TE_WERROR` option. `.clang-tidy`'s `WarningsAsErrors` went
+  from `'*'` to `''`, so tidy findings are reported and never fail a leg. §9's required-check
+  list still says `clang-format`/`clang-tidy`, but no tidy context exists: tidy runs inside
+  the two Linux build legs and cannot turn them red. Only `clang-format` is a failing style
+  check. Same change, reason and confirmation as [[ADR-005 - v2 tech stack & toolchain]]'s
+  amendment of this date (#78, S5-T12; permanent per Miguel). §5's "our targets only" channel
+  is unchanged and still carries the sanitizer and coverage flags. S7-P1.
 
 ## Context
 
@@ -239,6 +248,9 @@ deps fail to build on a warning we don't own.
   + TSan on Linux/Clang (ADR-005). Never hard-coded per target.
 - **clang-tidy** runs via `CMAKE_CXX_CLANG_TIDY` on our targets (the `.clang-tidy` from
   ADR-005), off for `_deps`.
+
+> **Amended 2026-10-09:** `te_warnings` no longer carries `/WX` or `-Werror`, and tidy
+> findings no longer fail a build. Warnings are reported, never fatal. See the header entry.
 
 ### 6. Tests: per-module Catch2 exes under CTest
 

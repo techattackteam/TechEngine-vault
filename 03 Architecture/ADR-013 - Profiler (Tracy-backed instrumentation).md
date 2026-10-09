@@ -17,6 +17,11 @@
   the frame real content is **+0.1377 µs, or 0.0008% of a 16.6 ms frame**
   ([[B3 - Build & Testing Notes]] § *Overhead*). The budget's purpose, the zero-when-OFF
   fact, the no-`ZoneTransient` rule and "not a CI gate" are all unchanged. Found at S3-T6.
+- **Amended 2026-10-09, decision:** §1's pin **`v0.13.1` → `v0.14.1`**. #46 (`ed24ae11`,
+  2026-08-24) bumped the tag inside an unrelated JobSystem card, and no artifact recorded it,
+  so this ADR, [[Profiler - Design]] and [[B3 - Build & Testing Notes]] named the old release
+  for 46 days. A reader who trusted them would download a desktop app that refuses to connect. The
+  rule that the tag and the desktop app must be the same release is unchanged. S7-P1.
 - **Supersedes:** **ADR-006 §5's `Profiler` classification row only** (`:233`: helper
   *service*, "owned + injected via `EngineContext`"). See §9. Every other clause of §5,
   including "profiler wraps the executor" and the F19 fix, **remains in force** and is
@@ -84,6 +89,9 @@ is for.
 **`v0.13.1`** (BSD-3). Writing a frame profiler is a project, not a task, and Tracy is
 best-in-class for exactly the shape this engine needs (frame marks, nested zones, lock
 contention, memory plots, GPU timestamps).
+
+> **Amended 2026-10-09:** the pin is now **`v0.14.1`**, since #46 on 2026-08-24. See the
+> header entry.
 
 **The pin is a protocol lock, not a version preference.** Client and consumer compile the
 same `ProtocolVersion` in; a mismatched pair does not connect. Consequence with teeth:

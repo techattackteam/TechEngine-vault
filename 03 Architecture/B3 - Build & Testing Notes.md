@@ -27,7 +27,8 @@ ADR-005/006). Decisions already made live in the ADRs (linked); this collects
 - **Toolchain / std / deps / CI / sanitizers / test framework** → [[ADR-005 - v2 tech stack & toolchain]]:
   C++20, MSVC + Linux/Clang CI matrix, **CMakePresets**, **FetchContent** (+ CI
   dependency **caching** (ccache / actions cache) or build times creep), Catch2 v3 +
-  CTest, clang-format + clang-tidy CI-enforced, `/W4 /WX`, ASan (Win) / UBSan+TSan (Linux).
+  CTest, clang-format CI-enforced, clang-tidy advisory, `/W4` with warnings never fatal
+  (ADR-005's 2026-10-09 amendment), ASan (Win) / UBSan+TSan (Linux).
 - **Module/target graph + linkage** → [[ADR-006 - v2 core architecture & module layout]] §1:
   `base → platform → core → client → app` static libs + leaf exes (`runtime`, `editor`,
   `tests`), one linkage story, no engine DLLs.
@@ -52,9 +53,11 @@ written, directly against ADR-008 §9's "CI time rides entirely on caching worki
 (Backstop guarantees are ADR-009 §4; this is the *practical* reason, which that ADR doesn't
 state.)
 
-**clang-tidy is verified on the Linux leg only.** The MSVC-side tidy integration segfaults
-locally, so the Linux/Clang leg is the only place the gate has actually been exercised. Treat a
-clean local Windows build as *no evidence* about tidy; the Linux leg is the authority.
+**clang-tidy runs on the Linux legs only, and a green leg says nothing about it.** The
+MSVC-side tidy integration segfaults locally, so the Linux/Clang legs are the only place tidy
+runs. Since #78 (Sep 8) its findings are warnings that never fail the leg
+([[ADR-008 - v2 build & testing baseline]]'s 2026-10-09 amendment), so the only way to see them
+is to read that leg's build log.
 
 **Phantom `CI / matrix.name` check on push runs: cosmetic, don't chase it.** The sanitizer
 job is `pull_request`-only (`ci.yml` `if: github.event_name == 'pull_request'`, ADR-008 §9
@@ -68,7 +71,8 @@ rulesets are unaffected. Clean fix if it ever matters: split sanitizers into the
 
 ## Profiling builds (Tracy): the pin is two-sided
 
-**Tracy `v0.13.1`** (`cmake/deps.cmake:91`). Recorded here because it is the one dep whose
+**Tracy `v0.14.1`** (`cmake/deps.cmake:117`), since #46 on 2026-08-24. This line said `v0.13.1`
+until 2026-10-09, because nothing recorded the bump. Recorded here because it is the one dep whose
 version is **not** a local matter: Tracy compiles its wire `ProtocolVersion` into client *and*
 consumer, so the **Tracy desktop app / `tracy-capture` in use must be the same release**:
 a mismatched pair connects to nothing, silently. Bumping the tag means re-downloading the
@@ -79,7 +83,8 @@ Observed on the first `TE_PROFILE=ON` build (2026-08-03, S3-T3, MSVC only):
 - **Default builds are untouched**: the fetch is `if(TE_PROFILE)`-guarded, so `build/windows`
   has no `tracy-src` at all.
 - **`/W4 /WX` needed no exemption.** CMake 3.28 emits `-external:W0` beside `-external:I` for
-  SYSTEM includes, and Tracy marks its own include dir SYSTEM. No `te_warnings` change.
+  SYSTEM includes, and Tracy marks its own include dir SYSTEM. No `te_warnings` change. `/WX`
+  itself was removed later, in #78.
 - **Editing `deps.cmake` invalidates CI's dep cache once**: `ci.yml`'s key is
   `hashFiles('cmake/deps.cmake')`, so the next run re-clones every dep. One-time, per edit.
 - **`linux-profile` is unverified and CI never builds it.** The profiled config can rot
@@ -211,9 +216,12 @@ the job**, before a single apt package, and every later step carries a guard aga
 A bypassed run finishes in seconds instead of spending about two minutes on clang, `diff-cover`
 and an instrumented build to reach a conclusion it already had.
 
-**It skips steps, never the job.** A required check skipped by a job-level `if:` does not report
-its context as success, which leaves the pull request pending instead of mergeable. The job has
-to run and go green; only the work inside it is optional. The cost of that shape is that a
+**It skips steps, never the job, for two reasons.** A job-level `if:` can only read the frozen
+event payload (*The bypass reads the API* below). And `sanitizers` needs this job to succeed: a
+skipped `coverage` would skip that matrix job too, which then reports one check named
+`matrix.name` instead of its three required contexts, and the pull request hangs pending. The
+`diff coverage` context itself would survive a skip, because GitHub documents a skipped
+required check as passing (*Four things that bite*, below). The cost of that shape is that a
 bypassed run reports no percentage and uploads no HTML, which is the trade taken knowingly: the
 old shape built everything to print a figure it was about to ignore.
 
@@ -228,6 +236,21 @@ pass.
 `coverage_report.cmake` checks its own bypass before the floor. That path is local-only now,
 since CI bypasses by never reaching the step, but the order still holds there: an explicit signal
 should be what the log reports, not an automatic fallback that happened to fire first.
+
+### What the gate excludes
+
+**Test sources only.** `coverage_report.cmake` drops them twice: by llvm-cov's filename regex
+and by name in `diff-cover`'s `--exclude`.
+
+**`engine/app/src/App.cpp` was the one other exclusion, and S7-P1 removes it (decided
+2026-10-09).** #59 added it while `App.cpp` still held the demo blocks, which no CI job runs,
+and a card that shipped one landed near 55% ([[Window - Design]]). #63 then moved the demos to
+`apps/runtime/src/demo/`. Since then `App.cpp` holds only the lifecycle, which
+`engine/app/tests/AppTests.cpp` drives, so the exclusion was hiding tested code from the gate.
+
+The move did not end the problem. `apps/runtime/src/demo/` is measured and no test drives it,
+which is why #111 and #117 shipped with `[skip-coverage]`. It is not excluded; the open
+question is on [[Backlog]] § *etc* (*Undriven demo code*).
 
 ### Running it locally
 

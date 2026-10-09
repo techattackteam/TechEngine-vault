@@ -16,6 +16,14 @@
   on every module). MSVC's STL, libstdc++ and libc++ all gate `<expected>` and `<print>` on
   C++23, and deducing-this is a language feature. No code used them, so nobody builds
   differently. S7-D3 ([[ADR-023 - Public error handling]]).
+- **Amended 2026-10-09, decision:** the *Format / lint* row's "clang-format + clang-tidy, config
+  checked in, CI-enforced", and the rationale's "plus `/W4 /WX`" → **only clang-format fails
+  CI.** clang-tidy still runs on the Linux legs, but its findings are reported and never fail
+  a build, and compiler warnings are no longer errors (`/W4` and `-Wall -Wextra -Wpedantic`
+  stay on). #78 (`5c0764bd`, 2026-09-08, S5-T12) made the change after Catch2's unreachable
+  fallback and tidy's performance suggestions blocked builds. Miguel confirmed on 2026-10-09
+  that it is permanent, not a pause. The mechanism is in
+  [[ADR-008 - v2 build & testing baseline]] §5. S7-P1.
 
 ## Context
 
@@ -63,6 +71,9 @@ Forces:
 | Format / lint                   | **clang-format + clang-tidy**, config checked in, CI-enforced                | **new**                              |
 | CI                              | **GitHub Actions**: Win/MSVC + Linux/Clang matrix                           | **new**                              |
 | Sanitizers                      | **ASan** (Win/MSVC) · **UBSan + TSan** (Linux/Clang)                         | **new**                              |
+
+> **Amended 2026-10-09:** in *Format / lint*, only clang-format is CI-enforced. clang-tidy
+> findings are advisory. See the header entry.
 
 ### Load-bearing rationale
 
@@ -123,6 +134,9 @@ framework choice.
 CI, and for AI collaborators) instead of living in one head. CLion consumes both
 natively. Closes the "no enforced style" half of F8; CI runs
 `clang-format --dry-run --Werror` + clang-tidy, plus `/W4 /WX`.
+
+> **Amended 2026-10-09:** CI still runs both tools, but only clang-format can fail it, and
+> `/WX` is gone. See the header entry.
 
 ## Consequences
 
