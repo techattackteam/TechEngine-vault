@@ -9,6 +9,15 @@
   commit directly)
 - **Task:** defines the branch topology, protection, and merge mechanics that ADR-008 §9
   assumed but never specified.
+- **Amended 2026-10-09, decision:** § *Consequences* said correctness leans on strict CI plus
+  self-review, with no exception. Since 2026-08-28 a PR that touches only `**.md`, `.claude/**`
+  or `.github/workflows/**` runs no build ([[ADR-008 - v2 build & testing baseline]]'s
+  amendment of that date), so **for a workflow-only PR, self-review is the whole gate**. The
+  mitigation is now policy: land a workflow edit in a PR of its own, then run `ci.yml` by
+  `workflow_dispatch` on `master` and read that run before building on the edit. A dispatch
+  cannot run `diff coverage` or the sanitizer legs, so an edit to those is first run by the
+  next code PR. What was verified, and how, is in [[B3 - Build & Testing Notes]] § *Docs-only
+  PRs*. Found at the 2026-08-29 drift check (A3). S7-P4.
 
 ## Context
 
@@ -106,6 +115,8 @@ sanitizers stay **required PR checks** (§2), they just don't re-run on the merg
 - **Solo + 0 approvals = self-review.** Correctness leans on strict CI + the habit of
   running `/code-review` before merge, not a second reviewer. Accepted for a solo repo;
   revisited when a contributor arrives.
+  > **Amended 2026-10-09:** a workflow-only PR runs no build, so self-review is its whole
+  > gate. Land it alone and dispatch `ci.yml` on `master` after the merge (see the header).
 - **No integration branch to soak overlapping features**: if two long-running branches
   ever overlap, more rebasing onto trunk. Not a solo concern today.
 - **Squash drops intra-story commit granularity** from trunk (kept on the branch until

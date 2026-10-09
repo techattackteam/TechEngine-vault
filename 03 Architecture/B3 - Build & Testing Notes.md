@@ -345,26 +345,53 @@ nearest minute** and nine trivial jobs are still nine jobs. The cheaper shape, i
 being enough, is one job posting nine check runs through the Checks API for ~1 minute, at the
 price of a token permission and more moving parts.
 
-### Three things that bite
+### Four things that bite
 
 - **`ci.yml` is never tested by its own PR.** It excludes `.github/workflows/**`, so breaking
   the YAML, renaming a leg or dropping a job still shows nine green checks from the stand-in
   and merges clean. It is worse than it looks: `ci-docs.yml` hardcodes the nine context names,
   so renaming a leg silently uncovers it and every later docs-only PR hangs unmergeable with
-  no clue why. **A workflow change is verified by watching the run it produces on `master`,
-  never by its own PR.** Land workflow edits alone and read the next run before building on
-  them. Same shape as S4-P1, whose fix merged its own verification out of reach.
+  no clue why. Same shape as S4-P1, whose fix merged its own verification out of reach.
+  **The merge does not test it either**, because the push filter excludes the same paths.
+  Land workflow edits alone, then run `ci.yml` by `workflow_dispatch` on `master` and read
+  that run before building on the change ([[ADR-009 - Branching strategy & merge rules]]'s
+  2026-10-09 amendment). See *What a dispatch covers* below.
+- **`ci-docs.yml` is the opposite: it does run on its own PR.** It has no path filter, and a
+  `pull_request` run uses the PR's copy of the workflow. #104 (S7-P9) is the evidence: its own
+  run reported the nine contexts from the file it had just fixed. So a wrong context name in
+  it hangs that PR pending, which is loud. The quiet case is a PR that also touches code,
+  because `scope` then stands the stand-in down and the edit waits for the next no-code PR.
 - **A skipped matrix job does not expand.** Measured on #49's push run, where `sanitizers`
   was skipped by its `if:`: it reported **one** check literally named `matrix.name`, and
   `win ASan` / `linux UBSan` / `linux TSan` reported nothing at all. A skipped *plain* job is
   different and does keep its context (`diff coverage` came back `skipped`). Seven of the nine
   required contexts are matrix legs, so gating the real jobs with `if:` would hang every
-  docs-only PR. This is why the stand-in is a separate workflow.
-- **A mixed PR fires both workflows.** `paths` matches when *any* changed file matches, while
-  `paths-ignore` skips only when *all* of them do, and Actions has no "all changed files
-  match" filter. Both then report the same nine contexts and the merge box takes the most
-  recent per name, which is the real run. That is ordering, not a guarantee: it holds only
-  while the stand-in stays seconds long.
+  docs-only PR. This is why the stand-in is a separate workflow. A skipped plain job is also
+  harmless to the merge box, because GitHub documents a skipped required check as passing. So
+  `diff coverage` does not keep its bypass inside the job to protect its own context;
+  `ci.yml`'s comment on that job gives the two real reasons.
+- **The no-code list is spelled three times.** `paths` fires when *any* changed file matches,
+  while `paths-ignore` skips only when *all* of them do, and Actions has no "all changed files
+  match" filter. Until 2026-08-29, a mixed PR therefore ran both workflows, and the merge box
+  took whichever run reported last. Since then `ci-docs.yml` has no path filter; its `scope`
+  job reads the real diff, so exactly one workflow reports. The price is that the list lives
+  in `ci.yml`'s two `paths-ignore` blocks and in `scope`'s regex, and the three must match.
+
+### What a dispatch covers (verified 2026-10-09, S7-P4)
+
+- **A workflow-only merge draws no `ci.yml` run.** #110 (`16b934d6`) and #112 (`8c32ea7b`)
+  each produced a `ci-docs.yml` push run on `master` and no `ci.yml` run.
+- **No `workflow_dispatch` had ever run** before 2026-10-09. Both merges were first exercised
+  by the next code PR, which is the gap the ADR-009 amendment closes.
+- **A dispatch runs the same jobs as a `master` push**, because `coverage` and `sanitizers`
+  are gated on `pull_request` and `build-test` accepts a skipped `coverage`. #120's push run
+  (`37971487921`, Oct 9) is that job set: clang-format, the four build legs and
+  `prune caches` succeeded, `diff coverage` was skipped, and the sanitizer matrix collapsed to
+  one skipped `matrix.name`. So a dispatch checks the YAML, `format`, `build-test` and
+  `cache-prune`. An edit to `coverage` or `sanitizers` is first run by the next code PR. The
+  [[Backlog]] entry on testing sanitizer workflow edits is the open half of this.
+- No dispatch was triggered to show this, because on an unchanged `master` it would have
+  repeated #120's push run.
 
 ## `<format>` header weight (S4-T1, 2026-08-29)
 
