@@ -6,11 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://research.nvidia.com/labs/rtr/publication/bitterli2020spatiotemporal/ (Rendering)
-- [ ] https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf (Rendering)
-- [ ] https://arxiv.org/abs/2004.10908 - **Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System** | IEEE TPDS 2021 (Multi-threading/task graph)
-- [ ] https://www.di.ens.fr/~zappa/readings/ppopp13.pdf - **Correct and Efficient Work-Stealing for Weak Memory Models** | PPoPP 2013 (Multi-threading/task graph)
-- [ ] https://dl.acm.org/doi/10.1145/1073970.1073974 - **Dynamic Circular Work-Stealing Deque** | SPAA 2005 (Multi-threading/task graph)
 - [ ] https://dl.acm.org/doi/10.1145/324133.324234 - **Scheduling Multithreaded Computations by Work Stealing** | JACM 1999 (Multi-threading/task graph)
 - [ ] https://www.gdcvault.com/play/1022186/Parallelizing-the-Naughty-Dog-Engine - **Parallelizing the Naughty Dog Engine Using Fibers** | GDC 2015 (Multi-threading/task graph)
 - [ ] https://ieeexplore.ieee.org/document/6166348 - **A Design Pattern for Parallel Programming of Games** | IEEE TCIAIG 2012 (Multi-threading/task graph)
@@ -69,6 +64,16 @@ kanban-plugin: board
 - [ ] https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf - **Microfacet Models for Refraction through Rough Surfaces** | EGSR 2007 (Rendering)
 	The paper that introduced the GGX distribution and extended microfacet models to transmission; a direct reference for R1's material model, where GGX is the usual specular term.
 
+- [ ] https://research.nvidia.com/labs/rtr/publication/bitterli2020spatiotemporal/ - **Spatiotemporal Reservoir Resampling for Real-Time Ray Tracing with Dynamic Direct Lighting** | ACM SIGGRAPH 2020 (Rendering)
+	Recommend reject: ReSTIR resamples light samples across space and time for ray-traced direct lighting from millions of lights, and no rendering rung (R1 to R3) includes ray tracing.
+- [ ] https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf - **High Quality Temporal Supersampling** | ACM SIGGRAPH 2014 Advances in Real-Time Rendering course (Rendering)
+	Karis's talk slides on Unreal Engine 4's temporal anti-aliasing (jitter, reprojection, neighbourhood clamping); a direct reference if R2's post stack gets TAA. It is a talk, not a paper.
+- [ ] https://arxiv.org/abs/2004.10908 - **Taskflow: A Lightweight Parallel and Heterogeneous Task Graph Computing System** | IEEE TPDS 2021 (Multi-threading/task graph)
+	Recommend reject: a duplicate, because this paper is already approved in Paper.md and sits in the Multi-threading/task graph column.
+- [ ] https://www.di.ens.fr/~zappa/readings/ppopp13.pdf - **Correct and Efficient Work-Stealing for Weak Memory Models** | PPoPP 2013 (Multi-threading/task graph)
+	Lê, Pop, Cohen and Zappa Nardelli prove an optimized Chase-Lev deque correct on ARM and POWER and give a C11 version; the reference for P2's work-stealing deque memory orders.
+- [ ] https://dl.acm.org/doi/10.1145/1073970.1073974 - **Dynamic Circular Work-Stealing Deque** | SPAA 2005 (Multi-threading/task graph)
+	Chase and Lev's growable circular work-stealing deque, the algorithm behind most job systems; the base design for P2's work-stealing, read together with the PPoPP 2013 paper on its memory orders.
 
 ## Rendering 👽
 
