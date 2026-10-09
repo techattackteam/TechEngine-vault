@@ -254,7 +254,8 @@ use the lane's capacity, not Miguel's, and none touches a Story B or C file.
 - Attended slots freed: two 🟢 Deep (S7-P2, S7-P3), one 🟠 Moderate (S7-T1) and one
   🟡 Light (S7-P7).
 - All eight Auto cards are done; the last two merged on Oct 6. Since then the lane runs
-  paper screens and module sweeps only (#107 platform, #116 app).
+  paper screens and module sweeps only (#107 platform, #116 app). Three more sweeps merged
+  on Oct 9: #118 apps (`3860333d`), #119 base (`5b1b5dc7`) and #120 platform (`371dbd9a`).
 
 ## Definition of Done
 
