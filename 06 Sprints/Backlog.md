@@ -373,14 +373,6 @@ groups are kept, because they show where future work will land.
   meant to be deps. On a 100%-hit Linux run (#106), the Jolt stretch of the build still took
   about 47 seconds. Found by S7-P7 on Sep 30, 2026. **Trigger:** the next CI-time card, or the
   next change to `deps.cmake`'s Jolt block.
-- #prio/medium · **`ci.yml`'s `prune caches` job has never deleted anything**: S7-P10 (#110,
-  `16b934d6`) merged without a `ci.yml` run, because workflow-only merges are excluded by the
-  push filter. Every cache was deleted by hand the same day, so the first run on any ref only
-  seeds one entry per family and has nothing to prune. The witness is the first `prune caches`
-  log that reports a nonzero stale count and a successful `delete` line, after which
-  `gh cache list` shows one entry per family on that ref. Until then the 10 GB bound is
-  unproven. Found at S7-P10's close on Oct 1, 2026. **Trigger:** the second `ci.yml` run on
-  `master` after #110, or the second push to any open PR.
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the
   file's path, which is not a required context, and #95 also touched code, so `ci.yml`

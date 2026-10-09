@@ -214,8 +214,9 @@ first scripting consumer and is not part of these cards.
   prune job deleting stale entries. Pulled in on Oct 1 when the repo hit the 10 GB cap
   (10.77 GB, 123 of 190 entries on closed PRs). The closed-PR entries were deleted by hand
   the same day, which left 64 entries and 4.1 GB. Every remaining cache was then deleted on
-  Miguel's call. Merged as #110 (`16b934d6`, Oct 1). The prune-job clause is still unverified;
-  see S7-P10's Done entry on [[Sprint Board]].
+  Miguel's call. Merged as #110 (`16b934d6`, Oct 1). The prune-job clause was met by `master`
+  push runs rather than a dispatch, from #111's run on Oct 1; see S7-P10's Done entry on
+  [[Sprint Board]].
 
 ### Story F: Backlog code hygiene for the Auto lane
 
