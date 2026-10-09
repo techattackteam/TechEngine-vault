@@ -15,7 +15,7 @@ Guardrails for decisions. When a choice is hard, these break the tie.
    (~2-6h). If it doesn't fit, split it.
 6. **Sustainable pace wins.** The plan is measured in years. Protect rest,
    karting, and the day job. Burnout ends the project faster than any bug.
-7. **Demo or it didn't happen.** Every feature ends in a short recorded demo and
-   a doc update.
+7. **Done means documented.** Every feature ends in a doc update: the design note
+   or ADR it touched describes what shipped.
 
 See also: [[Vision]]

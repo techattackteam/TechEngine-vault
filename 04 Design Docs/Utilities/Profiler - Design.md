@@ -46,6 +46,7 @@ optimizing blind.
 | Overhead is **zero** when compiled out. Compiled in, the bar is the **absolute +0.1377 µs per frame**. | ADR-013 §6 *(amended 2026-08-20; was "under 5% frame-time delta")* |
 | **No runtime-named or transient zones on a per-frame path.** Zone names are literals. | ADR-013 §6 |
 | Memory tracking rides the profiler: a global `new`/`delete` replacement in `app`, plus each dependency's allocator hook. | ADR-013 §7 |
+| Every tracked allocation names its source's pool. There is no unnamed pair. | S7-T2 (#121, 2026-10-09), *Memory pools* below |
 | GPU zones live in **`client`**, not `base`, and land with the render graph. | ADR-013 §8 |
 | The Profiler is a **utility** of global macros, not an injected service. | ADR-013 §9 |
 | The unnamed frame stream has one owner; simulation and main instrumentation cannot interleave into render frames. | [[ADR-019 - Fixed simulation ticks, render interpolation and shared clock]] §6, Accepted |
@@ -73,7 +74,7 @@ flowchart LR
 | `TE_PROFILER_FUNCTION()` | `base` | `ZoneScoped` |
 | `TE_PROFILER_FRAME()` | `base` | `FrameMark` |
 | `TE_PROFILER_FRAME_NAMED(name)` | `base` | `FrameMarkNamed(name)` |
-| `TE_PROFILER_ALLOC(p, n)` and `TE_PROFILER_FREE(p)` | `base` | `TracySecureAlloc` and `TracySecureFree` |
+| `TE_PROFILER_ALLOC(p, n, pool)` and `TE_PROFILER_FREE(p, pool)` | `base` | `TracyAllocN` and `TracyFreeN` |
 | `TE_PROFILER_GPU_CONTEXT()`, `_GPU_ZONE(name)`, `_GPU_COLLECT()` | `client` | `TracyGpuContext`, `TracyGpuZone`, `TracyGpuCollect` |
 
 Without `TE_PROFILE_ENABLED`, every macro expands to nothing and the header includes no
@@ -95,18 +96,8 @@ for.
 The ADR keeps its original text either way. That is the same refinement precedent as `dt`
 becoming `deltaTime`.
 
-**The memory pair forwards to Tracy's *secure* variants**, not to ADR-013 §7's `TracyAlloc`
-and `TracyFree`.
-
-`TracySecureAlloc` and `TracySecureFree` pass `secure = true`, which gates the record on
-`ProfilerAvailable()`. That check earns its place here. A global `operator new` replacement
-fires during CRT static initialization, so it can run before Tracy's own profiler has been
-constructed.
-
-The cost is one branch. The non-secure pair has no check at all to fall back on.
-
-This is mechanism rather than decision, so the ADR is not edited. Same precedent as the folder
-move above.
+**The memory pair always names a pool**, and Tracy's *secure* variants no longer exist. Both
+are described in *Memory pools* below.
 
 ### Memory tracking
 
@@ -133,6 +124,31 @@ which was the open question going in.
 The witness was a deliberate 12-byte `new` in the loop, since removed. So the capture proves
 that the pipe works end to end. It does not prove that any particular library's allocations
 are attributed.
+
+### Memory pools
+
+**Shipped Oct 9 in `cd085d6f` (#121, S7-T2).** The unnamed pair is gone, so every source
+records into its own pool: `"operator new"` for the global replacement and `"GLFW"` for
+GLFW's allocator. A capture therefore shows those two pools and no unnamed default pool,
+which differs from the Aug 7 capture above. No capture of the named pools is recorded.
+
+- **One constant per pool.** Tracy keys a pool by the address of its name, not by its text,
+  so a literal at each call site could split one pool in two (merging equal literals is a
+  compiler option, not a language guarantee). With profiling off, the macros reference the pool through `sizeof`, so the
+  constant is not an unused variable and nothing is evaluated.
+- **GLFW's hook**: `Window::initialize` installs a GLFW 3.4 allocator before `glfwInit`. It is
+  installed in every build, so its forwarding runs under CI and the sanitizer legs even though
+  CI never builds `TE_PROFILE=ON`. A `realloc` records the free and the new block only after
+  it succeeds, because a failed `realloc` leaves the old block live. Jolt and miniaudio wait
+  for their first init ([[Backlog]]).
+- **No secure variants since Tracy 0.14.0.** This note used to route the pair through
+  `TracySecureAlloc`/`TracySecureFree`, because the global replacement fires during CRT static
+  initialization, before Tracy's profiler exists. Tracy 0.14.0 removed the secure variants and
+  made the `ProfilerAvailable()` check unconditional; its NEWS calls this an API break. #46's
+  bump to 0.14.1 (Aug 24) therefore switched to the plain calls, and the static-init case is
+  still covered. Only this note and a `Profile.hpp` comment kept describing the old pair.
+- ADR-013 §7 still says `TracyAlloc`/`TracyFree`. That is mechanism rather than decision, so
+  the ADR is not edited; same precedent as the folder move above.
 
 ### Threaded frame streams (Accepted ADR-019)
 
@@ -304,6 +320,7 @@ thousands of small tasks is a measurement, and Story D takes it against §6's bu
   `engine/app/src/App.cpp`, `engine/app/include/TechEngine/app/SimulationThread.hpp`,
   `engine/app/src/SimulationThread.cpp` and `engine/client/src/render/RenderThread.cpp` (the zones) ·
   `engine/app/src/diagnostics/MemoryTracking.cpp` and `.hpp` (the allocator replacement) ·
+  `engine/platform/src/window/Window.cpp` (GLFW's allocator) ·
   `.github/workflows/ci.yml` (the Tracy-spelling grep) ·
   `engine/base/tests/diagnostics/ProfileTests.cpp` (the OFF-path case) ·
   `cmake/deps.cmake:91` · `engine/base/CMakeLists.txt:36-37` · `CMakeLists.txt:16` ·

@@ -102,10 +102,12 @@ groups are kept, because they show where future work will land.
 
 - #prio/low · **`InputState` leftovers from S7-T9's review**: `isHeld` checks `focused`
   although `apply` already keeps both bitsets empty while unfocused
-  (`engine/platform/src/input/InputState.cpp:36`, `:43`). The two copies of that rule could
+  (`engine/platform/src/input/InputState.cpp:53`, `:60`). The two copies of that rule could
   disagree silently if S7-T11 reads the bits directly for held notifications. The same file
   casts to an unqualified `size_t`, and no test covers the `Unknown` guards in `apply` and
-  `isHeld`. **Trigger:** S7-T11, which edits this file.
+  `isHeld`. **Trigger:** S7-T11, which edits this file. **Fired Oct 1:** #111 (S7-T11) merged
+  and left all three in place; citations re-resolved against `ea4dec0f` on Oct 9 (they were
+  `:36` and `:43`).
 
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
@@ -485,7 +487,8 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **Point later dependency allocator hooks at the profiler**: Jolt
   (`JPH::Allocate`/`Free`/aligned + `JPH_OVERRIDE_NEW_DELETE`) and miniaudio
   (`ma_allocation_callbacks`) remain under [[ADR-013 - Profiler (Tracy-backed instrumentation)]]
-  §7. GLFW's fired hook is S7-T2. **Trigger:** the first init of Jolt or miniaudio.
+  §7. GLFW's hook shipped in S7-T2 (#121); each new hook needs its own pool constant
+  ([[Profiler - Design]] § *Memory pools*). **Trigger:** the first init of Jolt or miniaudio.
 - #prio/low · **README at repo root** (public-facing). **Trigger:** T2, the first build that
   runs outside the editor.
 - #prio/xlow · **Command `/catch-up`**: session re-entry after a multi-day gap. **Trigger:**

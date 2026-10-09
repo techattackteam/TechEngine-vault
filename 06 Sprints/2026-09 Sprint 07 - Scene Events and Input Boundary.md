@@ -161,11 +161,12 @@ first scripting consumer and is not part of these cards.
   `sdk-smoke` public-boundary intent. `platform` is already a public `engine/app`
   dependency on `7e52fe3a`; that half of the original card needs no change. Re-tagged
   Auto on Sep 27.
-- [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟡 Light · 1-2h ·
+- [x] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟡 Light · 1-2h ·
   done: install GLFW 3.4's allocator before initialization and check allocation/free
   pairing and disabled-profiler behavior. This is the fired GLFW portion of
   [[ADR-013 - Profiler (Tracy-backed instrumentation)]] §7; Jolt and miniaudio wait
-  for their initialization consumers.
+  for their initialization consumers. Merged as #121 (`cd085d6f`, Oct 9), which also made
+  every memory macro take a named pool, at Miguel's request. No Tracy capture is recorded.
 
 ### Story E: Repair fired process and evidence gaps
 
@@ -187,22 +188,27 @@ first scripting consumer and is not part of these cards.
   stays a human read. Re-tagged Auto on Sep 27, with the check pinned as a script.
   Shipped in #106 (`5f2da623`, Sep 29). An at-SHA citation is a sha or tag in a code span
   earlier in the same paragraph, list item, table row or heading (S7-P3's Done entry).
-- [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h ·
+- [x] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h ·
   done: amend ADR-009 for workflow-only PRs receiving no build, verify the stated
   master-run mitigation, and correct `ci.yml`'s skipped-check comment without
-  changing the working gate.
+  changing the working gate. Merged as #122 (`b330a51e`, Oct 9). The mitigation was verified
+  from run history rather than a new dispatch (S7-P4's Done entry).
 - [x] **S7-P5** · Resolve old routine-prompt drift · P3 · 🟡 Light · 2h ·
   done: establish whether the old Claude routine still runs and reconcile its
   prompt-sync guidance with the vault, or record that the old routine is retired.
-- [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h ·
+- [x] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h ·
   done: decide whether the widened witness check belongs in `$weekly-review`, then
-  update that workflow or record why the existing sweep is sufficient.
+  update that workflow or record why the existing sweep is sufficient. It does: merged as
+  #123 (`ea4dec0f`, Oct 9) as the review's step 4.
 - [x] **S7-P7** · Measure ccache refresh after successive master revisions · P3 · 🤖 Auto · 2h ·
   done: record cache hits and snapshot growth from comparable recent runs, or name
   the missing evidence without claiming the policy improved hit rate. Report-only.
   Re-tagged Auto on Sep 27. Reported on Sep 30 with no PR (S7-P7's Done entry).
-- [ ] **S7-P8** · Define a small recorded-demo workflow · P3 · 🟡 Light · 2h ·
-  done: specify where a capture, Tracy trace and observed behavior are stored and
+- [ ] ~~**S7-P8** · Define a small recorded-demo workflow~~ · P3 · 🟡 Light · 2h ·
+  **Dropped Oct 9 by Miguel**, not returned to [[Backlog]]. The card came from a single card
+  that needed a recorded demo, and that need was an exception, so no workflow is owed.
+  [[Principles]] rule 7 dropped its recorded-demo half the same day; demos stay informal. Its
+  `done:` was: specify where a capture, Tracy trace and observed behavior are stored and
   linked from a sprint review, using the Sprint 06 showcase to identify what was
   observed and what was not captured.
 - [x] **S7-P9** · Make `ci-docs.yml` parse again · P1 · 🟡 Light · 1h ·
