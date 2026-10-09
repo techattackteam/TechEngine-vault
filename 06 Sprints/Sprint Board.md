@@ -24,14 +24,11 @@ kanban-plugin: board
 ## Story D: Close other fired decisions and implementation seams
 
 - [ ] **S7-D3** · Decide the public error-handling policy · P2 · 🟢 Deep · 4-6h: settle the open conventions row and `[[nodiscard]]` policy in an ADR.
-- [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟡 Light · 1-2h: install and verify the GLFW allocator seam.
 
 
 ## Story E: Repair fired process and evidence gaps
 
 - [ ] **S7-P1** · Reconcile build/profiler and App coverage policy · P2 · 🟢 Deep · 4-6h: carry S6-P1 and record the App coverage exclusion.
-- [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h: amend ADR-009 and fix the skipped-check comment.
-- [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h: settle the widened sweep's workflow home.
 - [ ] **S7-P8** · Define a small recorded-demo workflow · P3 · 🟡 Light · 2h: record capture storage and sprint-review links.
 
 
@@ -41,6 +38,9 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S7-T2** · Route GLFW allocations through profiler hooks · P3 · 🟡 Light · 1-2h: install and verify the GLFW allocator seam.
+- [ ] **S7-P4** · Reconcile workflow-only CI policy · P3 · 🟠 Moderate · 2-3h: amend ADR-009 and fix the skipped-check comment.
+- [ ] **S7-P6** · Keep fired backlog witnesses current · P3 · 🟡 Light · 2h: settle the widened sweep's workflow home.
 
 
 ## 👀 Review / Demo
