@@ -33,32 +33,32 @@ kanban-plugin: board
 	The original PBD paper, which projects constraints on positions directly; background for S1 and for Jolt's soft bodies, not something the engine will implement itself.
 - [ ] http://mmacklin.com/smallsteps.pdf (Physics)
 	**Small Steps in Physics Simulation**: fixed-step substeps and XPBD stability; useful for the planned physics lane.
-- [ ] https://www.highperformancegraphics.org/previous/www_2012/media/Papers/HPG2012_Papers_Olsson.pdf (Rendering)
-	**Clustered Deferred and Forward Shading**: light assignment for a future forward renderer.
 - [ ] https://arxiv.org/abs/2011.05538 - **Sound Synthesis, Propagation, and Rendering: A Survey** | Survey preprint 2020 (Audio)
 	Broad map of game and VR audio techniques before selecting specialized audio papers.
 - [ ] https://research.nvidia.com/labs/prl/zesch2023ncf/neuralcollision2023.pdf - **Neural Collision Fields for Triangle Primitives** | SIGGRAPH Asia 2023 (Physics)
 	A learned 6D field that integrates triangle-triangle contact instead of sampling contact points; background reading at most for S1, because Jolt owns collision and a neural primitive does not fit an authoritative fixed-step server.
 - [ ] https://sites.google.com/view/diffsim/ (Physics) (Nao encontrei paper mas achei interessante)
 	Could not resolve: the Google Sites page is blocked by this session's network policy, and web searches for the URL found no paper, title or authors behind it.
-- [ ] https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques - **Volume Rendering Techniques** | GPU Gems 2004 (Rendering)
-	A book chapter on texture-slice volume rendering of 3D data; background at most for R3's volumetric fog, which is more likely to march a froxel grid than to slice a volume texture.
 - [ ] https://graphics.stanford.edu/papers/rigid_bodies-sig03/rigid_bodies.pdf - **Nonconvex Rigid Bodies with Stacking** | ACM SIGGRAPH 2003 (Physics)
 	Guendelman, Bridson and Fedkiw stack nonconvex bodies with signed distance fields and shock propagation; background for S1, since Jolt owns contact and stacking.
 - [ ] https://gamma.cs.unc.edu/BVH/ (Rendering)
 	Could not resolve: the host is blocked by this session's network policy, and a web search found no paper behind the URL, only the GAMMA group's newer site at gamma.web.unc.edu.
-- [ ] https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf - **Microfacet Models for Refraction through Rough Surfaces** | EGSR 2007 (Rendering)
-	The paper that introduced the GGX distribution and extended microfacet models to transmission; a direct reference for R1's material model, where GGX is the usual specular term.
-
-- [ ] https://de45xmedrsdbp.cloudfront.net/Resources/files/TemporalAA_small-59732822.pdf - **High Quality Temporal Supersampling** | ACM SIGGRAPH 2014 Advances in Real-Time Rendering course (Rendering)
-	Karis's talk slides on Unreal Engine 4's temporal anti-aliasing (jitter, reprojection, neighbourhood clamping); a direct reference if R2's post stack gets TAA. It is a talk, not a paper.
 - [ ] https://www.di.ens.fr/~zappa/readings/ppopp13.pdf - **Correct and Efficient Work-Stealing for Weak Memory Models** | PPoPP 2013 (Multi-threading/task graph)
 	Lê, Pop, Cohen and Zappa Nardelli prove an optimized Chase-Lev deque correct on ARM and POWER and give a C11 version; the reference for P2's work-stealing deque memory orders.
 - [ ] https://dl.acm.org/doi/10.1145/1073970.1073974 - **Dynamic Circular Work-Stealing Deque** | SPAA 2005 (Multi-threading/task graph)
 	Chase and Lev's growable circular work-stealing deque, the algorithm behind most job systems; the base design for P2's work-stealing, read together with the PPoPP 2013 paper on its memory orders.
 
+
 ## Rendering 👽
 
+- [ ] [[Paper#Clustered Deferred and Forward Shading|Clustered Deferred and Forward Shading]] | HPG 2012 (Rendering)
+	Light assignment for a future forward renderer.
+- [ ] [[Paper#Volume Rendering Techniques|Volume Rendering Techniques]] | GPU Gems 2004 (Rendering)
+	A book chapter on texture-slice volume rendering of 3D data; background at most for R3's volumetric fog, which is more likely to march a froxel grid than to slice a volume texture.
+- [ ] [[Paper#Microfacet Models for Refraction through Rough Surfaces|Microfacet Models for Refraction through Rough Surfaces]] | EGSR 2007 (Rendering)
+	The paper that introduced the GGX distribution and extended microfacet models to transmission; a direct reference for R1's material model, where GGX is the usual specular term.
+- [ ] [[Paper#High Quality Temporal Supersampling|High Quality Temporal Supersampling]] | ACM SIGGRAPH 2014 Advances in Real-Time Rendering course (Rendering)
+	Karis's talk slides on Unreal Engine 4's temporal anti-aliasing (jitter, reprojection, neighbourhood clamping); a direct reference if R2's post stack gets TAA. It is a talk, not a paper.
 
 
 ## Physics 🍎
