@@ -106,8 +106,6 @@ groups are kept, because they show where future work will land.
   disagree silently if S7-T11 reads the bits directly for held notifications. The same file
   casts to an unqualified `size_t`, and no test covers the `Unknown` guards in `apply` and
   `isHeld`. **Trigger:** S7-T11, which edits this file.
-- #prio/low · **`inputKindLabel` has no caller**: `engine/platform/src/window/Window.cpp:178`,
-  a `static` function unused since #92. **Trigger:** the next edit to `Window.cpp`.
 
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
