@@ -285,7 +285,7 @@ The v1 set, at `ProjectManager.cpp:262-271` @ `v1-reference`, maps onto this as 
 
 | v1 alias | v2 alias | Physical root | Rung |
 |---|---|---|---|
-| `editorAssets://` | `engine` | `executablePath()/assets` | M3 |
+| `editorAssets://` | `engine` | `executablePath()/assets`; `executablePath()/engine` from S8-T2, decided Oct 11 so `assets/` beside the executables holds only packs ([[Resources - Design]]) | M3 |
 | `editorAssetsClient://` | `assets` | `<root>/assets/common` at priority 0, `<root>/assets/<side>` at 100 | M3 |
 | (none) | `shaders` | `<root>/shaders` | M3; retired 2026-10-10 when shaders moved into `assets/client/`, not built yet |
 | (none) | `project` | The root itself, for the manifest | M3 |

@@ -71,6 +71,8 @@ built or run.
 | Writer and reader both in `core`, at M6; the bake driver stays in the editor. | ADR-025 §6 |
 | The runtime mounts `assets` beside its executable and follows the boot record. | ADR-025 §7 |
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
+| The bake is an editor function that T2's export command calls; before T2 the editor calls it at startup, writing to its own executable folder. | Miguel, Oct 11; § *Bake and the runtime layout* |
+| The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
 
 ## v1 reuse boundary
 
@@ -245,6 +247,18 @@ copy-per-project problem does not return: the bake copies only into the shipped 
 packs files as they are, because every M6 asset is engine-native. T4 adds importers that write
 runtime-form files first, and the bake does not change.
 
+**The bake is a function, and its trigger changes with the rungs** (decided Oct 11). It takes
+the indexed project and an output folder. T2's export command will call it; until then the
+editor calls it once at startup, after opening the project, and logs a failure without
+stopping. A command-line mode was considered and dropped: the shipped editor calls the function
+from its UI, so parsing flags would be code nothing keeps. Unity is the same shape: its build
+menu and `-executeMethod` both call `BuildPipeline.BuildPlayer`. The output defaults to the
+editor's own executable folder. Both executables build into one `${CMAKE_BINARY_DIR}/bin`
+(`CMakeLists.txt:29`), so a development bake lands in `assets/` beside `runtime` with no copy
+step and no configure-time path for the runtime; Unreal stages its cooked output in a second
+step, which the shared output folder makes unnecessary here. For that folder to hold only packs, the
+editor's engine folder moves from `<exe dir>/assets` to `<exe dir>/engine`, matching its alias.
+
 ### What later rungs inherit
 
 | Rung | Uses |
@@ -260,21 +274,14 @@ runtime-form files first, and the bake does not change.
 
 ## Open questions
 
-- **A second real resource type in M6.** The scene is the only content M6 can load, and it is
-  not cached. Miguel leans toward a mesh or a material. A mesh has a consumer now, because the
-  triangle's vertices are hard-coded in `engine/client/src/render/FrameRenderer.cpp`; a material
-  has none before R1. Either needs an authoring path without T4's importers. Owner: `/sprint-plan`.
-- **How the bake runs before T2's UI exists**, and where a development bake writes so the
-  runtime build finds `assets/` beside its executable. The runtime must not regain a
-  configure-time path: ADR-017 deleted `TE_DEMO_ASSETS_DIR` for that reason. An editor
-  command-line mode is the cheapest. One collision to settle first: both executables build into
-  `${CMAKE_BINARY_DIR}/bin` (`CMakeLists.txt:29`), and the editor already mounts `engine` at
-  `<exe dir>/assets` (`apps/editor/src/EditorApp.cpp:21`). Renaming the editor's engine folder
-  to `engine/`, matching its alias, frees `assets/` for packs. Owner: the M6 bake card.
+- **A second real resource type in M6.** Planning on Oct 11 put it in Sprint 09 and leaned to a
+  mesh, whose consumer is the triangle hard-coded in `engine/client/src/render/FrameRenderer.cpp`;
+  a material has no consumer before R1. S8-D1 settles it, with how a mesh is authored before
+  T4 and whether it is drawn through a published copy or only loaded until R1.
 - **How a component field declares a reference**, so the scene document remaps it on save and
   load, the bake can walk it, and removing the component releases it. The same question is
   open for `Entity` fields ([[Scene - Design]] § *Registration and serialization seam*); one
-  answer should serve all of these. Owner: the M6 scene document card.
+  answer should serve all of these. Owner: S8-D1, before the Sprint 09 boundary; nothing in Sprint 08 writes a reference field.
 - **The editor's stopped, playing and paused states.** Decided Oct 10: only Play ticks; stopped
   and paused do not, and the simulation thread stays alive and idle between commands. Today every
   App ticks from readiness until stop (`engine/app/src/SimulationThread.cpp:177-189`), so the

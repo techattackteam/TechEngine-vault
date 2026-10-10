@@ -1,4 +1,6 @@
 {
   "templatesFolder": "Templates",
-  "newFileLocation": "current"
+  "newFileLocation": "current",
+  "showInlineTitle": true,
+  "readableLineLength": false
 }

@@ -77,9 +77,8 @@ around.
 never trigger it. ADR-004 (fresh start), ADR-009 (branching) and ADR-012 (vault split) are all
 in that category.
 
-Today the check fires on ADR-007. The ECS and replication have no note.
-[[Game Loop - Frame Flow]] and [[Task Graph - Execution Flow]] cover only the loop and the
-scheduler.
+Today the check fires on ADR-007's replication half only: [[Scene - Design]] covers the ECS,
+and replication has no note. It is not in play until the netcode lane.
 
 ## The trap this prevents
 

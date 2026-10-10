@@ -16,7 +16,7 @@ there to answer one.
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | Opus 5.5 (`claude-opus-5-5`), read off the routine on 2026-09-26. The lane's risk is judgment on bug fixes, not throughput. |
 | `cron_expression` | `7 8,13 * * 1-5`: **08:07 and 13:07 UTC, weekdays** (09:07 and 14:07 in Lisbon summer time), read off the routine on 2026-09-26. Cut from four fires on **2026-08-31**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
-| Status | **Paused** since the Sep 4 fires (all triggers paused, seen 2026-09-26). Resume it rather than re-creating it; paste the current prompt first. |
+| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27; read off the routine on 2026-10-11 (last fire Oct 9 14:08, next Oct 12 09:07 Lisbon). The routine's prompt was last updated on Oct 1. |
 | **Why two and not four** | **Claude's weekly usage limit**, not the CI budget. Four fires a weekday spent enough of the weekly allowance to compete with Miguel's own attended sessions, which are the lane's whole point. See [[Autonomous Lane - Design]] § *Cost model*. |
 | **DST** | **Breaks on 2026-10-25**, when Lisbon drops to UTC+0. Cron stays UTC, so every fire shifts an hour earlier in local terms. Re-point the expression then, or accept the shift. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |

@@ -105,15 +105,6 @@ groups are kept, because they show where future work will land.
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
   that section.
 
-- #prio/low · **`InputState` leftovers from S7-T9's review**: `isHeld` checks `focused`
-  although `apply` already keeps both bitsets empty while unfocused
-  (`engine/platform/src/input/InputState.cpp:53`, `:60`). The two copies of that rule could
-  disagree silently if S7-T11 reads the bits directly for held notifications. The same file
-  casts to an unqualified `size_t`, and no test covers the `Unknown` guards in `apply` and
-  `isHeld`. **Trigger:** S7-T11, which edits this file. **Fired Oct 1:** #111 (S7-T11) merged
-  and left all three in place; citations re-resolved against `ea4dec0f` on Oct 9 (they were
-  `:36` and `:43`).
-
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
@@ -173,15 +164,9 @@ groups are kept, because they show where future work will land.
   handlers. `Scene::publish` accepts any registered type from any system, and no card owns
   the publish declaration. The shape is a publish declaration on S7-T4's entry-scoped
   surface, checked in `Scene::publish` the way `validateWrite` checks components. Found at
-  S7-T6's review, Sep 27. **Trigger:** S7-T4 landing its declaration surface. **Fired Sep
-  27:** #99 shipped `ScheduleRegistration::on<Event>`.
-
-- #prio/low · **[[Clock - Design]] still argues from several simulations per process**: its
-  *Why simulation time is not here* says tests run several headless sims side by side. ADR-014
-  §5 made the same argument and was corrected on Sep 27, because the runtime and the editor
-  each run one simulation. Clock's conclusion rests on ADR-019, not ADR-014, so its reasons
-  need their own check rather than a copy of ADR-014's. Found at S7-T6, Sep 27. **Trigger:**
-  the next edit to that section, or `/weekly-review`'s drift check.
+  S7-T6's review, Sep 27. **Trigger:** P1's parallel executor, where an undeclared publisher
+  becomes a race. Its first trigger (S7-T4's surface, #99) fired on Sep 27, and Sprint 08's
+  planning re-triggered it on Oct 11 because no M6 card needs it.
 
 - #prio/medium · **Should `SerialExecutor` borrow the graph instead of copying it?**: its
   constructor copies each `TaskGraphNode`'s access mask and system pointer into its own node,
@@ -190,9 +175,9 @@ groups are kept, because they show where future work will land.
   that split, but not the copy. Borrowing a `const TaskGraph*`, as it already borrows systems
   from the schedule, would remove the duplicate `ScheduleAccess` and handler copies. Analyse
   the options, including the executor-before-graph lifetime in `App` and the tests, and
-  implement the better one if borrowing wins. Found at S7-T4, Sep 27. **Trigger:** S7-T7's
-  handler dispatch, or the parallel executor at P1. **Fired Sep 27:** #100 dispatches handlers
-  from the executor's copied nodes.
+  implement the better one if borrowing wins. Found at S7-T4, Sep 27. **Trigger:** the parallel
+  executor at P1. S7-T7's dispatch (#100) fired the first trigger on Sep 27; Sprint 08's
+  planning re-triggered it on Oct 11 because no M6 card needs it.
 
 - #prio/low · **Events published in a failed Tick stay staged**: a failed phase discards its
   structural commands but not its publications, so a retried Tick would make them visible
@@ -251,27 +236,6 @@ groups are kept, because they show where future work will land.
   `HierarchyTests` cases cover both paths. Found by the code sweep on Oct 1, 2026.
   **Trigger:** the next change to hierarchy linking.
 
-- #prio/low · **The schedule's bitmask and entry guards are written several times**:
-  `ScheduleAccess`'s constructor sets bits with two identical loops, and `reads` and `writes`
-  each repeat the word and bit arithmetic (`engine/core/src/systems/ScheduleAccess.cpp:22-63`).
-  `Schedule::addAccess` merges the two masks with two identical resize-and-OR blocks
-  (`engine/core/src/systems/Schedule.cpp:50-67`). Five `Schedule` setters open with the same
-  two `TE_CHECK` lines, and each one then calls `.at()` on an index it has just checked
-  (`engine/core/src/systems/Schedule.cpp:44-94`). The simpler shape is one private static mask
-  helper for set, test and merge, plus one private member that checks the index and returns
-  the entry. Together they would remove about 25 lines. The *Remove call-site access* entry
-  above may delete `addAccess`'s merge first. Found by the code sweep on Oct 1, 2026.
-  **Trigger:** the next change to `ScheduleAccess` or the `Schedule` setters.
-
-- #prio/low · **`SceneCommandBuffer` writes its pending-entity check four times**: the same
-  bufferId and epoch `TE_CHECK` appears in `despawn`, `queueAdd`, `queueRemove` and
-  `apply`'s `resolveTarget` (`engine/core/src/scene/SceneCommandBuffer.cpp:105`, `:114`,
-  `:123`, `:134`). The `Entity` and `PendingEntity` overloads of the private `addComponent` and
-  `removeComponent` templates also have identical bodies
-  (`engine/core/include/TechEngine/core/scene/SceneCommandBuffer.hpp:108-130`). The simpler shape
-  is one check on `Impl`, which lives in the `.cpp`, plus one template per operation over the
-  target type. It would remove about 15 lines. Found by the code sweep on Oct 1, 2026.
-
 - #prio/low · **`ArchetypeStorage`'s typed mutations exist only for tests**: the
   `addComponent<T>` and `removeComponent<T>` templates
   (`engine/core/src/scene/ArchetypeStorage.hpp:55-90`) repeat the type-erased
@@ -282,32 +246,7 @@ groups are kept, because they show where future work will land.
   remove about 30 lines, but the scene tests call it about 85 times, so the choice is yours.
   Found by the code sweep on Oct 1, 2026. **Trigger:** the next `ArchetypeStorage` API change.
 
-- #prio/low · **Two core test fixtures build the same engine context by hand**:
-  `ExecutorFixture` (`engine/core/tests/systems/SerialExecutorTests.cpp:234-251`) and
-  `SceneEventFixture` (`engine/core/tests/scene/SceneEventTests.cpp:180-218`) declare the same
-  seven members: `MountTable`, `FileAccess`, `JobSystem`, `Clock`, `EngineContext`,
-  `InputFrame` and `SimulationContext`. They initialize them the same way. Their state guards
-  (`SerialExecutorTests.cpp:45-59`, `SceneEventTests.cpp:63-77`) are the same class.
-  `amountsOf` is written in both `EventStreamTests.cpp:26-32` and `SceneEventTests.cpp:79-86`.
-  `registerMaskComponents` (`ScheduleTests.cpp:196-199`) is `registerGraphComponents`
-  (`TaskGraphTests.cpp:162-165`) under another name. The simpler shape is one core test header
-  beside `SceneTestRegistry.hpp`. It would remove about 40 lines. Found by the code sweep on
-  Oct 1, 2026. **Trigger:** a third test file that needs a running `SimulationContext`.
-
 ## client
-
-- #prio/low · **Code sweep leftovers: client**: Found by the code sweep on Oct 5, 2026
-  ([[2026-10-05 14-08 Auto Run]]). Each fix needs a new `te_test_support` header, which the
-  sweep may not add.
-  - `FrameRendererWindowScope` (`engine/client/tests/render/FrameRendererTests.cpp:13-17`),
-    `RenderWindowTestScope` (`engine/client/tests/render/RenderThreadTests.cpp:14-18`) and
-    `PlatformWindowTestScope` (`engine/platform/tests/window/WindowTests.cpp:17-21`) are the
-    same guard that calls `Window::terminate()`. One shared guard would remove about 10 lines.
-  - The three `ClientTests.cpp` cases (`:11-16`, `:31-36`, `:51-56`) build the same
-    `JobSystem`, `Clock`, `MountTable`, `FileAccess`, `EngineContext` and `InputBuffer` by
-    hand. The same set is in core's fixtures (the *Two core test fixtures* entry above), so
-    one shared engine-services helper would serve both modules. Here it would remove about
-    10 lines.
 
 ## app
 
@@ -374,51 +313,14 @@ groups are kept, because they show where future work will land.
   - `RuntimeApp::runtimeRole()` (`RuntimeApp.cpp:100`) and `EditorApp::editorRole()`
     (`EditorApp.cpp:87`) are public statics that only return `Role::Client` for the
     constructor. Passing `Role::Client` directly would remove about 8 lines.
-  - `CollisionSystem.cpp:19` names an unused `context` and `GravitySystem.cpp:26` an unused
-    `entity`, which are 2 of the build's 10 warnings. Leaving them unnamed, as
-    `EntitySpawnSystem::tick` and `MovementSystem`'s lambda do, removes no lines.
 
 ## etc: cross-cutting
 
-- #prio/high · **Process: compare engine forks against Unity and Unreal, then look for better**:
-  add a working rule to [[Technical Lead Charter]] so every session, the autonomous lane and the
-  review agents follow it. Before the question round on a load-bearing engine fork, show how
-  Unity and Unreal (Godot when relevant) solve it, as a baseline to beat rather than copy. Then
-  say per option where TechEngine's constraints allow something better. It came out of the M6
-  resources session on Oct 10, where the precedents decided soft references, settings assets
-  and the pack layout. **Trigger:** Miguel wants it in Sprint 08; cut it as a Process card at
-  that `/sprint-plan`.
-
-- #prio/low · **A `CONVENTIONS.md` gotcha for `bool` to `std::error_code` migrations**: a
-  caller that tests the result (`REQUIRE(f())`, `if (!f())`) still compiles and silently
-  inverts, because an empty code is false. S7-D3's rebase caught seven such sites; the
-  compiler caught none. One bullet in § *Error handling* § *Gotchas*.
-
-- #prio/medium · **Jolt's precompiled header probably makes all 138 Jolt TUs uncacheable**: every
-  `ccache stats` step on the last three `master` runs reports 139 uncacheable calls out of 386 on
-  Linux and 381 on Windows. The build logs show 138 Jolt `.cpp` objects plus Jolt's
-  `cmake_pch` object, which is exactly 139. ccache does not reuse a PCH-using compile without
-  extra `sloppiness` settings, and `ci.yml` sets none. The match is circumstantial: `ccache -s`
-  gives no reasons, and `ccache -sv` would. If it holds, [[B3 - Build & Testing Notes]]
-  § *ccache keys* is wrong that Jolt's compiles are cached: 140 of the 183 compilations were
-  meant to be deps. On a 100%-hit Linux run (#106), the Jolt stretch of the build still took
-  about 47 seconds. Found by S7-P7 on Sep 30, 2026. **Trigger:** the next CI-time card, or the
-  next change to `deps.cmake`'s Jolt block.
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the
   file's path, which is not a required context, and #95 also touched code, so `ci.yml`
   reported the nine required contexts and the merge went through. Nothing checks that a
   workflow file parses before it lands. Found at S7-P9's close on Sep 28, 2026.
-- #prio/medium · **The lane's PR bodies carry an AI attribution footer**: #103's body ended
-  with "Generated by Claude Code" and a session link, although
-  [[Autonomous Lane - Routine Prompt]] bans AI attribution in a PR body. The squashed commit
-  message was clean. The footer is probably added by the cloud harness and not by the prompt,
-  so another prompt line may not stop it. Found at S7-P2's close on Sep 28, 2026.
-  **Fired Sep 29:** the lane's next PR, #106 (S7-P3), ends in the same footer and session
-  link. The sweep PR #107 the same day does not.
-  **Workaround found Oct 2:** #113 carried it too. On #114 the footer was appended when the PR
-  was created, and one body update through the GitHub MCP tool with the same text removed it.
-  A routine-prompt line could make that update a standard step.
 - #prio/low · **No CI leg builds with the log gate above Info**: S7-B1 (#113, `2b9c921f`)
   made `-DTE_LOG_ACTIVE_LEVEL=3` build cleanly and pass, but only on a local Linux debug run.
   The CI matrix builds every leg at its default level, so a new test that asserts on an Info
@@ -429,16 +331,6 @@ groups are kept, because they show where future work will land.
   or the first time a level-3 build breaks again.
   **Near miss Oct 6:** #117 added `InputLogSystem::onRecovered`, whose parameter only an Info
   log reads. It got `[[maybe_unused]]` by hand before the commit; nothing would have caught it.
-- #prio/low · **Undriven demo code counts against diff coverage**: the runtime test binary
-  compiles `apps/runtime`'s demo systems, so `cmake/coverage_report.cmake` measures their
-  changed lines, but no test publishes input into `RuntimeApp`. `InputLogSystem`'s lines are
-  never run. #111, which added it, and #117 both shipped with `[skip-coverage]`; #117's body
-  names those lines as the reason. A headless `RuntimeAppTests` input case would cover them;
-  Miguel kept S7-T12 without one on Oct 6. Related: #125 (S7-P1) removed the `App.cpp`
-  exclusion on Oct 9 and added no exclusion for the demos; [[B3 - Build & Testing Notes]]
-  § *What the gate excludes*.
-  Found at S7-T12's close on Oct 6, 2026. **Trigger:** the next card that changes an undriven
-  demo system.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers
@@ -452,16 +344,8 @@ groups are kept, because they show where future work will land.
   [[v1 Code Audit]] with no `v1-reference` anchor, shas lost in the August rewrite). Until
   that noise is cut down with `--exclude` or anchors, its output is not a usable gate.
   Decide whether the drift check runs it, and with which excludes. Found at S7-P3's close on
-  Oct 1, 2026. **Trigger:** the next `/weekly-review`.
-- #prio/medium · **The autonomous lane's test line fails without a display**: step 6 of
-  [[Autonomous Lane - Routine Prompt]] runs a bare `ctest --preset linux-debug`. The cloud
-  sandbox has no `DISPLAY`, so 18 of 428 cases (every Window, Client, renderer and
-  editor case that opens a window) fail on GLFW error 65550. Under
-  `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug`, which matches `ci.yml`,
-  all 428 pass. Xvfb is already installed in the image. The note's measured "200/200" row is
-  stale for the same reason. Found by the Sep 27 fire on S7-T1. **Trigger:** the next time
-  the routine prompt is pasted into the routine.
-
+  Oct 1, 2026. **Trigger:** the next drift check with engine commits to check (the Oct 11
+  boundary had none).
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly**: report-once is per call site through a function-local static (ADR-011 §5), and
   `catch_discover_tests` hides that by giving every Catch2 case its own process. Two
@@ -471,20 +355,6 @@ groups are kept, because they show where future work will land.
   like a flake. Options are a test-only reset hook on the report-once static, or a rule that a
   fire count is asserted at exactly one case per site. **Trigger:** the next card that adds a
   `TE_ENSURE` case, or the first developer confused by a green `ctest` and a red exe.
-
-- #prio/low · **Four CI legs can never restore a ccache, and it is scoping, not the key**:
-  a cache written on `refs/pull/N/merge` is readable only by that PR; only caches on
-  `refs/heads/master` are shared across branches. `sanitizers` and `coverage` are
-  `pull_request`-only by design (`ci.yml`, ADR-008 §9 Option A), so master never writes their
-  entries. Measured on #59: master holds ccache entries for exactly `linux-debug`,
-  `linux-release`, `windows-debug`, `windows-release`, and the ASan, UBSan, TSan and coverage
-  legs all logged "No cache found". **The likely answer is to leave it.** Adding the four to
-  the master push costs roughly 15 billed minutes per merge, Windows ASan at 2×, to save one
-  or two minutes per leg on the next PR. At one PR per merge that is a net loss against the
-  2k budget. What this needs is the reasoning written into
-  [[B3 - Build & Testing Notes]] § *ccache keys*, not a fix. **Trigger:** more than one open
-  PR per master merge becomes normal, or a sanitizer leg's cold build gets slow enough to
-  notice.
 
 - #prio/medium · **Make sanitizer workflow edits testable in hosted CI**: PR #93
   changed the Linux TSan test step but received only docs-only stand-in checks.
@@ -501,13 +371,6 @@ groups are kept, because they show where future work will land.
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
   crosses one of the existing patterns.
-- #prio/low · **`.gitattributes` for committed test assets**: a repo-committed text asset gets
-  CRLF on a Windows checkout, so the day a case asserts on such a file's *contents* the two CI
-  legs disagree. Scratch-directory assets are written by the test and are unaffected.
-  **The witness this was written against is gone:** #65 deleted `engine/app/assets/demo.txt`,
-  and the tree now carries no committed data asset of any kind, so the entry is entirely
-  prospective and further from firing than when it was filed.
-  **Trigger:** the first test that reads a committed asset rather than a scratch one.
 - #prio/low · **Reconcile ADR-017's `main()` clause**: each executable defines `main()`
   and calls `runApp<AppType>()`; ADR-017 § *Decision* 3 instead places `main()` in a shared
   header. [[Project - Design]] § *Entry point and presentation boundary* records the
@@ -524,16 +387,6 @@ groups are kept, because they show where future work will land.
   runs outside the editor.
 - #prio/xlow · **Command `/catch-up`**: session re-entry after a multi-day gap. **Trigger:**
   the first session that opens with "where was I".
-- #prio/low · **The vault does not record #112's CI install change, and the CI cost figure predates it**:
-  #112 (`8c32ea7b`, Oct 1) replaced the three `apt-get update` plus `apt-get install` steps in
-  `ci.yml` with the third-party `awalsh128/cache-apt-pkgs-action@v1`, and it swapped `xorg-dev`
-  for an explicit list of X11 packages. [[B3 - Build & Testing Notes]] has no line on either
-  change, and no note says whether a third-party action should be pinned by tag or by sha. The
-  16.1 billed minutes per code PR (measured on #52 and recorded in B3) also predates #110 and #112,
-  and [[Autonomous Lane - Design]] § *Cost model* still prices the lane with it. Found by the
-  freshness check in [[2026-10-06 09-09 Auto Run]]. **Trigger:** the next `/weekly-review`, or
-  the next change to the lane's PR cap.
-
 ## Ideas (unsorted)
 
 - _drop raw ideas here; untagged until triage gives them a `#prio/…` and, when useful, a `Trigger:`_

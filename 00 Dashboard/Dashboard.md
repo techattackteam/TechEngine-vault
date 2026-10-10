@@ -8,9 +8,9 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
-| **Sprint** | Sprint 08 *(Oct 10-23)*, not yet planned. [[2026-09 Sprint 07 - Scene Events and Input Boundary]] closed Oct 9 with every card done, which closed M5. |
-| **Sprint goal** | Set at planning. Proposed theme: M6, decide the Resources model and load a project's scene. |
-| **Current focus** | The decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial from Sprint 08*). M6's decisions are **Accepted** (Oct 10): [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] and [[ADR-025 - Content packs (.tepack and the runtime load path)]], with [[Resources - Design]] as the M6 hub. Next: `/sprint-plan` cuts the Dev cards against them. |
+| **Sprint** | [[2026-10 Sprint 08 - Content Path]] *(Oct 10-23)*, planned Oct 11. Sprint 07 closed Oct 9 and closed M5 ([[2026-10-11 Sprint 07 Retrospective]]). |
+| **Sprint goal** | The editor bakes a project into `.tepack` files, and the runtime loads the exported startup scene from the packs beside its executable before its first Tick. |
+| **Current focus** | M6's vertical slice, the first sprint of the decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial from Sprint 08*). Start at S8-T1, the root card. Hub: [[Resources - Design]]. |
 | **Top blocker** | None. |
 | **Next milestone** | M6 content: Resources and project-to-scene binding. |
 | **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
@@ -22,7 +22,7 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline 01ed7a30..origin/master
+git log --oneline 82d7a11c..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
@@ -65,10 +65,11 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** `/sprint-plan` for the Sprint 07 boundary, run **after** the M6
-decisions are accepted, under the decide-first trial. The vault reconciliation already ran on
-Oct 10, so its step 3 only covers anything merged after `82d7a11c`.
-The Sprint 06 boundary is recorded in [[2026-09-26 Sprint 06 Retrospective]].
+→ **Next ceremony:** `/weekly-review` on the **Oct 17-18** weekend, mid-Sprint 08. If that
+weekend is lost, it falls back to Mon Oct 19 or Thu Oct 22. Then `/sprint-plan` for the Sprint 08
+boundary on **Oct 24-25**, after S8-D1 has cut Sprint 09's cards; its retro decides whether the
+decide-first trial becomes the rule. The Sprint 07 boundary is recorded in
+[[2026-10-11 Sprint 07 Retrospective]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
 
@@ -135,7 +136,7 @@ Build order from here: the [[Roadmap]] ladder: **chain M0-M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005-008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop, [[2026-08 Sprint 02 - Base Foundation]] | ✅ goal met (Jul 30); sprint closed Aug 2 |
-| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9); 🔨 **M6** next, decided before it is planned |
+| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9); 🔨 **M6** in Sprint 08: decided Oct 10, vertical slice first |
 
 _Tasks → [[Sprint Board]]._
 
@@ -186,9 +187,10 @@ Recently locked. Full set in [[ADR Index]]:
   Story B cards, which is where the 🟠 overload came from. The original implementation diverged on optional hooks and the entry point. #81 supplies optional hooks; the per-executable `main()` / `runApp<>()` wording still needs reconciliation ([[Backlog]]).
 - [x] **Claude autonomous lane:** S5-P1, P2 and P3 are closed. The first code PR (#66)
   merged Sep 3. PR #88 moved attended work to OpenAI Codex; on Sep 26 the project returned
-  to Claude and the Codex files were removed. The routine is paused, not deleted;
-  Miguel will resume it with the current [[Autonomous Lane - Routine Prompt]]. Its reports now
-  land one note per fire in `07 Journal/autoruns/<date>/`.
+  to Claude and the Codex files were removed. The routine has run
+  twice each weekday since Sep 27 (it was paused Sep 4-26); Sprint 07 gave it eight cards and
+  it opened twelve PRs, all merged. Reports land one note per fire in
+  `07 Journal/autoruns/<date>/`. Its cron needs re-pointing for the Oct 25 clock change.
 - [ ] renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20**, § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.
@@ -198,20 +200,17 @@ Recently locked. Full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (2026-09-26)
+## Health check (2026-10-11)
 
-- **Delivery:** Sprint 06 closed 12 board cards. S7-D1 cut six Scene event
-  implementation cards; S7-D2 cut four input Dev cards. Both stories are
-  committed to Sprint 07. [[Sprint Board]] holds the live plan.
-- **Evidence:** Miguel reports repeated Scene values and headless/windowed parity from
-  his showcase, with order visible in logs and Tracy. The committed App test remains
-  one tick/one entity. PR #93's hosted Linux TSan path still awaits a code PR.
-- **Sustainability:** Miguel rushed the final Sprint 06 weekend but ended okay. One
-  Sprint 07 weekend is unavailable and a Tuesday is free from his day job. He chose
-  an intentional overfill that now includes input delivery; preserve a rest day.
-  No card is pre-deferred; name any rollover at review if sessions do not fit.
-- **Artifact health:** this was a targeted check, not a complete reconciliation against
-  `742fed7e`. The Sep 26 ADR amendments settled Tick-event lifetime and removed
-  scheduled-reader cursors; S7-D1 settled cross-type handler order and cut Story B.
-  S7-D2 settled the input contract, added [[Input - Design]] and cut Story C.
-  The reconciliation stamp stays at `01ed7a30`.
+- **Delivery:** Sprint 07 closed all 28 cards (15 Dev, 3 Design, 1 Bug, 9 Process) and M5.
+  Sprint 08 plans M6's vertical slice: ten Dev cards, one Design card, two P2 stretch cards
+  for the cache, and twelve Auto cards. [[Sprint Board]] holds the live plan.
+- **Evidence:** M5's headless and windowed evidence is in the Sprint 07 note's *Definition of
+  Done*. Sprint 08's goal is proven headless, then windowed: the editor creates `projects/dev`'s
+  startup scene in code, bakes it, and `runtime.exe` loads it.
+- **Sustainability:** Miguel lost the Oct 3-4 weekend, crammed the last week and reports
+  feeling good. He is off karting both Sprint 08 weekends (rib injury) and chose to work them,
+  which leaves no rest day; the cache stretch is P2 so that one can be kept.
+- **Artifact health:** no engine commit after `82d7a11c`, so the stamp stays. Vault drift fixed
+  on Oct 11: the lane's "paused" status here and in [[Autonomous Lane - Routine Prompt]], the
+  stamp command under *Now*, the Journal index and the artifact gate's coverage line.

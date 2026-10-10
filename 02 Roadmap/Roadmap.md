@@ -136,7 +136,8 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 | Aug 22 to Aug 28 | [[2026-08 Sprint 04 - M2 Concurrency & Serialization]] | **M2 ✅**: threading + serialization ADRs Accepted day 1, first code against each. **Closed Aug 30 on day 9**, and the boundary moved a week early rather than the box running to Sep 4 |
 | Aug 29 to Sep 11 | [[2026-08 Sprint 05 - M3 Project & M4 Window]] | **M3 editor testbed + M4 complete.** Simulation independence also shipped; runtime packaging remains M6. Closed Sep 12. |
 | Sep 12 to Sep 25 | [[2026-09 Sprint 06 - Scene & Scheduling]] | **M5 in progress:** Scene and serial scheduling shipped; Miguel reported repeated values and headless/windowed parity in the closeout showcase. |
-| Sep 26 to Oct 9 | [[2026-09 Sprint 07 - Scene Events and Input Boundary]] | **M5 follow-through:** Scene event delivery at the Tick barrier and engine-coded input delivery during the consuming Tick. |
+| Sep 26 to Oct 9 | [[2026-09 Sprint 07 - Scene Events and Input Boundary]] | **M5 ✅** closed Oct 9: Scene event delivery at the Tick barrier and engine-coded input delivery during the consuming Tick. |
+| Oct 10 to Oct 23 | [[2026-10 Sprint 08 - Content Path]] | **M6, vertical slice:** the editor bakes a project into packs and the runtime loads the exported startup scene. The cache core is P2 stretch; the mesh and reference fields follow in Sprint 09. |
 
 ## Quarters
 

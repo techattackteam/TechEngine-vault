@@ -333,6 +333,20 @@ additional discretionary backlog entry was selected after the fired items.
 
 ## Sprint review (end)
 
-- Record shipped cards and the evidence that closes each part of the goal.
+Every card closed by Oct 9, which closed M5; S7-P8 was dropped. The evidence for the goal is
+under *Definition of Done*. One line per card; the Done entries these replace are in the vault
+history at `cce15e9`.
 
-Retrospective: [[07 Journal]]
+- **Story A/B, events:** S7-D1 (Sep 26) · S7-T3 #94 · S7-T5 #97 · S7-T6 #98 · S7-T4 #99 ·
+  S7-T7 #100 · S7-T8 #101, all Sep 26-27; Miguel's windowed run of Sep 27 is S7-T8's demo.
+- **Story C, input:** S7-D2 (Sep 26) · S7-T9 #105 (Sep 28) · S7-T10 #109 and S7-T11 #111
+  (Oct 1) · S7-T12 #117 (Oct 6); Miguel's windowed `runtime.exe` run of Oct 6 is the demo.
+- **Story D:** S7-D3 #124 (ADR-023 and the migration) and S7-T2 #121 (named memory pools), both
+  Oct 9; S7-T1 #96 (Sep 27, Auto).
+- **Story E:** S7-P9 #104 (Sep 28) · S7-P10 #110 (Oct 1) · S7-P3 #106 (Sep 29, Auto) · S7-P2
+  #103 (Sep 28, Auto) · S7-P7 report (Sep 30, Auto) · S7-P4 #122, S7-P6 #123 and S7-P1 #125
+  (Oct 9) · S7-P5 (routine drift; the stale status lines were corrected at the Oct 11 boundary).
+- **Story F, Auto:** S7-T13 #108 (Oct 1) · S7-B1 #113 (Oct 2) · S7-T14 #114 and S7-T15 #115
+  (Oct 6).
+
+Retrospective: [[2026-10-11 Sprint 07 Retrospective]]

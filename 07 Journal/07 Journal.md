@@ -12,6 +12,8 @@ the one home for cadence. Entries appear here as they're written, newest first.
 
 | Date | Entry |
 |---|---|
+| 2026-10-11 | [[2026-10-11 Sprint 07 Retrospective]]: Sprint 07 closed all 28 cards and M5; the decide-first trial's first half; Sprint 08 plans M6's vertical slice |
+| 2026-09-26 | [[2026-09-26 Sprint 06 Retrospective]]: Sprint 06 closed 12 cards; Scene and serial scheduling shipped |
 | 2026-09-19 | [[2026-09-19 Weekly Review]]: Story B closed; T6-T9 remain; OpenAI lane and paper-review integration stay unscheduled |
 | 2026-09-12 | [[2026-09-12 Sprint 05 Retrospective]]: Sprint 05 closed; M3, M4 and simulation independence shipped |
 | 2026-09-05 | [[2026-09-05 Weekly Review]]: F and B closed; S5-B1 first, M4 remains a stretch; artifact reconciliation deferred |
@@ -27,6 +29,17 @@ the one home for cadence. Entries appear here as they're written, newest first.
 
 | Day | Fires |
 |---|---|
+| 2026-10-09 | [[2026-10-09 09-08 Auto Run\|09:08]] · [[2026-10-09 14-08 Auto Run\|14:08]] |
+| 2026-10-08 | [[2026-10-08 09-08 Auto Run\|09:08]] · [[2026-10-08 14-08 Auto Run\|14:08]] |
+| 2026-10-07 | [[2026-10-07 09-08 Auto Run\|09:08]] · [[2026-10-07 14-08 Auto Run\|14:08]] |
+| 2026-10-06 | [[2026-10-06 09-09 Auto Run\|09:09]] · [[2026-10-06 14-09 Auto Run\|14:09]] |
+| 2026-10-05 | [[2026-10-05 09-08 Auto Run\|09:08]] · [[2026-10-05 14-08 Auto Run\|14:08]] |
+| 2026-10-02 | [[2026-10-02 09-08 Auto Run\|09:08]] · [[2026-10-02 14-08 Auto Run\|14:08]] |
+| 2026-10-01 | [[2026-10-01 09-09 Auto Run\|09:09]] · [[2026-10-01 14-09 Auto Run\|14:09]] |
+| 2026-09-30 | [[2026-09-30 09-09 Auto Run\|09:09]] · [[2026-09-30 14-08 Auto Run\|14:08]] |
+| 2026-09-29 | [[2026-09-29 09-08 Auto Run\|09:08]] · [[2026-09-29 14-08 Auto Run\|14:08]] |
+| 2026-09-28 | [[2026-09-28 09-09 Auto Run\|09:09]] · [[2026-09-28 14-08 Auto Run\|14:08]] |
+| 2026-09-27 | [[2026-09-27 01-01 Auto Run\|01:01]] |
 | 2026-09-04 | [[2026-09-04 09-14 Auto Run\|09:14]] · [[2026-09-04 14-17 Auto Run\|14:17]] |
 | 2026-09-03 | [[2026-09-03 09-13 Auto Run\|09:13]] · [[2026-09-03 14-16 Auto Run\|14:16]] |
 | 2026-09-02 | [[2026-09-02 09-18 Auto Run\|09:18]] · [[2026-09-02 14-15 Auto Run\|14:15]] |
