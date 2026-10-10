@@ -29,6 +29,12 @@
   and wire) is unchanged. Driver:
   [[ADR-016 - Serialization (binary primitives & describe-once seam)]] §5; precedent:
   `EventTypeId` and `CONVENTIONS.md` → *Macros*.
+- **Amended 2026-10-10, vocabulary (positioning only; no decision reversed):** two readings,
+  driven by [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §10, which gives "resource" to loaded content.
+  1. §6's "component + resource read/write sets" and "components **and** resources" read
+     **"shared singletons"** for the scheduling sense.
+  2. The 2026-07-24 entry's "no separate serialized-scene asset" reads **"no second in-memory
+     scene type"**. A scene document on disk is an asset (ADR-024 §8).
 
 ## Context
 

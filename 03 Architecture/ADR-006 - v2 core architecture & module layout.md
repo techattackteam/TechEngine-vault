@@ -51,6 +51,13 @@
   dedicated server that links no GL at all (§2). The module DAG, the client/server seam and
   the F22 device seam are all unchanged. Decided at S5-D2 (2026-08-30), before M4's first
   window code. Record: [[Window - Design]] § *The seam*.
+- **Amended 2026-10-10, vocabulary (positioning only; no decision reversed):** two readings,
+  driven by [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §10, which gives "resource" to loaded content.
+  1. §5's scheduling sense, "function-over-resources", reads **"function-over-shared-singletons"**.
+     §5's "owning resources does not disqualify it" is ordinary English and unchanged.
+  2. The 2026-07-24 entry's "no separate serialized-scene asset" reads **"no second in-memory
+     scene type"**. A scene document on disk is an asset (ADR-024 §8); the runtime ECS container
+     is still always `Scene`.
 
 ## Context
 

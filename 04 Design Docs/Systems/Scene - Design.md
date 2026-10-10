@@ -46,7 +46,7 @@ PR #90 as `ea5d0c9c`, PR #91 as `4da771af` and PR #92 as `2a50f8cb`.
 | Retain archetypes, cached transition edges and vector-backed SoA columns behind IComponentStorage; iterate typed spans. | ADR-007 §2 |
 | One registration seam describes identity, disk serialization and replication eligibility. Replicated components are restricted to trivially-copyable data without process-local pointers or handles. | ADR-007 §2; ADR-016 §1-2 |
 | Declared system writes feed per-column change ticks. Structural changes are deferred during system execution and applied after Tick. | ADR-007 §2 and §6; ADR-020 §1 and §8 |
-| S6-T6-T9 schedule conflicts from component access only. Shared-resource access waits for a concrete scheduled resource conflict. | ADR-020 §2, Sep 19 amendment |
+| S6-T6-T9 schedule conflicts from component access only. Shared-singleton access waits for a concrete scheduled singleton conflict. | ADR-020 §2, Sep 19 amendment; vocabulary amended Oct 10 |
 | Simulation performs fixed ticks; presentation consumes copied snapshots and never accesses live Scene storage. | ADR-019 §1-3, superseding ADR-007's variable/presentation pipeline |
 | Serialization uses the existing Writer/Reader and ADL visit seam. Scene document layout belongs to its consumer. | ADR-016 §2 and §6; [[Serialization - Design]] |
 
@@ -236,8 +236,8 @@ graph, debug access validation and change tracking as engine systems.
 S7-T3 (#94) shipped startup declaration by the persistent instance for app-selected
 systems ([[Task Graph - Execution Flow]] § Stage 1). The project catalog is not built yet;
 it waits in [[Backlog]] under app.
-Shared resources are outside S6-T6-T9 access masks; add them when a concrete scheduled
-resource conflict needs graph ordering or debug validation.
+Shared singletons are outside S6-T6-T9 access masks; add them when a concrete scheduled
+singleton conflict needs graph ordering or debug validation.
 A custom system can query and update both built-in and project components through public APIs.
 
 The S6-T8 deferred command contract covers spawn, despawn, component add and component

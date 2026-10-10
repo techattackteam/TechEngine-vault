@@ -12,6 +12,10 @@
   is a regular system” → the current Tick's ordered input batch reaches selected
   systems as engine-coded input notifications at their scheduled slots. No action
   map or command component is required for this local input path. Trigger: S7-D2.
+- **Amended 2026-10-10, vocabulary (positioning only; no decision reversed):** §2's title and
+  body, and the 2026-09-19 entry's "shared resources" and "Resources are shared singletons",
+  read **"shared singletons"**. Driver: [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §10 gives "resource" to loaded content. ADR-024
+  §5 separately adds a barrier resource step, rowed in [[ADR Index]] § *Partial supersessions*.
 - **Related:** settles the open items ADR-007 §6 deferred to "the task-graph ADR" ·
   builds on ADR-019's fixed-only simulation model · provides ADR-010 §4's terminal slot ·
   design hub: [[Task Graph - Execution Flow]]

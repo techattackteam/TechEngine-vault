@@ -128,8 +128,10 @@ groups are kept, because they show where future work will land.
   `std::error_code`) before a `SceneError` can exist. **Trigger:** the first caller that has to
   tell two of those reasons apart, likely the editor's hierarchy panel.
 
-- #prio/medium · **Resources: hot-reload / eviction**: candidate ADR; depends on the
-  UUID/cache model ported from v1 (F7, F13, F31). **Trigger:** the resource cache being real (M6).
+- #prio/medium · **Resources: hot-reload**: decided in shape by [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9: a reload swaps
+  data behind a live handle in a loading phase, with no generation bump, and fenced readers
+  treat it as a free. Eviction stays explicit release only. **Trigger:** file watching
+  ([[Backlog]] → `platform`) and an editor workflow that needs it.
 
 - #prio/low · **A test for `wait()` called from a pool worker**: the `TE_CHECK` added at
   S4-T4 is the only guard, and it has no case, because without it the test hangs rather than

@@ -7,14 +7,14 @@
 
 | | |
 |---|---|
-| **Quarter** | 2026 Q3 (Jul-Sep) |
-| **Sprint** | [[2026-09 Sprint 07 - Scene Events and Input Boundary]] *(Sep 26-Oct 9)* |
-| **Sprint goal** | Deliver Scene events at the Tick barrier and engine-coded input notifications during the consuming Tick. |
-| **Current focus** | Both implementation stories are done: S7-T12 (#117) closed Story C on Oct 6, after Story B closed on Sep 27. Story F closed the same day with #114 and #115. S7-T2 (#121), S7-P4 (#122), S7-P6 (#123) and S7-D3 (#124, ADR-023's error policy and its sweep) merged on Oct 9; S7-D3 completed Story D. S7-P1 (#125) closed Story E the same day, so every board card is done and S7-P8 was dropped. Next: the sprint review and Sprint 08 planning this weekend. |
+| **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
+| **Sprint** | Sprint 08 *(Oct 10-23)*, not yet planned. [[2026-09 Sprint 07 - Scene Events and Input Boundary]] closed Oct 9 with every card done, which closed M5. |
+| **Sprint goal** | Set at planning. Proposed theme: M6, decide the Resources model and load a project's scene. |
+| **Current focus** | The decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial from Sprint 08*). M6's decisions are **Accepted** (Oct 10): [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] and [[ADR-025 - Content packs (.tepack and the runtime load path)]], with [[Resources - Design]] as the M6 hub. Next: `/sprint-plan` cuts the Dev cards against them. |
 | **Top blocker** | None. |
-| **Next milestone** | Complete M5 event and input seams before M6 content. |
+| **Next milestone** | M6 content: Resources and project-to-scene binding. |
 | **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
-| **Reconciled against** | engine `01ed7a30` (2026-08-30) |
+| **Reconciled against** | engine `82d7a11c` (2026-10-10) |
 
 **Reading that stamp** ([[ADR-012 - Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -29,13 +29,18 @@ git log --oneline 01ed7a30..origin/master
 so when grounding an answer (`CLAUDE.md` § *How to work here*, rule 2). Distance is a signal, not
 proof: it cannot tell you *which* note drifted, only that nobody has looked.
 
-**Latest targeted check: Sep 26, 2026**, after fetching `origin/master` at `742fed7e`.
-The Sprint 06 boundary compared the merged Scene, task-graph and input/event seams with
-their design notes. Miguel supplied attended showcase evidence for repeated Scene values
-and headless/windowed parity. At that boundary, event lifetime/cursor binding and input
-translation remained design work; the Sep 26 amendments later settled the event rule.
-The wider vault reconciliation did not run, so **the stamp is unchanged**.
-No build, test, live CI check or demo was run by the AI in this planning session.
+**Latest full reconciliation: Oct 10, 2026**, against fetched `origin/master` at `82d7a11c`,
+covering the 63 engine commits since `01ed7a30`. Every Systems design note was read against
+the code its section describes. The Utilities notes were checked against the commits that
+changed their code, and all had been edited after those commits. `tools/check-vault-citations.py`
+ran against `82d7a11c`; its remaining reports are v1 or at-commit citations, not drift.
+Fixed in place: the `std::error_code` returns from #124 in [[Window - Design]]; the
+`fixedUpdate` hook that S6-T9 removed, in [[Simulation Thread - Design]],
+[[Game Loop - Frame Flow]] and [[Project - Design]]; claims that S7-T7's event barrier and
+S7-T8's tests were still unbuilt, in [[Scene - Design]], [[Game Loop - Frame Flow]] and
+[[Task Graph - Execution Flow]]; and six shifted line citations in [[Events - Design]] and
+[[Project - Design]]. The Decided rows showed no hub drift against the ADRs. No build, test
+or demo was run.
 
 ## 🗓️ Rhythm
 
@@ -60,7 +65,9 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** **Oct 10-11, 2026**: `$sprint-plan`, the Sprint 07 boundary.
+→ **Next ceremony:** `/sprint-plan` for the Sprint 07 boundary, run **after** the M6
+decisions are accepted, under the decide-first trial. The vault reconciliation already ran on
+Oct 10, so its step 3 only covers anything merged after `82d7a11c`.
 The Sprint 06 boundary is recorded in [[2026-09-26 Sprint 06 Retrospective]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
@@ -128,13 +135,13 @@ Build order from here: the [[Roadmap]] ladder: **chain M0-M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005-008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop, [[2026-08 Sprint 02 - Base Foundation]] | ✅ goal met (Jul 30); sprint closed Aug 2 |
-| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete**; 🔨 **M5** in [[2026-09 Sprint 07 - Scene Events and Input Boundary]]; event and input delivery are committed |
+| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9); 🔨 **M6** next, decided before it is planned |
 
 _Tasks → [[Sprint Board]]._
 
 ## Quick links
 
-- 📌 [[Roadmap]] · [[2026-Q3]]
+- 📌 [[Roadmap]] · [[2026-Q4]]
 - 🏃 [[Sprint Board]] · [[Backlog]]
 - 🏛️ [[ADR Index]] · [[Known Issues]] · [[v1 Code Audit]] · [[Lessons from v1 (reference prototype)]]
 - 🧠 [[Technical Lead Charter]] · [[Working with Claude - Operating Guide]]
@@ -144,6 +151,12 @@ _Tasks → [[Sprint Board]]._
 ## Active decisions
 
 Recently locked. Full set in [[ADR Index]]:
+- [x] **Resources and content packs** ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]], [[ADR-025 - Content packs (.tepack and the runtime load path)]]):
+  **Accepted Oct 10**, the first decisions of the decide-first trial. 64-bit ids with value
+  handles counted per entry; async loads on the `JobSystem`, hard references in loading
+  phases and soft references at the Tick barrier from A1; one `.tepack` per side, read by
+  ranged reads; the bake ships only what scenes and settings assets reference; an extensible
+  boot record names the startup scene. Closes M6's missing gate.
 - [x] **Project system composition** ([[ADR-022 - Project system composition and self-description]]):
   **Accepted Sep 26**. Projects explicitly contribute available systems; the app selects
   persistent instances before simulation. Each selected system declares its access,

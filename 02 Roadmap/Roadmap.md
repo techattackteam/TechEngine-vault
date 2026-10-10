@@ -20,7 +20,7 @@ Cadence: sprint length, week shape, ceremony anchor → [[Dashboard]] § Rhythm.
 flowchart TB
   M0["M0 · base ✅"] --> M1["M1 · enablers ✅"]
   M1 --> M2["M2 · concurrency &amp; serialization ✅"] & M3["M3 · project ✅"]
-  M2 & M3 --> M4["M4 · window ✅"] & M5["M5 · scene &amp; scheduling"]
+  M2 & M3 --> M4["M4 · window ✅"] & M5["M5 · scene &amp; scheduling ✅"]
   M5 --> M6["M6 · content"] & P["⚡ P1 → P2"] & S["🎮 S1 physics"] & N["🌐 N1 → N5"]
   M4 --> R
   M6 --> R["🎨 R1 → R2 → R3"] & T["🔧 T1 → T5"]
@@ -36,8 +36,8 @@ flowchart TB
 | **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a four-worker pool · **binary serialization + ADR-005's trait seam**                                                                                                                | **threading ADR**, gated on M1's Profiler · **serialization ADR**                                                                                |
 | **M3** | project ‖ M2                | root + `project.toml` (toml++) · path/mount resolution · **the rest of `FileAccess`'s mutating half**: `createDirectory` · `remove` · `copy` · `move` · `rename`. `write` itself shipped at S4-T7 · shader + asset dirs · **`projects/dev/` testbed** | none: toml, not the binary format                                                                                                                |
 | **M4** | window                      | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                                                                                                                                  | M2's context-ownership call                                                                                                                      |
-| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · FrameAllocator + command buffer · transform hierarchy · engine-coded input events                                                                                                           | [[ADR-020 - System scheduling and task-graph execution]] Accepted Sep 12, amended Sep 26; event-barrier and input delivery implementation remain |
-| **M6** | content                     | Resources (CPU/UUID) · project↔scene binding                                                                                                                                                                                                          | **none**: its seam closed at M2. ⚠️ the only gateless rung; revisit whether Resources owes one                                                   |
+| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · command buffer · transform hierarchy · engine-coded input events. The FrameAllocator was dropped on Oct 10 with no consumer; see R1                                                     | [[ADR-020 - System scheduling and task-graph execution]] Accepted Sep 12, amended Sep 26. ✅ **Closed Oct 9**: event and input delivery shipped in Sprint 07 |
+| **M6** | content                     | Resources (CPU, 64-bit ids, async loads) · scene document · `.tepack` reader and writer · minimal bake · runtime layout and boot record · project↔scene binding. Hub: [[Resources - Design]]                                                          | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] + [[ADR-025 - Content packs (.tepack and the runtime load path)]], both **Accepted** Oct 10 |
 
 ## The lanes
 
@@ -47,16 +47,16 @@ Listed in a suggested default order. The only hard edges are shown in *needs*.
 | ------ | --------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | **P1** | parallel executor on        | `publish` opened to workers · levels running concurrently · **TSan leg green**              | M5 · M2                                                                     |
 | **T1** | editor - panels             | dock · hierarchy · inspector · console/cvars · Profiler panel · scene save                 | M6, ImGui only, no engine renderer                                         |
-| **T2** | export slice                | editor saves → `runtime` loads the project and runs it, **no importers linked**            | T1 · M6                                                                     |
-| **R1** | renderer v0                 | device seam (F22) · mesh + shader + material · camera · frustum culling · one forward pass | M6 · **renderer ADR**                                                       |
+| **T2** | export slice                | editor save and export commands over M6's bake; the runtime load itself is M6 (ADR-025 §6) | T1 · M6                                                                     |
+| **R1** | renderer v0                 | device seam (F22) · mesh + shader + material · camera · frustum culling · one forward pass | M6 · **renderer ADR**, which also decides whether a per-frame allocator is owed |
 | **T3** | editor - viewport           | 3D scene view · picking (F21) · gizmos                                                     | R1                                                                          |
 | **N1** | transport                   | ENet/GNS/yojimbo pick · connect/disconnect · reliable + unreliable channels                | **netcode transport ADR**                                                   |
-| **A1** | scripting SDK               | user Systems + Scripts over `te_sdk` · game-DLL load + hot-reload                          | M5 · [[ADR-010 - User authoring model (Systems & Scripts)]] + scripting ADR |
+| **A1** | scripting SDK               | user Systems + Scripts over `te_sdk` · game-DLL load + hot-reload · soft references and async mid-run loads (ADR-024 §5) | M5 · M6 · [[ADR-010 - User authoring model (Systems & Scripts)]] + scripting ADR |
 | **A2** | game UI                     | 2D pass · font/text · layout · input routing · script-drivable                             | R1 · **own ADR**                                                            |
 | **S1** | physics                     | Jolt, authoritative, fixed phase                                                          | M5                                                                          |
 | **N2** | replication slice           | 2 processes, 1 replicated `Transform`                                                      | N1 · M5                                                                     |
 | **R2** | render graph                | passes · shadows · depth prepass · post · GPU zones per pass                               | R1                                                                          |
-| **T4** | import + bake               | assimp/stb in the editor · baked binary out                                                | T1 · M6                                                                     |
+| **T4** | import                      | assimp/stb in the editor, writing runtime-form files that M6's bake packs (ADR-025 §6) | T1 · M6                                                                     |
 | **N3** | snapshot/delta replication  | real encoder · dirty sets · per-component byte counters                                    | N2                                                                          |
 | **C1** | animation & skinning        | skeleton/clip assets · sampling System · GPU skinning                                      | T4 · R1                                                                     |
 | **P2** | job system - tuning         | work-stealing · Jolt pool integration (F15)                                                | P1 + measurement                                                            |
@@ -141,8 +141,9 @@ Only the current and next sprint carry dates. Everything past that is the ladder
 ## Quarters
 
 - **2026 Q3 (Jul-Sep)**: *Foundation & Direction* → [[2026-Q3]]
-- **Q4 and beyond**: a theme is written **at the boundary planning session that opens it**,
-  never earlier. A quarter gets a direction, not a feature list.
+- **2026 Q4 (Oct-Dec)**: *Close the Chain, Open the Lanes* → [[2026-Q4]]
+- **2027 Q1 and beyond**: a theme is written **at the boundary planning session that opens
+  it**, never earlier. A quarter gets a direction, not a feature list.
 
 ## Why this shape: 2026-07-31
 
@@ -175,7 +176,7 @@ Only the current and next sprint carry dates. Everything past that is the ladder
   `Scene` makes everything after it cheaper to debug. Only the 3D viewport needs R1, so it
   splits out as T3.
 - **Thin slices ahead of full systems, three times.** T2 proves the editor→runtime bake
-  boundary, N2 proves ADR-007, R1 proves the device seam, each before the full version
+  boundary (since Oct 10, M6's minimal bake proves it under ADR-025), N2 proves ADR-007, R1 proves the device seam, each before the full version
   (T4/T5, N3-N5, R2/R3) is built on an untested assumption. ADR-006 § Context is explicit that
   replication cannot be retrofitted; the same logic applies to the other two.
 - **`Scene`/ECS at M5, not after Resources.** Components hold resource handles and the renderer

@@ -72,9 +72,9 @@ Lower the component declarations to dense-ID masks, derive conflict and explicit
 then sort the resulting DAG into levels. ADR-020 §3 owns edge direction and cycle
 diagnostics. The cached levels are the task graph consumed by the executor.
 
-S6-T6-T9 track components only. Shared-resource access is deferred until a concrete
-scheduled resource conflict needs graph ordering or debug validation (ADR-020's
-Sep 19 amendment).
+S6-T6-T9 track components only. Shared-singleton access is deferred until a concrete
+scheduled singleton conflict needs graph ordering or debug validation (ADR-020's
+Sep 19 amendment; "resource" means loaded content since ADR-024 §10).
 
 S6-T7 shipped this stage in PR #90 (`ea5d0c9c`). `TaskGraph` stores immutable levels
 of system-pointer, system-type and access nodes. Construction rejects equal-priority conflicts
@@ -157,6 +157,11 @@ publications visible. Since S7-T7 that step is the executor's own, not an inject
 despawn, add and remove. Pending-entity tokens are local to the buffer that created them.
 Hierarchy constraints are validated at commit time. That is what makes determinism hold
 even once levels run in parallel.
+
+**From A1, a resource step joins the barrier** ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §5, partially superseding ADR-020 §1).
+After structural commands and `NetId` assignment it issues the Tick's soft-reference requests,
+which systems queue in a per-node request list beside their structural buffer, publishes
+finished loads and drains frees. Its order against the event step is A1's to fix.
 
 **Debug validation.** `Scene` asserts that the **actual** access is a subset of the
 **declared** access, so touching an undeclared component fires `TE_ASSERT`. Column

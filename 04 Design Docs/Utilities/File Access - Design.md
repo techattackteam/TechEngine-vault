@@ -153,9 +153,10 @@ reader following §4 plus its 2026-08-02 amendment would have built an `IFileAcc
 [[ADR Index]] § *What is not an amendment* → the mirror case: the ADR said it, this note now
 says otherwise, so it gets declared rather than left to rot.
 
-Bring the interface back when a second implementation is real. The candidates are an
-archive-backed VFS, a network-backed one, or a null one for a dedicated server with no
-assets. Extraction is mechanical. Every call site already goes through the four methods
+Bring the interface back when a second implementation is real. The candidates are a
+network-backed one, or a null one for a dedicated server with no assets. An archive-backed
+one is no longer a candidate: packs are read by a reader in `core` on top of this class
+([[ADR-025 - Content packs (.tepack and the runtime load path)]] §5). Extraction is mechanical. Every call site already goes through the four methods
 that would become the interface.
 
 ### The read surface
@@ -181,6 +182,10 @@ public:
     std::error_code resolve(std::string_view virtualPath, std::filesystem::path& out) const;
 };
 ```
+
+**A byte-range read joins them at M6**, decided 2026-10-10 by ADR-025 §3: the pack reader
+reads each entry at its offset instead of reading a pack whole. Its signature is the M6 card's
+to pin; it still knows nothing of packs.
 
 **All four read methods are `const`.** `FileAccess` holds a non-owning
 `const MountTable*`. The mutating calls are also on this class; their current mixed
@@ -209,7 +214,8 @@ lower-priority mount holds is readable through `read`, but it never appears in `
 
 That is inconsistent, and it is deliberate. A union would need a dedupe pass, plus a rule
 for the case where one name is a file in one mount and a directory in another. Nothing needs
-that today. Revisit at M6 if the resource scan does.
+that today. M6's id index does not: it scans each side through `project://assets/<side>/`
+([[Resources - Design]] § *The editor's id index*).
 
 ### The write surface
 
@@ -279,9 +285,10 @@ therefore printed an error every time it was absent, which is the normal path.
 **`..` is rejected, not normalised away.** That is the less obvious choice, so here is the
 reasoning.
 
-A virtual path is an **identity**, not just a lookup key. The resource cache, the watcher
-map and the asset manifests all key on the exact string. If `a://x/../y/f.png` and
-`a://y/f.png` both resolved, one file would sit in the cache twice under two names.
+A virtual path is an **identity**, not just a lookup key. The editor's id index and the watcher
+map key on the exact string, and so does anything else that stores a path. If `a://x/../y/f.png`
+and `a://y/f.png` both resolved, one file would appear twice under two names. (The resource
+cache itself keys on a `ResourceId`, not a path: [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §2.)
 
 Nothing in the engine produces `..` anyway. `list()` returns normalised paths, and manifests
 are written by tools. When one asset references another relatively, the loader resolves that
@@ -363,7 +370,7 @@ two failure surfaces a caller has to check, is in [[Serialization - Design]] §
 | Rung | Uses |
 |---|---|
 | **M3** project | `EditorApp::init()` mounts project and asset roots, then `Project` reads `project.toml`. S5-T3 supplied the five other mutating calls. |
-| **M6** resources | Every asset load, by virtual path. |
+| **M6** resources | The editor's loose loads by virtual path; the runtime's pack reader by byte-range reads of `assets://<side>.tepack`. No resource is looked up by path at run time (ADR-024 §2). |
 | editor | The asset pipeline's import and bake steps, which write. |
 
 ## Open questions
@@ -376,8 +383,8 @@ two failure surfaces a caller has to check, is in [[Serialization - Design]] §
   needs more than a port. It was built on callback subscriptions, which
   [[ADR-014 - Events (buffered streams) & StringId]] rules out. Re-read it against that ADR
   before designing a v2 one.
-- **Archive mounts.** Mounting a `.pak` file instead of a directory. `MountTable`'s shape
-  allows it. No consumer needs it before shipping.
+- **Archive mounts.** Closed 2026-10-10: packs are not mounted. ADR-025 §5 puts a pack reader
+  in `core` on top of `FileAccess`, because `platform` cannot parse a format `core` encodes.
 - **One live defect.** [[Known Issues]] **D3**: `canonical()` and symlinks, described under
   *Case sensitivity*. It came out of S3-T11's review alongside the `mount()` validation gap,
   which S5-T2 closed on 2026-09-01.

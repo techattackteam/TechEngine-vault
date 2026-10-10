@@ -10,6 +10,8 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 025 | [[ADR-025 - Content packs (.tepack and the runtime load path)]] | Accepted | 2026-10 |
+| 024 | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] | Accepted | 2026-10 |
 | 023 | [[ADR-023 - Public error handling]] | Accepted | 2026-10 |
 | 022 | [[ADR-022 - Project system composition and self-description]] | Accepted | 2026-09 |
 | 021 | [[ADR-021 - Immediate Scene transform propagation]] | Accepted | 2026-09 |
@@ -37,7 +39,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 - Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/`, history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **024** (numbers are never reused).
+> Next number is **026** (numbers are never reused).
 
 ### Partial supersessions
 
@@ -51,6 +53,10 @@ anyone noticed (2026-08-20).
 
 | Clause | Superseded by | Scope |
 | --- | --- | --- |
+| [[ADR-006 - v2 core architecture & module layout]] §4: the **`ResourceRegistry& resources` field** of the `EngineContext` sketch; §5: "injected via `EngineContext`", for the resource cache only | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4 | Accepted Oct 10: `App` owns the cache and hands it to the simulation side, because only the simulation thread may use it. The DI rule, context immutability, "holds no systems" and the `app` composition root remain. |
+| [[ADR-020 - System scheduling and task-graph execution]] §1: the barrier-operations list | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §5 | Accepted Oct 10, takes effect with A1: the barrier gains a resource step after structural commands and NetId assignment that issues the Tick's soft-reference requests, publishes finished loads and drains frees. Its order against the event step is A1's to fix. The rest of §1 remains. |
+| [[ADR-016 - Serialization (binary primitives & describe-once seam)]] §6: "asset containers to T4's bake" | [[ADR-025 - Content packs (.tepack and the runtime load path)]] §1 §6 | Accepted Oct 10: the `.tepack` container and the bake land at M6; T4 keeps importers. The scene layout (M5/M6), snapshot packets (N3), the compression trigger and the 2026-08-30 amendment remain. |
+| [[ADR-016 - Serialization (binary primitives & describe-once seam)]] §4: "one format version ... re-bake assets and re-save scenes" | [[ADR-025 - Content packs (.tepack and the runtime load path)]] §2 | Accepted Oct 10: each blob kind carries its own magic and version, so a pack change never strands a scene. Re-bake over migration and the per-type trigger remain. |
 | [[ADR-014 - Events (buffered streams) & StringId]] §2: blanket “no callbacks” clause | [[ADR-022 - Project system composition and self-description]] | Accepted Sep 26: scheduled system-local handlers run at the reader's slot before `tick` under its declared access. Publishing stays buffered; subscriptions and immediate callbacks remain prohibited. |
 | [[ADR-020 - System scheduling and task-graph execution]] §7 and *What would move this*: suggested future live enable/disable command | [[ADR-022 - Project system composition and self-description]] | Accepted Sep 26: the active set stays fixed for a simulation session. A different selection requires stopping that session and building a new graph before the next one. The immutable-graph decision remains. |
 | [[ADR-020 - System scheduling and task-graph execution]] §1: hierarchy changes propagated on the next tick; §3/§5: separate `TransformPropagation` schedule entry | [[ADR-021 - Immediate Scene transform propagation]] | Accepted Sep 18: Transform setters and committed hierarchy changes refresh the affected subtree immediately. The next Tick sees barrier changes already propagated; the Tick graph and barrier remain. |

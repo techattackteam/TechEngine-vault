@@ -29,6 +29,9 @@
   unchanged; it now holds with one simulation per process, which is what the runtime and the
   editor each run. The *Alternatives* `EventBus` bullet leaned on the same argument. Trigger:
   the Sep 27 ownership review of `App`, `Scene` and `EngineContext`.
+- **Amended 2026-10-10, vocabulary (positioning only; no decision reversed):** §4's "beside
+  components and resources" and "its domain is components and resources" read **"shared
+  singletons"** for the scheduling sense. Driver: [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §10 gives "resource" to loaded content.
 - **Supersedes (partial):** **ADR-006 §4's `EventBus& events` field only**
   (`:186`): event streams are `Scene` state, not an `EngineContext` service; every other
   §4 clause (DI rule, immutability, "holds no systems", F13 ownership) remains in force.

@@ -22,10 +22,11 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 | Little-endian on disk and wire, no swap code, compile-time check documents it. | ADR-016 §3 |
 | Blob header is `{magic, u16 formatVersion, flags}`; strings length-prefixed; `StringId` as raw `u64`. | ADR-016 §3 |
 | Encoding adds no nondeterminism: same input bytes, identical output bytes. | ADR-016 §3 |
-| One header version; a bump means re-bake and re-save; per-type versions wait for non-regenerable content. | ADR-016 §4 |
+| Each blob kind (scene, pack) carries its own magic and version, so a pack change never strands a scene; a bump means re-bake or re-save. Per-type versions wait for non-regenerable content, which for scenes is T1's first kept save. Today's single `BLOB_MAGIC` and `BLOB_FORMAT_VERSION` split at M6. | ADR-016 §4, partially superseded by [[ADR-025 - Content packs (.tepack and the runtime load path)]] §2; ADR-024 §8 |
 | Type tags are macro-free `constexpr` strings hashed with `StringId` (FNV-1a/64). | ADR-016 §5, ADR-007 §1 as amended |
 | Primitives and seam live in `core`; document schemas belong to their consumers. | ADR-016 §6, ADR-006 §1 |
 | Disk identity (authoring-id + remap, opt-in UUID) is ADR-007's, not re-opened here. | ADR-007 §1 |
+| Asset identity is a random 64-bit `ResourceId`; a reference to an asset is written as that id and remapped to a handle on load. | ADR-024 §2 |
 | `Reader`'s sticky failure is a `std::error_code` in the `ReadError` category (`ReadStatus` until 2026-10-09). The sticky shape stays. | [[ADR-023 - Public error handling]] §2 |
 
 ## Design
