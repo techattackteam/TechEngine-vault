@@ -380,6 +380,15 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/high · **Process: compare engine forks against Unity and Unreal, then look for better**:
+  add a working rule to [[Technical Lead Charter]] so every session, the autonomous lane and the
+  review agents follow it. Before the question round on a load-bearing engine fork, show how
+  Unity and Unreal (Godot when relevant) solve it, as a baseline to beat rather than copy. Then
+  say per option where TechEngine's constraints allow something better. It came out of the M6
+  resources session on Oct 10, where the precedents decided soft references, settings assets
+  and the pack layout. **Trigger:** Miguel wants it in Sprint 08; cut it as a Process card at
+  that `/sprint-plan`.
+
 - #prio/low · **A `CONVENTIONS.md` gotcha for `bool` to `std::error_code` migrations**: a
   caller that tests the result (`REQUIRE(f())`, `if (!f())`) still compiles and silently
   inverts, because an empty code is false. S7-D3's rebase caught seven such sites; the
