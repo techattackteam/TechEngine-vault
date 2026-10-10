@@ -29,8 +29,8 @@ was Accepted during S5-T14 review and implemented by #81. ADR-018 ownership rema
 | Main fans out presentation input and blocks on events; stop wakes it. | ADR-019 §4 §5, Accepted |
 
 Current accepted topology: [[Concurrency - Design]]. The fixed-step accumulator and four
-JobSystem workers already exist. The task-graph executor remains planned for M5; moving the
-simulation driver does not require implementing that executor now.
+JobSystem workers exist. Since S6-T9 (#92) each fixed tick runs the serial task-graph
+executor ([[Task Graph - Execution Flow]]); it does not use the workers until P1.
 
 ## Target ownership
 
@@ -215,14 +215,17 @@ the headless lifecycle without adding a server product or blocking console reade
 ## Lifecycle
 
 `App::run()` remains the sole lifecycle coordinator. Virtual hooks remain the only app
-dispatch; no parallel callback registry is added. Target hook names and affinity:
+dispatch; no parallel callback registry is added. Shipped hook names and affinity
+(`engine/app/include/TechEngine/app/App.hpp`):
 
 | Hook | Thread and responsibility |
 |---|---|
 | `init()` | Main; mounts/services and client window/render startup. Only mandatory initialization override. |
-| `mainUpdate()` / `shouldClose()` | Main only; wait for events and read published status. No live simulation references. |
+| `configureSimulation()` | Main, once, after `init()` and before the simulation thread starts; registers components and events and adds the selected systems to the schedule. `App` then builds the streams, freezes the registry and builds the graph. |
+| `mainThreadUpdate()` / `shouldClose()` | Main only; wait for events and read published status. No live simulation references. |
+| `wakeMainThread()` / `renderTiming()` | Any thread; wake a blocked main loop and report copied render timing. Overrides must be thread-safe. |
 | `simulationInit()` | Simulation; initialize owned state and initial output before readiness. |
-| `fixedUpdate(simulation)` | Simulation; ingress is consumed immediately before each invocation. |
+| Each fixed tick | Simulation; not a hook. Ingress is consumed, then the executor runs the scheduled systems and the barrier. `fixedUpdate` was removed in S6-T9 (#92). |
 | `publishSnapshot(simulation)` | Simulation; fixed context only, once after catch-up for extraction/publication; initial publication before readiness. |
 | `simulationShutdown()` | Simulation; release simulation-owned state after outstanding jobs settle. |
 | `shutdown()` | Main; stop/join rendering and destroy resources after simulation joins. |
@@ -292,9 +295,10 @@ RateCounter and TimingMetrics replace the old frame/update rate paths. The publi
 hook passes fixed context so extraction does not reach into runner internals; it carries
 no variable delta or alpha. This is the implemented spelling of ADR-019's no-delta hook.
 
-The fixed-phase/task-graph, Scene and command-result portions of the target remain future
-consumers. The completed cards implement the triangle/raw-input stage. Native Windows and
-Linux TSan evidence closed T17 on Sep 11.
+Scene and the serial task-graph executor have since shipped (S6, S7), and input reaches
+scheduled systems ([[Input - Design]]). The editor/CLI command and command-result
+portions of the target remain future consumers. Native Windows and Linux TSan evidence
+closed T17 on Sep 11.
 
 **Sep 10 draft check:** fetched `origin/master` is `a60b64bd`; T14 checkout is `82ac7ed2`
 plus working changes. The runner exists there, while the published baseline remains T13.
@@ -315,7 +319,7 @@ dedicated-thread tests. No new build or demo ran during this close.
 The Windows failure tests exposed Jolt's exported `_HAS_EXCEPTIONS=0` disagreeing with
 Catch2's exception types. `cmake/deps.cmake` now enables `CPP_EXCEPTIONS_ENABLED`.
 Compiler warnings and clang-tidy findings became advisory at Miguel's request; formatting
-still gates CI. The accepted build-policy text needs reconciliation; see [[Backlog]].
+still gates CI. S7-P1 reconciled the build-policy ADRs with this on Oct 9.
 
 The pre-integration baseline was `a60b64bd` (#79): `engine/app/src/App.cpp:15` still owned
 the driver; `apps/editor/src/EditorApp.cpp:40` mixed main work and frame publication.

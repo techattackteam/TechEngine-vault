@@ -56,7 +56,7 @@ flowchart LR
         S1["Sample Clock<br/>accumulate elapsed"]
         S2{"due ticks?"}
         S3["Drain InputBuffer batch"]
-        S4["fixedUpdate(SimulationContext)<br/>(EventStream within)"]
+        S4["executeSimulationTick<br/>scheduled systems + barrier"]
         S5["Advance diagnostic counter"]
         S6["publishSnapshot<br/>→ SnapshotMailbox"]
         S7["Publish TPS to TimingMetrics"]
@@ -115,8 +115,8 @@ as a transfer arrow because it does not flow through the InputBuffer or mailbox 
 
 ### Event system and task-graph phases
 
-The diagram shows `fixedUpdate` as one call per tick. The accepted Scene event path
-expands it into ordered graph levels and one barrier per Tick:
+The diagram shows each tick as one box. The serial executor expands it into ordered
+graph levels and one barrier per Tick:
 
 ```mermaid
 flowchart TB
@@ -130,8 +130,8 @@ flowchart TB
 EventStream is single-thread staged publishing (ADR-014). It is not a cross-thread
 mechanism; InputBuffer, SnapshotMailbox and TimingMetrics handle those. Systems within
 a Tick may publish events, but no later level in that Tick sees them. They become
-visible only at the barrier and are delivered in the next Tick. The current App
-barrier still has a no-op event service; this diagram is the accepted target.
+visible only at the barrier and are delivered in the next Tick. This shipped in S7-T7
+(#100); [[Events - Design]] § *Scheduled Tick delivery* has the calls.
 
 ## Tick timestamps
 
@@ -302,7 +302,8 @@ timeBeginPeriod(1) did not change it. No build, tests or timing experiment ran f
 
 ## Deferred consumers
 
-FrameAllocator reset granularity and net receive/send placement still need their owning
-designs. Pause/time scaling needs a timeline mapping and reset
+A per-frame allocator was dropped from M5 on Oct 10 because nothing needed it; whether one
+is owed is a question for the renderer ADR (R1). Net receive/send placement still needs its
+owning design. Pause/time scaling needs a timeline mapping and reset
 contract. Remote-clock conversion, prediction and interpolation delay tuning belong to the
 netcode ADR; one local Clock does not imply a shared clock across machines.

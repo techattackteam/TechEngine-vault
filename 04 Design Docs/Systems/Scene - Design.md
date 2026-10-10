@@ -337,11 +337,10 @@ and column write-stamping points. S6-T6-T8 shipped Schedule, graph and serial ex
 `SerialExecutor` owns persistent system instances and one reusable command buffer per
 graph node, while `TaskGraph` remains immutable. Scene validates actual accesses against
 the active declaration, and the executor stamps every matching declared writable column
-once before a system runs. S6-T9 connected this path to fixed ticks. The barrier service
-interface has `NetId` and event hooks after command application, but `App` currently
-supplies a no-op adapter. Event flushing and barrier ownership are planned in
-[[2026-09 Sprint 07 - Scene Events and Input Boundary]]; `NetId` assignment waits for
-its first networking consumer. The port does not restore v1's `parallelEach` or
+once before a system runs. S6-T9 connected this path to fixed ticks. After command
+application the barrier calls the injected `assignNetIds` hook, for which `App` supplies a
+no-op adapter until a networking consumer exists. Since S7-T7 (#100) the executor itself
+then retires the old event batch and makes the new one visible ([[Events - Design]]). The port does not restore v1's `parallelEach` or
 ADR-007's superseded variable-rate tail.
 
 Completed simulation state is extracted into owned presentation values through the
@@ -354,12 +353,13 @@ See [[Game Loop - Frame Flow]] and ADR-019 for delivery and interpolation.
 - PR #92 (`2a50f8cb`) registered built-ins at the composition root and ran the
   configured demo through the fixed-tick executor. Miguel reports repeated expected
   Scene values and headless/windowed parity from an attended Sep 26 showcase.
-  Automated App tests still cover only one tick and entity count.
+  S7-T8 (#101) added multi-Tick tests of the event path through the demo systems in
+  `apps/runtime/tests/RuntimeAppTests.cpp`; component values are still checked only by hand.
 
 S6-T8 shipped deferred structural commands, barrier-service hooks and declared-write
-stamps under ADR-020's Tick barrier. [[Events - Design]] records the accepted
-next-Tick batch rule. S7-T6 (#98) put the event streams on Scene; handler delivery at the
-barrier remains unbuilt.
+stamps under ADR-020's Tick barrier. S7-T6 (#98) put the event streams on Scene and
+S7-T7 (#100) delivers handlers and advances the batches at the barrier
+([[Events - Design]]).
 
 Story B closed with five cards (S6-T1 through S6-T5): entity handles and registry,
 archetype storage and transitions, queries, built-in hierarchy and transform propagation.

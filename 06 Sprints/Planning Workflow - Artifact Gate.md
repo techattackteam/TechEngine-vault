@@ -190,6 +190,21 @@ When the gate says an item needs an artifact and none exists, decide **when** it
 At planning, **flag every item the gate wants an artifact for and that does not have one.**
 Draft the light ones on the spot. Schedule the heavy ones.
 
+### Trial from Sprint 08: decide first, then plan
+
+**Started Oct 10, 2026, at Miguel's request.** On this boundary the heavy artifacts are not
+sprint tasks. The ADR and every other decision the sprint goal needs are written and accepted
+**first**, at the start of the new sprint. Only then does `/sprint-plan` run, and it cuts
+sized Dev cards against accepted decisions, so no story is left unsized.
+
+The rules above still hold where this trial does not reach: an open decision is still never
+sized past. The trial only moves when that decision gets made. `/sprint-plan` itself is not
+changed yet; the Sprint 08 retro decides whether the trial becomes the rule.
+
+**What to watch at the retro.** Whether the decision work left the board empty for long
+(the failure § *Rhythm* on the [[Dashboard]] records from August), and whether the Dev cards
+held up better than cards cut by a Design task in the middle of a sprint.
+
 Never let implementation start on an item that warranted an artifact and has none
 (CLAUDE.md rule 2).
 

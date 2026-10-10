@@ -92,11 +92,12 @@ namespace TechEngine {
     class Window {                       // platform. Owns the GLFWwindow*.
     public:
         // --- main thread only (GLFW pins these) ---
-        static bool  initialize();       // glfwInit + the 4.5 core hints
+        static std::error_code initialize(); // glfwInit + the 4.5 core hints
         static void  terminate();        // after every window closes
-        bool         open(int width, int height, std::string_view title);
+        std::error_code open(int width, int height, std::string_view title);
         void         pollEvents();
         void         waitEvents();
+        void         waitEvents(double timeoutSeconds);
         static void  postEmptyEvent();
         void         setInputBuffer(InputBuffer* input);
         void         setTitle(std::string_view title);
@@ -162,7 +163,8 @@ the target, because a vendored file with no recorded provenance cannot be regene
 **Shipped Sep 6, `a053486c` (#76):** `EditorApp` owns `Client`, whose private state owns
 `Window` before `RenderThread`. The temporary `ClientSession` type was folded into `Client`.
 `start()` opens the window and waits for the worker's startup promise; failure joins before
-returning false. `stop()` requests cancellation and joins the `std::jthread`, then closes
+returning. Since #124 (`bd5788cd`, Oct 9) `start()`, `Window::initialize()` and `open()`
+return a `std::error_code` in the `ClientError` or `WindowError` category instead of `bool`. `stop()` requests cancellation and joins the `std::jthread`, then closes
 the window and calls `Window::terminate()`. The current client owns one GLFW lifetime.
 
 **S5-T8 shipped Sep 7, `681ddf6b` (#77):** startup also initializes triangle resources

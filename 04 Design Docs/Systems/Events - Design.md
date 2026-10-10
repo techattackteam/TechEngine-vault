@@ -88,7 +88,7 @@ layout's owner.)
 
 ADR-020 requires the staged batch to become visible at each Tick barrier.
 `makeVisible(tick)` swaps the two buffers and records the Tick, so no payload is copied
-(`engine/core/src/events/EventStream.cpp:18`). The recorded Tick is only the batch's identity,
+(`engine/core/src/events/EventStream.cpp:26`). The recorded Tick is only the batch's identity,
 readable through `visibleTick()`; nothing about its lifetime depends on it. `Clock::tick()`
 is a process-wide diagnostic counter, not that anchor. S7-T3 (#94) renamed its advancing
 method to `advanceTick()` and dropped the frame argument from
@@ -119,7 +119,7 @@ S7-T4 made these calls; no artifact had decided them.
 
 | Call | Shape |
 |---|---|
-| **Declaration** | `registration.onEvent<Event>(handler)` inside `ISystem::init`, where the handler is a lambda taking `(Scene&, std::span<const Event>)`. It gets no `SimulationContext`. The handler is stored type-erased, and the entry keeps its handlers in declaration order, duplicate types included (`engine/core/include/TechEngine/core/systems/ScheduleRegistration.hpp:76`). S7-T4 shipped it as `on<Event>`; S7-T8 renamed it. |
+| **Declaration** | `registration.onEvent<Event>(handler)` inside `ISystem::init`, where the handler is a lambda taking `(Scene&, std::span<const Event>)`. It gets no `SimulationContext`. The handler is stored type-erased, and the entry keeps its handlers in declaration order, duplicate types included (`engine/core/include/TechEngine/core/systems/ScheduleRegistration.hpp:73`). S7-T4 shipped it as `on<Event>`; S7-T8 renamed it. |
 | **Same instance** | Binding to the persistent instance is a convention: the lambda captures `this`. Nothing stops a lambda from capturing something else. |
 | **When the type resolves** | At graph build, not at declaration, because `configureSimulation()` can add a system before it registers the event type. The declaration keeps a pointer to `eventTypeId<Event>` and calls it then. |
 | **Which registry** | `TaskGraph` takes the `EventRegistry` as a constructor argument (`engine/core/src/systems/TaskGraph.cpp:170`). A type counts as registered only if that registry's `find` knows it, because `eventTypeId<T>()` is one process-wide slot that any registry writes. |
@@ -133,7 +133,7 @@ S7-T7 made these calls; no artifact had decided them.
 
 | Call | Shape |
 |---|---|
-| **Who runs the barrier** | `SerialExecutor::execute` calls `retireEvents()` and then `makeEventsVisible(tick)` on the Scene, after applying commands and `assignNetIds` (`engine/core/src/systems/SerialExecutor.cpp:89`). `TickBarrierServices` no longer has an event hook. A failed phase throws before this point, which is what retains the batch. |
+| **Who runs the barrier** | `SerialExecutor::execute` calls `retireEvents()` and then `makeEventsVisible(tick)` on the Scene, after applying commands and `assignNetIds` (`engine/core/src/systems/SerialExecutor.cpp:179-181`). `TickBarrierServices` no longer has an event hook. A failed phase throws before this point, which is what retains the batch. |
 | **The only read path** | The executor reads each handler's batch as bytes through a private `Scene::readEventBytes(EventTypeId)`, reachable only by its friend `SerialExecutor`. The public `Scene::read<T>` is gone, so a system cannot read a batch from `tick`. |
 | **A quiet Tick** | A handler whose type has an empty visible batch is not called. |
 | **A Scene without streams** | The batch read fires a `TE_VERIFY` and returns empty, so the handler is skipped. That is one fire per handler per Tick. |
