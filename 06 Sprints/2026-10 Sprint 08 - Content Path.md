@@ -38,7 +38,7 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   `BadMagic`, and a wrong version with `BadVersion`. `FileAccess` reads a byte range of a file
   into a vector; a range past the end fails with a `FileError` and leaves the out-param
   untouched. Tests cover both halves.
-- [ ] **S8-T2** · Clear the editor's mount layout for M6 · P2 · 🟡 Light · 1-2h ·
+- [x] **S8-T2** · Clear the editor's mount layout for M6 · P2 · 🟡 Light · 1-2h ·
   done: the dev shaders live in `projects/dev/assets/client/`, and `projects/dev/shaders/` and
   the `shaders` mount are gone. The editor mounts `engine` at `<exe dir>/engine`, which frees
   `<exe dir>/assets` for packs. `EditorAppTests`' mount-set case asserts the new set of four
@@ -46,13 +46,17 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
 
 ### Story B: Scene documents
 
-- [ ] **S8-T3** · Write and read scene documents · P1 · 🟢 Deep · 4-6h ·
+- [x] **S8-T3** · Write and read scene files · P1 · 🟢 Deep · 4-6h ·
   done: a component registered as serializable carries a payload adapter on its registry record,
   bound through the existing `visit` seam. The writer emits the scene kind's header, the scene's
   `ResourceId`, the entity table (authoring ids and parent links) and one block per component,
   framed by tag and byte length. The reader rebuilds the Scene and remaps parent links.
   `Transform` round-trips, and `Hierarchy` is rebuilt from parent links rather than written.
   Prove a small hierarchy round-trips and a truncated document fails soft. Follows S8-T1.
+  **Scope added on Oct 11:** `Hierarchy` keeps a last-child link, so `setParent` appends a
+  child at the end without walking the sibling list. The scene reader appends every child, so
+  without the link a parent with n children took about n²/2 steps to load. `HierarchyTests`
+  prove that an append still lands last after each change to the previous last child.
 
 ### Story C: Content packs
 

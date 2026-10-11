@@ -11,12 +11,10 @@ kanban-plugin: board
 
 ## Story A: Content primitives
 
-- [ ] **S8-T2** · Clear the editor's mount layout for M6 · P2 · 🟡 Light · 1-2h: shaders into `projects/dev/assets/client/`, no `shaders` mount, `engine` at `<exe dir>/engine`; `EditorAppTests` asserts four mounts.
 
 
-## Story B: Scene documents
+## Story B: Scene files
 
-- [ ] **S8-T3** · Write and read scene documents · P1 · 🟢 Deep · 4-6h: payload adapters on the registry record, entity table with authoring ids and parent links, tag-and-length blocks; round-trip and truncation cases. Follows S8-T1.
 
 
 ## Story C: Content packs
@@ -76,11 +74,17 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 08
 
+- [x] **S8-T3** · Write and read scene files · P1 · 🟢 Deep · 4-6h: #127 `824e2111`, **Oct 11**, with S8-T2 on the branch `S8-T3/Scene-file`. All seven build legs, clang-format and diff coverage passed. **Two `done:` clauses had no referent at `/card-start`.** `ResourceId` belonged to S8-T10, a stretch card, so this card pulled in a minimal strong `u64` type with no generator. Nothing said how a component is "registered as serializable": Miguel chose that registration fills the adapters automatically when the type has a `visit` for both archives. **The design note's layout could not detect every truncation**, because its block list named no owning entity and carried no count; blocks now follow their entity, behind a count. The note also said unknown blocks are kept, which the sprint had moved to Sprint 09, so they are skipped with a warning. The code says *scene asset*, not *scene document*, after ADR-024 §10's vocabulary (Miguel). A structurally invalid table returns the new `ReadError::Malformed`. These calls are now in [[Resources - Design]] § *Scene assets*, [[Serialization - Design]] and [[Scene - Design]]. **Scope added:** `Hierarchy` keeps a last-child link, because appending at the end walked every sibling and made a wide parent quadratic to load; Miguel's call, made without a measurement. Unblocks S8-T13 (with S8-T6) and S8-D1, and is one of S8-T9's predecessors; completes Story B. **Retro:**
+	  - `/card-review` for overengineering found that the reader accepted any authoring id through a map, on a claim that T1 would keep ids stable across saves that no artifact made, and that it rejected duplicate blocks the writer cannot produce, with no test. Both were cut before merge: an id must equal its row, a parent must be an earlier row, and a duplicate block keeps its last value. A rejected `setParent` became unreachable and is now a `TE_CHECK`. The review's third finding, an unmeasured per-type scratch cache in the reader, was kept.
+	  - Claude wrote almost all of this card at Miguel's request: the scaffold, the tests, both functions, the adapters, `Transform`'s `visit` and the last-child link. The sprint note's capacity section asked for this to be recorded at the review.
+	  - The PR has no body or review conversation, so this entry is the only record of these calls.
+- [x] **S8-T2** · Clear the editor's mount layout for M6 · P2 · 🟡 Light · 1-2h: #127 `824e2111`, **Oct 11**. **It shipped on S8-T3's branch**, by Miguel's choice because it was small, so this entry is the only link from the squashed commit back to this card. The `shaders` mount is gone, the dev shaders sit in `projects/dev/assets/client/shaders/` (a subfolder, with the old `.gitkeep` moved along), and the editor mounts `engine` at `<exe dir>/engine`; [[Project - Design]] records both. Completes Story A. **Retro:**
+	  - The first commit left `engine` at `<exe dir>/assets`. `/card-review` caught it, and the fix landed before merge. `EditorAppTests` checks that four mounts exist but not where `engine` points, so no test would have failed.
+	  - S8-T6 inherits two raw GLSL files under `assets/client/` with no blob header, and its index reads the header of every file there.
 - [x] **S8-T1** · Split the blob header per kind and add a ranged `FileAccess` read · P1 · 🟠 Moderate · 2-3h: #126 `089ea289`, **Oct 11**. All seven build legs, clang-format and diff coverage (89%) passed. **Two signatures that no artifact pinned were settled at `/card-start` on Oct 11.** [[File Access - Design]] left the ranged read's signature to "the M6 card", and nothing said how `Writer` and `Reader` take a kind. Miguel chose a `BlobKind` passed to each header call, not to the constructor, because component blocks and pack entries are read by readers over a slice with no header. The scene and pack kinds belong to S8-T3 and S8-T4, so this card ships no kind constant. The read is `readRange(path, u64 offset, u64 size, out)`, with a new `FileError::OutOfRange`, so a corrupt pack offset is not mistaken for a disk failure. Both calls are now in [[Serialization - Design]] and [[File Access - Design]]. **A deliberate asymmetry with `read`:** `readRange` leaves `out` untouched on every failure, even a read that fails after the range check, while `read` clears it. Unblocks S8-T3, S8-T4 and S8-T6; Story A stays open with S8-T2. **Retro:**
 	  - Miguel's first `readRange` ended by calling itself instead of reading. Every level held an open stream until Windows ran out of handles, so each of the eight success cases failed with `IoError` after about 550 ms. The past-end and miss cases passed, because they return before the call. At Miguel's request, Claude wrote the seek and the read, plus the `tellg() < 0` guard that `read` also has.
 	  - Diff coverage first failed at 84% against the 85% gate, on three `IoError` paths. A permission case now covers the failed open on Linux, and it calls `SKIP` where the file still opens (Windows, or root). CI then reached 89%. A failed `tellg` and a read that fails after the range check stay uncovered, because no test can set them up.
 	  - Claude wrote the scaffold, the tests and the `readRange` fix. Miguel wrote the header bodies and the first `readRange`. The PR has no body or review conversation, and the squash is titled "Headers blob", so this entry is the only record of the two signature calls.
-
 
 
 

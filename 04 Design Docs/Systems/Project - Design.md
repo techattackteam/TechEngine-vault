@@ -198,10 +198,9 @@ that walks a directory to produce a package does not need that directory resolva
 
 **Shaders live in `assets/client/`, decided 2026-10-10.** A dedicated server loads no shaders,
 so they are client assets like any other and ride `client.tepack`
-([[ADR-025 - Content packs (.tepack and the runtime load path)]] §4). This replaces a separate
-`shaders/` root and its `shaders` mount, which `apps/editor/src/EditorApp.cpp:25` and
-`projects/dev/shaders/` still carry until an M6 card moves them. That card also updates
-`apps/editor/tests/EditorAppTests.cpp:78`, which asserts the `shaders` alias exists.
+([[ADR-025 - Content packs (.tepack and the runtime load path)]] §4). This replaced a separate
+`shaders/` root and its `shaders` mount. S8-T2 removed both (#127, 2026-10-11), and the dev
+shaders now sit in `projects/dev/assets/client/shaders/`.
 
 ### Why no template tree
 
@@ -285,9 +284,9 @@ The v1 set, at `ProjectManager.cpp:262-271` @ `v1-reference`, maps onto this as 
 
 | v1 alias | v2 alias | Physical root | Rung |
 |---|---|---|---|
-| `editorAssets://` | `engine` | `executablePath()/assets`; `executablePath()/engine` from S8-T2, decided Oct 11 so `assets/` beside the executables holds only packs ([[Resources - Design]]) | M3 |
+| `editorAssets://` | `engine` | `executablePath()/engine` since S8-T2 (#127, 2026-10-11), so `assets/` beside the executables holds only packs ([[Resources - Design]]); `executablePath()/assets` before that | M3 |
 | `editorAssetsClient://` | `assets` | `<root>/assets/common` at priority 0, `<root>/assets/<side>` at 100 | M3 |
-| (none) | `shaders` | `<root>/shaders` | M3; retired 2026-10-10 when shaders moved into `assets/client/`, not built yet |
+| (none) | `shaders` | `<root>/shaders` | M3; retired 2026-10-10, removed at S8-T2 (#127) |
 | (none) | `project` | The root itself, for the manifest | M3 |
 | `projectResources://` | `resources` | The bake output directory | Retired 2026-10-10: packs live in `assets/` beside the runtime (ADR-025 §7) |
 | `projectCache://` | `cache` | The build and import cache | Deferred to the scripting rung |

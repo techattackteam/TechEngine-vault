@@ -175,6 +175,11 @@ S6-T4 created entities in the `{Hierarchy}` archetype. S6-T5 added Transform to 
 starting archetype. S6-T9 moved built-in registration from storage to `App` startup;
 direct Scene tests register both built-ins in their fixtures.
 
+**A last-child link, added at S8-T3 (#127, 2026-10-11).** `Hierarchy` also keeps
+`m_lastChild`, so appending a child at the end no longer walks its siblings; the scene asset
+reader appends every child, and the walk made a wide parent quadratic to load. Inserting in
+the middle still walks. `setParent` and `unparent` check and update the link with the others.
+
 ## Transform propagation: shipped Sep 18
 
 One Transform stores local and world position, quaternion rotation and scale. Local TRS
@@ -255,12 +260,14 @@ vectors of dense IDs.
 Whatever module supplies callbacks must remain loaded until its systems, component values
 and cached metadata have been destroyed. No plugin loader is implied by this contract.
 
-## Registration and serialization seam: identity and storage factory shipped
+## Registration and serialization seam: identity, storage factory and disk adapters shipped
 
 S6-T1 shipped stable tag hashing, registration-order dense IDs, stable/dense lookup and
 the startup freeze mechanism. S6-T2 added a type-erased storage factory to each registered
 record. Duplicate tags, conflicting tags for one C++ type and dense-ID exhaustion fail
-before publishing a record. Disk and replication traits remain resource-system work.
+before publishing a record. S8-T3 (#127) added the disk adapters: a record carries
+`writePayload` and `readPayload`, filled automatically when the type has a `visit` for both
+`Writer` and `Reader` ([[Resources - Design]] § *Scene assets*). Replication traits remain open.
 
 Each registered component supplies its stable tag, stable ID, local dense ID, storage
 factory, disk eligibility and replication eligibility. Serializable types bind adapters
@@ -397,7 +404,8 @@ Each includes focused tests. The sprint note holds their acceptance criteria.
   growth, clear invalidation, structural-mutation rejection, callback unwinding and concurrent
   disjoint queries in PR #85 (`150f8f0d`). It also covers explicit `eachEntity`; empty
   component queries are rejected.
-- Serialization round-trip testing is deferred to the resource system.
+- S8-T3's `SceneAssetTests` cover the scene round-trip, every truncation, skipped blocks and
+  malformed entity tables (#127).
 - S6-T8 proves deferred mutation visibility, declared-access checks, graph-order buffer
   application and column change ticks in executor tests. PR #92 wires the executor to
   fixed ticks, but its runtime test observes one entity after one tick. Miguel's

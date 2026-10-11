@@ -6,7 +6,8 @@
 **Module:** `core` (cache, loaders, pack reader and writer) · `apps/editor` (bake driver, id
 index) · `client` (GPU mirror, from R1)
 **Kind:** helper service (ADR-006 §5), not a scheduled System
-**Status:** decided. Both ADRs were **Accepted** on 2026-10-10; nothing is built yet.
+**Status:** implementing. Both ADRs were **Accepted** on 2026-10-10. Built so far: `ResourceId`
+and the scene asset (S8-T3, #127, 2026-10-11).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
@@ -153,7 +154,10 @@ for every batch still in flight, which is legal because the simulation thread is
 worker, and then logs every non-zero count.
 
 The surface, including the type's name, is pinned at the first Dev card. It is not `…System`
-(ADR-006 §5); ADR-006 §4's sketch called it `ResourceRegistry`.
+(ADR-006 §5); ADR-006 §4's sketch called it `ResourceRegistry`. `ResourceId` itself shipped
+early, at S8-T3, because the scene header needs it: a strong `u64` type in
+`engine/core/include/TechEngine/core/resources/ResourceId.hpp`, where zero is null. It has no
+generator yet; S8-T13 is the first card that creates an id.
 
 ### Loading phases and other threads
 
@@ -189,20 +193,34 @@ before its first Tick. Unity's Graphics settings and render pipeline asset are t
 The bake walks it like a scene, and the boot record lists each selected system's settings asset,
 keyed by the system's registration name, as roots the startup phase loads.
 
-### Scene documents
+### Scene assets
 
-A scene file is `.tescene`, under `assets/common/` because every role simulates it.
+A scene asset is a `.tescene` file under `assets/common/`, because every role simulates it.
+It shipped at S8-T3 (#127, 2026-10-11) as `writeSceneAsset` and `readSceneAsset` in
+`engine/core/include/TechEngine/core/scene/SceneAsset.hpp`. The code says "scene asset" where
+earlier notes and cards said "scene document", following ADR-024 §10's vocabulary.
 
 | Part | Content |
 |---|---|
-| Header | The scene kind's own magic and version, then the scene's `ResourceId` |
-| Entities | Count, then per entity its per-scene authoring id (ADR-007 §1) and parent link |
-| Components | Per component: stable tag (`u64`), byte length (`u32`), then the visited payload |
+| Header | `SCENE_KIND` (magic "TESC", version 1), then the scene's `ResourceId` as a `u64` |
+| Entity count | `u32` |
+| Per entity | Authoring id (`u32`, equal to its row; ADR-007 §1), parent row (`u32`, `0xFFFFFFFF` for a root), block count (`u32`), then that entity's blocks |
+| Per block | Stable tag (`u64`), byte length (`u32`), then the visited payload |
 
-A block with an unregistered tag is kept as raw bytes and written back unchanged on save. A
-registered block whose payload does not consume exactly its length is skipped and reported;
-until T1 adds per-type versions, its data is lost on the next save. Entity references in a
-payload are authoring ids, and asset references are `ResourceId`s; loading remaps both.
+- **Rows list parents before children, and children in sibling order**, so the reader appends
+  each child and child order survives. Root order is not kept; it is not a contract.
+- **Every count comes before what it counts**, so any truncation is detected as `Truncated`.
+- **A component is written when its type has a `visit` for both archives.** Registration fills
+  the record's adapters automatically. `Hierarchy` has none, so it is rebuilt from parent rows.
+- **A block with an unregistered tag is skipped with a warning.** Keeping it as raw bytes for
+  the next save moved to Sprint 09 with T1's scene save. A registered block whose payload does
+  not consume exactly its length is also skipped with a warning; until T1 adds per-type
+  versions, its data is lost on the next save.
+- **The reader takes an empty `Scene` and leaves it empty on any failure.** A table that breaks
+  the row rules (an id that is not its row, a parent that is not an earlier row, bytes after
+  the last entity) is `ReadError::Malformed`. The id out-param is set only on success.
+- Entity references in a payload will be authoring ids, and asset references `ResourceId`s;
+  loading remaps both. Nothing writes either until S8-D1 decides the field shape.
 
 ### Pack layout and the boot record
 

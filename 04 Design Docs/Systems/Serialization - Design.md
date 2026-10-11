@@ -50,7 +50,8 @@ blocks and pack entries are read by a `Reader` over a slice that has no header, 
 constructor argument would make each of those readers name a kind it never checks.
 
 - **Each kind's constant lives with its consumer** (ADR-016 §6): the scene kind with the scene
-  document, the pack kind with the pack reader. `core/serialization` defines none.
+  asset (`SCENE_KIND` in `SceneAsset.hpp`, since S8-T3), the pack kind with the pack reader.
+  `core/serialization` defines none.
 - **The check is exact in both directions.** The magic is checked first, so a blob of another
   kind is `BadMagic`; a different version of the right kind is `BadVersion`, whether newer or
   older. There is no compatibility window, because a bump means re-bake or re-save (ADR-016 §4).
@@ -59,7 +60,9 @@ constructor argument would make each of those readers name a kind it never check
 ### Error surface (decided at S4-T6, 2026-08-27)
 
 `Reader` carries its own error, a `std::error_code` in the `ReadError` category: `Truncated`,
-`BadMagic`, `BadVersion`. It does not reuse `FileError`. That enum's vocabulary belongs to
+`BadMagic`, `BadVersion`, and since S8-T3 (#127) `Malformed`, for bytes that are all present
+but describe an invalid structure, such as a scene asset's entity table. It does not reuse
+`FileError`. That enum's vocabulary belongs to
 `platform`'s mount layer (`NoMount`, `IsADirectory`) and says nothing useful about a memory
 buffer. Both travel as the same `std::error_code` type ([[ADR-023 - Public error handling]]).
 
