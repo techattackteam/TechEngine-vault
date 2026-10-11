@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: Content primitives
 
-- [ ] **S8-T1** · Split the blob header per kind and add a ranged `FileAccess` read · P1 · 🟠 Moderate · 2-3h: per-kind magic and version in `Writer` and `Reader`; a byte-range read with a `FileError` past the end. The root card: S8-T3, S8-T4 and S8-T6 follow it.
 - [ ] **S8-T2** · Clear the editor's mount layout for M6 · P2 · 🟡 Light · 1-2h: shaders into `projects/dev/assets/client/`, no `shaders` mount, `engine` at `<exe dir>/engine`; `EditorAppTests` asserts four mounts.
 
 
@@ -69,6 +68,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S8-T1** · Split the blob header per kind and add a ranged `FileAccess` read · P1 · 🟠 Moderate · 2-3h: per-kind magic and version in `Writer` and `Reader`; a byte-range read with a `FileError` past the end. The root card: S8-T3, S8-T4 and S8-T6 follow it.
 
 
 ## 👀 Review / Demo
