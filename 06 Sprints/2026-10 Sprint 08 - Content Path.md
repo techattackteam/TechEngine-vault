@@ -32,7 +32,7 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
 
 ### Story A: Content primitives
 
-- [ ] **S8-T1** · Split the blob header per kind and add a ranged `FileAccess` read · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S8-T1** · Split the blob header per kind and add a ranged `FileAccess` read · P1 · 🟠 Moderate · 2-3h ·
   done: `Writer` and `Reader` take a blob kind's magic and version, and the single
   `BLOB_MAGIC` and `BLOB_FORMAT_VERSION` are gone. Reading a blob of another kind fails with
   `BadMagic`, and a wrong version with `BadVersion`. `FileAccess` reads a byte range of a file

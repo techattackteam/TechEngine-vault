@@ -22,7 +22,7 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 | Little-endian on disk and wire, no swap code, compile-time check documents it. | ADR-016 §3 |
 | Blob header is `{magic, u16 formatVersion, flags}`; strings length-prefixed; `StringId` as raw `u64`. | ADR-016 §3 |
 | Encoding adds no nondeterminism: same input bytes, identical output bytes. | ADR-016 §3 |
-| Each blob kind (scene, pack) carries its own magic and version, so a pack change never strands a scene; a bump means re-bake or re-save. Per-type versions wait for non-regenerable content, which for scenes is T1's first kept save. Today's single `BLOB_MAGIC` and `BLOB_FORMAT_VERSION` split at M6. | ADR-016 §4, partially superseded by [[ADR-025 - Content packs (.tepack and the runtime load path)]] §2; ADR-024 §8 |
+| Each blob kind (scene, pack) carries its own magic and version, so a pack change never strands a scene; a bump means re-bake or re-save. Per-type versions wait for non-regenerable content, which for scenes is T1's first kept save. The split shipped at S8-T1 (#126, 2026-10-11) as a `BlobKind` passed to each header call (*Blob kinds* below). | ADR-016 §4, partially superseded by [[ADR-025 - Content packs (.tepack and the runtime load path)]] §2; ADR-024 §8 |
 | Type tags are macro-free `constexpr` strings hashed with `StringId` (FNV-1a/64). | ADR-016 §5, ADR-007 §1 as amended |
 | Primitives and seam live in `core`; document schemas belong to their consumers. | ADR-016 §6, ADR-006 §1 |
 | Disk identity (authoring-id + remap, opt-in UUID) is ADR-007's, not re-opened here. | ADR-007 §1 |
@@ -41,6 +41,20 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 - The bulk path takes `std::span<const T>` for trivially-copyable `T` and writes count plus
   bytes; the visited path is `visit(archive, value)` with the archive deciding direction.
 - The header is written and checked by the same pair, so no consumer hand-rolls it.
+
+### Blob kinds (decided at S8-T1, 2026-10-11)
+
+`BlobKind` is `{u32 magic, u16 version}` in `BlobHeader.hpp`. It goes to each header call,
+`writeHeader(kind, flags)` and `readHeader(kind, out)`, not to the constructor. Component
+blocks and pack entries are read by a `Reader` over a slice that has no header, and a
+constructor argument would make each of those readers name a kind it never checks.
+
+- **Each kind's constant lives with its consumer** (ADR-016 §6): the scene kind with the scene
+  document, the pack kind with the pack reader. `core/serialization` defines none.
+- **The check is exact in both directions.** The magic is checked first, so a blob of another
+  kind is `BadMagic`; a different version of the right kind is `BadVersion`, whether newer or
+  older. There is no compatibility window, because a bump means re-bake or re-save (ADR-016 §4).
+- The header is still 8 bytes and its layout did not change; only the values are per kind.
 
 ### Error surface (decided at S4-T6, 2026-08-27)
 
@@ -150,7 +164,7 @@ if (readError) {
 
 Reader reader{bytes};                  // the vector converts to a span
 BlobHeader header;
-reader.readHeader(header);
+reader.readHeader(LEVEL_KIND, header); // the consumer's own BlobKind
 
 std::uint32_t entityCount = 0;
 reader.read(entityCount);
@@ -177,7 +191,7 @@ and lets N3 reuse one pooled vector every frame.
 ```cpp
 std::vector<std::byte> bytes;          // reused across saves: bytes.clear() first
 Writer writer{bytes};
-writer.writeHeader();
+writer.writeHeader(LEVEL_KIND);
 writer.write(entityCount);
 // ... more writes
 

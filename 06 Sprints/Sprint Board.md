@@ -68,7 +68,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S8-T1** · Split the blob header per kind and add a ranged `FileAccess` read · P1 · 🟠 Moderate · 2-3h: per-kind magic and version in `Writer` and `Reader`; a byte-range read with a `FileError` past the end. The root card: S8-T3, S8-T4 and S8-T6 follow it.
 
 
 ## 👀 Review / Demo
@@ -76,6 +75,11 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 08
+
+- [x] **S8-T1** · Split the blob header per kind and add a ranged `FileAccess` read · P1 · 🟠 Moderate · 2-3h: #126 `089ea289`, **Oct 11**. All seven build legs, clang-format and diff coverage (89%) passed. **Two signatures that no artifact pinned were settled at `/card-start` on Oct 11.** [[File Access - Design]] left the ranged read's signature to "the M6 card", and nothing said how `Writer` and `Reader` take a kind. Miguel chose a `BlobKind` passed to each header call, not to the constructor, because component blocks and pack entries are read by readers over a slice with no header. The scene and pack kinds belong to S8-T3 and S8-T4, so this card ships no kind constant. The read is `readRange(path, u64 offset, u64 size, out)`, with a new `FileError::OutOfRange`, so a corrupt pack offset is not mistaken for a disk failure. Both calls are now in [[Serialization - Design]] and [[File Access - Design]]. **A deliberate asymmetry with `read`:** `readRange` leaves `out` untouched on every failure, even a read that fails after the range check, while `read` clears it. Unblocks S8-T3, S8-T4 and S8-T6; Story A stays open with S8-T2. **Retro:**
+	  - Miguel's first `readRange` ended by calling itself instead of reading. Every level held an open stream until Windows ran out of handles, so each of the eight success cases failed with `IoError` after about 550 ms. The past-end and miss cases passed, because they return before the call. At Miguel's request, Claude wrote the seek and the read, plus the `tellg() < 0` guard that `read` also has.
+	  - Diff coverage first failed at 84% against the 85% gate, on three `IoError` paths. A permission case now covers the failed open on Linux, and it calls `SKIP` where the file still opens (Windows, or root). CI then reached 89%. A failed `tellg` and a read that fails after the range check stay uncovered, because no test can set them up.
+	  - Claude wrote the scaffold, the tests and the `readRange` fix. Miguel wrote the header bodies and the first `readRange`. The PR has no body or review conversation, and the squash is titled "Headers blob", so this entry is the only record of the two signature calls.
 
 
 

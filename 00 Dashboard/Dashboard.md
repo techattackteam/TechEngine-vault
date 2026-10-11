@@ -10,7 +10,7 @@
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
 | **Sprint** | [[2026-10 Sprint 08 - Content Path]] *(Oct 10-23)*, planned Oct 11. Sprint 07 closed Oct 9 and closed M5 ([[2026-10-11 Sprint 07 Retrospective]]). |
 | **Sprint goal** | The editor bakes a project into `.tepack` files, and the runtime loads the exported startup scene from the packs beside its executable before its first Tick. |
-| **Current focus** | M6's vertical slice, the first sprint of the decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial from Sprint 08*). Start at S8-T1, the root card. Hub: [[Resources - Design]]. |
+| **Current focus** | M6's vertical slice, the first sprint of the decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial from Sprint 08*). S8-T1, the root card, closed Oct 11 (#126), so S8-T3, S8-T4 and S8-T6 can start. Hub: [[Resources - Design]]. |
 | **Top blocker** | None. |
 | **Next milestone** | M6 content: Resources and project-to-scene binding. |
 | **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |

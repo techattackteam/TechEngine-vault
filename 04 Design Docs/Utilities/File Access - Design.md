@@ -156,7 +156,7 @@ says otherwise, so it gets declared rather than left to rot.
 Bring the interface back when a second implementation is real. The candidates are a
 network-backed one, or a null one for a dedicated server with no assets. An archive-backed
 one is no longer a candidate: packs are read by a reader in `core` on top of this class
-([[ADR-025 - Content packs (.tepack and the runtime load path)]] §5). Extraction is mechanical. Every call site already goes through the four methods
+([[ADR-025 - Content packs (.tepack and the runtime load path)]] §5). Extraction is mechanical. Every call site already goes through the five read methods
 that would become the interface.
 
 ### The read surface
@@ -164,7 +164,7 @@ that would become the interface.
 ```cpp
 enum class FileError : std::uint8_t { InvalidPath = 1, NoMount, NotFound,
                                       IsADirectory, NotADirectory, AlreadyExists, NotEmpty,
-                                      AccessDenied, IoError };   // + a std::error_category
+                                      AccessDenied, IoError, OutOfRange };   // + a std::error_category
 
 struct FileStatus {
     std::filesystem::path physicalPath;
@@ -176,6 +176,8 @@ struct FileStatus {
 class FileAccess {                    // ctor takes const MountTable&, stores a non-owning ptr
 public:
     std::error_code read(std::string_view virtualPath, std::vector<std::byte>& out) const;
+    std::error_code readRange(std::string_view virtualPath, std::uint64_t offset,
+                              std::uint64_t size, std::vector<std::byte>& out) const;
     std::error_code status(std::string_view virtualPath, FileStatus& out) const;
     std::error_code list(std::string_view virtualPath, bool recursive,
                          std::vector<std::string>& out) const;
@@ -183,11 +185,19 @@ public:
 };
 ```
 
-**A byte-range read joins them at M6**, decided 2026-10-10 by ADR-025 §3: the pack reader
-reads each entry at its offset instead of reading a pack whole. Its signature is the M6 card's
-to pin; it still knows nothing of packs.
+**`readRange` shipped at S8-T1 (#126, 2026-10-11)** for ADR-025 §3: the pack reader reads each
+entry at its offset instead of reading a pack whole. It still knows nothing of packs.
 
-**All four read methods are `const`.** `FileAccess` holds a non-owning
+| Question | Call |
+|---|---|
+| A range past the end | `OutOfRange`, a code of its own, so a corrupt pack offset is not mistaken for a disk failure (`IoError`). |
+| An offset and size whose sum overflows `u64` | `OutOfRange`. |
+| A range that ends exactly at the end of the file | Succeeds. |
+| A zero-size range, inside the file or at its end | Succeeds with an empty buffer. |
+| A directory, or a miss | The same codes as `read`. |
+| `out` after any failure | **Untouched**, even when the read fails after the range check. `read` instead clears `out` on a mid-read `IoError`. |
+
+**All five read methods are `const`.** `FileAccess` holds a non-owning
 `const MountTable*`. The mutating calls are also on this class; their current mixed
 constness is recorded in *Why the write split was dropped*.
 
