@@ -66,13 +66,19 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   and table when it opens a pack, and each entry with one ranged read. Prove several entries
   round-trip, every payload offset is aligned, an absent id is reported, and a corrupt table
   fails soft. Follows S8-T1.
-- [ ] **S8-T5** · Boot record, merged table and pack source · P1 · 🟢 Deep · 4-6h ·
+- [x] **S8-T5** · Boot record, merged table and pack source · P1 · 🟢 Deep · 4-6h ·
   done: `common.tepack` carries a boot record of tagged sections (a `StringId` tag, a `u16`
   version and a byte length) with the startup scene, the packs per role, the sides, and an
   empty system-settings section; a reader skips a section it does not know. Opening a role's
   packs builds one table from id to pack, offset and size. An id on a side the role never opens
   is reported absent for that role, and the pack source returns an id's bytes by ranged read.
   Prove an unknown section is skipped and two packs merge. Follows S8-T4.
+  **Scope added on Oct 11:** `Pack.hpp` splits into `PackFormat.hpp`, `PackReader.hpp` and
+  `PackWriter.hpp`, so each `.cpp` pairs with its own header. `writeSceneAsset` and
+  `readSceneAsset` become a `SceneAsset` struct that holds the asset's id, and the boot record
+  writes and reads itself through members, because Miguel wants a type's operations to be its
+  members, not free functions. The calls settled while grounding the card are in
+  [[Resources - Design]] § *Two sources, one cache*, § *The boot record* and § *The pack source*.
 
 ### Story D: Editor index and bake
 

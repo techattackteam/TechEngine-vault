@@ -7,7 +7,8 @@
 index) · `client` (GPU mirror, from R1)
 **Kind:** helper service (ADR-006 §5), not a scheduled System
 **Status:** implementing. Both ADRs were **Accepted** on 2026-10-10. Built so far: `ResourceId`
-and the scene asset (S8-T3, #127, 2026-10-11), the pack writer and reader (S8-T4, #128, 2026-10-11).
+and the scene asset (S8-T3, #127, 2026-10-11), the pack writer and reader (S8-T4, #128, 2026-10-11),
+and the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
@@ -74,6 +75,9 @@ built or run.
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
 | The bake is an editor function that T2's export command calls; before T2 the editor calls it at startup, writing to its own executable folder. | Miguel, Oct 11; § *Bake and the runtime layout* |
 | The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
+| A source answers `Present`, `AbsentForRole` or `Unknown` through a query; only its `read` returns a `std::error_code`. | Miguel, Oct 11; § *Two sources, one cache* |
+| An id missing from the role's packs but listed in the boot record's sides is absent for the role; in neither, it is unknown. | Miguel, Oct 11; § *The pack source* |
+| A known boot section at a version the reader does not know is `BadVersion`; an unknown tag is skipped. | Miguel, Oct 11; § *The boot record* |
 
 ## v1 reuse boundary
 
@@ -103,6 +107,14 @@ flowchart LR
   loose & packsrc --> cache["resource cache (core)<br/>loaders by type tag"]
   cache --> handles["handles held by callers"]
 ```
+
+The interface is `AssetSource`, in `engine/core/include/TechEngine/core/assets/`, named for what
+it serves: asset bytes, not loaded resources (ADR-024 §10). `find(id)` returns an
+`AssetAvailability` of `Present`, `AbsentForRole` or `Unknown`, and `read(id, out)` returns only
+file and read failures. Reading an id that is not present is a `TE_CHECK`, so a caller asks
+`find` first. Absence is a query result, not an error code, because ADR-023 §1 reports an
+absence that is not a failure as data, and ADR-023 §2 gives `core` one error enum, `ReadError`.
+The cache's "unknown id fails at once" code is S8-T10's to choose.
 
 ### The editor's id index
 
@@ -196,9 +208,12 @@ keyed by the system's registration name, as roots the startup phase loads.
 ### Scene assets
 
 A scene asset is a `.tescene` file under `assets/common/`, because every role simulates it.
-It shipped at S8-T3 (#127, 2026-10-11) as `writeSceneAsset` and `readSceneAsset` in
-`engine/core/include/TechEngine/core/scene/SceneAsset.hpp`. The code says "scene asset" where
-earlier notes and cards said "scene document", following ADR-024 §10's vocabulary.
+It shipped at S8-T3 (#127, 2026-10-11) in
+`engine/core/include/TechEngine/core/scene/SceneAsset.hpp`. Since S8-T5 it is a `SceneAsset`
+struct that holds the asset's `ResourceId`, with `write(scene, out)` and `read(bytes, scene)`;
+before that it was two free functions, which Miguel removed because a type's operations are its
+members. The code says "scene asset" where earlier notes and cards said "scene document",
+following ADR-024 §10's vocabulary.
 
 | Part | Content |
 |---|---|
@@ -218,7 +233,7 @@ earlier notes and cards said "scene document", following ADR-024 §10's vocabula
   versions, its data is lost on the next save.
 - **The reader takes an empty `Scene` and leaves it empty on any failure.** A table that breaks
   the row rules (an id that is not its row, a parent that is not an earlier row, bytes after
-  the last entity) is `ReadError::Malformed`. The id out-param is set only on success.
+  the last entity) is `ReadError::Malformed`. `SceneAsset::id` is set only on success.
 - Entity references in a payload will be authoring ids, and asset references `ResourceId`s;
   loading remaps both. Nothing writes either until S8-D1 decides the field shape.
 
@@ -232,27 +247,44 @@ earlier notes and cards said "scene document", following ADR-024 §10's vocabula
 | Payloads | Each at a 16-byte-aligned absolute offset, with zero padding between. In-place use assumes the buffer a ranged read fills is itself 16-byte aligned, which default `new` gives on every current target. |
 | Boot record | In `common.tepack` only, at the next 16-byte boundary after the last payload. |
 
-The **boot record** is a block in `common.tepack` that the pack header points to, so no
-reserved id exists. It is a list of tagged sections, each framed by a `StringId` tag, a `u16`
-version and a byte length, so a runtime skips a section it does not know and an older runtime
-still starts. This table is the one home for the section list; adding a row needs no ADR
-amendment (ADR-025 §7).
+The pack header points to the boot record, so no reserved id exists; its format is
+§ *The boot record*. `ReadError` already covers a bad magic or version; the serialization change
+to per-kind magic and version is [[Serialization - Design]]'s.
 
-| Section | Content | Since |
-|---|---|---|
-| Startup scene | The scene's `ResourceId` | M6 |
-| System settings | Per selected system: registration name and settings-asset `ResourceId` | M6 (first used by R1) |
-| Packs per role | For each role, the pack files it opens | M6 |
-| Sides | The side of every id in the project, for absent-for-role | M6 |
+### The boot record
 
-`ReadError` already covers a bad magic or version; the serialization change to per-kind magic
-and version is [[Serialization - Design]]'s.
+The boot record is a list of tagged sections, so a runtime skips a section it does not know
+and an older runtime still starts. It is `BootRecord` in
+`engine/core/include/TechEngine/core/resources/BootRecord.hpp`, which writes and reads itself
+(`write`, `read`). It starts with a `u32` section count, so a cut at a section boundary is still
+`Truncated`. Each section is a `StringId` tag, a `u16` version (1 for all four) and a `u32` byte
+length, then its payload. This table is the one home for the section list; adding a row needs
+no ADR amendment (ADR-025 §7).
+
+| Section | Tag | Payload | Since |
+|---|---|---|---|
+| Startup scene | `TechEngine.Boot.StartupScene` | The scene's `ResourceId` (`u64`) | M6 |
+| System settings | `TechEngine.Boot.SystemSettings` | A `u32` count, then per selected system its registration name (a string) and its settings asset's `u64` id. Written with a count of zero until R1. | M6 (first used by R1) |
+| Packs per role | `TechEngine.Boot.RolePacks` | A `u32` count, then per role a `u8` `Role`, a `u32` count and the file names of the packs it opens | M6 |
+| Sides | `TechEngine.Boot.Sides` | A `u32` count, then per id its `u64` value and a `u8` `Side` (`core/resources/Side.hpp`) | M6 |
+
+- **An unknown tag is skipped by its length**, with a warning, before its version is read.
+- **A known tag at another version is `BadVersion`.** Skipping it would turn a newer
+  startup-scene section into a confusing "no startup scene" error later.
+- **A known payload that does not fill exactly its length is `Malformed`**, and so is a `Role`
+  or `Side` byte outside its enum or a null id in the sides. Scene blocks are skipped instead,
+  because they have no per-type version yet. The writer asserts on a null id in the sides.
+- **`read` assigns the record only on success.** A duplicate known section is not rejected,
+  because the writer cannot produce one.
 
 ### Pack writer and reader
 
-The writer and reader shipped at S8-T4 (#128, 2026-10-11) in
-`engine/core/include/TechEngine/core/resources/Pack.hpp`. Miguel settled these at its
-`/card-start`:
+The writer and reader shipped at S8-T4 (#128, 2026-10-11). Since S8-T5 their declarations are
+split by job in `engine/core/include/TechEngine/core/resources/`: `PackFormat.hpp` holds the
+kind, sizes and alignment, `PackReader.hpp` holds `PackReader` and `PackEntry`, and
+`PackWriter.hpp` holds `PackWriter` and `PackInput`, so each `.cpp` pairs with its header.
+`PackReader::getEntries()` was added at S8-T5 for the pack source's merge. Miguel settled these
+at S8-T4's `/card-start`:
 
 - **`PackWriter` builds the pack in memory**, and the bake writes it with `FileAccess::write`.
   `add` keeps the caller's views, so payloads must outlive `write`; a null or duplicate id is a
@@ -265,6 +297,24 @@ The writer and reader shipped at S8-T4 (#128, 2026-10-11) in
 - **An absent id is `find` returning `false`**, because `core` owns only `ReadError` and none of
   its codes means "not here". `bootRecord` returns the boot range as a `PackEntry`, and `read`
   serves both with one ranged read.
+
+### The pack source
+
+`PackSource`, in `engine/core/include/TechEngine/core/assets/`, is the runtime's `AssetSource`.
+One `PackReader` reads one file; one `PackSource` serves everything a role can see, so the cache
+holds one source in either process.
+
+- **`open(record, role, directory)` opens the packs the record lists for that role**, each at
+  `directory` plus its name (`assets://common.tepack`), and merges their tables into one table
+  sorted by id: id to pack, offset and size. It also keeps the sides' ids, sorted.
+- **`open` returns `Malformed` when the record does not list the role**, or when two opened packs
+  hold the same id (a bake error, ADR-025 §4). A pack's file error comes back unchanged. It builds
+  into locals and starts by clearing, so the source is empty after any failure.
+- **`find` checks the merged table first, then the sides.** The order matters, because the sides
+  list every id, the role's own included. The cost: a common id that a bake wrongly leaves out
+  of `common.tepack` reads as absent for the role, not as an error.
+- **`read` is one ranged read through the id's own pack**, so nothing is read at open beyond the
+  headers and tables.
 
 ### Bake and the runtime layout
 
