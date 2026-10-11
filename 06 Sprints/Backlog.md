@@ -376,6 +376,23 @@ groups are kept, because they show where future work will land.
   header. [[Project - Design]] § *Entry point and presentation boundary* records the
   divergence. **Trigger:** the next ADR-017 decision amendment.
 
+- #prio/xhigh · **Review the test strategy: tiers, run policy, process isolation**: the engine has
+  only one kind of test, and `catch_discover_tests` starts a new process for every case. Measured
+  on Oct 11, 2026, with existing Windows binaries:
+  - A test body takes about 0 ms. A process start costs 49 ms in `windows` Debug and 553 ms in
+    `windows-profile`, where Tracy sleeps 200 ms to calibrate its timer before `main`.
+  - Each `[window]` case costs about 450 ms in its own process, because the first OpenGL context
+    loads the driver. The 13 cases take 1.6 s in one process and 3.5 s in separate processes.
+  - The two `... does not depend on recursion depth` cases (`HierarchyTests`, `TransformTests`)
+    take 6 s each in Debug. They build a 4096-deep chain top-down, and `setParent`'s cycle check
+    makes that quadratic.
+
+  Decide which tiers exist (unit, OS/driver integration, stress, and later functional, visual and
+  perf), how a case is tagged into one, where and when each tier runs (local, every CI leg,
+  nightly) within the CI-minute budget, and whether any tier shares one process. Sharing a process
+  interacts with the `TE_ENSURE` report-once entry above. Compare with Unity's EditMode/PlayMode
+  and Unreal's automation filters, Functional Tests and Low-Level Tests. Raised by Miguel on
+  Oct 11, 2026, to be settled in Sprint 09 (from Oct 24) or Sprint 10 (from Nov 7).
 - #prio/high · **Memory-management design note**: the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
 - #prio/medium · **Point later dependency allocator hooks at the profiler**: Jolt
