@@ -7,7 +7,7 @@
 index) · `client` (GPU mirror, from R1)
 **Kind:** helper service (ADR-006 §5), not a scheduled System
 **Status:** implementing. Both ADRs were **Accepted** on 2026-10-10. Built so far: `ResourceId`
-and the scene asset (S8-T3, #127, 2026-10-11).
+and the scene asset (S8-T3, #127, 2026-10-11), the pack writer and reader (S8-T4, #128, 2026-10-11).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
@@ -226,10 +226,11 @@ earlier notes and cards said "scene document", following ADR-024 §10's vocabula
 
 | Part | Content |
 |---|---|
-| Header | The pack kind's own magic and version, `flags` (compression later), and the entry count |
-| Table | Per entry, sorted by id: `ResourceId`, type tag (`u64`), offset (`u64`), size (`u64`), name offset (`u32`) |
-| Names | The source virtual path of each entry, as a debug label |
-| Payloads | Each at a 16-byte-aligned absolute offset. In-place use assumes the buffer a ranged read fills is itself 16-byte aligned, which default `new` gives on every current target. |
+| Header | `PACK_KIND` (magic "TEPK", version 1) with `flags` (compression later), the entry count (`u32`), then the boot record's offset and size (`u64` each, both zero when there is none). 28 bytes. |
+| Table | Per entry, sorted by id: `ResourceId`, type tag (`u64`), offset (`u64`), size (`u64`), name offset (`u32`). 36 bytes, so row `k` is found without reading the rows before it. |
+| Names | The source virtual path of each entry, as a debug label: a `u32` length and the bytes. A name offset counts from the start of this block. |
+| Payloads | Each at a 16-byte-aligned absolute offset, with zero padding between. In-place use assumes the buffer a ranged read fills is itself 16-byte aligned, which default `new` gives on every current target. |
+| Boot record | In `common.tepack` only, at the next 16-byte boundary after the last payload. |
 
 The **boot record** is a block in `common.tepack` that the pack header points to, so no
 reserved id exists. It is a list of tagged sections, each framed by a `StringId` tag, a `u16`
@@ -246,6 +247,24 @@ amendment (ADR-025 §7).
 
 `ReadError` already covers a bad magic or version; the serialization change to per-kind magic
 and version is [[Serialization - Design]]'s.
+
+### Pack writer and reader
+
+The writer and reader shipped at S8-T4 (#128, 2026-10-11) in
+`engine/core/include/TechEngine/core/resources/Pack.hpp`. Miguel settled these at its
+`/card-start`:
+
+- **`PackWriter` builds the pack in memory**, and the bake writes it with `FileAccess::write`.
+  `add` keeps the caller's views, so payloads must outlive `write`; a null or duplicate id is a
+  `TE_CHECK` in `add`, because S8-T6's index already reports duplicates as data errors.
+- **`PackReader::open` checks everything at open**, so a bad pack fails once and never during a
+  load: ids non-null and strictly ascending, offsets aligned, and every payload and the boot
+  range after the table and inside the file. A failure is `ReadError::Malformed`, a file shorter
+  than its header or table is `Truncated`, and any other file error comes back unchanged. The
+  reader is left empty on any failure. It never reads the names.
+- **An absent id is `find` returning `false`**, because `core` owns only `ReadError` and none of
+  its codes means "not here". `bootRecord` returns the boot range as a `PackEntry`, and `read`
+  serves both with one ranged read.
 
 ### Bake and the runtime layout
 
@@ -292,6 +311,8 @@ editor's engine folder moves from `<exe dir>/assets` to `<exe dir>/engine`, matc
 
 ## Open questions
 
+- **Whether `PackReader::open` rejects non-zero `flags`.** Today it ignores them, so a future
+  compressed pack would be read as raw bytes. Owner: whoever adds compression behind `flags`.
 - **A second real resource type in M6.** Planning on Oct 11 put it in Sprint 09 and leaned to a
   mesh, whose consumer is the triangle hard-coded in `engine/client/src/render/FrameRenderer.cpp`;
   a material has no consumer before R1. S8-D1 settles it, with how a mesh is authored before

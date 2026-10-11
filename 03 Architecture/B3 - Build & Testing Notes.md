@@ -248,9 +248,9 @@ and a card that shipped one landed near 55% ([[Window - Design]]). #63 then move
 `apps/runtime/src/demo/`. Since then `App.cpp` holds only the lifecycle, which
 `engine/app/tests/AppTests.cpp` drives, so the exclusion was hiding tested code from the gate.
 
-The move did not end the problem. `apps/runtime/src/demo/` is measured and no test drives it,
-which is why #111 and #117 shipped with `[skip-coverage]`. It is not excluded; the open
-question is on [[Backlog]] § *etc* (*Undriven demo code*).
+The move did not end the problem. `apps/runtime/src/demo/` was measured and no test drove it,
+which is why #111 and #117 shipped with `[skip-coverage]`. S8-T14 (Oct 11) deleted the
+directory, so that cause of a skipped gate is gone.
 
 ### Running it locally
 

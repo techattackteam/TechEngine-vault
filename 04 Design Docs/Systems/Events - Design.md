@@ -17,8 +17,10 @@ S7-T6 (#98 `745f067a`, Sep 27) put the streams on `Scene` (*Scene residence*). S
 `0218571e`, Sep 27) added handler declaration and its resolution at graph build
 (*Handler declaration*). S7-T7 (#100 `82bf3f72`, Sep 27) delivers handlers and advances
 the batches at the Tick barrier (*Scheduled Tick delivery*). S7-T8 (#101 `63b437d5`, Sep 27)
-proved the path through `RuntimeApp`'s demo systems in `apps/runtime/tests/RuntimeAppTests.cpp`
-and changed the declaration surface (*Event type and publish API*).
+proved the path at App level in `apps/runtime/tests/RuntimeAppTests.cpp` and changed the
+declaration surface (*Event type and publish API*). Those cases ran through the runtime's demo
+systems until S8-T14 (Oct 11) deleted the demo; they now run through test-only systems that a
+probe registers in the test file.
 
 ## Purpose
 

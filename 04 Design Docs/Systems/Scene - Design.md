@@ -357,11 +357,12 @@ See [[Game Loop - Frame Flow]] and ADR-019 for delivery and interpolation.
 
 ## Open implementation gates
 
-- PR #92 (`2a50f8cb`) registered built-ins at the composition root and ran the
-  configured demo through the fixed-tick executor. Miguel reports repeated expected
-  Scene values and headless/windowed parity from an attended Sep 26 showcase.
-  S7-T8 (#101) added multi-Tick tests of the event path through the demo systems in
-  `apps/runtime/tests/RuntimeAppTests.cpp`; component values are still checked only by hand.
+- PR #92 (`2a50f8cb`) registered built-ins at the composition root and ran a demo
+  through the fixed-tick executor. Miguel reported repeated expected Scene values and
+  headless/windowed parity from an attended Sep 26 showcase. S8-T14 (Oct 11) deleted that
+  demo, so the showcase cannot be repeated. S7-T8's (#101) multi-Tick tests of the event path
+  now run through test-only systems in `apps/runtime/tests/RuntimeAppTests.cpp`. No App-level
+  test checks component values.
 
 S6-T8 shipped deferred structural commands, barrier-service hooks and declared-write
 stamps under ADR-020's Tick barrier. S7-T6 (#98) put the event streams on Scene and
@@ -388,8 +389,8 @@ Each includes focused tests. The sprint note holds their acceptance criteria.
   (`5a687af1`). Still verify archetype moves while linked during integration.
 - S6-T5 covers immediate parent-first propagation after local/world writes and hierarchy
   changes, current-parent world edits, preserve-local/world reparenting, small nonzero scale
-  boundaries and non-uniform scale in PR #87 (`47bfaefc`). PR #92 executes demo systems;
-  its snapshot does not yet carry Scene state.
+  boundaries and non-uniform scale in PR #87 (`47bfaefc`). The runtime's snapshot does not
+  yet carry Scene state.
 - Prove editor world edits convert using the current parent state despite an older displayed
   snapshot. Cover root equivalence, ordered parent/child edits and stale handles. Verify
   that zero scale is rejected and that non-uniform parent scale produces correct rendered

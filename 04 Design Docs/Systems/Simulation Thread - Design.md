@@ -241,8 +241,8 @@ idle state and a wake on command arrival are T1's to build.
 Optional work hooks have empty defaults. A headless default main waits on stop/completion;
 an interactive main blocks on `glfwWaitEvents` under Accepted ADR-019.
 Stop/completion/failure wakes it with `glfwPostEmptyEvent()` while the main thread is alive;
-the headless path keeps its cancellable control wait. A thread-safe `requestStop()` permits
-simulation to finish a bounded runtime demo without main reading its counters.
+the headless path keeps its cancellable control wait. A thread-safe `requestStop()` lets the
+simulation thread end the run without main reading its state.
 `shouldClose()` reads main state only; a published worker failure independently requests
 coordinated stop.
 

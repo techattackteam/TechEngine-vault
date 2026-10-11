@@ -60,7 +60,7 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
 
 ### Story C: Content packs
 
-- [ ] **S8-T4** · Write and read `.tepack` files · P1 · 🟢 Deep · 4-6h ·
+- [x] **S8-T4** · Write and read `.tepack` files · P1 · 🟢 Deep · 4-6h ·
   done: the writer emits the pack kind's header (with `flags` and the entry count), a table
   sorted by id, the names block and 16-byte-aligned payloads. The reader reads only the header
   and table when it opens a pack, and each entry with one ranged read. Prove several entries
@@ -116,7 +116,7 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   `*.tescene` and `*.tepack` as binary. T1's scene save replaces the code-built scene. Follows
   S8-T3 and S8-T6; the startup bake then has a scene to export.
 
-- [ ] **S8-T14** · Remove the runtime demo systems · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S8-T14** · Remove the runtime demo systems · P2 · 🟠 Moderate · 2-3h ·
   done: `apps/runtime/src/demo/` is gone (the five systems, `Velocity`, `RigidBody` and the four
   event types), and `RuntimeApp::configureSimulation` registers none of them. They existed to
   exercise the task graph, which is done for now (Miguel, Oct 11). `RuntimeAppTests` keeps the
