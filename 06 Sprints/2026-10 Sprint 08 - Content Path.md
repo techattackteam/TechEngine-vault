@@ -169,7 +169,7 @@ type.
 
 ### Story H: Auto lane and fired backlog
 
-- [ ] **S8-P1** · Add the Unity and Unreal comparison rule · P2 · 🤖 Auto · 1-2h ·
+- [x] **S8-P1** · Add the Unity and Unreal comparison rule · P2 · 🤖 Auto · 1-2h ·
   done: [[Technical Lead Charter]] holds the rule once, scoped to drafting or discussing an
   ADR or a design note's decisions: before the question round on such a fork, show how Unity
   and Unreal (Godot when relevant) solve it as a baseline to beat, say when those facts are from
