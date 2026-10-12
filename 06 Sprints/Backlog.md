@@ -299,6 +299,13 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/high · **Keep editor tests from exporting into `bin/`**: `EditorApp::init` exports the
+  client target into its own executable folder, and the editor's test executable builds into
+  the same `bin/<config>/` as `runtime`. Today no scratch project names a startup scene, so the
+  export fails before it writes. Once S8-T13 creates a startup scene at editor startup, every
+  editor test that bootstraps will write its scratch packs over the development export in
+  `bin/<config>/assets/`, and parallel `ctest` runs will write the same files. Found at S8-T7 on
+  Oct 12, 2026. **Trigger:** S8-T13.
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the

@@ -50,7 +50,7 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Filename** | Fixed. `project.toml`, never a scan for an extension. | Fixes v1's two sources of truth for the name |
 | **Schema** | `name`, and one `[export.<target>]` table per export target holding its `startupScene` (a `ResourceId`). Only `export.client` exists so far. Changed 2026-10-12 at S8-T7 from one top-level `exportStartupScene`. Nothing else. | See *The manifest*; ADR-025 §7 |
 | **Root** | Derived from the manifest's own location. Never stored inside it. | See *The manifest* |
-| **Errors** | A `std::error_code`, returned: `ProjectError` for the manifest's own failures, and `FileError` passed through unchanged for file failures. No exceptions, no silent defaults. `ProjectResult` until 2026-10-09. | [[ADR-023 - Public error handling]] §2, [[File Access - Design]] § *Resolution* |
+| **Errors** | A `std::error_code`, returned: `ProjectError` for the manifest's own failures and for `exportTo`'s startup scene (S8-T7), and `FileError` passed through unchanged for file failures. No exceptions, no silent defaults. `ProjectResult` until 2026-10-09. | [[ADR-023 - Public error handling]] §2, [[File Access - Design]] § *Resolution* |
 | **Load and save** | Both owned by `Project`, both through `FileAccess`. | Fixes v1's split |
 | **Toolchain paths** | Not on `Project` and not in the manifest. | See *Why the CMake paths are gone* |
 | **Mount authority** | Only the composition root mounts into the shared table. The one exception is `Project::exportTo`, which mounts its output folder in a private table that it drops on return (S8-T7). | See *Why `Project` does not mount* |

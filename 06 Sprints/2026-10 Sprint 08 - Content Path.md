@@ -88,7 +88,7 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   duplicate id is reported with both paths. The loose source returns the bytes of a `common`
   or `client` id and reports a `server` id as absent for the client role. `Project` reads and
   writes an optional `exportStartupScene`. Follows S8-T1.
-- [ ] **S8-T7** · Export a project's client target from the editor · P1 · 🟢 Deep · 4-6h ·
+- [x] **S8-T7** · Export a project's client target from the editor · P1 · 🟢 Deep · 4-6h ·
   done: `Project::exportTo` takes an export target and a folder. For the client target it writes
   `<folder>/assets/common.tepack`, holding the boot record, and `client.tepack`, packing what the
   client's startup scene reaches (this sprint, the scene alone, into its own side's pack). The
@@ -264,8 +264,10 @@ type.
   scene from them before its first Tick; a missing pack ends the run with its error.
 - [ ] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
   committed startup scene from `bin/assets/`.
-- [ ] `Project::exportTo` turns a project's client target into `common.tepack` and `client.tepack`
+- [x] `Project::exportTo` turns a project's client target into `common.tepack` and `client.tepack`
   with a boot record, and the editor runs it at startup until T2's export command replaces that call.
+  Met Oct 12 by S8-T7, #132 `eb62d607`. Until S8-T13 creates its scene, the startup export on
+  `projects/dev` logs `NoStartupScene` and the editor keeps running (Miguel's run, Oct 12).
 - [ ] Touched design notes ([[Resources - Design]], [[Serialization - Design]],
   [[Project - Design]], [[Simulation Thread - Design]], [[File Access - Design]]) describe what
   shipped; validation records keep tests, CI, attended runs and unrun checks apart.

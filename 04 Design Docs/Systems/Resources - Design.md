@@ -9,7 +9,8 @@ index) · `client` (GPU mirror, from R1)
 **Status:** implementing. Both ADRs were **Accepted** on 2026-10-10. Built so far: `ResourceId`
 and the scene asset (S8-T3, #127, 2026-10-11), the pack writer and reader (S8-T4, #128, 2026-10-11),
 the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), and the editor's
-`AssetIndex` and loose source (S8-T6, #131, 2026-10-12).
+`AssetIndex` and loose source (S8-T6, #131, 2026-10-12), and the client export target (S8-T7,
+#132, 2026-10-12).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
@@ -397,8 +398,11 @@ build profiles each carry their own scene list (both from memory).
   chosen target into its own subfolder of it. The subfolder names are T2's to pick.
 - **The startup scene must be on a side the target ships.** A client target whose scene is a
   server asset fails the export, because the client could never open it.
-- **Only the client target is built in Sprint 08.** The server targets follow when a server
-  executable or hosting exists.
+- **Built at S8-T7 for the client target only** (#132, 2026-10-12), as `Project::exportTo` in
+  `apps/editor/src/project/Project.cpp`. A table lists which sides each target ships, and the two
+  server rows sit commented out until a server executable or hosting exists. A missing, unindexed
+  or unshipped startup scene returns `NoStartupScene`, `UnknownStartupScene` or
+  `StartupSceneNotInTarget`; a target missing from the table is a `TE_CHECK`.
 
 ### What later rungs inherit
 

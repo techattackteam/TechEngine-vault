@@ -5,6 +5,13 @@
 - **Deciders:** Miguel (Lead Engineer), with AI as technical lead
 - **Task:** the Sprint 08 decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial
   from Sprint 08*). Gates M6 together with [[ADR-024 - Resources (64-bit ids, value handles, async loads)]].
+- **Amended 2026-10-12, vocabulary:** "bake" → **"export"** for the editor step that writes
+  packs, in §1, §2, §4, §6, *Consequences* and *Alternatives*; the quotes of ADR-016 and ADR-006
+  keep their own words. The code and the design notes call it `Project::exportTo`. S8-T7.
+- **Amended 2026-10-12, decision:** §4, "The bake writes `common.tepack`, `client.tepack` and
+  `server.tepack`" → one export writes the packs of the sides its **export target** ships. The
+  client and the server ship as separate programs, so a client's folder holds no server pack and
+  a dedicated server's holds no client pack ([[Resources - Design]] § *Export targets*). S8-T7.
 - **Partially supersedes:** [[ADR-016 - Serialization (binary primitives & describe-once seam)]],
   two clauses only, each rowed in [[ADR Index]] § *Partial supersessions*:
   - §6, "asset containers to T4's bake". The scene layout (M5/M6), the snapshot packets (N3),
@@ -42,7 +49,7 @@ sits below `core` (ADR-006 §1), so file access cannot parse a format that `core
 A `.tepack` opens with ADR-016's header, then a table sorted by `ResourceId`, with a type tag,
 offset, size and a debug name per entry. Payloads are **16-byte aligned**, so a
 trivially-copyable payload is usable where it lies. Sorting makes lookup a binary search and
-two bakes of the same input byte-identical (ADR-016 §3).
+two exports of the same input byte-identical (ADR-016 §3).
 
 "Faster" means this: a pack skips import and conversion. A visited payload still goes through
 `Reader`; only a trivially-copyable payload skips parsing entirely.
@@ -52,10 +59,10 @@ two bakes of the same input byte-identical (ADR-016 §3).
 A pack carries its own magic and format version, so a pack change never strands a saved
 scene. Today one magic and one version serve every blob
 (`engine/core/include/TechEngine/core/serialization/BlobHeader.hpp:10-12`), as ADR-016 §4
-decided; this splits them per kind, scenes included. A pack version bump means a re-bake while every pack can be
+decided; this splits them per kind, scenes included. A pack version bump means a re-export while every pack can be
 rebuilt from its project. The first shipped build whose packs a newer runtime must still read
 (a patch, downloadable content) is ADR-016 §4's trigger for packs. Compression sits behind the
-header's existing `flags` when a bake-size or load-time problem is measured, as ADR-016 says.
+header's existing `flags` when an export-size or load-time problem is measured, as ADR-016 says.
 
 ### 3. Ranged reads through `FileAccess`, mappable by layout
 
@@ -67,11 +74,16 @@ nothing holds a pointer, so a pack can later be memory-mapped as it is.
 
 ### 4. One pack per side, no overrides
 
-The bake writes `common.tepack`, `client.tepack` and `server.tepack`, mirroring the asset
-split. An id lives on exactly one side, so a duplicate id across packs is a bake error; a
+The export writes `common.tepack`, `client.tepack` and `server.tepack`, mirroring the asset
+split. An id lives on exactly one side, so a duplicate id across packs is an export error; a
 variant is a separate asset with its own id. The runtime merges the tables of the packs it
 opens into one id index. The boot record (§7) lists the packs each role opens, so finer packs
-(per scene, per chunk) stay a bake-side change.
+(per scene, per chunk) stay an export-side change.
+
+> **Amended 2026-10-12:** one export no longer writes all three packs. An export target (the
+> client game, a dedicated server or a listen-server) writes `common.tepack` and the packs of
+> the sides it ships, and its boot record lists only its own role
+> ([[Resources - Design]] § *Export targets*). One pack per side and one side per id still hold.
 
 ### 5. A pack reader in `core`, on top of `FileAccess`
 
@@ -83,19 +95,19 @@ client mounts, and reads `server` headers only to learn each id's side. Both sou
 
 ### 6. Writer and reader land together, in `core`, at M6
 
-**The bake ships only what is used.** It walks hard and soft references from its roots, the
+**The export ships only what is used.** It walks hard and soft references from its roots, the
 exported scenes and the selected systems' settings assets (in M6, the startup scene), and
 packs what they reach, each asset into its side's pack. An asset nothing
 references is not shipped. Engine-owned assets, such as a default material, travel the same
 way, so the runtime needs no `engine` alias.
 
 The pack writer is a format primitive, symmetric with `Writer` and `Reader`, and it is
-round-trip tested with the pack reader. The bake driver, which walks the references, assigns
+round-trip tested with the pack reader. The export driver, which walks the references, assigns
 sides and writes the layout, stays in the editor. So ADR-006 §1's "editor owns the asset
 pipeline" holds, and ADR-017's `tooling` trigger does not fire before T4's importers.
 
 M6 has no converter: every M6 asset is engine-native, and its source already is its runtime
-form. T4's importers will write runtime-form files that this same bake packs.
+form. T4's importers will write runtime-form files that this same export packs.
 
 ### 7. The runtime layout and the boot record
 
@@ -121,7 +133,7 @@ form. T4's importers will write runtime-form files that this same bake packs.
   stays closed by structure.
 - **Benefit:** a project and a shipped game use one folder name, `assets/`, and a shipped game
   carries only the assets its scenes reference.
-- **Benefit:** granularity, compression and mapping are bake-side or reader-side changes. No
+- **Benefit:** granularity, compression and mapping are export-side or reader-side changes. No
   loader and no handle moves with them.
 - **Cost:** the editor reads loose files and the runtime reads packs, so a pack bug can hide
   until the runtime is run. Round-trip tests and T2's export run are the guard. This is
@@ -129,10 +141,10 @@ form. T4's importers will write runtime-form files that this same bake packs.
 - **Cost:** one pack per side means a change to one asset rewrites its whole pack, so a patch
   would ship the whole pack. That matters only once patches ship (see *Revisit when*).
 - **Cost:** two lanes move. T2 shrinks to the editor's save and export commands on top of this
-  bake, and T4 narrows to importers ([[Roadmap]]).
+  ADR's export, and T4 narrows to importers ([[Roadmap]]).
 - **Revisit when:**
   - Ranged-read cost is measured as a problem: memory mapping.
-  - A bake-size or load-time problem is measured: compression behind the header flags.
+  - An export-size or load-time problem is measured: compression behind the header flags.
   - A shipped build must be patched: finer packs, per-entry hashes, and ADR-016 §4's migration story.
   - A dedicated server must be re-pointed at content without a rebuild: ADR-017's trigger.
   - A project needs the boot record to choose systems or be edited after export: a change of
@@ -144,9 +156,9 @@ form. T4's importers will write runtime-form files that this same bake packs.
 | Option | For it | Why not |
 |---|---|---|
 | Archive mount in `MountTable` | One read path for loose and packed files; [[File Access - Design]] lists it as open. | `platform` cannot parse a format `core` encodes, and `MountTable` keys by path where packs key by id. |
-| One pack per project | Simplest bake and layout. | A dedicated server would ship client content. |
-| One pack per scene | Fits the one-live-scene model. | Duplicates content that scenes share. Nothing in M6 needs it, and the boot record keeps it a bake-side change. |
-| Pack every file in `assets/` | No reference walk in the bake. | Ships unused content; Miguel wants only what the exported scenes need. |
+| One pack per project | Simplest export and layout. | A dedicated server would ship client content. |
+| One pack per scene | Fits the one-live-scene model. | Duplicates content that scenes share. Nothing in M6 needs it, and the boot record keeps it an export-side change. |
+| Pack every file in `assets/` | No reference walk in the export. | Ships unused content; Miguel wants only what the exported scenes need. |
 | Side overrides common | A client-only variant of shared content under one id. | A priority rule in the merged index for a need nobody has yet; a separate id does the same job. |
 | Format and reader only; writer at T2 or T4 | A smaller M6. | The runtime has nothing to load, Q4's objective fails, and the reader is tested only against hand-built bytes. |
 | An existing archive (zip, PhysFS) | Free tooling and compression. | No id-keyed table, no alignment guarantee, and a third-party dependency on the load path for compression nobody needs yet. |
