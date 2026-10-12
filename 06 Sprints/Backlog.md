@@ -305,7 +305,7 @@ groups are kept, because they show where future work will land.
   editor executable. [[Project - Design]] records the placement and open storage choice.
   **Trigger:** the first editor UI card.
 - #prio/low · **Reopen the scene the editor had open last.** Per-user state, not
-  `project.toml`: the export key `exportStartupScene` changes only when the shipped game's first
+  `project.toml`: the `[export.<target>]` keys change only when a shipped program's first
   scene is chosen ([[Project - Design]] § *The manifest*). Found at S8-T6 on Oct 12, 2026. Its
   storage is [[Project - Design]] § *Open questions*' per-user settings question. **Trigger:**
   T1, when the editor can open another scene.

@@ -74,7 +74,7 @@ built or run.
 | Writer and reader both in `core`, at M6; the bake driver stays in the editor. | ADR-025 §6 |
 | The runtime mounts `assets` beside its executable and follows the boot record. | ADR-025 §7 |
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
-| The bake is an editor function that T2's export command calls; before T2 the editor calls it at startup, writing to its own executable folder. | Miguel, Oct 11; § *Bake and the runtime layout* |
+| The export is an editor function per **export target**, a `Role` value. It writes one target into the folder it is given; T2's export command writes several targets into one folder, one subfolder each. Before T2, the editor exports the client target at startup into its own executable folder. | Miguel, Oct 11 and 12; § *Export targets* |
 | The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
 | A source answers `Present`, `AbsentForRole` or `Unknown` through a query; only its `read` returns a `std::error_code`. | Miguel, Oct 11; § *Two sources, one cache* |
 | An id missing from the role's packs but listed in the boot record's sides is absent for the role; in neither, it is unknown. | Miguel, Oct 11; § *The pack source* |
@@ -234,7 +234,9 @@ keyed by the system's registration name, as roots the startup phase loads.
 
 ### Scene assets
 
-A scene asset is a `.tescene` file under `assets/common/`, because every role simulates it.
+A scene asset is a `.tescene` file under the side that ships it: `assets/common/` for a scene
+every export target opens, or one side's folder for a scene only that program opens, such as a
+client's menu (§ *Export targets*).
 It shipped at S8-T3 (#127, 2026-10-11) in
 `engine/core/include/TechEngine/core/scene/SceneAsset.hpp`. Since S8-T5 it is a `SceneAsset`
 struct that holds the asset's `ResourceId`, with `write(scene, out)` and `read(bytes, scene)`;
@@ -343,28 +345,29 @@ holds one source in either process.
 - **`read` is one ranged read through the id's own pack**, so nothing is read at open beyond the
   headers and tables.
 
-### Bake and the runtime layout
+### Export and the runtime layout
 
 ```mermaid
 flowchart LR
-  toml["project.toml<br/>exportStartupScene"] --> bake
-  assets["project assets/common · client · server"] --> bake["bake driver (editor)<br/>pack writer (core)"]
-  bake --> out["&lt;out&gt;/assets/common.tepack<br/>client.tepack · server.tepack"]
+  toml["project.toml<br/>export.client.startupScene"] --> export
+  assets["project assets/common · client · server"] --> export["Project::exportTo (editor)<br/>pack writer (core)"]
+  export --> out["&lt;folder&gt;/assets/common.tepack<br/>and the target's side packs"]
   out --> rt["runtime: mount assets beside the exe,<br/>open common, read the boot record,<br/>open the role's packs, load the startup scene"]
 ```
 
-The `project.toml` key is `exportStartupScene`, holding the scene's id; [[Project - Design]] owns the
-schema. The bake walks hard and soft references from its roots, the exported scenes and the
-selected systems' settings assets (in M6, the startup scene), and packs only what they reach, each asset into its side's pack. Engine-owned assets the editor keeps
+Each export target's startup scene is a key in `project.toml`; [[Project - Design]] owns the
+schema. The export walks hard and soft references from the target's roots, its startup scene and
+the selected systems' settings assets (in M6, the startup scene alone), and packs only what they
+reach, each asset into its side's pack. Engine-owned assets the editor keeps
 beside its executable travel the same way, so the runtime needs no `engine` alias and F27's
 copy-per-project problem does not return: the bake copies only into the shipped pack. M6's bake
 packs files as they are, because every M6 asset is engine-native. T4 adds importers that write
 runtime-form files first, and the bake does not change.
 
-**The bake is a function, and its trigger changes with the rungs** (decided Oct 11). It takes
-the indexed project and an output folder. T2's export command will call it; until then the
-editor calls it once at startup, after opening the project, and logs a failure without
-stopping. A command-line mode was considered and dropped: the shipped editor calls the function
+**The export is a function, and its trigger changes with the rungs** (decided Oct 11).
+`Project::exportTo` takes an export target, the id index and an output folder. T2's export
+command will call it; until then the editor exports the client target once at startup, after
+opening the project, and logs a failure without stopping. A command-line mode was considered and dropped: the shipped editor calls the function
 from its UI, so parsing flags would be code nothing keeps. Unity is the same shape: its build
 menu and `-executeMethod` both call `BuildPipeline.BuildPlayer`. The output defaults to the
 editor's own executable folder. Both executables build into one `${CMAKE_BINARY_DIR}/bin`
@@ -373,13 +376,37 @@ step and no configure-time path for the runtime; Unreal stages its cooked output
 step, which the shared output folder makes unnecessary here. For that folder to hold only packs, the
 editor's engine folder moves from `<exe dir>/assets` to `<exe dir>/engine`, matching its alias.
 
+### Export targets
+
+An export target is a program the user ships: the client game, a dedicated server or a
+listen-server (decided Oct 12). It is a `Role` value, so no second enum exists. Each target has
+its own startup scene, because a client may start in a menu while a server starts in the world.
+Unreal splits *Game Default Map* from *Server Default Map* for the same reason, and Unity's
+build profiles each carry their own scene list (both from memory).
+
+| Target | Packs written | Boot record lists |
+|---|---|---|
+| Client | `common`, `client` | Client |
+| Dedicated server | `common`, `server` | DedicatedServer |
+| Listen-server | `common`, `client`, `server` | ListenServer |
+
+- **`exportTo` writes one target into `<folder>/assets/`**: only that target's packs, with the
+  boot record in its `common.tepack`. One target's folder is a complete layout beside its
+  executable, which is why the development export can write straight into `bin/`.
+- **Several targets are T2's job.** The user picks one folder, and the command exports each
+  chosen target into its own subfolder of it. The subfolder names are T2's to pick.
+- **The startup scene must be on a side the target ships.** A client target whose scene is a
+  server asset fails the export, because the client could never open it.
+- **Only the client target is built in Sprint 08.** The server targets follow when a server
+  executable or hosting exists.
+
 ### What later rungs inherit
 
 | Rung | Uses |
 |---|---|
 | **R1** | Mesh, shader and material loaders; a GPU mirror keyed by handle; render's read fence. |
 | **T1** | Scene save through the document writer; per-type component versions; main's read fence; opening another scene during a run. |
-| **T2** | The editor's save and export commands, on top of the M6 bake. |
+| **T2** | The editor's save and export commands, on top of `exportTo`; the export command writes each chosen target into its own subfolder. |
 | **T4** | Importers that write runtime-form files, and the sidecar-or-registry choice for source ids. |
 | **T5** | The runtime executable plus `assets/`, as a distributable. |
 | **P1** | Soft loads share the pool with the parallel executor; priorities if one delays a Tick. |

@@ -6,7 +6,7 @@
 
 ## Sprint goal
 
-The editor bakes a project into `.tepack` files, and the runtime loads
+The editor exports a project into `.tepack` files, and the runtime loads
 the exported startup scene from the packs beside its executable before its first Tick.
 
 This is the vertical slice of M6, chosen at planning on Oct 11: it delivers [[2026-Q4]]'s
@@ -80,7 +80,7 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   members, not free functions. The calls settled while grounding the card are in
   [[Resources - Design]] § *Two sources, one cache*, § *The boot record* and § *The pack source*.
 
-### Story D: Editor index and bake
+### Story D: Editor index and export
 
 - [x] **S8-T6** · Index the project's assets and read them by id · P1 · 🟢 Deep · 4-6h ·
   done: at project open the editor reads the header of every runtime-form file under
@@ -88,14 +88,17 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   duplicate id is reported with both paths. The loose source returns the bytes of a `common`
   or `client` id and reports a `server` id as absent for the client role. `Project` reads and
   writes an optional `exportStartupScene`. Follows S8-T1.
-- [ ] **S8-T7** · Bake a project from the editor · P1 · 🟢 Deep · 4-6h ·
-  done: a bake function takes the indexed project and an output folder, and packs what
-  `exportStartupScene` reaches (this sprint, the scene alone) into `<out>/assets/common.tepack`,
-  `client.tepack` and `server.tepack`, with the boot record in `common`. A missing or unknown
-  `exportStartupScene` returns its error. Until T2's export command exists, the editor calls it once
-  at startup after opening the project, with its own executable folder as `<out>`; a failed
-  bake is logged and the editor keeps running. Prove a bake of a scratch project in
-  `EditorAppTests` by calling the function directly. Follows S8-T2, S8-T5 and S8-T6.
+- [ ] **S8-T7** · Export a project's client target from the editor · P1 · 🟢 Deep · 4-6h ·
+  done: `Project::exportTo` takes an export target and a folder. For the client target it writes
+  `<folder>/assets/common.tepack`, holding the boot record, and `client.tepack`, packing what the
+  client's startup scene reaches (this sprint, the scene alone, into its own side's pack). The
+  boot record lists only the Client role. `project.toml` holds the client's startup scene under
+  `[export.client]`, replacing `exportStartupScene`. A missing or unknown startup scene returns
+  its error. Until T2's export command exists, the editor exports the client target once at
+  startup into its own executable folder; a failed export is logged and the editor keeps
+  running. Prove it in the editor's tests by calling `exportTo` directly. Follows S8-T2, S8-T5
+  and S8-T6. **Rescoped on Oct 12** from one bake of three packs, because the client and the
+  server ship as separate programs ([[Resources - Design]] § *Export targets*).
 
 ### Story E: The runtime loads the startup scene
 
@@ -111,16 +114,16 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   startup phase. A missing pack or startup scene ends the run with its error. Prove it with a
   headless `RuntimeAppTests` case over packs that the test writes into a scratch directory, and
   record Miguel's windowed run: launch the editor on `projects/dev`, then `runtime.exe` loads
-  what it baked. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14.
+  what it exported. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14.
 - [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h ·
-  done: after opening the project and before the startup bake, an editor whose project names no
-  `exportStartupScene` builds a small scene in code (a parent with two children, `Transform` only). It writes the scene to
+  done: after opening the project and before the startup export, an editor whose project names no
+  client startup scene builds a small scene in code (a parent with two children, `Transform` only). It writes the scene to
   `project://assets/common/` through the scene document writer with a fresh `ResourceId`, adds
-  it to the id index, and saves its id as `exportStartupScene` through `Project::save`. A later launch
+  it to the id index, and saves its id as the client target's startup scene through `Project::save`. A later launch
   finds the id and creates nothing. The file and the `project.toml` change made on
   `projects/dev` are committed, so a fresh clone skips creation. `.gitattributes` marks
   `*.tescene` and `*.tepack` as binary. T1's scene save replaces the code-built scene. Follows
-  S8-T3 and S8-T6; the startup bake then has a scene to export.
+  S8-T3 and S8-T6; the startup export then has a scene to pack.
 
 - [x] **S8-T14** · Remove the runtime demo systems · P2 · 🟠 Moderate · 2-3h ·
   done: `apps/runtime/src/demo/` is gone (the five systems, `Velocity`, `RigidBody` and the four
@@ -259,10 +262,10 @@ type.
 
 - [ ] A headless test writes packs into a scratch directory, and `RuntimeApp` loads the startup
   scene from them before its first Tick; a missing pack ends the run with its error.
-- [ ] Windowed: the editor opens `projects/dev` and bakes it, and `runtime.exe` then loads the
+- [ ] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
   committed startup scene from `bin/assets/`.
-- [ ] The bake function turns a project with a `exportStartupScene` into the three packs and a boot
-  record, and the editor runs it at startup until T2's export command replaces that call.
+- [ ] `Project::exportTo` turns a project's client target into `common.tepack` and `client.tepack`
+  with a boot record, and the editor runs it at startup until T2's export command replaces that call.
 - [ ] Touched design notes ([[Resources - Design]], [[Serialization - Design]],
   [[Project - Design]], [[Simulation Thread - Design]], [[File Access - Design]]) describe what
   shipped; validation records keep tests, CI, attended runs and unrun checks apart.

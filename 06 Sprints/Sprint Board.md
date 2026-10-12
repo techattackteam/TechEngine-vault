@@ -21,7 +21,7 @@ kanban-plugin: board
 
 
 
-## Story D: Editor index and bake
+## Story D: Editor index and export
 
 
 
@@ -29,7 +29,7 @@ kanban-plugin: board
 
 - [ ] **S8-T8** · Run a startup loading phase before the first Tick · P1 · 🟠 Moderate · 2-3h: after readiness, before Tick 1, timeline restart, a failure ends the run. Independent.
 - [ ] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h: mount `<exe dir>/assets`, follow the boot record, stream the scene in the startup phase; a headless case over packs in a scratch directory. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14. The named rollover risk.
-- [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h: with no `exportStartupScene`, the editor builds a small `Transform`-only scene in code, writes it through the scene writer, indexes it and saves its id to `project.toml`; commit the result on `projects/dev`; `.gitattributes` marks `.tescene` and `.tepack` binary. Follows S8-T3 and S8-T6.
+- [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h: with no client startup scene, the editor builds a small `Transform`-only scene in code, writes it through the scene writer, indexes it and saves its id to `project.toml`; commit the result on `projects/dev`; `.gitattributes` marks `.tescene` and `.tepack` binary. Follows S8-T3 and S8-T6.
 
 
 ## Story F: Decide Sprint 09's references
@@ -59,7 +59,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S8-T7** · Bake a project from the editor · P1 · 🟢 Deep · 4-6h: a bake function writes the three packs and the boot record; the editor calls it at startup into its own exe folder until T2's export command, and a failed bake is logged without stopping the editor. Follows S8-T2, S8-T5 and S8-T6.
+- [ ] **S8-T7** · Export a project's client target from the editor · P1 · 🟢 Deep · 4-6h: `Project::exportTo(target, folder)` writes the client target's `common` and `client` packs with the boot record; `[export.client]` replaces `exportStartupScene`; the editor exports at startup into its own exe folder until T2's export command, and a failed export is logged without stopping the editor. Rescoped Oct 12. Follows S8-T2, S8-T5 and S8-T6.
 
 
 ## 👀 Review / Demo

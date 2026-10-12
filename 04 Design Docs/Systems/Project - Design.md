@@ -48,12 +48,12 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Bootstrap seam** | Each executable subclasses `App`. The editor mounts in `init()`; the runtime mounts `assets` beside its executable (ADR-025 §7). One `MountTable` belongs to the base. | ADR-017 § *Decision* 3; ADR-018 §3 |
 | **Format** | `project.toml`, parsed with toml++ in its non-throwing mode. | [[Roadmap]] § *M3* |
 | **Filename** | Fixed. `project.toml`, never a scan for an extension. | Fixes v1's two sources of truth for the name |
-| **Schema** | `name`, and `exportStartupScene` (a `ResourceId`, added 2026-10-10, renamed 2026-10-12). Nothing else. | See *The manifest*; ADR-025 §7 |
+| **Schema** | `name`, and one `[export.<target>]` table per export target holding its `startupScene` (a `ResourceId`). Only `export.client` exists so far. Changed 2026-10-12 at S8-T7 from one top-level `exportStartupScene`. Nothing else. | See *The manifest*; ADR-025 §7 |
 | **Root** | Derived from the manifest's own location. Never stored inside it. | See *The manifest* |
 | **Errors** | A `std::error_code`, returned: `ProjectError` for the manifest's own failures, and `FileError` passed through unchanged for file failures. No exceptions, no silent defaults. `ProjectResult` until 2026-10-09. | [[ADR-023 - Public error handling]] §2, [[File Access - Design]] § *Resolution* |
 | **Load and save** | Both owned by `Project`, both through `FileAccess`. | Fixes v1's split |
 | **Toolchain paths** | Not on `Project` and not in the manifest. | See *Why the CMake paths are gone* |
-| **Mount authority** | Only the composition root mounts, and `Project` carries no mount knowledge at all. | See *Why `Project` does not mount* |
+| **Mount authority** | Only the composition root mounts into the shared table. The one exception is `Project::exportTo`, which mounts its output folder in a private table that it drops on return (S8-T7). | See *Why `Project` does not mount* |
 | **New `FileResult` values** (now `FileError`) | `AlreadyExists` and `NotEmpty`. | See *The five mutating calls* |
 | **Missing parents** | `write` does not create them and returns `NotFound`. `createDirectory` does create them. | Answers [[File Access - Design]] § *Open questions* |
 | **Layout** | The root holds `project.toml` and an `assets/` split into `common`, `client` and `server`. Shaders are client assets under `assets/client/`. Changed 2026-10-10; not built yet. | See *The project layout* |
@@ -128,13 +128,18 @@ move plus a CMake edit.
 
 ```toml
 name = "Sandbox"
-exportStartupScene = "0x3f9a2c41d07e88b5"   # the shipped game's startup scene
+
+[export.client]
+startupScene = "0x3f9a2c41d07e88b5"   # the client game's first scene
 ```
 
-**Two keys, and that is the whole schema.** `exportStartupScene` was added 2026-10-10 for M6's scene
-binding; the bake copies it into the boot record ([[Resources - Design]]). It was renamed from
-`startupScene` on 2026-10-12 at S8-T6, because it names the scene a shipped game boots into, not
-the scene the editor has open; it changes only when the export setting does. The scene
+**`name` and one table per export target, and that is the whole schema.** Each
+`[export.<target>]` table holds that program's startup scene, which the export copies into the
+boot record ([[Resources - Design]] § *Export targets*). Only `export.client` exists so far. The
+scene was one top-level `startupScene` from 2026-10-10, renamed `exportStartupScene` at S8-T6,
+and split per target at S8-T7 on 2026-10-12, because a client may start in a menu while a server
+starts in the world. It names the scene a shipped program boots into, not the scene the editor
+has open; it changes only when the export setting does. The scene
 the editor reopens is per-user state, not this key (§ *Open questions*, per-user settings). The rest of this
 paragraph is the original 2026-09-04 reasoning for `name` alone. Decided 2026-09-04, when § *The project layout*
 made the directories a convention. `shaderDir` and `assetDirs` were dropped the same day: once
@@ -412,10 +417,11 @@ it compiles, never fires, and `parse()` throws instead. Wired at S5-T4 on 2026-0
 `InvalidPath` for a `manifestPath` the mount table refuses, and the same codes from `save`.
 Until 2026-10-09 these were folded into `ReadFailed` and `WriteFailed`. `ParseFailed` means the
 bytes are not TOML. `SchemaInvalid` means it is valid TOML with `name` missing or not a
-string, or with an `exportStartupScene` that is not a string of `0x` and 16 hex digits. An
+string, or with an `export.client.startupScene` that is not a string of `0x` and 16 hex digits. An
 editor reports each of these very differently.
 
-**`exportStartupScene` is optional** (S8-T6, #131, 2026-10-12). An absent key loads as a null
+**`export.client.startupScene` is optional** (S8-T6, #131, 2026-10-12; moved under
+`[export.client]` at S8-T7). An absent key loads as a null
 `ResourceId`, so `Project` holds no `std::optional`; `save` omits the key while it is null and
 otherwise writes `0x` and 16 zero-padded hex digits. A TOML integer cannot hold every id, which
 is why the value is a string. `load` commits the root, the name and the id together, on
