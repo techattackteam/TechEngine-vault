@@ -47,7 +47,6 @@ kanban-plugin: board
 
 ## Story H: Auto lane and fired backlog
 
-- [ ] **S8-P1** · Add the Unity and Unreal comparison rule · P2 · 🤖 Auto · 1-2h: the rule once in [[Technical Lead Charter]], scoped to ADR and design-note decisions only, not chat or planning; one-line pointers from `/adr` and `engine-researcher`.
 - [ ] **S8-T12** · Clean up `InputState`'s leftovers · P3 · 🤖 Auto · 1-2h: drop `isHeld`'s redundant `focused` check, `std::size_t` casts, cases for the `Unknown` guards; existing tests unedited.
 - [ ] **S8-P2** · Record #112's CI change and re-measure the lane's CI cost · P3 · 🤖 Auto · 1-2h: a B3 line for the apt cache action, measured billed minutes against the 16.1 figure; pinning stays Miguel's question.
 - [ ] **S8-P3** · Check *Clock - Design*'s several-simulations argument · P3 · 🤖 Auto · 1h: report-only, with a proposed paragraph.
@@ -67,6 +66,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S8-P1** · Add the Unity and Unreal comparison rule · P2 · 🤖 Auto · 1-2h: #130 on `S8-P1/engine-comparison-rule`, opened by the Oct 12 morning fire. The rule is in [[Technical Lead Charter]] § *Compare against Unity and Unreal* (pushed to the vault); the PR adds the pointers in `/adr` and `engine-researcher`. Miguel merges.
 
 
 ## ✅ Done: Sprint 08

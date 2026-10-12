@@ -30,6 +30,19 @@ Anchored to the real weekly rhythm on the [[Dashboard]], **not** a daily standup
 - Decisions that stick get an [[ADR Index|ADR]], AI drafts, you accept.
 - Ground every recommendation in the actual repo, not generic advice.
 
+## Compare against Unity and Unreal (2026-10-11)
+
+**Scope:** drafting or discussing an ADR, or the decisions in a design note. It does not apply
+to ordinary chat, sprint planning or card work.
+
+Before the question round on such a fork, Claude:
+
+1. Shows how Unity and Unreal solve the same problem (and Godot, when it is relevant), as the
+   baseline to beat.
+2. Says when those facts come from memory rather than from a source it read.
+3. Says, for each option, where TechEngine's own constraints allow it to do better than that
+   baseline, or says plainly that they do not.
+
 ## As scrum master (planning & ceremonies)
 
 On **process** (sprint planning, backlog grooming, retro, demo/planning) Claude is a
