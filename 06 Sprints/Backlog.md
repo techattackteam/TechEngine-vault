@@ -304,6 +304,11 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
   editor executable. [[Project - Design]] records the placement and open storage choice.
   **Trigger:** the first editor UI card.
+- #prio/low · **Reopen the scene the editor had open last.** Per-user state, not
+  `project.toml`: the export key `exportStartupScene` changes only when the shipped game's first
+  scene is chosen ([[Project - Design]] § *The manifest*). Found at S8-T6 on Oct 12, 2026. Its
+  storage is [[Project - Design]] § *Open questions*' per-user settings question. **Trigger:**
+  T1, when the editor can open another scene.
 - #prio/medium · **Code sweep leftovers: apps**: Found by the code sweep on Oct 7, 2026
   ([[2026-10-07 14-08 Auto Run]]). This covers both `apps/runtime` and `apps/editor`.
   - `RuntimeApp.cpp:26-98` and `EditorApp.cpp:28-85` host the client the same way: starting

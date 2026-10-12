@@ -8,7 +8,8 @@ index) · `client` (GPU mirror, from R1)
 **Kind:** helper service (ADR-006 §5), not a scheduled System
 **Status:** implementing. Both ADRs were **Accepted** on 2026-10-10. Built so far: `ResourceId`
 and the scene asset (S8-T3, #127, 2026-10-11), the pack writer and reader (S8-T4, #128, 2026-10-11),
-and the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11).
+the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), and the editor's
+`AssetIndex` and loose source (S8-T6, #131, 2026-10-12).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
@@ -78,6 +79,9 @@ built or run.
 | A source answers `Present`, `AbsentForRole` or `Unknown` through a query; only its `read` returns a `std::error_code`. | Miguel, Oct 11; § *Two sources, one cache* |
 | An id missing from the role's packs but listed in the boot record's sides is absent for the role; in neither, it is unknown. | Miguel, Oct 11; § *The pack source* |
 | A known boot section at a version the reader does not know is `BadVersion`; an unknown tag is skipped. | Miguel, Oct 11; § *The boot record* |
+| The index knows an asset by its header's magic, paired with a `StringId` type tag; the tag is what the pack table stores and loaders register by. | Miguel, Oct 12; § *The editor's id index* |
+| A file the index cannot read as a known asset is skipped with a warning; only a side folder that cannot be listed fails the index. | Miguel, Oct 12; § *The editor's id index* |
+| A duplicate id is indexed under neither path, and the pair is kept as data (ADR-024 §2). | Miguel, Oct 12; § *The editor's id index* |
 
 ## v1 reuse boundary
 
@@ -134,6 +138,29 @@ ever measured as slow, the idle simulation thread can preload in the background 
 A duplicate id, such as a file copied outside the editor, is reported at index time with both
 paths. The index is not persisted, and rebuilding it on file changes waits for file watching
 ([[Backlog]] → `platform`).
+
+**As built** (S8-T6, #131, 2026-10-12). `AssetIndex` lives in `apps/editor/src/assets/`, and
+`EditorApp::init()` builds it right after the project mounts, with `TE_CHECK` on failure, like
+the project load. Miguel settled these at `/card-start`:
+
+- **An asset kind is a magic paired with a type tag.** The index reads the first 16 bytes (the
+  header and the id) and looks the magic up in a table in `AssetIndex.cpp`. Scene is its only
+  row, with `SCENE_TYPE_TAG` (`"TechEngine.Scene"`) beside `SCENE_KIND` in `SceneAsset.hpp`. A
+  record holds the id, the type tag, the side and the virtual path, which is the "name" the
+  pack's names block also stores.
+- **Anything else is skipped with a warning**: a directory (silently), a file under 16 bytes,
+  an unknown magic, a known kind at another version, a null id, or a file that fails to read.
+  On `projects/dev` that is the `.gitkeep` files and the two raw GLSL shaders, until R1 makes
+  shaders assets. Only a side folder that cannot be listed fails `build`.
+- **A duplicate id is indexed under neither path.** Each extra path becomes a `DuplicateAsset`
+  paired with the first, and a warning names both. The loose source then answers `Unknown`.
+- **Records stay sorted by id**, and `find` is a binary search over them. Anything that adds a
+  record later (S8-T13) must keep that order.
+
+The loose source is `LooseSource`, beside the index. It serves `common` and `client` and
+reports a `server` id as `AbsentForRole`, so it takes no role. Nothing in Sprint 08's product
+code calls it; its first caller is the cache (S8-T10, or Sprint 09's editor startup load), and
+Miguel kept it here so the cache starts with both sources.
 
 ### Handles, counts and the load lifecycle
 
@@ -320,13 +347,13 @@ holds one source in either process.
 
 ```mermaid
 flowchart LR
-  toml["project.toml<br/>startupScene"] --> bake
+  toml["project.toml<br/>exportStartupScene"] --> bake
   assets["project assets/common · client · server"] --> bake["bake driver (editor)<br/>pack writer (core)"]
   bake --> out["&lt;out&gt;/assets/common.tepack<br/>client.tepack · server.tepack"]
   out --> rt["runtime: mount assets beside the exe,<br/>open common, read the boot record,<br/>open the role's packs, load the startup scene"]
 ```
 
-The `project.toml` key is `startupScene`, holding the scene's id; [[Project - Design]] owns the
+The `project.toml` key is `exportStartupScene`, holding the scene's id; [[Project - Design]] owns the
 schema. The bake walks hard and soft references from its roots, the exported scenes and the
 selected systems' settings assets (in M6, the startup scene), and packs only what they reach, each asset into its side's pack. Engine-owned assets the editor keeps
 beside its executable travel the same way, so the runtime needs no `engine` alias and F27's

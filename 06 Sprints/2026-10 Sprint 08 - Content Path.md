@@ -82,17 +82,17 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
 
 ### Story D: Editor index and bake
 
-- [ ] **S8-T6** · Index the project's assets and read them by id · P1 · 🟢 Deep · 4-6h ·
+- [x] **S8-T6** · Index the project's assets and read them by id · P1 · 🟢 Deep · 4-6h ·
   done: at project open the editor reads the header of every runtime-form file under
   `project://assets/<side>/` for all three sides, and records each id's kind, name and side. A
   duplicate id is reported with both paths. The loose source returns the bytes of a `common`
   or `client` id and reports a `server` id as absent for the client role. `Project` reads and
-  writes an optional `startupScene`. Follows S8-T1.
+  writes an optional `exportStartupScene`. Follows S8-T1.
 - [ ] **S8-T7** · Bake a project from the editor · P1 · 🟢 Deep · 4-6h ·
   done: a bake function takes the indexed project and an output folder, and packs what
-  `startupScene` reaches (this sprint, the scene alone) into `<out>/assets/common.tepack`,
+  `exportStartupScene` reaches (this sprint, the scene alone) into `<out>/assets/common.tepack`,
   `client.tepack` and `server.tepack`, with the boot record in `common`. A missing or unknown
-  `startupScene` returns its error. Until T2's export command exists, the editor calls it once
+  `exportStartupScene` returns its error. Until T2's export command exists, the editor calls it once
   at startup after opening the project, with its own executable folder as `<out>`; a failed
   bake is logged and the editor keeps running. Prove a bake of a scratch project in
   `EditorAppTests` by calling the function directly. Follows S8-T2, S8-T5 and S8-T6.
@@ -114,9 +114,9 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   what it baked. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14.
 - [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h ·
   done: after opening the project and before the startup bake, an editor whose project names no
-  `startupScene` builds a small scene in code (a parent with two children, `Transform` only). It writes the scene to
+  `exportStartupScene` builds a small scene in code (a parent with two children, `Transform` only). It writes the scene to
   `project://assets/common/` through the scene document writer with a fresh `ResourceId`, adds
-  it to the id index, and saves its id as `startupScene` through `Project::save`. A later launch
+  it to the id index, and saves its id as `exportStartupScene` through `Project::save`. A later launch
   finds the id and creates nothing. The file and the `project.toml` change made on
   `projects/dev` are committed, so a fresh clone skips creation. `.gitattributes` marks
   `*.tescene` and `*.tepack` as binary. T1's scene save replaces the code-built scene. Follows
@@ -261,7 +261,7 @@ type.
   scene from them before its first Tick; a missing pack ends the run with its error.
 - [ ] Windowed: the editor opens `projects/dev` and bakes it, and `runtime.exe` then loads the
   committed startup scene from `bin/assets/`.
-- [ ] The bake function turns a project with a `startupScene` into the three packs and a boot
+- [ ] The bake function turns a project with a `exportStartupScene` into the three packs and a boot
   record, and the editor runs it at startup until T2's export command replaces that call.
 - [ ] Touched design notes ([[Resources - Design]], [[Serialization - Design]],
   [[Project - Design]], [[Simulation Thread - Design]], [[File Access - Design]]) describe what

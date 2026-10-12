@@ -48,7 +48,7 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Bootstrap seam** | Each executable subclasses `App`. The editor mounts in `init()`; the runtime mounts `assets` beside its executable (ADR-025 §7). One `MountTable` belongs to the base. | ADR-017 § *Decision* 3; ADR-018 §3 |
 | **Format** | `project.toml`, parsed with toml++ in its non-throwing mode. | [[Roadmap]] § *M3* |
 | **Filename** | Fixed. `project.toml`, never a scan for an extension. | Fixes v1's two sources of truth for the name |
-| **Schema** | `name`, and `startupScene` (a `ResourceId`, added 2026-10-10). Nothing else. | See *The manifest*; ADR-025 §7 |
+| **Schema** | `name`, and `exportStartupScene` (a `ResourceId`, added 2026-10-10, renamed 2026-10-12). Nothing else. | See *The manifest*; ADR-025 §7 |
 | **Root** | Derived from the manifest's own location. Never stored inside it. | See *The manifest* |
 | **Errors** | A `std::error_code`, returned: `ProjectError` for the manifest's own failures, and `FileError` passed through unchanged for file failures. No exceptions, no silent defaults. `ProjectResult` until 2026-10-09. | [[ADR-023 - Public error handling]] §2, [[File Access - Design]] § *Resolution* |
 | **Load and save** | Both owned by `Project`, both through `FileAccess`. | Fixes v1's split |
@@ -128,11 +128,14 @@ move plus a CMake edit.
 
 ```toml
 name = "Sandbox"
-startupScene = "0x3f9a2c41d07e88b5"   # the startup scene's ResourceId
+exportStartupScene = "0x3f9a2c41d07e88b5"   # the shipped game's startup scene
 ```
 
-**Two keys, and that is the whole schema.** `startupScene` was added 2026-10-10 for M6's scene
-binding; the bake copies it into the boot record ([[Resources - Design]]). The rest of this
+**Two keys, and that is the whole schema.** `exportStartupScene` was added 2026-10-10 for M6's scene
+binding; the bake copies it into the boot record ([[Resources - Design]]). It was renamed from
+`startupScene` on 2026-10-12 at S8-T6, because it names the scene a shipped game boots into, not
+the scene the editor has open; it changes only when the export setting does. The scene
+the editor reopens is per-user state, not this key (§ *Open questions*, per-user settings). The rest of this
 paragraph is the original 2026-09-04 reasoning for `name` alone. Decided 2026-09-04, when § *The project layout*
 made the directories a convention. `shaderDir` and `assetDirs` were dropped the same day: once
 the bootstrap derives every root from the project root, a manifest key naming those directories
@@ -409,7 +412,14 @@ it compiles, never fires, and `parse()` throws instead. Wired at S5-T4 on 2026-0
 `InvalidPath` for a `manifestPath` the mount table refuses, and the same codes from `save`.
 Until 2026-10-09 these were folded into `ReadFailed` and `WriteFailed`. `ParseFailed` means the
 bytes are not TOML. `SchemaInvalid` means it is valid TOML with `name` missing or not a
-string. An editor reports each of these very differently.
+string, or with an `exportStartupScene` that is not a string of `0x` and 16 hex digits. An
+editor reports each of these very differently.
+
+**`exportStartupScene` is optional** (S8-T6, #131, 2026-10-12). An absent key loads as a null
+`ResourceId`, so `Project` holds no `std::optional`; `save` omits the key while it is null and
+otherwise writes `0x` and 16 zero-padded hex digits. A TOML integer cannot hold every id, which
+is why the value is a string. `load` commits the root, the name and the id together, on
+success only.
 
 **An empty file is not a parse error.** It is valid TOML and parses to an empty table, so it
 lands on `SchemaInvalid` for the missing `name`.
