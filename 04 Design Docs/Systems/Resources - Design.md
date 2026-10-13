@@ -204,14 +204,14 @@ generator yet; S8-T13 is the first card that creates an id.
 | When | Thread | What happens |
 |---|---|---|
 | `configureSimulation()` | Main, before the simulation thread starts | Loaders register, then registration closes. |
-| Startup loading phase | Simulation, after readiness, before the first Tick | The boot roots (startup scene, selected systems' settings assets) and everything they hard-reference load, then systems read their settings. The first Tick waits, and the timeline restarts after the phase so the load time is not replayed as catch-up ticks. A failure ends a runtime's run with its `std::error_code`; the editor reports it and stays open. |
+| Startup loading phase | Simulation, after readiness, before the first Tick | The boot roots (startup scene, selected systems' settings assets) and everything they hard-reference load, then systems read their settings. The first Tick waits, and the timeline restarts after the phase so the load time is not replayed as catch-up ticks. A failure ends a runtime's run with its `std::error_code`; the editor reports it and stays open. The hook is `App::simulationStartupLoad()` ([[Simulation Thread - Design]] § *Lifecycle*). |
 | Scene change (T1 and later) | Simulation, with ticking stopped | Acquire the new scene's references, then release the old scene's, then drain frees. Shared content is never reloaded. |
 | Editor load commands (T1) | Simulation, stopped or paused | Main's UI sends load commands through the main-to-simulation queue. A stopped or paused simulation does not tick, so each command runs as a loading phase; results come back as published copies. |
 | Barrier resource step (A1) | Simulation | After structural commands and NetId assignment: issue the Tick's soft requests, publish finished loads, drain frees. Its order against the event step is A1's to fix. |
 | `simulationShutdown()` | Simulation | Wait for load batches, release everything, log what is still counted. |
 
 The startup load runs **after** readiness on purpose. `SimulationThread::start` blocks main
-until the thread signals ready (`engine/app/src/SimulationThread.cpp:49`), so a load inside
+until the thread signals ready (`engine/app/src/SimulationThread.cpp:50`), so a load inside
 `simulationInit()` would freeze main's event pump.
 
 A system never acquires or releases from `tick`, though it may resolve ready entries on any
@@ -431,7 +431,7 @@ build profiles each carry their own scene list (both from memory).
   answer should serve all of these. Owner: S8-D1, before the Sprint 09 boundary; nothing in Sprint 08 writes a reference field.
 - **The editor's stopped, playing and paused states.** Decided Oct 10: only Play ticks; stopped
   and paused do not, and the simulation thread stays alive and idle between commands. Today every
-  App ticks from readiness until stop (`engine/app/src/SimulationThread.cpp:177-189`), so the
+  App ticks from the end of the startup phase until stop (`engine/app/src/SimulationThread.cpp:188-200`), so the
   idle state and a wake on command arrival are T1's to build in [[Simulation Thread - Design]].
 - **Changing scene during a run**, and whether that ends an ADR-022 simulation session. The
   cache lives per process either way (ADR-024 §4). M6 loads only the startup scene. Owner: T1.

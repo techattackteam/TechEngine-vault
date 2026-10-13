@@ -102,7 +102,7 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
 
 ### Story E: The runtime loads the startup scene
 
-- [ ] **S8-T8** · Run a startup loading phase before the first Tick · P1 · 🟡 Light · 1-2h ·
+- [x] **S8-T8** · Run a startup loading phase before the first Tick · P1 · 🟡 Light · 1-2h ·
   done: a simulation-thread hook runs after readiness and before the first Tick, and the
   timeline restarts after it, so load time is not replayed as catch-up Ticks. A failure ends
   the runtime's run with its `std::error_code`, and no Tick runs. Prove the order (ready, then

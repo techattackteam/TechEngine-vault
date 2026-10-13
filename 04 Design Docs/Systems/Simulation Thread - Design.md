@@ -225,7 +225,7 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 | `mainThreadUpdate()` / `shouldClose()` | Main only; wait for events and read published status. No live simulation references. |
 | `wakeMainThread()` / `renderTiming()` | Any thread; wake a blocked main loop and report copied render timing. Overrides must be thread-safe. |
 | `simulationInit()` | Simulation; initialize owned state and initial output before readiness. |
-| Startup loading phase | Simulation, after readiness and before the first tick; not a hook yet. Loads the boot roots and everything they hard-reference on the `JobSystem`, then systems read their settings, then the timeline restarts so the load is not replayed as catch-up. A failure ends a runtime's run and is reported by the editor. [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4; built in M6. |
+| `simulationStartupLoad()` | Simulation, after readiness and before the first tick; the startup loading phase. Loads the boot roots and everything they hard-reference on the `JobSystem`, then systems read their settings ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4). The timeline restarts after it, so the load is not replayed as catch-up. A returned error is fatal for that App: no tick runs, `simulationShutdown()` still runs, `App::stopSimulation()` logs the code and `run()` returns 1, while `completion()` stays `Completed` (S8-T8, #134). An App that survives a failed load, like the editor, reports it in its own override and returns `{}`. The default does nothing; the runtime's override comes with S8-T9. |
 | Each fixed tick | Simulation; not a hook. Ingress is consumed, then the executor runs the scheduled systems and the barrier. `fixedUpdate` was removed in S6-T9 (#92). |
 | `publishSnapshot(simulation)` | Simulation; fixed context only, once after catch-up for extraction/publication; initial publication before readiness. |
 | `simulationShutdown()` | Simulation; release simulation-owned state after outstanding jobs settle, including resource load batches (ADR-024 §4). |
@@ -235,7 +235,7 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 stopped, playing or paused. Only playing ticks; stopped and paused do not, as in Unity and
 Unreal, while the user keeps editing the scene. The simulation thread stays alive and idle
 between commands and runs each editor load command as a loading phase ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4). Today every
-App ticks from readiness until stop (`engine/app/src/SimulationThread.cpp:177-189`), so the
+App ticks from the end of the startup phase until stop (`engine/app/src/SimulationThread.cpp:188-200`), so the
 idle state and a wake on command arrival are T1's to build.
 
 Optional work hooks have empty defaults. A headless default main waits on stop/completion;
