@@ -45,7 +45,6 @@ kanban-plugin: board
 
 ## Story H: Auto lane and fired backlog
 
-- [ ] **S8-T12** · Clean up `InputState`'s leftovers · P3 · 🤖 Auto · 1-2h: drop `isHeld`'s redundant `focused` check, `std::size_t` casts, cases for the `Unknown` guards; existing tests unedited.
 - [ ] **S8-P2** · Record #112's CI change and re-measure the lane's CI cost · P3 · 🤖 Auto · 1-2h: a B3 line for the apt cache action, measured billed minutes against the 16.1 figure; pinning stays Miguel's question.
 - [ ] **S8-P3** · Check *Clock - Design*'s several-simulations argument · P3 · 🤖 Auto · 1h: report-only, with a proposed paragraph.
 - [ ] **S8-T15** · Fold the schedule's repeated bitmask and entry guards · P3 · 🤖 Auto · 2h: one mask helper and one checked-entry member in `ScheduleAccess.cpp` and `Schedule.cpp`; tests unedited.
@@ -63,6 +62,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S8-T12** · Clean up `InputState`'s leftovers · P3 · 🤖 Auto · 1-2h: #133, branch `S8-T12/input-state-leftovers`, opened Oct 13 by the morning auto run. Built and tested green on `linux-debug`; Miguel to review and merge.
 
 
 ## ✅ Done: Sprint 08
