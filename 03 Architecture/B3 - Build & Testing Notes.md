@@ -416,6 +416,55 @@ price of a token permission and more moving parts.
 - No dispatch was triggered to show this, because on an unchanged `master` it would have
   repeated #120's push run.
 
+## Cached apt install (#112, 2026-10-01)
+
+**#112 (`8c32ea7b`) replaced `apt-get update && apt-get install` on all three Linux jobs**
+(`build-test`, `coverage`, `sanitizers`) with `awalsh128/cache-apt-pkgs-action@v1`, each step
+capped by `timeout-minutes: 5`. The mirror was what stalled, and the action never touches it
+on a cache hit: it restores the `.deb`s, and package versions resolve against the lists baked
+into the runner image, because it never runs `apt-get update`.
+
+**`xorg-dev` became an explicit list**: `libx11-dev`, `libxrandr-dev`, `libxinerama-dev`,
+`libxcursor-dev`, `libxi-dev` and `libxext-dev`, which is exactly what GLFW 3.4's CMake checks
+for. A configure that fails with "headers not found" means GLFW grew a dependency: add its
+`-dev` package to all three lists, not `xorg-dev` back. `ci.yml`'s GOTCHA comment on
+`build-test` says the same.
+
+**Measured effect** (S8-P2, Oct 13), over every successful first-attempt PR run of `ci.yml`
+from Sep 15 to Oct 13, 21 before the merge and 25 after:
+
+| Install step, per run | Before #112 | After |
+|---|---|---|
+| Mean across the run's Linux jobs, median run | 20.8 s | 12.2 s |
+| Slowest Linux job, median run | 30 s | 20 s |
+
+A cache miss still costs a full install: the worst run since then took 56 s (Oct 8).
+
+**Open, and Miguel's call: pinning.** `@v1` is a third-party major tag that its owner can
+move. It can be pinned to a release tag or to a full commit sha, and nothing has been decided.
+
+## CI cost per code PR, re-measured (S8-P2, 2026-10-13)
+
+The lane's cost model uses **16.1 billed minutes per code PR**
+([[Autonomous Lane - Design]] § *Cost model*). Recomputed from the Actions jobs API with
+private-repo rules (each job rounded up to a whole minute, Windows ×2), over the same 46 runs:
+
+| Run | Jobs | Billed-equivalent minutes |
+|---|---|---|
+| PR run, before #112 (21 runs) | 9 | median 43, range 32-56 |
+| PR run, after #112 (25 runs) | 10 (`prune caches` added) | median 49, range 32-60 |
+| `master` push after the merge (5 runs, Oct 11-13) | 6 | 20-25 |
+
+**A code PR is therefore about 70 minutes under those rules, roughly four times 16.1.** The
+three sanitizer legs and the three Windows jobs are most of it. Re-runs and red runs come on top.
+
+**But the repository is public**, and GitHub's run-timing API reports **0 billable
+milliseconds** for every run checked, from Aug 27 to Oct 13. Standard GitHub-hosted runners
+are free for public repositories, so the ~2,000-minute budget that ADR-008 §9 sets for a
+private repo may not bind at all. Only the account's billing page can confirm this, and the
+cost rows that cite 16.1 wait on that answer. Those rows are in [[Autonomous Lane - Design]],
+[[Autonomous Lane - Routine Prompt]] and [[Planning Workflow - Artifact Gate]].
+
 ## `<format>` header weight (S4-T1, 2026-08-29)
 
 One TU per header, holding that single `#include` and nothing else. Flags copied verbatim
