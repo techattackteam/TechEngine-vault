@@ -102,12 +102,13 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
 
 ### Story E: The runtime loads the startup scene
 
-- [ ] **S8-T8** · Run a startup loading phase before the first Tick · P1 · 🟠 Moderate · 2-3h ·
+- [ ] **S8-T8** · Run a startup loading phase before the first Tick · P1 · 🟡 Light · 1-2h ·
   done: a simulation-thread hook runs after readiness and before the first Tick, and the
   timeline restarts after it, so load time is not replayed as catch-up Ticks. A failure ends
   the runtime's run with its `std::error_code`, and no Tick runs. Prove the order (ready, then
   the phase, then Tick 1), no catch-up after a slow phase, and the failure path in
-  `SimulationThreadTests`.
+  `AppTests`, whose lifecycle probe drives the real thread (`SimulationThreadTests` only drives
+  `advance()`; corrected at `/card-start` on Oct 13).
 - [ ] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h ·
   done: `RuntimeApp` mounts `assets` at `<exe dir>/assets`, opens `common.tepack`, reads the
   boot record, opens its role's packs, and streams the startup scene into the Scene during the
@@ -139,13 +140,19 @@ S8-T1 is the root: S8-T3, S8-T4 and S8-T6 start from it. S8-T8 is independent an
 
 ### Story F: Decide Sprint 09's references
 
-- [ ] **S8-D1** · Decide how a component field declares a reference, and cut Sprint 09 · P2 · 🟡 Light · 2-3h ·
+Split on Oct 13: the decision is six forks and likely an ADR, so it is 🟢 Deep, and cutting
+the cards against it is a separate 🟡 Light step.
+
+- [ ] **S8-D1** · Decide how a component field declares a reference · P2 · 🟢 Deep · 4-6h ·
   done: [[Resources - Design]] records the reference field shape for asset and `Entity`
   references, with the Unity and Unreal baseline: what the field holds in memory, how the scene
   document remaps it, how the bake walks it, and how removing a component releases it. It
   settles the mesh as the second resource type, how a mesh is authored before T4, and whether
-  it is drawn through a published copy or only loaded until R1. Sprint 09's mesh and reference
-  cards are cut against it before the Oct 24 boundary. Follows S8-T3.
+  it is drawn through a published copy or only loaded until R1. If the field shape is hard to
+  reverse, it gets its own ADR. Starts from S8-P4's brief. Follows S8-T3.
+- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h ·
+  done: Sprint 09's mesh and reference cards are cut against S8-D1's Decided rows before the
+  Oct 24 boundary, each with a `done:` clause and a size. Follows S8-D1.
 
 ### Story G: Resource cache · stretch
 
@@ -275,8 +282,9 @@ type.
 ## Capacity note
 
 Day 1 (Oct 10) went to ADR-024 and ADR-025. Miguel is off karting both weekends, so Oct 11 and
-both days of Oct 17-18 are dev days: about **9-12 🟢, 2 🟠 and 2 🟡**. The slice uses 6 🟢,
-4 🟠 and 2 🟡 (the 🟠 cards can take a 🟢 slot; S8-T13 and S8-T14 were added on Oct 11); Story G adds 2 🟢 as stretch. Using all
+both days of Oct 17-18 are dev days: about **9-12 🟢, 2 🟠 and 2 🟡**. The slice uses 7 🟢,
+3 🟠 and 3 🟡 (the 🟠 cards can take a 🟢 slot; S8-T13 and S8-T14 were added on Oct 11; on Oct 13
+S8-T8 dropped to 🟡, S8-D1 rose to 🟢, and S8-D2 split off as 🟡); Story G adds 2 🟢 as stretch. Using all
 four weekend days leaves no rest day, against the Dashboard guardrail; the stretch is P2 so
 that a rest day costs nothing.
 

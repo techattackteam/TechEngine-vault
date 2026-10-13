@@ -27,14 +27,15 @@ kanban-plugin: board
 
 ## Story E: The runtime loads the startup scene
 
-- [ ] **S8-T8** · Run a startup loading phase before the first Tick · P1 · 🟠 Moderate · 2-3h: after readiness, before Tick 1, timeline restart, a failure ends the run. Independent.
+- [ ] **S8-T8** · Run a startup loading phase before the first Tick · P1 · 🟡 Light · 1-2h: after readiness, before Tick 1, timeline restart, a failure ends the run. Independent.
 - [ ] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h: mount `<exe dir>/assets`, follow the boot record, stream the scene in the startup phase; a headless case over packs in a scratch directory. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14. The named rollover risk.
 - [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h: with no client startup scene, the editor builds a small `Transform`-only scene in code, writes it through the scene writer, indexes it and saves its id to `project.toml`; commit the result on `projects/dev`; `.gitattributes` marks `.tescene` and `.tepack` binary. Follows S8-T3 and S8-T6.
 
 
 ## Story F: Decide Sprint 09's references
 
-- [ ] **S8-D1** · Decide how a component field declares a reference, and cut Sprint 09 · P2 · 🟡 Light · 2-3h: the field shape with the Unity and Unreal baseline, the mesh's authoring and draw policy, Sprint 09's cards cut before Oct 24. Follows S8-T3.
+- [ ] **S8-D1** · Decide how a component field declares a reference · P2 · 🟢 Deep · 4-6h: the field shape with the Unity and Unreal baseline, the mesh's authoring and draw policy; its own ADR if the shape is hard to reverse. Starts from S8-P4's brief. Follows S8-T3.
+- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: cut against S8-D1's Decided rows before Oct 24. Follows S8-D1.
 
 
 ## Story G: Resource cache · stretch

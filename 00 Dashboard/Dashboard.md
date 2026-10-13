@@ -67,7 +67,7 @@ stale-artifact + hub-drift check. Running both wrote two journal entries and upd
 Dashboard twice before any code got written.
 → **Next ceremony:** `/weekly-review` on the **Oct 17-18** weekend, mid-Sprint 08. If that
 weekend is lost, it falls back to Mon Oct 19 or Thu Oct 22. Then `/sprint-plan` for the Sprint 08
-boundary on **Oct 24-25**, after S8-D1 has cut Sprint 09's cards; its retro decides whether the
+boundary on **Oct 24-25**, after S8-D2 has cut Sprint 09's cards; its retro decides whether the
 decide-first trial becomes the rule. The Sprint 07 boundary is recorded in
 [[2026-10-11 Sprint 07 Retrospective]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
