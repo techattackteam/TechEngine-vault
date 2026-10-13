@@ -180,7 +180,7 @@ type.
   ordinary chat, sprint planning or card work. `.claude/commands/adr.md` and
   `.claude/agents/engine-researcher.md` point to it in one line instead of restating it.
   Narrowed by Miguel on Oct 11, from a rule for every session.
-- [ ] **S8-T12** · Clean up `InputState`'s leftovers · P3 · 🤖 Auto · 1-2h ·
+- [x] **S8-T12** · Clean up `InputState`'s leftovers · P3 · 🤖 Auto · 1-2h ·
   done: `InputState::isHeld` drops its `focused` check, because `apply` already keeps both
   bitsets empty while unfocused (`engine/platform/src/input/InputState.cpp:53`, `:60`); the
   `size_t` casts become `std::size_t`; and new cases cover the `Unknown` guards in `apply` and
