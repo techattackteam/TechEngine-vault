@@ -398,6 +398,14 @@ groups are kept, because they show where future work will land.
   - The two `... does not depend on recursion depth` cases (`HierarchyTests`, `TransformTests`)
     take 6 s each in Debug. They build a 4096-deep chain top-down, and `setParent`'s cycle check
     makes that quadratic.
+  - On CI (run 38367963268, Oct 13, 2026), only `win ASan` has a slow test step: 173 s for 621
+    cases, against 13-45 s on every other leg. About 89 s is process startup for the ~595 short
+    cases (0.15 s each under ASan), about 61 s is the window and GL cases (about 2.2 s each), and
+    about 21 s is the two recursion-depth cases.
+  - No test preset sets `execution.jobs`, so `ctest` runs one case at a time on 4-core runners.
+  - Three `EditorAppTests` cases are tagged only `[editor]` (project mounts, asset index, the
+    `assets/client` overlay), but `bootstrap()` opens a window, so a split by tag would leave
+    them in the unit tier.
 
   Decide which tiers exist (unit, OS/driver integration, stress, and later functional, visual and
   perf), how a case is tagged into one, where and when each tier runs (local, every CI leg,
@@ -405,6 +413,19 @@ groups are kept, because they show where future work will land.
   interacts with the `TE_ENSURE` report-once entry above. Compare with Unity's EditMode/PlayMode
   and Unreal's automation filters, Functional Tests and Low-Level Tests. Raised by Miguel on
   Oct 11, 2026, to be settled in Sprint 09 (from Oct 24) or Sprint 10 (from Nov 7).
+- #prio/high · **Builds, not tests, set CI wall time**: on run 38367963268 (Oct 13, 2026) a PR
+  run took 12.6 min. Its critical path is `clang-format` (10 s), then `diff coverage` (4.1 min),
+  which `sanitizers` waits on, then `win ASan` (8.1 min). Three causes, from the leg logs:
+  - The four PR-only builds (`diff coverage`, `linux TSan`, `linux UBSan`, `win ASan`) hit
+    ccache 0% and took 150-237 s each. A PR restores caches only from its own ref or from
+    `master`, and `master` never runs those jobs, so every PR's first run builds them cold.
+  - `linux-clang` Debug and Release hit ccache 99% and still build for about 185 s, because
+    clang-tidy runs there and ccache does not cache it.
+  - The `needs: coverage` gate puts 4.1 min in front of the sanitizer legs.
+
+  All three fixes are `.github/workflows/ci.yml` edits, outside the Auto lane. Found while
+  measuring the test step for the entry above. **Trigger:** the test-strategy decision, since
+  both change `ci.yml`.
 - #prio/high · **Memory-management design note**: the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
 - #prio/medium · **Point later dependency allocator hooks at the profiler**: Jolt
