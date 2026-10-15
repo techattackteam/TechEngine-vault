@@ -213,13 +213,13 @@ type.
   blocks use it too, and the five `Schedule` setters share one private member that checks the
   index and returns the entry (`engine/core/src/systems/ScheduleAccess.cpp:22-63`,
   `Schedule.cpp:44-94`). Behaviour-preserving; existing tests pass unedited.
-- [ ] **S8-T16** · Check `SceneCommandBuffer`'s pending entities in one place · P3 · 🤖 Auto · 1-2h ·
+- [x] **S8-T16** · Check `SceneCommandBuffer`'s pending entities in one place · P3 · 🤖 Auto · 1-2h ·
   done: the bufferId and epoch `TE_CHECK` repeated in `despawn`, `queueAdd`, `queueRemove` and
   `apply` becomes one check on `Impl`, and the identical `Entity` and `PendingEntity` overloads
   of the private add and remove templates become one template each over the target type
   (`engine/core/src/scene/SceneCommandBuffer.cpp:105-134`, `SceneCommandBuffer.hpp:108-130`).
   Behaviour-preserving; existing tests pass unedited.
-- [ ] **S8-T17** · Share the engine-services test fixture across core and client · P3 · 🤖 Auto · 2-3h ·
+- [x] **S8-T17** · Share the engine-services test fixture across core and client · P3 · 🤖 Auto · 2-3h ·
   done: one header in `tests/support/include/TechEngine/testing/` builds the `MountTable`,
   `FileAccess`, `JobSystem`, `Clock`, `EngineContext`, `InputFrame` and `SimulationContext` set
   that `SerialExecutorTests`, `SceneEventTests` and the three `ClientTests` cases each build by

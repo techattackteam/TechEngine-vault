@@ -27,8 +27,8 @@ kanban-plugin: board
 
 ## Story E: The runtime loads the startup scene
 
-- [ ] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h: mount `<exe dir>/assets`, follow the boot record, stream the scene in the startup phase; a headless case over packs in a scratch directory. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14. The named rollover risk.
 - [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h: with no client startup scene, the editor builds a small `Transform`-only scene in code, writes it through the scene writer, indexes it and saves its id to `project.toml`; commit the result on `projects/dev`; `.gitattributes` marks `.tescene` and `.tepack` binary. Follows S8-T3 and S8-T6.
+- [ ] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h: mount `<exe dir>/assets`, follow the boot record, stream the scene in the startup phase; a headless case over packs in a scratch directory. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14. The named rollover risk.
 
 
 ## Story F: Decide Sprint 09's references
@@ -57,11 +57,16 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S8-T17** · Share the engine-services test fixture across core and client · P3 · 🤖 Auto · 2-3h: **#137**, branch `S8-T17/engine-services-fixture`, opened Oct 15 by the afternoon auto run. Built and tested locally on `linux-debug` (625/625). Waiting on Miguel to review and merge.
-- [ ] **S8-T16** · Check `SceneCommandBuffer`'s pending entities in one place · P3 · 🤖 Auto · 1-2h: **#136**, branch `S8-T16/command-buffer-pending-check`, opened Oct 15 by the morning auto run. Built and tested locally on `linux-debug` (625/625). Waiting on Miguel to review and merge.
 
 
 ## ✅ Done: Sprint 08
+
+- [x] **S8-T17** · Share the engine-services test fixture across core and client · P3 · 🤖 Auto · 2-3h: #137 `5b9d6f9`, **Oct 15**, opened by the Oct 15 afternoon auto run. All build legs, the sanitizers, clang-format and diff coverage passed. Test code only, in three commits. **Two clauses were read wider than written.** "The copied helpers go too" did not say where they go. Only `core` uses them, so they moved into core's test tree (`events/EventAmounts.hpp`, `systems/IndexedComponents.hpp`), not into `tests/support` beside the two new headers. The card named only `ScheduleTests`' `registerMaskComponents`, but `TaskGraphTests`' `registerGraphComponents` was its twin, so both files now register one shared `IndexedComponent`, and their tags became `Test.IndexedComponent.<n>`. No test reads those tags. The lane flagged the rename as Miguel's call, and the merge accepted it without comment. **A fourth copy was left alone:** `InputDeliveryTests`' fixture builds the same seven services by hand; it is in [[Backlog]] → *core*. Every `TEST_CASE` and `SECTION` was kept, and no assertion changed. Story H stays open with S8-P5 to S8-P8. **Retro:**
+	  - The PR has no review conversation, so this entry and [[2026-10-15 14-08 Auto Run]] are the only record of the tag rename.
+- [x] **S8-T16** · Check `SceneCommandBuffer`'s pending entities in one place · P3 · 🤖 Auto · 1-2h: #136 `9956fd2`, **Oct 15**, opened by the Oct 15 morning auto run. All build legs, the sanitizers, clang-format and diff coverage passed. The `done:` clause held as written. The check is `Impl::checkPending`, so the public header gains no symbol, and each private template takes a deduced `Target`. `queueAdd` and `queueRemove` keep their two overloads, so only a `PendingEntity` is checked. **One behaviour change the clause did not foresee:** a failed check now reports `checkPending`'s source line instead of the caller's. No test reads it. **Retro:**
+	  - The lane was unsure whether MSVC would let `Impl` read `PendingEntity`'s private fields through the befriended `SceneCommandBuffer`. A nested class of a friend shares its access, and the Windows legs passed.
+	  - Only one test ("a pending entity cannot cross per-system command buffers") covers the moved check, and nobody checked which of the four call sites it reaches.
+	  - The squash commit dropped the PR title's `S8-T16:` prefix, so the branch name is the only link back to this card.
 
 - [x] **S8-T15** · Fold the schedule's repeated bitmask and entry guards · P3 · 🤖 Auto · 2h: #135 `6f6bbff`, **Oct 15**, opened by the Oct 14 afternoon auto run. All build legs, the sanitizers, clang-format and diff coverage passed on the final head. **Two clauses were read wider than written.** The card named five `Schedule` setters, but `addInputHandler` carried the same guards, so `checkedEntry` serves six. "One private mask helper" became three (`hasBit`, `setBit`, `orWord`), because testing a bit and setting one cannot share a function. `checkedEntry` keeps `.at()`, because the tests' capture handler lets a failed check continue. **Reshaped during review.** The lane's first version made the helpers `static` and had `Schedule::addAccess` OR straight into both objects' masks. A commit on the branch then removed the helpers and inlined the arithmetic again, together with a new `ScheduleAccess::merge`. Miguel wanted only the `static` gone, so the helpers came back as non-static private members, and `merge` stayed and ORs through `orWord`; `Schedule` no longer touches the masks. No test was edited. Story H stays open with S8-T16 and S8-T17. **Retro:**
 	  - The commit that removed the helpers (`6d91f46`) was not pushed by the lane's session, yet it read as the lane's work, because every commit carries Miguel's name. Who pushed it is unknown. A branch's history cannot show which session wrote a commit, so check before attributing one.

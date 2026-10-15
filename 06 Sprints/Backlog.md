@@ -246,6 +246,13 @@ groups are kept, because they show where future work will land.
   remove about 30 lines, but the scene tests call it about 85 times, so the choice is yours.
   Found by the code sweep on Oct 1, 2026. **Trigger:** the next `ArchetypeStorage` API change.
 
+- #prio/low · **`InputDeliveryTests` still builds the engine services by hand**:
+  `InputDeliveryFixture` (`engine/core/tests/systems/InputDeliveryTests.cpp:226-244`) builds the
+  same seven services that `TechEngineTests::EngineServices` now builds for the executor and
+  scene-event fixtures. Deriving from it is the same edit S8-T17 made to those two. S8-T17's card
+  did not name this copy, so the lane left it. Found at S8-T17, Oct 15. **Trigger:** the next
+  change to that fixture, or a code sweep of `core`'s tests.
+
 ## client
 
 ## app
