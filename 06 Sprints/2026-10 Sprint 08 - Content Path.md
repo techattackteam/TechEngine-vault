@@ -207,7 +207,7 @@ type.
   or property, and how one walk serves save, load, cooking and release. It names the sources it
   read and marks anything taken from memory. It maps each answer onto TechEngine's `visit` seam
   (ADR-016 §2) without choosing; S8-D1 decides. Report-only, and best done in week 1.
-- [ ] **S8-T15** · Fold the schedule's repeated bitmask and entry guards · P3 · 🤖 Auto · 2h ·
+- [x] **S8-T15** · Fold the schedule's repeated bitmask and entry guards · P3 · 🤖 Auto · 2h ·
   done: `ScheduleAccess`'s two identical bit-setting loops and the word and bit arithmetic in
   `reads` and `writes` use one private mask helper, `Schedule::addAccess`'s two resize-and-OR
   blocks use it too, and the five `Schedule` setters share one private member that checks the
