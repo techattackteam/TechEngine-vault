@@ -9,8 +9,9 @@ index) · `client` (GPU mirror, from R1)
 **Status:** implementing. Both ADRs were **Accepted** on 2026-10-10. Built so far: `ResourceId`
 and the scene asset (S8-T3, #127, 2026-10-11), the pack writer and reader (S8-T4, #128, 2026-10-11),
 the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), and the editor's
-`AssetIndex` and loose source (S8-T6, #131, 2026-10-12), and the client export target (S8-T7,
-#132, 2026-10-12).
+`AssetIndex` and loose source (S8-T6, #131, 2026-10-12), the client export target (S8-T7,
+#132, 2026-10-12), id generation with the editor's startup scene (S8-T13, #138, 2026-10-15),
+and the runtime's startup load (S8-T9, #139, 2026-10-15).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
@@ -75,7 +76,7 @@ built or run.
 | Writer and reader both in `core`, at M6; the bake driver stays in the editor. | ADR-025 §6 |
 | The runtime mounts `assets` beside its executable and follows the boot record. | ADR-025 §7 |
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
-| The export is an editor function per **export target**, a `Role` value. It writes one target into the folder it is given; T2's export command writes several targets into one folder, one subfolder each. Before T2, the editor exports the client target at startup into its own executable folder. | Miguel, Oct 11 and 12; § *Export targets* |
+| The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`, numbered `<name>(1)`, `<name>(2)` when that folder exists. Before T2, the editor exports the client target in its startup load, into its own executable folder. | Miguel, Oct 11, 12 and 15; § *Export targets* |
 | The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
 | A source answers `Present`, `AbsentForRole` or `Unknown` through a query; only its `read` returns a `std::error_code`. | Miguel, Oct 11; § *Two sources, one cache* |
 | An id missing from the role's packs but listed in the boot record's sides is absent for the role; in neither, it is unknown. | Miguel, Oct 11; § *The pack source* |
@@ -155,8 +156,11 @@ the project load. Miguel settled these at `/card-start`:
   shaders assets. Only a side folder that cannot be listed fails `build`.
 - **A duplicate id is indexed under neither path.** Each extra path becomes a `DuplicateAsset`
   paired with the first, and a warning names both. The loose source then answers `Unknown`.
-- **Records stay sorted by id**, and `find` is a binary search over them. Anything that adds a
-  record later (S8-T13) must keep that order.
+- **Records stay sorted by id**, and `find` is a binary search over them. `add` keeps that order
+  (S8-T13): it inserts at the id's position and `TE_CHECK`s a null id, an id already indexed, and
+  an id reported as a duplicate. `generateId` draws a random id and draws again on zero or on any
+  of those ids. It reads two 32-bit values from `std::random_device`; a once-seeded `mt19937_64`
+  was rejected, because a 32-bit seed would give two editor sessions the same id sequence.
 
 The loose source is `LooseSource`, beside the index. It serves `common` and `client` and
 reports a `server` id as `AbsentForRole`, so it takes no role. Nothing in Sprint 08's product
@@ -197,14 +201,15 @@ The surface, including the type's name, is pinned at the first Dev card. It is n
 (ADR-006 §5); ADR-006 §4's sketch called it `ResourceRegistry`. `ResourceId` itself shipped
 early, at S8-T3, because the scene header needs it: a strong `u64` type in
 `engine/core/include/TechEngine/core/resources/ResourceId.hpp`, where zero is null. It has no
-generator yet; S8-T13 is the first card that creates an id.
+generator of its own: ids are created only in the editor, by `AssetIndex::generateId`
+(§ *The editor's id index*, S8-T13).
 
 ### Loading phases and other threads
 
 | When | Thread | What happens |
 |---|---|---|
 | `configureSimulation()` | Main, before the simulation thread starts | Loaders register, then registration closes. |
-| Startup loading phase | Simulation, after readiness, before the first Tick | The boot roots (startup scene, selected systems' settings assets) and everything they hard-reference load, then systems read their settings. The first Tick waits, and the timeline restarts after the phase so the load time is not replayed as catch-up ticks. A failure ends a runtime's run with its `std::error_code`; the editor reports it and stays open. The hook is `App::simulationStartupLoad()` ([[Simulation Thread - Design]] § *Lifecycle*). |
+| Startup loading phase | Simulation, after readiness, before the first Tick | The boot roots (startup scene, selected systems' settings assets) and everything they hard-reference load, then systems read their settings. The first Tick waits, and the timeline restarts after the phase so the load time is not replayed as catch-up ticks. A failure ends a runtime's run with its `std::error_code`; the editor reports it and stays open. The hook is `App::simulationStartupLoad()` ([[Simulation Thread - Design]] § *Lifecycle*). Until Sprint 09's editor load, the editor's override only creates or adopts its startup scene, then runs the startup export (S8-T13). |
 | Scene change (T1 and later) | Simulation, with ticking stopped | Acquire the new scene's references, then release the old scene's, then drain frees. Shared content is never reloaded. |
 | Editor load commands (T1) | Simulation, stopped or paused | Main's UI sends load commands through the main-to-simulation queue. A stopped or paused simulation does not tick, so each command runs as a loading phase; results come back as published copies. |
 | Barrier resource step (A1) | Simulation | After structural commands and NetId assignment: issue the Tick's soft requests, publish finished loads, drain frees. Its order against the event step is A1's to fix. |
@@ -367,15 +372,39 @@ runtime-form files first, and the bake does not change.
 
 **The export is a function, and its trigger changes with the rungs** (decided Oct 11).
 `Project::exportTo` takes an export target, the id index and an output folder. T2's export
-command will call it; until then the editor exports the client target once at startup, after
-opening the project, and logs a failure without stopping. A command-line mode was considered and dropped: the shipped editor calls the function
+command will call it; until then the editor exports the client target once in its startup
+load (S8-T13), after its startup scene exists, and logs a failure without stopping. A command-line mode was considered and dropped: the shipped editor calls the function
 from its UI, so parsing flags would be code nothing keeps. Unity is the same shape: its build
 menu and `-executeMethod` both call `BuildPipeline.BuildPlayer`. The output defaults to the
 editor's own executable folder. Both executables build into one `${CMAKE_BINARY_DIR}/bin`
-(`CMakeLists.txt:29`), so a development bake lands in `assets/` beside `runtime` with no copy
-step and no configure-time path for the runtime; Unreal stages its cooked output in a second
-step, which the shared output folder makes unnecessary here. For that folder to hold only packs, the
-editor's engine folder moves from `<exe dir>/assets` to `<exe dir>/engine`, matching its alias.
+(`CMakeLists.txt:29`), and the editor's engine folder moved from `<exe dir>/assets` to
+`<exe dir>/engine`, matching its alias, so `assets/` there was free for packs.
+
+**Since S8-T13 the packs no longer land beside `runtime`.** `exportTo` writes into
+`<folder>/<project name>/assets/` (§ *Export targets*), so the development export lands in
+`bin/<config>/Dev/assets/`, or `Dev(1)` and later once `Dev` exists, and every editor launch adds
+a folder. Until the export command decides that layout, the runtime reads the first one,
+`<exe dir>/Dev` (§ *The runtime's startup load*).
+
+### The runtime's startup load
+
+Built at S8-T9 (#139, 2026-10-15) as `RuntimeApp::simulationStartupLoad()` in
+`apps/runtime/src/RuntimeApp.cpp`. It reads the scene directly, without a cache, because the
+cache is S8-T10's stretch. Miguel settled these at `/card-start`:
+
+- **`RuntimeApp` takes a folder and mounts `<folder>/assets` in `init()`**, through a protected
+  `mountAssets()` that the headless tests call, since `init()` also opens the window. `main`
+  passes `<exe dir>/Dev`, the dev project's first export, and ignores `Dev(1)` and later. This
+  is a development stopgap against ADR-025 §7, which still says `<exe dir>/assets`.
+- **The order:** open `assets://common.tepack`, read its boot record, `PackSource::open` the
+  client's packs at `assets://`, then `find` and `read` the startup scene into the live scene.
+- **A missing or broken file returns its own error unchanged** (`FileError::NotFound`,
+  `ReadError::Truncated`). **A missing startup scene is `ReadError::Malformed`**: a
+  `common.tepack` with no boot record, a null startup-scene id, or an id the client's packs do not
+  hold. No error enum outside the editor means "not here", and these are all export errors.
+- **`find` must say `Present` before `read`**, because `PackSource::read` asserts on any other id.
+- After a successful load, the runtime logs the scene's tree with each entity's local position,
+  because nothing draws entities yet.
 
 ### Export targets
 
@@ -391,11 +420,15 @@ build profiles each carry their own scene list (both from memory).
 | Dedicated server | `common`, `server` | DedicatedServer |
 | Listen-server | `common`, `client`, `server` | ListenServer |
 
-- **`exportTo` writes one target into `<folder>/assets/`**: only that target's packs, with the
-  boot record in its `common.tepack`. One target's folder is a complete layout beside its
-  executable, which is why the development export can write straight into `bin/`.
-- **Several targets are T2's job.** The user picks one folder, and the command exports each
-  chosen target into its own subfolder of it. The subfolder names are T2's to pick.
+- **`exportTo` writes one target into `<folder>/<project name>/assets/`**: only that target's
+  packs, with the boot record in its `common.tepack`. When `<project name>` already exists in the
+  folder, it writes `<project name>(1)`, then `(2)`, and so on, and it never writes into an existing
+  folder. The name is chosen only after the startup scene is validated, so a failed export claims
+  no folder. Miguel added the project folder at S8-T13 (#138, 2026-10-15). The project folder is a
+  complete layout once a runtime executable sits beside its `assets/` (T5).
+- **Several targets are T2's job.** Each export claims its own project folder today, so a second
+  target exported into the same folder would become `<project name>(1)`. T2 decides how a target
+  appears in the folder name.
 - **The startup scene must be on a side the target ships.** A client target whose scene is a
   server asset fails the export, because the client could never open it.
 - **Built at S8-T7 for the client target only** (#132, 2026-10-12), as `Project::exportTo` in
@@ -419,6 +452,11 @@ build profiles each carry their own scene list (both from memory).
 
 ## Open questions
 
+- **How the runtime reaches the exported folder.** The development export lands in
+  `bin/<config>/<project name>(n)/assets/`, not in `<exe dir>/assets/`, where ADR-025 §7 has the
+  runtime look. S8-T9 hard-coded `<exe dir>/Dev` as a stopgap (§ *The runtime's startup load*).
+  Copying the runtime into the export folder, or a development-only path argument, are the
+  candidates, and the answer may amend ADR-025 §7. Owner: T2, with T5's distributable.
 - **Whether `PackReader::open` rejects non-zero `flags`.** Today it ignores them, so a future
   compressed pack would be read as raw bytes. Owner: whoever adds compression behind `flags`.
 - **A second real resource type in M6.** Planning on Oct 11 put it in Sprint 09 and leaned to a

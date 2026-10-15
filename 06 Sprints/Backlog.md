@@ -286,6 +286,12 @@ groups are kept, because they show where future work will land.
   ownership review, Sep 27. **Trigger:** the editor inspector on rung T1, or any main-thread
   hook that wants Scene data.
 
+- #prio/low · **The runtime logs every loaded entity at `INFO`**: after the startup load,
+  `RuntimeApp::logSceneTree` writes one `INFO` line per entity (S8-T9, #139). That is useful
+  while nothing draws entities, but a real scene would flood the log. Drop the lines to
+  `TE_LOGGER_DEBUG` or keep only the summary line. **Trigger:** the first scene with more than a
+  handful of entities, or the first card that draws them.
+
 ## net
 
 - #prio/medium · **Assign NetIds at the Tick barrier**: connect server-authoritative NetId
@@ -306,13 +312,12 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
-- #prio/high · **Keep editor tests from exporting into `bin/`**: `EditorApp::init` exports the
-  client target into its own executable folder, and the editor's test executable builds into
-  the same `bin/<config>/` as `runtime`. Today no scratch project names a startup scene, so the
-  export fails before it writes. Once S8-T13 creates a startup scene at editor startup, every
-  editor test that bootstraps will write its scratch packs over the development export in
-  `bin/<config>/assets/`, and parallel `ctest` runs will write the same files. Found at S8-T7 on
-  Oct 12, 2026. **Trigger:** S8-T13.
+- #prio/medium · **One shared call to create a scene asset**: `EditorApp::writeStartupScene`
+  checks the path, generates the id, writes the file and adds the index record, which is what a
+  content browser's *New Scene* also needs. An `AssetIndex::createScene(files, scene, side, name,
+  out)` returning `FileError::AlreadyExists` for a taken path was proposed at S8-T13 on Oct 15 and
+  deferred by Miguel; the code carries a `TODO` on `writeStartupScene`. **Trigger:** the next asset
+  kind's writer (Sprint 09's mesh), or the content browser.
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the

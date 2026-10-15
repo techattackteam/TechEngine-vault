@@ -109,14 +109,14 @@ resource cache is the sixth; its core is this sprint's P2 stretch, and the rest 
   the phase, then Tick 1), no catch-up after a slow phase, and the failure path in
   `AppTests`, whose lifecycle probe drives the real thread (`SimulationThreadTests` only drives
   `advance()`; corrected at `/card-start` on Oct 13).
-- [ ] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h ·
+- [x] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h ·
   done: `RuntimeApp` mounts `assets` at `<exe dir>/assets`, opens `common.tepack`, reads the
   boot record, opens its role's packs, and streams the startup scene into the Scene during the
   startup phase. A missing pack or startup scene ends the run with its error. Prove it with a
   headless `RuntimeAppTests` case over packs that the test writes into a scratch directory, and
   record Miguel's windowed run: launch the editor on `projects/dev`, then `runtime.exe` loads
   what it exported. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14.
-- [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h ·
   done: after opening the project and before the startup export, an editor whose project names no
   client startup scene builds a small scene in code (a parent with two children, `Transform` only). It writes the scene to
   `project://assets/common/` through the scene document writer with a fresh `ResourceId`, adds
@@ -267,14 +267,23 @@ type.
 
 ## Definition of Done
 
-- [ ] A headless test writes packs into a scratch directory, and `RuntimeApp` loads the startup
+- [x] A headless test writes packs into a scratch directory, and `RuntimeApp` loads the startup
   scene from them before its first Tick; a missing pack ends the run with its error.
-- [ ] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
+  Met Oct 15 by S8-T9, #139 `8cb43014`: `RuntimeAppTests` calls the startup hook directly and
+  proves the load and each error. That the hook runs before Tick 1, and that its error ends the
+  run, is S8-T8's `AppTests` proof (#134), not re-run here.
+- [x] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
   committed startup scene from `bin/assets/`.
+  Met Oct 15 by Miguel's run after S8-T9 (#139 `8cb43014`). The packs were read from
+  `bin/Debug/Dev/assets/`, not `bin/assets/`, because S8-T13 moved the export
+  ([[Resources - Design]] § *The runtime's startup load*). Nothing on screen changes, because
+  nothing draws entities yet; the runtime's log shows the scene was loaded.
 - [x] `Project::exportTo` turns a project's client target into `common.tepack` and `client.tepack`
   with a boot record, and the editor runs it at startup until T2's export command replaces that call.
   Met Oct 12 by S8-T7, #132 `eb62d607`. Until S8-T13 creates its scene, the startup export on
   `projects/dev` logs `NoStartupScene` and the editor keeps running (Miguel's run, Oct 12).
+  S8-T13 created that scene on Oct 15 (#138 `7aca05bb`); the startup export now runs in the
+  editor's startup load and writes into `<exe dir>/<project name>/assets/`, numbered when taken.
 - [ ] Touched design notes ([[Resources - Design]], [[Serialization - Design]],
   [[Project - Design]], [[Simulation Thread - Design]], [[File Access - Design]]) describe what
   shipped; validation records keep tests, CI, attended runs and unrun checks apart.

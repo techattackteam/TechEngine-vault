@@ -234,8 +234,9 @@ directory, and a shipped game keeps them in `assets/` (ADR-025 §7).
 ### Two bootstraps
 
 The editor starts with a project root, mounts it, reads `project.toml` for the name,
-then derives the remaining mounts from the root by convention. `RuntimeApp::init()`
-currently mounts nothing; M6 must define the exported layout beside the executable.
+then derives the remaining mounts from the root by convention. `RuntimeApp::init()` mounts
+one `assets` alias at `<folder>/assets`, where `main` passes `<exe dir>/Dev` until the export
+command settles the layout (S8-T9, [[Resources - Design]] § *The runtime's startup load*).
 `App` owns the shared `MountTable`, `FileAccess`, Clock, JobSystem and simulation
 runner. [[Simulation Thread - Design]] owns the loop and hook lifecycle.
 
