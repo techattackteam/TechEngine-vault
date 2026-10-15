@@ -27,7 +27,6 @@ kanban-plugin: board
 
 ## Story E: The runtime loads the startup scene
 
-- [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h: with no client startup scene, the editor builds a small `Transform`-only scene in code, writes it through the scene writer, indexes it and saves its id to `project.toml`; commit the result on `projects/dev`; `.gitattributes` marks `.tescene` and `.tepack` binary. Follows S8-T3 and S8-T6.
 - [ ] **S8-T9** · Load the startup scene from packs beside the runtime · P1 · 🟢 Deep · 4-6h: mount `<exe dir>/assets`, follow the boot record, stream the scene in the startup phase; a headless case over packs in a scratch directory. Follows S8-T3, S8-T5, S8-T8, S8-T13 and S8-T14. The named rollover risk.
 
 
@@ -53,6 +52,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S8-T13** · Create the startup scene at editor startup · P1 · 🟠 Moderate · 2-3h: with no client startup scene, the editor builds a small `Transform`-only scene in code, writes it through the scene writer, indexes it and saves its id to `project.toml`; commit the result on `projects/dev`; `.gitattributes` marks `.tescene` and `.tepack` binary. Follows S8-T3 and S8-T6.
 
 
 ## 👀 Review / Demo
@@ -67,7 +67,6 @@ kanban-plugin: board
 	  - The lane was unsure whether MSVC would let `Impl` read `PendingEntity`'s private fields through the befriended `SceneCommandBuffer`. A nested class of a friend shares its access, and the Windows legs passed.
 	  - Only one test ("a pending entity cannot cross per-system command buffers") covers the moved check, and nobody checked which of the four call sites it reaches.
 	  - The squash commit dropped the PR title's `S8-T16:` prefix, so the branch name is the only link back to this card.
-
 - [x] **S8-T15** · Fold the schedule's repeated bitmask and entry guards · P3 · 🤖 Auto · 2h: #135 `6f6bbff`, **Oct 15**, opened by the Oct 14 afternoon auto run. All build legs, the sanitizers, clang-format and diff coverage passed on the final head. **Two clauses were read wider than written.** The card named five `Schedule` setters, but `addInputHandler` carried the same guards, so `checkedEntry` serves six. "One private mask helper" became three (`hasBit`, `setBit`, `orWord`), because testing a bit and setting one cannot share a function. `checkedEntry` keeps `.at()`, because the tests' capture handler lets a failed check continue. **Reshaped during review.** The lane's first version made the helpers `static` and had `Schedule::addAccess` OR straight into both objects' masks. A commit on the branch then removed the helpers and inlined the arithmetic again, together with a new `ScheduleAccess::merge`. Miguel wanted only the `static` gone, so the helpers came back as non-static private members, and `merge` stayed and ORs through `orWord`; `Schedule` no longer touches the masks. No test was edited. Story H stays open with S8-T16 and S8-T17. **Retro:**
 	  - The commit that removed the helpers (`6d91f46`) was not pushed by the lane's session, yet it read as the lane's work, because every commit carries Miguel's name. Who pushed it is unknown. A branch's history cannot show which session wrote a commit, so check before attributing one.
 	  - The PR has no review conversation, so this entry is the only record of the `static` call.
