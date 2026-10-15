@@ -45,7 +45,6 @@ kanban-plugin: board
 
 ## Story H: Auto lane and fired backlog
 
-- [ ] **S8-T17** · Share the engine-services test fixture across core and client · P3 · 🤖 Auto · 2-3h: shared fixture and `Window::terminate()` guard in `tests/support`; every `TEST_CASE` and `SECTION` kept.
 - [ ] **S8-P5** · Add the `bool` to `std::error_code` gotcha to `CONVENTIONS.md` · P3 · 🤖 Auto · 1h: one bullet under *Error handling*.
 - [ ] **S8-P6** · Write down why four CI legs never restore a ccache · P3 · 🤖 Auto · 1h: the reasoning in B3 § *ccache keys*; vault-only.
 - [ ] **S8-P7** · Measure whether Jolt's precompiled header defeats ccache · P3 · 🤖 Auto · 1-2h: `ccache -sv` on a local `linux-debug` build, result in B3; report-only.
@@ -58,6 +57,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S8-T17** · Share the engine-services test fixture across core and client · P3 · 🤖 Auto · 2-3h: **#137**, branch `S8-T17/engine-services-fixture`, opened Oct 15 by the afternoon auto run. Built and tested locally on `linux-debug` (625/625). Waiting on Miguel to review and merge.
 - [ ] **S8-T16** · Check `SceneCommandBuffer`'s pending entities in one place · P3 · 🤖 Auto · 1-2h: **#136**, branch `S8-T16/command-buffer-pending-check`, opened Oct 15 by the morning auto run. Built and tested locally on `linux-debug` (625/625). Waiting on Miguel to review and merge.
 - [ ] **S8-T15** · Fold the schedule's repeated bitmask and entry guards · P3 · 🤖 Auto · 2h: **#135**, branch `S8-T15/schedule-guards`, opened Oct 14 by the afternoon auto run. Built and tested locally on `linux-debug` (625/625). Waiting on Miguel to review and merge.
 
