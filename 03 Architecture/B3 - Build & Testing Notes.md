@@ -331,6 +331,41 @@ A closed PR's entries are therefore unreadable, and only the newest `master` sna
 is ever restored. On a dry run on Oct 1, 2026, the steady state on `master` was eight
 entries and about 730 MB, and an open PR adds at most one entry per leg.
 
+### Four legs start every PR cold (S8-P6, 2026-10-16)
+
+`diff coverage`, `linux UBSan`, `linux TSan` and `win ASan` never restore a cache on a PR's
+first run. Each has its own key family, and a run restores only from its own ref or `master`.
+**`master` never writes those families**, because the four jobs are `pull_request`-only
+(`ci.yml` `coverage:` and `sanitizers:` `if:`). The entry a PR saves lives on
+`refs/pull/N/merge`, so it warms only that PR's later pushes, and `cache-cleanup.yml`
+deletes it when the PR closes. The next PR starts cold again.
+
+PR #139's two runs on Oct 15 show the size of it. Run 38807657731 was the first push;
+run 38809485445 came 14 minutes later on the same PR and restored the first run's entries.
+
+| Job | Build, cold → warm | Job, cold → warm | Billed, private rules |
+|---|---|---|---|
+| `diff coverage` | 227 s → 36 s | 5:16 → 2:07 | 6 → 3 |
+| `linux UBSan` | 110 s → 26 s | 2:52 → 1:50 | 3 → 2 |
+| `linux TSan` | 200 s → 22 s | 5:13 → 1:41 | 6 → 2 |
+| `win ASan` (×2) | 222 s → 28 s | 8:18 → 5:05 | 18 → 12 |
+| **Total** | | | **33 → 19** |
+
+**Why `master` should not run them just to warm the cache.** Running the four jobs on every
+`master` push costs at least the warm column, about 19 billed minutes per merge, and more
+when the previous `master` snapshot is older. It saves at most the difference, about 14
+minutes, and only on the first run of the next PR. Every later run of a PR is already warm
+from its own ref. One merge is roughly one PR, so the push spends more than it saves. The 14
+is also an upper bound: run 2 differed from run 1 by one merge commit, while a new PR differs
+from `master`'s snapshot by its whole diff. `win ASan`'s 198 s test step, not its build, is
+most of its job either way.
+
+Two things would change this. If the repository's runners prove free (§ *CI cost per code
+PR, re-measured*), the trade is wall time and cache storage rather than minutes. Wall time is the larger cost there:
+run 1 took 14 minutes end to end and run 2 under 8, because the cold `diff coverage` build
+and the cold `win ASan` build both sit on the critical path. And the fixes listed in
+[[Backlog]] under *Builds, not tests, set CI wall time* are `ci.yml` edits, so they are Miguel's.
+
 ### How it got here
 
 | Shape | What went wrong |
