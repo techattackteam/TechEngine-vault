@@ -226,10 +226,10 @@ type.
   hand; one header holds the `Window::terminate()` guard that `FrameRendererTests`,
   `RenderThreadTests` and `WindowTests` each define. The copied `amountsOf` and
   `registerMaskComponents` helpers go too. Every `TEST_CASE` and `SECTION` is kept.
-- [ ] **S8-P5** · Add the `bool` to `std::error_code` gotcha to `CONVENTIONS.md` · P3 · 🤖 Auto · 1h ·
+- [x] **S8-P5** · Add the `bool` to `std::error_code` gotcha to `CONVENTIONS.md` · P3 · 🤖 Auto · 1h ·
   done: one bullet under `CONVENTIONS.md` § *Error handling* says a caller that tests the result
   (`REQUIRE(f())`, `if (!f())`) still compiles after such a migration and silently inverts,
-  because an empty code is false, citing S7-D3's seven sites.
+  because an empty code is false, citing S7-D3's seven sites. Merged as #140 (`7fe3630`, Oct 16).
 - [ ] **S8-P6** · Write down why four CI legs never restore a ccache · P3 · 🤖 Auto · 1h ·
   done: [[B3 - Build & Testing Notes]] § *ccache keys* explains that a cache saved on
   `refs/pull/N/merge` serves only that PR, that `sanitizers` and `coverage` never run on
