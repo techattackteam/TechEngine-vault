@@ -43,7 +43,6 @@ kanban-plugin: board
 
 ## Story H: Auto lane and fired backlog
 
-- [ ] **S8-P5** · Add the `bool` to `std::error_code` gotcha to `CONVENTIONS.md` · P3 · 🤖 Auto · 1h: one bullet under *Error handling*.
 - [ ] **S8-P6** · Write down why four CI legs never restore a ccache · P3 · 🤖 Auto · 1h: the reasoning in B3 § *ccache keys*; vault-only.
 - [ ] **S8-P7** · Measure whether Jolt's precompiled header defeats ccache · P3 · 🤖 Auto · 1-2h: `ccache -sv` on a local `linux-debug` build, result in B3; report-only.
 - [ ] **S8-P8** · Match the routine prompt note to what the lane does · P3 · 🤖 Auto · 1h: the xvfb test line and the footer re-send step; Miguel pastes it and re-points the cron for Oct 25.
@@ -55,6 +54,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S8-P5** · Add the `bool` to `std::error_code` gotcha to `CONVENTIONS.md` · P3 · 🤖 Auto · 1h: one bullet under *Error handling*. **PR #140**, branch `S8-P5/bool-error-code-gotcha`, opened by the Oct 16 morning auto run. Miguel to merge. The card says "seven sites"; the Sprint 07 retro says the grep "dropped six"; the bullet uses both (seven sites, six missed). Check that count before merging.
 
 
 ## ✅ Done: Sprint 08
