@@ -61,6 +61,10 @@ groups are kept, because they show where future work will land.
   § *Error handling* says the mapping site logs it, but every `ec` in `FileAccess.cpp` and
   `MountTable.cpp` collapses to `FileError::IoError` or `NotFound` with nothing logged.
   **Trigger:** the first `IoError` that someone has to diagnose.
+  **Fired Oct 11:** S8-T1's first `readRange` (#126) failed all eight success cases with
+  `IoError`, and the cause (the function called itself until Windows ran out of handles) was
+  found by reading the code, because nothing logged the OS error. Re-checked against
+  `39943f19`: `FileAccess.cpp` and `MountTable.cpp` still log nothing where they map an error.
 
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
@@ -108,8 +112,17 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
+  **Fired Oct 11:** S8-T1 (#126) added `FileAccess::readRange`. The three calls are still
+  `const`, and the note's *Open questions* still records the options.
 
 ## core
+
+- #prio/medium · **Route the runtime's startup scene load through the resource cache**:
+  `RuntimeApp::simulationStartupLoad()` reads its scene straight from the pack source, written
+  before a cache existed (S8-T9). S8-T10 built one and nothing uses it, so the runtime still
+  holds no entry, no count and no handle for the scene it loaded
+  ([[Resources - Design]] § *The runtime's startup load*). **Trigger:** the first resource a
+  scene hard-references, or T1's scene change.
 
 - #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
   `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
@@ -196,6 +209,9 @@ groups are kept, because they show where future work will land.
   that every component already carries as `T::tag`, so the two registries differ. Aligning
   components would also let a component concept reject a type with no tag. Found at S7-T8,
   Sep 27. **Trigger:** the next change to `ComponentRegistry`'s registration call.
+  **Fired Oct 11:** S8-T3 (#127) changed `registerComponent`'s body to fill the serialization
+  adapters, and it still takes the tag as an argument
+  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:45`).
 
 - #prio/low · **Intra-system chunking for heavy systems**: parallelize a system's entity
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
@@ -204,13 +220,16 @@ groups are kept, because they show where future work will land.
 - #prio/low · **Three public symbols in core have no caller and no test**: `toString(Role)`
   (`engine/core/include/TechEngine/core/SimulationContext.hpp:13-23`, the only reason the header
   includes `<string>`), `ComponentRegistry::tagOf`
-  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:56`, defined at
+  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:68`, defined at
   `engine/core/src/scene/ComponentRegistry.cpp:42`) and `Writer::size()`
   (`engine/core/include/TechEngine/core/serialization/Writer.hpp:87`). `toString(Role)` lost its
   last callers when the log lines from #63 went away. Every serialization test reads the
   buffer's own `size()`. `EventRegistry::tagOf` is tested and stays. The simpler shape deletes all three, about
   25 lines. The sweep did not fix this, because the three are public API. Found by the code sweep on
   Oct 1, 2026. **Trigger:** the next edit to any of the three headers.
+  **Fired Oct 11:** S8-T1 (#126) edited `Writer.hpp` and S8-T3 (#127) edited
+  `ComponentRegistry.hpp`. Re-checked against `39943f19`: all three still have no caller and no
+  test, and only `tagOf`'s declaration moved, from `:56` to `:68`.
 
 - #prio/low · **Two Scene paths re-implement `ComponentRegistry::denseId`**:
   `Scene::addComponentInternal` and `Scene::removeComponentInternal`
@@ -229,12 +248,14 @@ groups are kept, because they show where future work will land.
   Found by the code sweep on Oct 1, 2026.
 
 - #prio/low · **`Scene::unparent` repeats `setParent`'s detach**: `setParent` validates the old
-  parent and siblings and then unlinks the child (`engine/core/src/scene/Scene.cpp:301-316` and
-  `:351-361`). `unparent` performs the same validation and the same unlink
-  (`engine/core/src/scene/Scene.cpp:417-435`). The simpler shape is one private member that
+  parent and siblings and then unlinks the child (`engine/core/src/scene/Scene.cpp:301-317` and
+  `:356-368`). `unparent` performs the same validation and the same unlink
+  (`engine/core/src/scene/Scene.cpp:426-447`). The simpler shape is one private member that
   validates and unlinks a child, and both callers use it. It would remove about 20 lines. The
   `HierarchyTests` cases cover both paths. Found by the code sweep on Oct 1, 2026.
   **Trigger:** the next change to hierarchy linking.
+  **Fired Oct 11:** S8-T3 (#127) added `Hierarchy::m_lastChild`, and both copies gained the same
+  last-child check and update, so the duplication grew. Citations re-resolved against `39943f19`.
 
 - #prio/low · **`ArchetypeStorage`'s typed mutations exist only for tests**: the
   `addComponent<T>` and `removeComponent<T>` templates
@@ -285,6 +306,14 @@ groups are kept, because they show where future work will land.
   would; `RuntimeAppTests` reads it through a probe that would need a replacement. Found at the
   ownership review, Sep 27. **Trigger:** the editor inspector on rung T1, or any main-thread
   hook that wants Scene data.
+
+- #prio/low · **No test proves the cache shuts down after the app's own shutdown**: S8-T11
+  (#142) made `SimulationThread` call `ResourceCache::shutdown()` right after
+  `app.simulationShutdown()`, so the app's releases land before the cache logs what is still
+  counted. `ResourceCacheTests` prove the cache's wait and log, but no `AppTests` case drives
+  the real thread through that order ([[Resources - Design]] § *Loads on the job system, as
+  built*). **Trigger:** the first product code that requests a resource, or any change to the
+  simulation thread's shutdown path.
 
 - #prio/low · **The runtime logs every loaded entity at `INFO`**: after the startup load,
   `RuntimeApp::logSceneTree` writes one `INFO` line per entity (S8-T9, #139). That is useful
@@ -340,6 +369,11 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/low · **Sweep the six remaining `GOTCHA:` labels**: S8-T10 (#141) made a `GOTCHA:`,
+  `NOTE:` or `IMPORTANT:` label a delete-on-sight comment in `CONVENTIONS.md`, and cleaned only
+  the file it added. Six comments still carry the label, in `Assert.hpp`, `Log.hpp` (two),
+  `AssertCapture.hpp`, `AssertTests.cpp` and `DiagnosticsTests.cpp`. The sentences stay; only
+  the label goes. Fits the Auto lane.
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the
   file's path, which is not a required context, and #95 also touched code, so `ci.yml`
@@ -370,6 +404,10 @@ groups are kept, because they show where future work will land.
   Decide whether the drift check runs it, and with which excludes. Found at S7-P3's close on
   Oct 1, 2026. **Trigger:** the next drift check with engine commits to check (the Oct 11
   boundary had none).
+  **Fired Oct 18:** the weekly review's drift check ran it against `39943f19` with
+  `--exclude` for `07 Journal`, `05 Research`, `09 References` and [[v1 Code Audit]]. It reported
+  67 of 237 citations, and every one was a v1 path or a card's historical `done:` clause, so
+  those four excludes are not enough to make it a gate yet.
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly**: report-once is per call site through a function-local static (ADR-011 §5), and
   `catch_discover_tests` hides that by giving every Catch2 case its own process. Two
@@ -395,6 +433,8 @@ groups are kept, because they show where future work will land.
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
   crosses one of the existing patterns.
+  **Fired Oct 18:** S8-T10 (#141) added a third `check` to `ci.yml`, for
+  `internal::g_(componentTypeSlot|resourceTypeTag)` under `engine/core/include/`.
 - #prio/low · **Reconcile ADR-017's `main()` clause**: each executable defines `main()`
   and calls `runApp<AppType>()`; ADR-017 § *Decision* 3 instead places `main()` in a shared
   header. [[Project - Design]] § *Entry point and presentation boundary* records the

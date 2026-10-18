@@ -11,7 +11,8 @@ and the scene asset (S8-T3, #127, 2026-10-11), the pack writer and reader (S8-T4
 the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), and the editor's
 `AssetIndex` and loose source (S8-T6, #131, 2026-10-12), the client export target (S8-T7,
 #132, 2026-10-12), id generation with the editor's startup scene (S8-T13, #138, 2026-10-15),
-and the runtime's startup load (S8-T9, #139, 2026-10-15).
+the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #141,
+2026-10-18), and its loads on the `JobSystem` (S8-T11, #142, 2026-10-18).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
@@ -62,6 +63,10 @@ built or run.
 | A scene is an entry with an id, streamed into the live `Scene`, never cached. | ADR-024 §8 |
 | Scene components are framed by stable tag and byte length. Per-type versions land with T1's scene save. | ADR-024 §8 |
 | Hot-reload swaps data behind a live handle; eviction is explicit release only. Both wait. | ADR-024 §9 |
+| The cache is `ResourceCache`, owned by `App`; one instance holds every type behind its type tag. | ADR-024 §1 (amended Oct 18); § *The cache as built* |
+| A reference cycle is invalid content: the loading phase rejects the edge that closes one. | Miguel, Oct 18; § *The cache as built* |
+| A loading phase is two non-blocking halves, submit and drain, looped until nothing is pending or loading. A failure does not stop it; the phase returns the first error drained. | Miguel, Oct 18; § *Loads on the job system, as built* |
+| The cache shuts down on the simulation thread right after `simulationShutdown()`, and again from its destructor. | Miguel, Oct 18; § *Loads on the job system, as built* |
 
 ### Decided: packs and the runtime layout
 
@@ -120,7 +125,8 @@ it serves: asset bytes, not loaded resources (ADR-024 §10). `find(id)` returns 
 file and read failures. Reading an id that is not present is a `TE_CHECK`, so a caller asks
 `find` first. Absence is a query result, not an error code, because ADR-023 §1 reports an
 absence that is not a failure as data, and ADR-023 §2 gives `core` one error enum, `ReadError`.
-The cache's "unknown id fails at once" code is S8-T10's to choose.
+An id the source answers `Unknown` for is `ReadError::UnknownResource`, a value S8-T10 added to
+that same enum rather than opening a second one.
 
 ### The editor's id index
 
@@ -197,12 +203,71 @@ defers its free to a later drain, so a drain never stalls a Tick. At shutdown th
 for every batch still in flight, which is legal because the simulation thread is not a pool
 worker, and then logs every non-zero count.
 
-The surface, including the type's name, is pinned at the first Dev card. It is not `…System`
-(ADR-006 §5); ADR-006 §4's sketch called it `ResourceRegistry`. `ResourceId` itself shipped
-early, at S8-T3, because the scene header needs it: a strong `u64` type in
+The surface is `ResourceCache` (§ *The cache as built*), not `…System` (ADR-006 §5); ADR-006
+§4's sketch had called it `ResourceRegistry`. `ResourceId` itself shipped early, at S8-T3,
+because the scene header needs it: a strong `u64` type in
 `engine/core/include/TechEngine/core/resources/ResourceId.hpp`, where zero is null. It has no
 generator of its own: ids are created only in the editor, by `AssetIndex::generateId`
 (§ *The editor's id index*, S8-T13).
+
+### The cache as built
+
+**As built** (S8-T10, #141, 2026-10-18), in `engine/core/{include/TechEngine/core,src}/resources/`.
+`App` owns it and closes loader registration right after `configureSimulation()`. No product
+code requests a resource yet, so the tests are its only caller. Miguel settled these at
+`/card-start`:
+
+- **One cache holds every type**, behind a `StringId` type tag, rather than a `ResourceCache<T>`
+  per type. A handle is `ResourceHandle<T>`, the `{u32 index, u32 generation}` of ADR-024 §3;
+  `resolve<T>` checks the tag, so a handle resolved as the wrong type is a `TE_CHECK`.
+- **A loader registers under its asset's blob magic paired with its type tag**, and the cache
+  picks the loader by the leading magic of the bytes it read. A dependency arrives as a bare id
+  with no caller to name its type, and `AssetSource` serves only bytes, so the magic is the only
+  thing that can choose. It is the pairing the editor's index already uses
+  (§ *The editor's id index*). `registerLoader` takes the type as a template parameter, because
+  the slot store needs its size, alignment and destructor.
+- **A loader names its dependencies and never waits**: one hook, bytes in, payload out,
+  dependency ids appended. Nothing writes a handle back into a payload until S8-D1 settles the
+  reference field shape, so an entry records the dependencies it acquired and nothing more.
+- **A payload is one allocation owned by its slot**, not a per-type pool. Only the slots have
+  to stay put, and the blocks that hold them take 256 entries each.
+- **Exhaustion and generation wrap are guarded** the way `EntitySlots` guards them: `create`
+  `TE_CHECK`s the slot limit instead of handing out an index that reads as null, and a slot
+  whose generation reaches its limit is retired rather than recycled.
+- **A reference cycle is invalid content.** Counting cannot free one, so the loading phase
+  rejects the dependency edge that would close a cycle with `ReadError::CyclicReference` and
+  releases the acquire it had just taken. The alternative, a reachability collector, is what
+  Unreal's GC does and what ADR-024 §3's counted entries rule out.
+- **A null dependency id is a `TE_CHECK`**, not a skipped reference. That holds while a loader
+  builds its own list; authored reference fields that can be empty will reopen it (S8-D1).
+
+### Loads on the job system, as built
+
+**As built** (S8-T11, #142, 2026-10-18). The cache takes the `App`'s `JobSystem` at
+construction, and `App` declares the job system first, so it outlives the cache. Miguel settled
+these at `/card-start`:
+
+- **A phase is two halves that never block.** `submitLoads()` turns every pending entry into
+  one task in a single batch and marks it loading. `removeCompletions()` publishes what has
+  finished and requests each completion's dependencies as pending entries for the next round.
+  `runLoadingPhase()` loops submit, a wait on the in-flight batches, and the drain, until no
+  entry is pending or loading, and then drains frees. The halves exist so that a test, and
+  later A1's barrier step, can hold an entry in flight outside a phase.
+- **A failed load does not stop the phase.** Every round still runs, each failure keeps its
+  error on its own entry (`getError`), and the phase returns the first error it drained. A
+  holder whose dependency fails to load stays Ready; a holder that names an unknown dependency
+  id, or one that closes a cycle, fails itself.
+- **A task touches only its own entry and the completion queue.** It writes the payload, the
+  type tag and the error, then pushes a completion holding the slot and the dependency ids. It
+  never looks an entry up through the slot store, because the owner grows that store while
+  tasks run. The owner publishes the entry only when it drains the completion.
+- **A free never waits.** `drainFrees` keeps an entry that is still loading, or that was
+  acquired again, in the pending-free list for a later drain.
+- **Shutdown runs after the app's own.** `SimulationThread` calls `ResourceCache::shutdown()`
+  right after `app.simulationShutdown()`, so the app's releases land first and the log names
+  only real leaks: it waits for every in-flight batch, then warns once per entry whose count is
+  not zero. The destructor calls it again as a safety net for an App whose simulation never
+  ran, and that second call logs the same entries again.
 
 ### Loading phases and other threads
 
@@ -213,7 +278,7 @@ generator of its own: ids are created only in the editor, by `AssetIndex::genera
 | Scene change (T1 and later) | Simulation, with ticking stopped | Acquire the new scene's references, then release the old scene's, then drain frees. Shared content is never reloaded. |
 | Editor load commands (T1) | Simulation, stopped or paused | Main's UI sends load commands through the main-to-simulation queue. A stopped or paused simulation does not tick, so each command runs as a loading phase; results come back as published copies. |
 | Barrier resource step (A1) | Simulation | After structural commands and NetId assignment: issue the Tick's soft requests, publish finished loads, drain frees. Its order against the event step is A1's to fix. |
-| `simulationShutdown()` | Simulation | Wait for load batches, release everything, log what is still counted. |
+| `simulationShutdown()` | Simulation | The app releases what it holds; then the cache waits for its load batches and logs what is still counted (S8-T11). Nothing releases the leftovers. |
 
 The startup load runs **after** readiness on purpose. `SimulationThread::start` blocks main
 until the thread signals ready (`engine/app/src/SimulationThread.cpp:50`), so a load inside
@@ -389,8 +454,9 @@ a folder. Until the export command decides that layout, the runtime reads the fi
 ### The runtime's startup load
 
 Built at S8-T9 (#139, 2026-10-15) as `RuntimeApp::simulationStartupLoad()` in
-`apps/runtime/src/RuntimeApp.cpp`. It reads the scene directly, without a cache, because the
-cache is S8-T10's stretch. Miguel settled these at `/card-start`:
+`apps/runtime/src/RuntimeApp.cpp`. It reads the scene directly, without a cache, because no
+cache existed yet. S8-T10 has since built one (§ *The cache as built*), and routing this path
+through it is a [[Backlog]] entry with no card. Miguel settled these at `/card-start`:
 
 - **`RuntimeApp` takes a folder and mounts `<folder>/assets` in `init()`**, through a protected
   `mountAssets()` that the headless tests call, since `init()` also opens the window. `main`

@@ -10,11 +10,11 @@
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
 | **Sprint** | [[2026-10 Sprint 08 - Content Path]] *(Oct 10-23)*, planned Oct 11. Sprint 07 closed Oct 9 and closed M5 ([[2026-10-11 Sprint 07 Retrospective]]). |
 | **Sprint goal** | The editor exports a project into `.tepack` files, and the runtime loads the exported startup scene from the packs beside its executable before its first Tick. |
-| **Current focus** | M6's vertical slice, the first sprint of the decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial from Sprint 08*). S8-T1 to S8-T5 and S8-T14 closed Oct 11 (#126 to #129), completing Stories A, B and C. S8-T6 and S8-T7 closed Oct 12 (#131, #132), completing Story D; S8-T7 was rescoped to export targets ([[Resources - Design]] § *Export targets*). S8-T8 closed Oct 13 (#134). S8-T13 and S8-T9 closed Oct 15 (#138, #139), completing Story E and meeting the sprint goal; the runtime reads the dev export at `<exe dir>/Dev` as a stopgap ([[Resources - Design]] § *The runtime's startup load*). S8-D1 can start, and S8-D2 cuts Sprint 09's cards after it. Hub: [[Resources - Design]]. |
-| **Top blocker** | None. |
+| **Current focus** | M6's vertical slice, the first sprint of the decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial from Sprint 08*). S8-T1 to S8-T5 and S8-T14 closed Oct 11 (#126 to #129), completing Stories A, B and C. S8-T6 and S8-T7 closed Oct 12 (#131, #132), completing Story D; S8-T7 was rescoped to export targets ([[Resources - Design]] § *Export targets*). S8-T8 closed Oct 13 (#134). S8-T13 and S8-T9 closed Oct 15 (#138, #139), completing Story E and meeting the sprint goal; the runtime reads the dev export at `<exe dir>/Dev` as a stopgap ([[Resources - Design]] § *The runtime's startup load*). S8-T10 closed Oct 18 (#141) with the cache core, pinning its whole surface ([[Resources - Design]] § *The cache as built*); nothing requests a resource through it yet. S8-T11 closed Oct 18 (#142) with loads on the `JobSystem`, completing Story G, the sprint's stretch. The weekly review ran Oct 18 ([[2026-10-18 Weekly Review]]); Miguel chose to finish Sprint 08 rather than pull the boundary forward, because Sprint 09's cards come out of S8-D1. S8-D1 is next, and S8-D2 cuts Sprint 09's cards after it. Hub: [[Resources - Design]]. |
+| **Top blocker** | None. S8-P8 has a date: the routine's cron must be re-pointed before the Oct 25 clock change. |
 | **Next milestone** | M6 content: Resources and project-to-scene binding. |
 | **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
-| **Reconciled against** | engine `82d7a11c` (2026-10-10) |
+| **Reconciled against** | engine `39943f19` (2026-10-18) |
 
 **Reading that stamp** ([[ADR-012 - Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -22,12 +22,19 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline 82d7a11c..origin/master
+git log --oneline 39943f19..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (`CLAUDE.md` § *How to work here*, rule 2). Distance is a signal, not
 proof: it cannot tell you *which* note drifted, only that nobody has looked.
+
+**Latest check: Oct 18, 2026**, against fetched `origin/master` at `39943f19`, covering the 17
+engine commits since `82d7a11c`. It was a spot-check of the systems the week touched, not a full
+reconciliation: [[Resources - Design]]'s as-built sections were read against the code, and the
+claims the week added to four other notes were spot-checked. Two rows in
+[[Simulation Thread - Design]] were fixed, and ADR-024 §1's `IResourceCache<T>` row was amended
+to the single `ResourceCache`. Details in [[2026-10-18 Weekly Review]] § *Artifact drift*.
 
 **Latest full reconciliation: Oct 10, 2026**, against fetched `origin/master` at `82d7a11c`,
 covering the 63 engine commits since `01ed7a30`. Every Systems design note was read against
@@ -65,11 +72,10 @@ close rate, not to demand more per day.
 (2026-07-26). The retro covers the final week, and it inherits the weekly review's
 stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
 Dashboard twice before any code got written.
-→ **Next ceremony:** `/weekly-review` on the **Oct 17-18** weekend, mid-Sprint 08. If that
-weekend is lost, it falls back to Mon Oct 19 or Thu Oct 22. Then `/sprint-plan` for the Sprint 08
-boundary on **Oct 24-25**, after S8-D2 has cut Sprint 09's cards; its retro decides whether the
-decide-first trial becomes the rule. The Sprint 07 boundary is recorded in
-[[2026-10-11 Sprint 07 Retrospective]].
+→ **Next ceremony:** `/sprint-plan` for the Sprint 08 boundary on **Oct 24-25**, after S8-D2
+has cut Sprint 09's cards; its retro decides whether the decide-first trial becomes the rule. If
+that weekend is lost, it falls back to Mon Oct 26 or Thu Oct 29. Sprint 08's mid-sprint review is
+[[2026-10-18 Weekly Review]].
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
 
@@ -200,17 +206,17 @@ Recently locked. Full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (2026-10-11)
+## Health check (2026-10-18)
 
-- **Delivery:** Sprint 07 closed all 28 cards (15 Dev, 3 Design, 1 Bug, 9 Process) and M5.
-  Sprint 08 plans M6's vertical slice: ten Dev cards, one Design card, two P2 stretch cards
-  for the cache, and twelve Auto cards. [[Sprint Board]] holds the live plan.
-- **Evidence:** M5's headless and windowed evidence is in the Sprint 07 note's *Definition of
-  Done*. Sprint 08's goal is proven headless, then windowed: the editor creates `projects/dev`'s
-  startup scene in code, bakes it, and `runtime.exe` loads it.
-- **Sustainability:** Miguel lost the Oct 3-4 weekend, crammed the last week and reports
-  feeling good. He is off karting both Sprint 08 weekends (rib injury) and chose to work them,
-  which leaves no rest day; the cache stretch is P2 so that one can be kept.
-- **Artifact health:** no engine commit after `82d7a11c`, so the stamp stays. Vault drift fixed
-  on Oct 11: the lane's "paused" status here and in [[Autonomous Lane - Routine Prompt]], the
-  stamp command under *Now*, the Journal index and the artifact gate's coverage line.
+- **Delivery:** Sprint 08 met its goal on Oct 15 (day 6) and closed its P2 stretch on Oct 18.
+  Every Dev card is done; Story F (S8-D1, S8-D2) and two Auto cards (S8-P7, S8-P8) are left.
+  [[Sprint Board]] holds the live plan.
+- **Evidence:** Miguel's windowed run on Oct 15 loaded the exported startup scene in
+  `runtime.exe` (S8-T9's entry on the board). The cache is proven by tests only, because no
+  product code requests a resource yet.
+- **Sustainability:** no rest day for two weekends (rib injury, no karting). Keep Fri Oct 23
+  light and one day of the Oct 24-25 weekend off. Claude wrote much of this sprint's engine
+  logic at Miguel's request; the retro decides whether that split stays.
+- **Artifact health:** reconciled against `39943f19` on Oct 18 as a spot-check of the touched
+  systems ([[2026-10-18 Weekly Review]] § *Artifact drift*). ADR-024 §1 was amended the same
+  day to the single `ResourceCache` that S8-T10 built.

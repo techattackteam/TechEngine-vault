@@ -160,7 +160,7 @@ Pulled in on Oct 11 because Miguel is off karting for both weekends. Both are P2
 them never costs the goal. Neither depends on S8-D1; both are tested with a test-only resource
 type.
 
-- [ ] **S8-T10** · Build the resource cache core · P2 · 🟢 Deep · 4-6h ·
+- [x] **S8-T10** · Build the resource cache core · P2 · 🟢 Deep · 4-6h ·
   done: `ResourceId`, a typed generational handle and slot blocks that never move. Entries
   carry their state and a count of acquires, and hold acquires on their dependencies. A request
   finds or creates an entry, and an unknown id fails at once. `release` frees an entry at zero
@@ -168,7 +168,7 @@ type.
   `configureSimulation()`. A loading phase runs loaders inline, including dependency rounds.
   `App` owns the cache, not `EngineContext`. Prove stale handles, slot reuse, per-entry counts,
   dependency acquires, free on release, and late registration rejected.
-- [ ] **S8-T11** · Run loads on the `JobSystem` · P2 · 🟢 Deep · 4-6h ·
+- [x] **S8-T11** · Run loads on the `JobSystem` · P2 · 🟢 Deep · 4-6h ·
   done: each new entry's read and decode run as a `JobSystem` task that writes only its own
   entry and pushes a completion naming its dependencies. The owner drains completions,
   publishes ready entries and requests dependencies as the next round. A failed load keeps its
@@ -192,17 +192,17 @@ type.
   bitsets empty while unfocused (`engine/platform/src/input/InputState.cpp:53`, `:60`); the
   `size_t` casts become `std::size_t`; and new cases cover the `Unknown` guards in `apply` and
   `isHeld`. Existing tests pass unedited.
-- [ ] **S8-P2** · Record #112's CI change and re-measure the lane's CI cost · P3 · 🤖 Auto · 1-2h ·
+- [x] **S8-P2** · Record #112's CI change and re-measure the lane's CI cost · P3 · 🤖 Auto · 1-2h ·
   done: [[B3 - Build & Testing Notes]] records #112's switch to
   `awalsh128/cache-apt-pkgs-action@v1` and the explicit X11 package list. The billed minutes of
   recent code PRs are measured from Actions run data and compared with the 16.1 in
   [[Autonomous Lane - Design]] § *Cost model*. Pinning by tag or by sha is listed as Miguel's
   question, not decided.
-- [ ] **S8-P3** · Check *Clock - Design*'s several-simulations argument · P3 · 🤖 Auto · 1h ·
+- [x] **S8-P3** · Check *Clock - Design*'s several-simulations argument · P3 · 🤖 Auto · 1h ·
   done: a report says whether [[Clock - Design]] § *Why simulation time is not here* still
   holds without the "several headless sims per process" reason, given that its conclusion rests
   on ADR-019, and proposes the corrected paragraph. Report-only; Miguel applies it.
-- [ ] **S8-P4** · Research brief for S8-D1: how engines declare and walk references · P2 · 🤖 Auto · 2-3h ·
+- [x] **S8-P4** · Research brief for S8-D1: how engines declare and walk references · P2 · 🤖 Auto · 2-3h ·
   done: a report compares how Unity, Unreal and Godot declare an asset reference in a component
   or property, and how one walk serves save, load, cooking and release. It names the sources it
   read and marks anything taken from memory. It maps each answer onto TechEngine's `visit` seam
@@ -230,7 +230,7 @@ type.
   done: one bullet under `CONVENTIONS.md` § *Error handling* says a caller that tests the result
   (`REQUIRE(f())`, `if (!f())`) still compiles after such a migration and silently inverts,
   because an empty code is false, citing S7-D3's seven sites. Merged as #140 (`7fe3630`, Oct 16).
-- [ ] **S8-P6** · Write down why four CI legs never restore a ccache · P3 · 🤖 Auto · 1h ·
+- [x] **S8-P6** · Write down why four CI legs never restore a ccache · P3 · 🤖 Auto · 1h ·
   done: [[B3 - Build & Testing Notes]] § *ccache keys* explains that a cache saved on
   `refs/pull/N/merge` serves only that PR, that `sanitizers` and `coverage` never run on
   `master`, and why pushing them on `master` costs more billed minutes than it saves.

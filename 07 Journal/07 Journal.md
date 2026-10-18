@@ -12,6 +12,7 @@ the one home for cadence. Entries appear here as they're written, newest first.
 
 | Date | Entry |
 |---|---|
+| 2026-10-18 | [[2026-10-18 Weekly Review]]: Sprint 08 met its goal on Oct 15 and closed its stretch; Story F is left; vault reconciled against `39943f19` |
 | 2026-10-11 | [[2026-10-11 Sprint 07 Retrospective]]: Sprint 07 closed all 28 cards and M5; the decide-first trial's first half; Sprint 08 plans M6's vertical slice |
 | 2026-09-26 | [[2026-09-26 Sprint 06 Retrospective]]: Sprint 06 closed 12 cards; Scene and serial scheduling shipped |
 | 2026-09-19 | [[2026-09-19 Weekly Review]]: Story B closed; T6-T9 remain; OpenAI lane and paper-review integration stay unscheduled |

@@ -5,6 +5,12 @@
 - **Deciders:** Miguel (Lead Engineer), with AI as technical lead
 - **Task:** the Sprint 08 decide-first trial ([[Planning Workflow - Artifact Gate]] § *Trial
   from Sprint 08*). Gates M6 together with [[ADR-025 - Content packs (.tepack and the runtime load path)]].
+- **Amended 2026-10-18, decision:** §1's "the generic per-type cache as the public API" →
+  one `ResourceCache` that holds every type behind a type tag, with typed members
+  (`request<T>`, `resolve<T>`, `ResourceHandle<T>`), not a cache per type. F7's fix was a
+  generic typed API instead of per-type copies, and that is kept. A dependency arrives as an
+  untyped id, and dependency acquires and the cycle check cross types, so one store is what can
+  route them. S8-T10 (#141); confirmed by Miguel at the Oct 18 weekly review.
 - **Partially supersedes:** each rowed in [[ADR Index]] § *Partial supersessions*.
   - ADR-006 §4, the **`ResourceRegistry& resources` field** of the `EngineContext` sketch, and
     §5's "injected via `EngineContext`" for this one service (§4 below). The DI rule, context
@@ -39,6 +45,9 @@ packs are regenerable, while handles end up in every component.
 names as keys, the per-type copy-paste, the cascades into the ECS and the silent defaults.
 §2-§9 are the adaptations. "Port" keeps the mechanism and adapts house style; "drop" excludes
 it. Every adapt row is forced by an audit finding or an accepted ADR. Paths are at `v1-reference`.
+
+> **Amended 2026-10-18:** the generic API is ported as typed members of one `ResourceCache`,
+> not as a cache per type (S8-T10). The `IResourceCache<T>` row below is historical.
 
 | v1 piece                                                      | Treatment                                          | Source and reason                                                                                                                                                                                          |
 | ------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
