@@ -287,7 +287,9 @@ container serializer. Registration must respect this distinction.
 
 Local Entity fields cannot be copied to disk just because Entity is trivially copyable.
 The future Scene document adapter must translate references to authoring IDs and remap on
-load. Wire references similarly require network identity. This is a schema gate: the
+load. The field shape and the walk that does it are
+[[ADR-026 - Reference fields and scene-held acquires]] (Accepted Oct 19), and
+[[Resources - Design]] § *Reference fields* holds the mechanism. Wire references similarly require network identity. This is a schema gate: the
 accepted raw-byte path does not itself supply reference remapping or portable struct layout.
 No Scene file format, loader or network encoder is included in the first storage port.
 

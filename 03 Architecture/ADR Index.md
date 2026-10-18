@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 026 | [[ADR-026 - Reference fields and scene-held acquires]] | Accepted | 2026-10 |
 | 025 | [[ADR-025 - Content packs (.tepack and the runtime load path)]] | Accepted | 2026-10 |
 | 024 | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] | Accepted | 2026-10 |
 | 023 | [[ADR-023 - Public error handling]] | Accepted | 2026-10 |

@@ -15,6 +15,7 @@ the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #1
 2026-10-18), and its loads on the `JobSystem` (S8-T11, #142, 2026-10-18).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
+[[ADR-026 - Reference fields and scene-held acquires]] ·
 [[ADR-006 - v2 core architecture & module layout]] §1 §4 ·
 [[ADR-007 - v2 networking & ECS replication foundation]] §1 ·
 [[ADR-016 - Serialization (binary primitives & describe-once seam)]] ·
@@ -67,6 +68,11 @@ built or run.
 | A reference cycle is invalid content: the loading phase rejects the edge that closes one. | Miguel, Oct 18; § *The cache as built* |
 | A loading phase is two non-blocking halves, submit and drain, looped until nothing is pending or loading. A failure does not stop it; the phase returns the first error drained. | Miguel, Oct 18; § *Loads on the job system, as built* |
 | The cache shuts down on the simulation thread right after `simulationShutdown()`, and again from its destructor. | Miguel, Oct 18; § *Loads on the job system, as built* |
+| A loaded scene acquires each distinct id its components reference, once, and holds those acquires. A reference field owns nothing, so removing a component releases nothing. | ADR-026 §1 |
+| An `Entity` field holds the live handle and saves its target's authoring row. An `AssetRef<T>` holds `{ResourceId, ResourceHandle<T>}` and saves the id. An empty field is valid. A replicated component holds a bare `ResourceId`. | ADR-026 §2 |
+| One reference visitor over `visit` serves the scene writer, the reader's second pass, the scene's acquire set and the bake. The scene header has no dependency table. | ADR-026 §3 |
+| A live `AssetRef<T>` names only an asset its scene holds. An editor edit acquires the new asset at once and releases the old one when the scene reloads. | ADR-026 §4 |
+| The mesh is the second resource type. Before T4 the editor writes one in code, and until R1 it is loaded, not drawn. | Miguel, Oct 18; § *Reference fields* |
 
 ### Decided: packs and the runtime layout
 
@@ -238,8 +244,9 @@ code requests a resource yet, so the tests are its only caller. Miguel settled t
   rejects the dependency edge that would close a cycle with `ReadError::CyclicReference` and
   releases the acquire it had just taken. The alternative, a reachability collector, is what
   Unreal's GC does and what ADR-024 §3's counted entries rule out.
-- **A null dependency id is a `TE_CHECK`**, not a skipped reference. That holds while a loader
-  builds its own list; authored reference fields that can be empty will reopen it (S8-D1).
+- **A null dependency id is a `TE_CHECK`**, not a skipped reference. An empty authored field is
+  valid content (ADR-026 §2), but the reference walk skips it before any id reaches a loader's
+  list, so the check stands.
 
 ### Loads on the job system, as built
 
@@ -334,8 +341,31 @@ following ADR-024 §10's vocabulary.
 - **The reader takes an empty `Scene` and leaves it empty on any failure.** A table that breaks
   the row rules (an id that is not its row, a parent that is not an earlier row, bytes after
   the last entity) is `ReadError::Malformed`. `SceneAsset::id` is set only on success.
-- Entity references in a payload will be authoring ids, and asset references `ResourceId`s;
-  loading remaps both. Nothing writes either until S8-D1 decides the field shape.
+- Entity references in a payload are authoring rows, and asset references `ResourceId`s;
+  loading remaps both in a second pass (§ *Reference fields*). Nothing writes either yet.
+
+### Reference fields
+
+Decided on Oct 18 at S8-D1 ([[ADR-026 - Reference fields and scene-held acquires]], Accepted Oct 19).
+Not built: Sprint 09's cards build it.
+
+| Job | What the reference walk does |
+|---|---|
+| Scene write | Maps each `Entity` to its row; writes each `AssetRef<T>` as its id |
+| Scene read, second pass | After the last row: maps rows to entities. After the loading phase: fills each `AssetRef<T>` handle |
+| Scene load | Collects the distinct ids, which the loaded scene acquires once each |
+| Bake | Collects the ids each root scene reaches, so only those are packed |
+
+- **The lifecycle.** The startup load and every later scene change acquire the new scene's ids
+  before releasing the old scene's (ADR-024 §4), so content the two share never reloads. Nothing
+  else releases a scene's acquires.
+- **The editor.** An inspector edit runs as a loading phase: it acquires the new asset and fills
+  the field. The asset it replaced stays held until the scene reloads (T1).
+- **The mesh.** It is Sprint 09's second resource type, because the hard-coded triangle in
+  `engine/client/src/render/FrameRenderer.cpp` is its consumer. Until T4's importers, the editor
+  writes a mesh asset in code, the way S8-T13 writes the startup scene. Until R1 it is loaded and
+  never drawn; tests and a runtime log line prove the load. Drawing it needs render's fence and
+  a GPU copy keyed by handle, which are R1's.
 
 ### Pack layout and the boot record
 
@@ -525,14 +555,12 @@ build profiles each carry their own scene list (both from memory).
   candidates, and the answer may amend ADR-025 §7. Owner: T2, with T5's distributable.
 - **Whether `PackReader::open` rejects non-zero `flags`.** Today it ignores them, so a future
   compressed pack would be read as raw bytes. Owner: whoever adds compression behind `flags`.
-- **A second real resource type in M6.** Planning on Oct 11 put it in Sprint 09 and leaned to a
-  mesh, whose consumer is the triangle hard-coded in `engine/client/src/render/FrameRenderer.cpp`;
-  a material has no consumer before R1. S8-D1 settles it, with how a mesh is authored before
-  T4 and whether it is drawn through a published copy or only loaded until R1.
-- **How a component field declares a reference**, so the scene document remaps it on save and
-  load, the bake can walk it, and removing the component releases it. The same question is
-  open for `Entity` fields ([[Scene - Design]] § *Registration and serialization seam*); one
-  answer should serve all of these. Owner: S8-D1, before the Sprint 09 boundary; nothing in Sprint 08 writes a reference field.
+- **Where a loaded scene keeps its acquires.** ADR-024 §3's "an entry holds acquires on its
+  dependencies" fits, but a scene cannot load like other entries: a load task writes only its
+  own entry (ADR-024 §4), and a scene streams into the live `Scene`, which only the simulation
+  thread may touch. So the scene's read and its acquire set run on the owner inside the loading
+  phase, and whether the set lives on a scene entry or beside the live `Scene` is open. Owner:
+  Sprint 09's first reference card, cut by S8-D2.
 - **The editor's stopped, playing and paused states.** Decided Oct 10: only Play ticks; stopped
   and paused do not, and the simulation thread stays alive and idle between commands. Today every
   App ticks from the end of the startup phase until stop (`engine/app/src/SimulationThread.cpp:188-200`), so the

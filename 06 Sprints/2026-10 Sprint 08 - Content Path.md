@@ -153,6 +153,13 @@ the cards against it is a separate 🟡 Light step.
 - [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h ·
   done: Sprint 09's mesh and reference cards are cut against S8-D1's Decided rows before the
   Oct 24 boundary, each with a `done:` clause and a size. Follows S8-D1.
+  **The first reference card must settle where a loaded scene keeps its acquires** (found
+  while drafting ADR-026 on Oct 18). A scene cannot load as an ordinary cache entry: a load
+  task writes only its own entry (ADR-024 §4), while a scene streams into the live `Scene`,
+  which only the simulation thread touches. So the scene's read and its acquire set run on the
+  owner inside the loading phase, and the card decides whether the set lives on a scene entry
+  or beside the live `Scene` ([[Resources - Design]] § *Open questions*). Every other reference
+  card builds on that answer, so it is the chain's root and likely 🟢.
 
 ### Story G: Resource cache · stretch
 

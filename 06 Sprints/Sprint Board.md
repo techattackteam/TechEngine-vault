@@ -31,8 +31,7 @@ kanban-plugin: board
 
 ## Story F: Decide Sprint 09's references
 
-- [ ] **S8-D1** · Decide how a component field declares a reference · P2 · 🟢 Deep · 4-6h: the field shape with the Unity and Unreal baseline, the mesh's authoring and draw policy; its own ADR if the shape is hard to reverse. Starts from S8-P4's brief. Follows S8-T3.
-- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: cut against S8-D1's Decided rows before Oct 24. Follows S8-D1.
+- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: cut against S8-D1's Decided rows before Oct 24. Follows S8-D1. The first reference card must settle where a loaded scene keeps its acquires (scene entry or beside the live `Scene`); it is the chain's root ([[Resources - Design]] § *Open questions*).
 
 
 ## Story G: Resource cache · stretch
@@ -47,6 +46,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S8-D1** · Decide how a component field declares a reference · P2 · 🟢 Deep · 4-6h: the field shape with the Unity and Unreal baseline, the mesh's authoring and draw policy; its own ADR if the shape is hard to reverse. Starts from S8-P4's brief. Follows S8-T3.
 
 
 ## 👀 Review / Demo
@@ -59,7 +59,6 @@ kanban-plugin: board
 	  - The branch was cut from S8-T10's unmerged branch, by Miguel's choice, and it merged cleanly: #142's diff holds only T11's six files, although its squash message still lists #141's two commit titles. This is the second time it has worked (S8-T9 on S8-T13).
 	  - Claude wrote the scaffold and every test at `/card-start`; Miguel wrote the logic. The PR has no body or review conversation, so this entry is the only record of the three calls above.
 	  - Two questions the scaffold left open shipped by default, not by decision: `getError` reads an entry's error even while its task may still be writing it, and the second `shutdown()` call from the destructor logs the same unreleased entries again.
-
 - [x] **S8-T10** · Build the resource cache core · P2 · 🟢 Deep · 4-6h: #141 `5472d8ba`, **Oct 18**. All build legs, the sanitizers, clang-format and diff coverage passed. **The surface was the card's real work, and no artifact fixed it.** [[Resources - Design]] said in as many words that the type's name and the unknown-id code were the first Dev card's to choose, so Miguel settled four forks at `/card-start`: the type is `ResourceCache`; an unknown id returns the new `ReadError::UnknownResource`, which keeps core's single error enum (ADR-023 §2); one cache holds every type behind type-erased payloads, rather than the `ResourceCache<T>` per type that ADR-024 §1's "port `IResourceCache<T>`" row reads as literally; and a loader is one hook that names dependency ids, with no handle written back into a payload until S8-D1 decides the reference field shape. **Two of those forced a shape nobody had written down.** `registerLoader` takes the resource type as a template parameter, because the slot store needs its size, alignment and destructor; and a registration carries the asset's `BlobKind`, because a dependency arrives as a bare id and `AssetSource` serves only bytes, so the cache picks a loader by the leading magic, reusing the magic-paired-with-a-tag rule the editor's index already had. **One clause had nothing to do:** `ResourceId` shipped at S8-T3. **Cycles became scope.** Counting cannot free a cycle, so `/card-review` logged it as a design gap and Miguel chose to close it inside the card: the loading phase rejects a dependency edge that would close a cycle, with the new `ReadError::CyclicReference`, releasing the acquire it had just taken. The alternative is a reachability collector, which is what Unreal's GC does and what ADR-024 §3's counted entries rule out. **The review's five findings were all fixed before merge**, two of them changing the design: `ResourceSlots` gained `slotLimit` and `generationLimit` like `EntitySlots`, so exhaustion reports a check instead of handing out a null index and a slot at its generation limit is retired rather than recycled; and `std::array::at` stopped standing in for an assert on the resolve path. **Nothing requests a resource yet.** `App` owns the cache and closes registration after `configureSimulation()`, but no product code loads through it and the runtime's startup load still reads its scene directly ([[Backlog]] → `core`). Calls recorded in [[Resources - Design]] § *The cache as built*. Unblocks S8-T11; Story G stays open with it. **Retro:**
 	  - **One variable meant two things.** `m_size` was both the live count and the next free index, so after any destroy `isSlotValid` rejected the reused slot, and `create` could hand out an index that was still live. The generation-reuse test caught the first; the second would have stayed hidden much longer.
 	  - A house rule landed in the same PR: a `GOTCHA:` label is now a delete-on-sight comment (`CONVENTIONS.md`, `CLAUDE.md`, `AGENTS.md`, `/te-review`). Six labelled comments remain on `master`, now in [[Backlog]].
