@@ -42,6 +42,15 @@ kanban-plugin: board
 
 - [ ] **S8-P7** · Measure whether Jolt's precompiled header defeats ccache · P3 · 🤖 Auto · 1-2h: `ccache -sv` on a local `linux-debug` build, result in B3; report-only.
 - [ ] **S8-P8** · Match the routine prompt note to what the lane does · P3 · 🤖 Auto · 1h: the xvfb test line and the footer re-send step; Miguel pastes it and re-points the cron for Oct 25.
+- [ ] **S8-P9** · Let a vault-only card pass `/card-start` and `/card-close` · P3 · 🤖 Auto · 1h: one line in each command; a vault-only card skips the branch gate and closes on its vault commit.
+- [ ] **S8-T20** · Drop the six remaining `GOTCHA:` and `NOTE:` labels · P3 · 🤖 Auto · 1h: comment-only, in `engine/base` and two diagnostics tests; the sentences stay.
+
+
+## Story I: Week 2 fill
+
+- [ ] **S8-T18** · Make `App::m_scene` private · P2 · 🟠 Moderate · 2-3h: Mon. A simulation-thread hook that needs the scene receives it as a parameter; the two app test probes get a replacement.
+- [ ] **S8-D3** · Decide the test strategy: tiers, run policy and process isolation · P2 · 🟢 Deep · 4-6h: Thu. An ADR if it changes ADR-008 in a hard-to-reverse way, else B3; the `ci.yml` fixes become Sprint 09 candidates. Vault-only.
+- [ ] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h: Fri, if there is room. Follows S8-T18; where the subclass lives is settled at `/card-start`.
 
 
 ## 🔨 In Progress

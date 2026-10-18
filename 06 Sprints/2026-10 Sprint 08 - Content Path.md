@@ -252,6 +252,70 @@ type.
   `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug`, and its PR step re-sends the
   body once after creation to strip the harness's attribution footer. Vault-only; the report
   asks Miguel to paste the prompt into the routine and to re-point the cron for Oct 25.
+- [ ] **S8-P9** · Let a vault-only card pass `/card-start` and `/card-close` · P3 · 🤖 Auto · 1h ·
+  done: `.claude/commands/card-start.md` skips the `<card ID>/<slug>` branch gate for a
+  vault-only Design or Process card, and `.claude/commands/card-close.md` takes that card's vault
+  commit on the vault's `origin/master` as its close gate instead of a merged PR. One line in each
+  command. S8-D1 passed both gates only because Miguel waived them by hand on Oct 19.
+- [ ] **S8-T20** · Drop the six remaining `GOTCHA:` and `NOTE:` labels · P3 · 🤖 Auto · 1h ·
+  done: the comments in `Assert.hpp`, `Log.hpp` (two), `AssertCapture.hpp`, `AssertTests.cpp`
+  and `engine/app/tests/diagnostics/DiagnosticsTests.cpp` keep their sentences and lose the
+  label, as `CONVENTIONS.md` § *Comments* requires since S8-T10. A grep for `GOTCHA:`, `NOTE:`
+  and `IMPORTANT:` under `engine/`, `apps/`, `sdk/` and `tests/` returns nothing.
+  Comment-only; existing tests pass unedited.
+
+### Story I: Week 2 fill
+
+Added on Oct 19, after S8-D1 closed and left week 2 with three free attended slots. None of the
+three touches Sprint 09's scope (the mesh, reference fields, the startup load through the cache,
+or the shared scene-asset call), so S8-D2 still cuts all of that. Planned order: S8-T18 on Mon,
+S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
+
+- [ ] **S8-T18** · Make `App::m_scene` private · P2 · 🟠 Moderate · 2-3h ·
+  done: `m_scene` moves out of `App`'s `protected` block, so a main-thread hook cannot reach the
+  `Scene` while the simulation thread owns it. A simulation-thread hook that needs the scene
+  receives it as a parameter instead; today that is only `simulationStartupLoad`, in both
+  `RuntimeApp` and `EditorApp`.
+  `RuntimeAppTests` and `EditorAppTests` reach the scene through a replacement for their probe's
+  `return m_scene;`. Behaviour-preserving; the existing cases keep their assertions. Lands before
+  Sprint 09's editor startup load adds another hook that reads the scene.
+- [ ] **S8-D3** · Decide the test strategy: tiers, run policy and process isolation · P2 · 🟢 Deep · 4-6h ·
+  done: the decision says which test tiers exist (unit, OS and driver integration, stress, and
+  later functional, visual and perf), how a case is tagged into one, where and when each tier
+  runs (local, every CI leg, nightly) within the CI-minute budget, and whether any tier shares
+  one process. It settles the `TE_ENSURE` report-once interaction ([[Backlog]] → *etc:
+  cross-cutting*) and starts from the Unity and Unreal baseline (EditMode and PlayMode tests;
+  automation filters, Functional Tests and Low-Level Tests). It is an ADR if it changes
+  [[ADR-008 - v2 build & testing baseline]] in a hard-to-reverse way, otherwise a section in
+  [[B3 - Build & Testing Notes]]. The `ci.yml` fixes it implies, together with the CI wall-time
+  entry in [[Backlog]], are written up as Sprint 09 candidates. Vault-only. Evidence, moved
+  from the Backlog (measured Oct 11, 2026, with existing Windows binaries):
+  - A test body takes about 0 ms. A process start costs 49 ms in `windows` Debug and 553 ms in
+    `windows-profile`, where Tracy sleeps 200 ms to calibrate its timer before `main`.
+  - Each `[window]` case costs about 450 ms in its own process, because the first OpenGL context
+    loads the driver. The 13 cases take 1.6 s in one process and 3.5 s in separate processes.
+  - The two `... does not depend on recursion depth` cases (`HierarchyTests`, `TransformTests`)
+    take 6 s each in Debug. They build a 4096-deep chain top-down, and `setParent`'s cycle check
+    makes that quadratic.
+  - On CI (run 38367963268, Oct 13, 2026), only `win ASan` has a slow test step: 173 s for 621
+    cases, against 13-45 s on every other leg. About 89 s is process startup for the ~595 short
+    cases (0.15 s each under ASan), about 61 s is the window and GL cases (about 2.2 s each), and
+    about 21 s is the two recursion-depth cases.
+  - No test preset sets `execution.jobs`, so `ctest` runs one case at a time on 4-core runners.
+  - Three `EditorAppTests` cases are tagged only `[editor]` (project mounts, asset index, the
+    `assets/client` overlay), but `bootstrap()` opens a window, so a split by tag would leave
+    them in the unit tier.
+- [ ] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h ·
+  done: `RuntimeApp` and `EditorApp` stop hosting the client the same way twice. One
+  client-hosting `App` subclass owns the client and implements
+  `publishSnapshot`, `mainThreadUpdate`, `wakeMainThread`, `renderTiming`, `shouldClose` and
+  the client's shutdown, taking the window title as its only difference. Both apps derive from it,
+  and the `runtimeRole()` and `editorRole()` statics go, so each constructor passes
+  `Role::Client` directly. Behaviour-preserving; existing tests pass unedited, apart from the
+  probes S8-T18 already changed. Where the subclass lives is settled at `/card-start`:
+  `engine/app` would link the client into every executable, a future server included. Follows
+  S8-T18, because both edit the same files. P3, so it
+  goes back to the [[Backlog]] if Friday has no room.
 
 ## 🤖 Auto lane
 
@@ -260,6 +324,9 @@ type.
   (six):** S8-P2, S8-P4, S8-P6, S8-P7 and S8-P8 are vault-only or report-only, and S8-P3 is
   report-only. S8-P4 is P2 so the lane takes it early, for S8-D1. With no Auto card open, the
   morning fire screens papers and the afternoon fire sweeps one module.
+- Two more were added on Oct 19, bringing the total to fourteen: S8-T20 is a code PR, and S8-P9
+  (`.claude/`) is docs-only. S8-T20 touches only `engine/base` and diagnostics tests, which no
+  attended week-2 card changes; S8-T18 and S8-T19 take `engine/app` and `apps/`.
 - Eight were added on Oct 11 at Miguel's request ("it could do a bit more"). Every code card
   stays off the files the attended M6 cards change: no `serialization/`, `FileAccess`,
   `Scene.cpp`, `ComponentRegistry`, `SimulationThread`, `apps/` or `RuntimeAppTests`.
@@ -307,6 +374,11 @@ that a rest day costs nothing.
 Sized on the assumption that Miguel writes the code (the question Sprint 07's lost weekly
 review never answered). If Claude writes large parts again, as in Sprint 07, the cards will
 close early; record that at review rather than refilling the sprint.
+
+**Week 2 refill (Oct 19).** The slice and the stretch closed by Oct 18 and S8-D1 by Oct 19,
+leaving Mon 🟢, Thu 🟢 and Fri 🟠 free around S8-D2 on Tue. Miguel chose to fill them (Story I:
+1 🟢 and 2 🟠) rather than pull Sprint 09 forward, because Sprint 09's cards cannot be cut
+before S8-D2. Wed stays a rest day.
 
 **Moved to Sprint 09:** the mesh, reference fields and their remap, the bake's reference walk,
 the editor's own startup load, and keeping unknown component blocks (its consumer is T1's scene

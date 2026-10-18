@@ -295,18 +295,6 @@ groups are kept, because they show where future work will land.
   state) is load-bearing and likely needs an ADR. Found at the ownership review, Sep 27.
   **Trigger:** the project-contribution entry above, or the first editor Play and Stop.
 
-- #prio/medium · **Both threads can reach `App::m_scene`**: `m_scene` is `protected`
-  (`engine/app/include/TechEngine/app/App.hpp:42`), so a subclass's main-thread hooks can touch
-  the Scene while the simulation thread owns it. `Scene`'s execution guards are `thread_local`
-  (`engine/core/src/scene/Scene.cpp:28`), so on the main thread it believes no system is
-  running and allows everything, including immediate structural mutation. **Silent**: only
-  the TSan leg could catch the race, and only if a test exercised it.
-  [[Scene - Design]] § *Ownership and lifetime* forbids main-thread borrowing, but nothing
-  enforces it. Making `m_scene` private and passing `Scene` to the simulation-thread hooks
-  would; `RuntimeAppTests` reads it through a probe that would need a replacement. Found at the
-  ownership review, Sep 27. **Trigger:** the editor inspector on rung T1, or any main-thread
-  hook that wants Scene data.
-
 - #prio/low · **No test proves the cache shuts down after the app's own shutdown**: S8-T11
   (#142) made `SimulationThread` call `ResourceCache::shutdown()` right after
   `app.simulationShutdown()`, so the app's releases land before the cache logs what is still
@@ -357,30 +345,8 @@ groups are kept, because they show where future work will land.
   scene is chosen ([[Project - Design]] § *The manifest*). Found at S8-T6 on Oct 12, 2026. Its
   storage is [[Project - Design]] § *Open questions*' per-user settings question. **Trigger:**
   T1, when the editor can open another scene.
-- #prio/medium · **Code sweep leftovers: apps**: Found by the code sweep on Oct 7, 2026
-  ([[2026-10-07 14-08 Auto Run]]). This covers both `apps/runtime` and `apps/editor`.
-  - `RuntimeApp.cpp:26-98` and `EditorApp.cpp:28-85` host the client the same way: starting
-    it, `publishSnapshot`, `mainThreadUpdate` (only the title prefix differs),
-    `wakeMainThread`, `renderTiming`, `shutdown` and `shouldClose`. The simpler shape is one
-    client-hosting `App` subclass that takes the window title. It would remove about 45 lines.
-  - `RuntimeApp::runtimeRole()` (`RuntimeApp.cpp:100`) and `EditorApp::editorRole()`
-    (`EditorApp.cpp:87`) are public statics that only return `Role::Client` for the
-    constructor. Passing `Role::Client` directly would remove about 8 lines.
-
 ## etc: cross-cutting
 
-- #prio/low · **`/card-start` and `/card-close` assume every card has an engine PR**: the
-  branch gate wants `<card ID>/<slug>` and the close gate wants a merged PR, but a vault-only
-  Design or Process card has neither. S8-D1 (Oct 18-19) passed both by Miguel waiving the
-  branch gate by hand and treating the vault commit as the merge. The fix is one line in each
-  command: a vault-only card skips the branch gate, and its close gate is its vault commit on
-  `origin/master`. Found at S8-D1's close. Fits the Auto lane (`.claude/commands/`).
-
-- #prio/low · **Sweep the six remaining `GOTCHA:` labels**: S8-T10 (#141) made a `GOTCHA:`,
-  `NOTE:` or `IMPORTANT:` label a delete-on-sight comment in `CONVENTIONS.md`, and cleaned only
-  the file it added. Six comments still carry the label, in `Assert.hpp`, `Log.hpp` (two),
-  `AssertCapture.hpp`, `AssertTests.cpp` and `DiagnosticsTests.cpp`. The sentences stay; only
-  the label goes. Fits the Auto lane.
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the
   file's path, which is not a required context, and #95 also touched code, so `ci.yml`
@@ -447,31 +413,6 @@ groups are kept, because they show where future work will land.
   header. [[Project - Design]] § *Entry point and presentation boundary* records the
   divergence. **Trigger:** the next ADR-017 decision amendment.
 
-- #prio/xhigh · **Review the test strategy: tiers, run policy, process isolation**: the engine has
-  only one kind of test, and `catch_discover_tests` starts a new process for every case. Measured
-  on Oct 11, 2026, with existing Windows binaries:
-  - A test body takes about 0 ms. A process start costs 49 ms in `windows` Debug and 553 ms in
-    `windows-profile`, where Tracy sleeps 200 ms to calibrate its timer before `main`.
-  - Each `[window]` case costs about 450 ms in its own process, because the first OpenGL context
-    loads the driver. The 13 cases take 1.6 s in one process and 3.5 s in separate processes.
-  - The two `... does not depend on recursion depth` cases (`HierarchyTests`, `TransformTests`)
-    take 6 s each in Debug. They build a 4096-deep chain top-down, and `setParent`'s cycle check
-    makes that quadratic.
-  - On CI (run 38367963268, Oct 13, 2026), only `win ASan` has a slow test step: 173 s for 621
-    cases, against 13-45 s on every other leg. About 89 s is process startup for the ~595 short
-    cases (0.15 s each under ASan), about 61 s is the window and GL cases (about 2.2 s each), and
-    about 21 s is the two recursion-depth cases.
-  - No test preset sets `execution.jobs`, so `ctest` runs one case at a time on 4-core runners.
-  - Three `EditorAppTests` cases are tagged only `[editor]` (project mounts, asset index, the
-    `assets/client` overlay), but `bootstrap()` opens a window, so a split by tag would leave
-    them in the unit tier.
-
-  Decide which tiers exist (unit, OS/driver integration, stress, and later functional, visual and
-  perf), how a case is tagged into one, where and when each tier runs (local, every CI leg,
-  nightly) within the CI-minute budget, and whether any tier shares one process. Sharing a process
-  interacts with the `TE_ENSURE` report-once entry above. Compare with Unity's EditMode/PlayMode
-  and Unreal's automation filters, Functional Tests and Low-Level Tests. Raised by Miguel on
-  Oct 11, 2026, to be settled in Sprint 09 (from Oct 24) or Sprint 10 (from Nov 7).
 - #prio/high · **Builds, not tests, set CI wall time**: on run 38367963268 (Oct 13, 2026) a PR
   run took 12.6 min. Its critical path is `clang-format` (10 s), then `diff coverage` (4.1 min),
   which `sanitizers` waits on, then `win ASan` (8.1 min). Three causes, from the leg logs:
@@ -483,8 +424,8 @@ groups are kept, because they show where future work will land.
   - The `needs: coverage` gate puts 4.1 min in front of the sanitizer legs.
 
   All three fixes are `.github/workflows/ci.yml` edits, outside the Auto lane. Found while
-  measuring the test step for the entry above. **Trigger:** the test-strategy decision, since
-  both change `ci.yml`.
+  measuring the test step for S8-D3's evidence. **Trigger:** the test-strategy decision
+  (S8-D3), since both change `ci.yml`.
 - #prio/high · **Memory-management design note**: the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
 - #prio/medium · **Point later dependency allocator hooks at the profiler**: Jolt
