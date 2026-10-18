@@ -143,7 +143,7 @@ S8-T1 is the root: S8-T3, S8-T4 and S8-T6 start from it. S8-T8 is independent an
 Split on Oct 13: the decision is six forks and likely an ADR, so it is 🟢 Deep, and cutting
 the cards against it is a separate 🟡 Light step.
 
-- [ ] **S8-D1** · Decide how a component field declares a reference · P2 · 🟢 Deep · 4-6h ·
+- [x] **S8-D1** · Decide how a component field declares a reference · P2 · 🟢 Deep · 4-6h ·
   done: [[Resources - Design]] records the reference field shape for asset and `Entity`
   references, with the Unity and Unreal baseline: what the field holds in memory, how the scene
   document remaps it, how the bake walks it, and how removing a component releases it. It

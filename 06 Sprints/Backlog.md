@@ -369,6 +369,13 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/low · **`/card-start` and `/card-close` assume every card has an engine PR**: the
+  branch gate wants `<card ID>/<slug>` and the close gate wants a merged PR, but a vault-only
+  Design or Process card has neither. S8-D1 (Oct 18-19) passed both by Miguel waiving the
+  branch gate by hand and treating the vault commit as the merge. The fix is one line in each
+  command: a vault-only card skips the branch gate, and its close gate is its vault commit on
+  `origin/master`. Found at S8-D1's close. Fits the Auto lane (`.claude/commands/`).
+
 - #prio/low · **Sweep the six remaining `GOTCHA:` labels**: S8-T10 (#141) made a `GOTCHA:`,
   `NOTE:` or `IMPORTANT:` label a delete-on-sight comment in `CONVENTIONS.md`, and cleaned only
   the file it added. Six comments still carry the label, in `Assert.hpp`, `Log.hpp` (two),
