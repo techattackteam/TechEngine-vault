@@ -292,14 +292,15 @@ three touches Sprint 09's scope (the mesh, reference fields, the startup load th
 or the shared scene-asset call), so S8-D2 still cuts all of that. Planned order: S8-T18 on Mon,
 S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
 
-- [ ] **S8-T18** · Make `App::m_scene` private · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S8-T18** · Make `App::m_scene` private · P2 · 🟠 Moderate · 2-3h ·
   done: `m_scene` moves out of `App`'s `protected` block, so a main-thread hook cannot reach the
   `Scene` while the simulation thread owns it. A simulation-thread hook that needs the scene
   receives it as a parameter instead; today that is only `simulationStartupLoad`, in both
   `RuntimeApp` and `EditorApp`.
   `RuntimeAppTests` and `EditorAppTests` reach the scene through a replacement for their probe's
   `return m_scene;`. Behaviour-preserving; the existing cases keep their assertions. Lands before
-  Sprint 09's editor startup load adds another hook that reads the scene.
+  Sprint 09's editor startup load adds another hook that reads the scene. Merged as #146
+  (`4563411d`, Oct 19).
 - [ ] **S8-D3** · Decide the test strategy: tiers, run policy and process isolation · P2 · 🟢 Deep · 4-6h ·
   done: the decision says which test tiers exist (unit, OS and driver integration, stress, and
   later functional, visual and perf), how a case is tagged into one, where and when each tier
