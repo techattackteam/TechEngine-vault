@@ -18,6 +18,14 @@
   cannot run `diff coverage` or the sanitizer legs, so an edit to those is first run by the
   next code PR. What was verified, and how, is in [[B3 - Build & Testing Notes]] § *Docs-only
   PRs*. Found at the 2026-08-29 drift check (A3). S7-P4.
+- **Amended 2026-10-19, decision:** §4 said the sanitizer trio is `pull_request`-only and does
+  not re-run on the merge push. It now **runs on the merge push and on a dispatch too**, and
+  `diff coverage` builds there without scoring a diff. The reason is the cache, not a second
+  check: a PR can restore only its own ref's caches and `master`'s, and `master` never saved
+  one for these four legs, so every PR built them cold (0 hits on #146's run). They stay
+  required PR checks. The 2026-10-09 entry's "a dispatch cannot run `diff coverage` or the
+  sanitizer legs" narrows to "a dispatch cannot run the diff gate". Takes effect when S8-D3's
+  PR merges. Same change as [[ADR-008 - v2 build & testing baseline]]'s amendment of this date.
 
 ## Context
 
@@ -98,6 +106,9 @@ The §9 `push` → `master` trigger still fires: a squash-merged PR **is** a pus
 per-PR", amended 2026-07-21), since a squash of an up-to-date branch (§2) yields the same
 tree the PR already sanitized. This clarifies §9's *trigger*, not its required-check set:
 sanitizers stay **required PR checks** (§2), they just don't re-run on the merge push.
+
+> **Amended 2026-10-19:** the sanitizer trio now does run on the merge push, to save the cache
+> the next PR restores. See the header.
 
 ## Consequences
 

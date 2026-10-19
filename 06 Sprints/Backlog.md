@@ -377,6 +377,7 @@ groups are kept, because they show where future work will land.
   have one each. Each sentence stays and only the label goes. The two workflow files are
   outside the Auto lane, so the card is attended or splits. Found at S8-T20's close on
   Oct 19, 2026. **Trigger:** the next card that edits `ci.yml`, such as S8-D3's follow-ups.
+  **Fired Oct 19:** S8-D3 drops all ten. Delete this entry when its PR merges.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers
@@ -405,6 +406,37 @@ groups are kept, because they show where future work will land.
   like a flake. Options are a test-only reset hook on the report-once static, or a rule that a
   fire count is asserted at exactly one case per site. **Trigger:** the next card that adds a
   `TE_ENSURE` case, or the first developer confused by a green `ctest` and a red exe.
+- #prio/medium · **Test tiers and parallel ctest**: S8-D3 started as this decision and was
+  rescoped on Oct 19 to the PR wall-time fix, because builds, not tests, set that time. Still
+  open: which tiers exist, how a case is tagged into one, where each runs, and whether any tier
+  shares a process. Already answered by Miguel at S8-D3's `/card-start`: the real-disk tests
+  (`[files]`, `[fileaccess]`, `[mounttable]` and the rest that use `ScratchDirectory`) are the
+  OS tier, not unit; and the repository is public now but will go private, so the plan must
+  hold under a minute budget. Proposed and not decided: tiers are Catch2 tags turned into CTest
+  labels (`catch_discover_tests(... ADD_TAGS_AS_LABELS)`, which the pinned Catch2 supports),
+  legs exclude by label so a forgotten tag runs more rather than less, every case keeps its own
+  process (so the `TE_ENSURE` entry above needs no reset hook), test presets set
+  `execution.jobs`, and `[stress]` leaves the sanitizer legs. Functional, visual and perf get a
+  shape and a trigger, not wiring. Evidence, measured Oct 11, 2026, with existing Windows
+  binaries:
+  - A test body takes about 0 ms. A process start costs 49 ms in `windows` Debug and 553 ms in
+    `windows-profile`, where Tracy sleeps 200 ms to calibrate its timer before `main`.
+  - Each `[window]` case costs about 450 ms in its own process, because the first OpenGL context
+    loads the driver. The 13 cases take 1.6 s in one process and 3.5 s in separate processes.
+  - The two `... does not depend on recursion depth` cases (`HierarchyTests`, `TransformTests`)
+    take 6 s each in Debug. They build a 4096-deep chain top-down, and `setParent`'s cycle check
+    makes that quadratic.
+  - On CI (run 38367963268, Oct 13, 2026), `win ASan`'s test step is 173 s for 621 cases,
+    against 13-45 s on every other leg: about 89 s of process startup, 61 s of window and GL
+    cases and 21 s for the two recursion-depth cases. Its cap is `timeout-minutes: 5`.
+  - No test preset sets `execution.jobs`, so `ctest` runs one case at a time on 4-core runners.
+    Every `ScratchDirectory` name is unique today (checked by grep only), which parallel runs
+    need.
+  - Three `EditorAppTests` cases are tagged only `[editor]` (project mounts, asset index, the
+    `assets/client` overlay), but `bootstrap()` opens a window, so a split by tag would leave
+    them in the unit tier.
+
+  **Trigger:** the repository goes private, or `win ASan`'s test step passes 4 minutes.
 
 - #prio/medium · **Make sanitizer workflow edits testable in hosted CI**: PR #93
   changed the Linux TSan test step but received only docs-only stand-in checks.
@@ -413,6 +445,8 @@ groups are kept, because they show where future work will land.
   remains unverified. Find a targeted validation path that preserves the normal
   PR-only sanitizer cost. **Trigger:** before the next sanitizer workflow edit;
   inspect the next code PR's Linux TSan result for #93's first hosted evidence.
+  **Fired Oct 19:** S8-D3 runs the sanitizers on `master` pushes and dispatches, so a dispatch
+  now validates a sanitizer workflow edit. Delete this entry when its PR merges.
 - #prio/low · **`delete_branch_on_merge` is off**: [[ADR-009 - Branching strategy & merge rules]]
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a
@@ -445,6 +479,8 @@ groups are kept, because they show where future work will land.
   The three open fixes are `.github/workflows/ci.yml` edits, outside the Auto lane. Found while
   measuring the test step for S8-D3's evidence. **Trigger:** the test-strategy decision
   (S8-D3), since both change `ci.yml`.
+  **Fired Oct 19:** S8-D3 takes the first and third causes. When its PR merges, cut this entry
+  down to the clang-tidy cause alone.
 - #prio/high · **Memory-management design note**: the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
 - #prio/medium · **Point later dependency allocator hooks at the profiler**: Jolt

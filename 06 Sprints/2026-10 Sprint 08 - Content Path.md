@@ -301,32 +301,24 @@ S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
   `return m_scene;`. Behaviour-preserving; the existing cases keep their assertions. Lands before
   Sprint 09's editor startup load adds another hook that reads the scene. Merged as #146
   (`4563411d`, Oct 19).
-- [ ] **S8-D3** · Decide the test strategy: tiers, run policy and process isolation · P2 · 🟢 Deep · 4-6h ·
-  done: the decision says which test tiers exist (unit, OS and driver integration, stress, and
-  later functional, visual and perf), how a case is tagged into one, where and when each tier
-  runs (local, every CI leg, nightly) within the CI-minute budget, and whether any tier shares
-  one process. It settles the `TE_ENSURE` report-once interaction ([[Backlog]] → *etc:
-  cross-cutting*) and starts from the Unity and Unreal baseline (EditMode and PlayMode tests;
-  automation filters, Functional Tests and Low-Level Tests). It is an ADR if it changes
-  [[ADR-008 - v2 build & testing baseline]] in a hard-to-reverse way, otherwise a section in
-  [[B3 - Build & Testing Notes]]. The `ci.yml` fixes it implies, together with the CI wall-time
-  entry in [[Backlog]], are written up as Sprint 09 candidates. Vault-only. Evidence, moved
-  from the Backlog (measured Oct 11, 2026, with existing Windows binaries):
-  - A test body takes about 0 ms. A process start costs 49 ms in `windows` Debug and 553 ms in
-    `windows-profile`, where Tracy sleeps 200 ms to calibrate its timer before `main`.
-  - Each `[window]` case costs about 450 ms in its own process, because the first OpenGL context
-    loads the driver. The 13 cases take 1.6 s in one process and 3.5 s in separate processes.
-  - The two `... does not depend on recursion depth` cases (`HierarchyTests`, `TransformTests`)
-    take 6 s each in Debug. They build a 4096-deep chain top-down, and `setParent`'s cycle check
-    makes that quadratic.
-  - On CI (run 38367963268, Oct 13, 2026), only `win ASan` has a slow test step: 173 s for 621
-    cases, against 13-45 s on every other leg. About 89 s is process startup for the ~595 short
-    cases (0.15 s each under ASan), about 61 s is the window and GL cases (about 2.2 s each), and
-    about 21 s is the two recursion-depth cases.
-  - No test preset sets `execution.jobs`, so `ctest` runs one case at a time on 4-core runners.
-  - Three `EditorAppTests` cases are tagged only `[editor]` (project mounts, asset index, the
-    `assets/client` overlay), but `bootstrap()` opens a window, so a split by tag would leave
-    them in the unit tier.
+- [ ] **S8-D3** · Cut a PR's CI wall time · P1 · 🟢 Deep · 4-6h ·
+  done: `diff coverage`, `win ASan`, `linux UBSan` and `linux TSan` also run on `master` pushes
+  and dispatches, so `master` holds a ccache for each and a PR's first push restores it. On a
+  push, `diff coverage` builds and saves its cache but skips the diff gate. No leg `needs:`
+  `diff coverage` any more: every leg starts right after `clang-format`, and an under-covered
+  diff still blocks the merge through its own check. `cache-prune` keeps one entry per family on
+  `master` with no logic change. The ten `GOTCHA:` and `NOTE:` labels left in `ci.yml`,
+  `ci-docs.yml`, `.clang-format`, `cmake/coverage.cmake` and `cmake/coverage_report.cmake` go,
+  each sentence kept. The next code PR's first push is measured against #146's 17.5 min, and
+  `master` shows one `ccache-v2-<leg>` entry per leg after two merges.
+  **Rescoped on Oct 19** from "Decide the test strategy: tiers, run policy and process
+  isolation", vault-only. At `/card-start` Miguel named the real goal, a PR that does not take
+  15 minutes, and #146's run showed that builds, not tests, set that time: the four PR-only legs
+  had 0 cache hits, and every leg waited for `diff coverage`. Module-scoped test runs were
+  considered and rejected, because the module chain makes most PRs test most modules and the
+  build is the slow part. The tier work and its evidence moved to [[Backlog]] → *etc:
+  cross-cutting* (*Test tiers and parallel ctest*). Recorded as dated amendments to
+  [[ADR-008 - v2 build & testing baseline]] and [[ADR-009 - Branching strategy & merge rules]].
 - [ ] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h ·
   done: `RuntimeApp` and `EditorApp` stop hosting the client the same way twice. One
   client-hosting `App` subclass owns the client and implements

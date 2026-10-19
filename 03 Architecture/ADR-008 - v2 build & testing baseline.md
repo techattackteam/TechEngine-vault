@@ -17,7 +17,8 @@
   debug info (compiler caches can't cache `/Zi` PDBs).
 - **Amended 2026-07-21:** two §9 corrections. (1) Sanitizer trigger made literal:
   sanitizers run **`pull_request` only** (Option A "all per-PR"); the `push`→`master`
-  backstop runs build+format+tidy+`te_sdk_smoke`, **not** the sanitizer trio (a
+  backstop runs build+format+tidy+`te_sdk_smoke`, **not** the sanitizer trio (reversed
+  2026-10-19, below) (a
   squash-merge was already sanitized on its up-to-date PR,
   see [[ADR-009 - Branching strategy & merge rules]] §4). Sanitizers remain **required PR checks**; only the push
   run drops them. (2) The §4/§9 "ccache caches deps" claim needed Jolt to stop forcing
@@ -33,7 +34,7 @@
   required-check list gains a ninth entry, **`diff coverage`**. Old list: build+test on both
   legs × {Debug, Release} + `clang-format`/`clang-tidy` + `te_sdk_smoke`. It blocks a merge
   under **85% of the lines the PR changes**, bypassable with `[skip-coverage]` in the PR
-  description. (2) That retires §9's "affordable because matrix legs run **in parallel**"
+  description. (2) (Reversed 2026-10-19, below.) That retires §9's "affordable because matrix legs run **in parallel**"
   rationale: `build-test` and `sanitizers` now both declare `needs: [format, coverage]`, so
   the expensive legs sit behind two cheap gates and PR wall-clock is a sum, not a max. The
   trade was deliberate, since a formatting slip or an under-covered diff should not pay for
@@ -58,6 +59,18 @@
   check. Same change, reason and confirmation as [[ADR-005 - v2 tech stack & toolchain]]'s
   amendment of this date (#78, S5-T12; permanent per Miguel). §5's "our targets only" channel
   is unchanged and still carries the sanitizer and coverage flags. S7-P1.
+- **Amended 2026-10-19, decision:** two §9 changes to cut a PR's wall time, which had reached
+  14.5-17.5 min (#142, #146), almost all of it builds. (1) **Reverses the 2026-07-21 (1) entry:**
+  the sanitizer trio and the `diff coverage` build also run on the `push` to `master` and on a
+  dispatch. Only the diff gate itself stays `pull_request`-only. A PR restores caches only from
+  its own ref and `master`, and `master` never saved one for these four legs, so each PR built
+  them cold. (2) **Reverses the 2026-08-27 (2) entry:** no leg `needs: coverage` any more. Every
+  leg waits only for `clang-format`, and `diff coverage` blocks the merge through its own
+  required check. Both trades cost minutes, which is acceptable because the repository is
+  public and its runners report 0 billable minutes ([[B3 - Build & Testing Notes]] § *CI cost
+  per code PR, re-measured*). **Reversal trigger:** the repository goes private. Then the
+  `master` run becomes a build-only warm job, or moves to a nightly schedule. The cost
+  argument and the measurements are in B3 § *Four legs start every PR cold*. S8-D3.
 
 ## Context
 
@@ -324,6 +337,8 @@ merge. (ADR-005 chose GitHub Actions.)
     checked-in suppressions file**; promote to zero-tolerance once it's proven stable.
   > **Amended 2026-08-27:** the "in parallel" rationale opening this bullet no longer holds.
   > The legs are chained behind `format` and `coverage`. See the header.
+  > **Amended 2026-10-19:** it holds again: the legs wait only for `format`, and the sanitizers
+  > also run on the `master` push to warm their cache. See the header.
 - **Caching is mandatory** (§4): each sanitizer is its own cache namespace; a cold leg
   rebuilds heavy deps (assimp) under instrumentation. ccache + `_deps` cache keyed on
   `deps.cmake` + compiler + `TE_SANITIZER`.

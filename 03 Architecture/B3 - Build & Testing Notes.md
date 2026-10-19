@@ -59,16 +59,6 @@ runs. Since #78 (Sep 8) its findings are warnings that never fail the leg
 ([[ADR-008 - v2 build & testing baseline]]'s 2026-10-09 amendment), so the only way to see them
 is to read that leg's build log.
 
-**Phantom `CI / matrix.name` check on push runs: cosmetic, don't chase it.** The sanitizer
-job is `pull_request`-only (`ci.yml` `if: github.event_name == 'pull_request'`, ADR-008 §9
-amended + ADR-009 §4). When a job is skipped by a **job-level `if:`** the matrix never
-expands, so `name: ${{ matrix.name }}` has no matrix context and GitHub renders the literal
-expression: **one** skipped check called `matrix.name` instead of three named ones. On a PR
-the job runs, the matrix expands, and the real contexts (`win ASan`, `linux UBSan`,
-`linux TSan`) report normally, which is where required checks are evaluated, so branch
-rulesets are unaffected. Clean fix if it ever matters: split sanitizers into their own
-`pull_request`-only workflow; costs ~40 lines of duplicated setup for a cosmetic win.
-
 ## Profiling builds (Tracy): the pin is two-sided
 
 **Tracy `v0.14.1`** (`cmake/deps.cmake:117`), since #46 on 2026-08-24. This line said `v0.13.1`
@@ -216,14 +206,15 @@ the job**, before a single apt package, and every later step carries a guard aga
 A bypassed run finishes in seconds instead of spending about two minutes on clang, `diff-cover`
 and an instrumented build to reach a conclusion it already had.
 
-**It skips steps, never the job, for two reasons.** A job-level `if:` can only read the frozen
-event payload (*The bypass reads the API* below). And `sanitizers` needs this job to succeed: a
-skipped `coverage` would skip that matrix job too, which then reports one check named
-`matrix.name` instead of its three required contexts, and the pull request hangs pending. The
-`diff coverage` context itself would survive a skip, because GitHub documents a skipped
-required check as passing (*Four things that bite*, below). The cost of that shape is that a
-bypassed run reports no percentage and uploads no HTML, which is the trade taken knowingly: the
-old shape built everything to print a figure it was about to ignore.
+**It skips steps, never the job,** because a job-level `if:` can only read the frozen event
+payload (*The bypass reads the API* below). Until S8-D3 there was a second reason: `sanitizers`
+needed this job to succeed. No job depends on `coverage` any more. The cost of that shape is
+that a bypassed run reports no percentage and uploads no HTML, which is the trade taken
+knowingly: the old shape built everything to print a figure it was about to ignore.
+
+**On a `master` push or a dispatch the job only builds.** There is no diff to score, so the
+bypass, the `Coverage` step and the upload are `pull_request`-only, and the run exists to save
+the `linux-coverage` ccache that PRs restore (*Four legs start every PR cold*, below).
 
 **Below 10 changed measurable lines the gate stops scoring and passes.** Measurable means the
 changed lines that carry coverage mapping, which is the set the percentage is computed over. At
@@ -329,7 +320,8 @@ TUs stay warm as well as dependencies. That makes storage the cost, and two piec
 **Why per ref.** A PR can read caches from its own merge ref and from `master`, nothing else.
 A closed PR's entries are therefore unreadable, and only the newest `master` snapshot per leg
 is ever restored. On a dry run on Oct 1, 2026, the steady state on `master` was eight
-entries and about 730 MB, and an open PR adds at most one entry per leg.
+entries and about 730 MB, and an open PR adds at most one entry per leg. Since S8-D3,
+`master` also holds one entry for each of the four PR-only legs.
 
 ### Four legs start every PR cold (S8-P6, 2026-10-16)
 
@@ -351,20 +343,25 @@ run 38809485445 came 14 minutes later on the same PR and restored the first run'
 | `win ASan` (×2) | 222 s → 28 s | 8:18 → 5:05 | 18 → 12 |
 | **Total** | | | **33 → 19** |
 
-**Why `master` should not run them just to warm the cache.** Running the four jobs on every
-`master` push costs at least the warm column, about 19 billed minutes per merge, and more
-when the previous `master` snapshot is older. It saves at most the difference, about 14
-minutes, and only on the first run of the next PR. Every later run of a PR is already warm
-from its own ref. One merge is roughly one PR, so the push spends more than it saves. The 14
-is also an upper bound: run 2 differed from run 1 by one merge commit, while a new PR differs
-from `master`'s snapshot by its whole diff. `win ASan`'s 198 s test step, not its build, is
-most of its job either way.
+**Measured in billed minutes, warming them on `master` did not pay.** Running the four jobs on
+every `master` push costs at least the warm column, about 19 billed minutes per merge, and
+saves at most about 14 on the next PR's first run.
 
-Two things would change this. If the repository's runners prove free (§ *CI cost per code
-PR, re-measured*), the trade is wall time and cache storage rather than minutes. Wall time is the larger cost there:
-run 1 took 14 minutes end to end and run 2 under 8, because the cold `diff coverage` build
-and the cold `win ASan` build both sit on the critical path. And the fixes listed in
-[[Backlog]] under *Builds, not tests, set CI wall time* are `ci.yml` edits, so they are Miguel's.
+**Reversed by S8-D3 (Oct 19), because minutes are not the cost.** The repository is public and
+its runners report 0 billable minutes (§ *CI cost per code PR, re-measured*), so the trade is
+wall time against cache storage, and wall time is what Miguel waits on before every merge. #146's
+PR run (39300560487) took 17.5 minutes with 0 cache hits on all four legs, against 14.5 for
+#142's. #143 had just made every call cacheable, which only helps where a cache exists, and on
+these legs it meant compiling Jolt cold without its precompiled header. So the four legs now
+also run on every `master` push and dispatch, `diff coverage` there builds without scoring a
+diff, and no leg waits for `diff coverage` any more
+([[ADR-008 - v2 build & testing baseline]]'s amendment of Oct 19). Expected: a PR's first push
+close to #139's warm second run (under 8 minutes), lower once the coverage gate is gone. Not
+measured yet; the next code PR after S8-D3 measures it.
+
+**Storage:** `cache-prune` keeps one entry per family on `master`, so four families add four
+entries, roughly 0.3-0.6 GB at today's sizes. **If the repository goes private**, the `master`
+run becomes a build-only warm job or a nightly one.
 
 ### Jolt's precompiled header is never cached (S8-P7, 2026-10-19)
 
@@ -398,7 +395,9 @@ The Windows legs had also reported 139 uncacheable calls out of 410 (run 3916233
 reason in their `ccache -s`. #143's own run (39231921663) confirms the PCH was the cause there
 too: `win-msvc Debug` reports 3 uncacheable calls out of 409, and `linux-clang Debug` reports
 414 of 414 cacheable. The last 3 Windows calls still have no logged reason. Whether the change
-shortens CI runs is not measured yet; S8-P10 measures it.
+shortens `master` runs is not measured yet; S8-P10 measures it. **On a PR it first made things
+worse:** the four PR-only legs had no cache to hit, so they compiled Jolt cold without the PCH,
+and #146's PR run took 17.5 minutes against #142's 14.5 (*Four legs start every PR cold*).
 
 ### How it got here
 
@@ -475,13 +474,11 @@ price of a token permission and more moving parts.
   each produced a `ci-docs.yml` push run on `master` and no `ci.yml` run.
 - **No `workflow_dispatch` had ever run** before 2026-10-09. Both merges were first exercised
   by the next code PR, which is the gap the ADR-009 amendment closes.
-- **A dispatch runs the same jobs as a `master` push**, because `coverage` and `sanitizers`
-  are gated on `pull_request` and `build-test` accepts a skipped `coverage`. #120's push run
-  (`37971487921`, Oct 9) is that job set: clang-format, the four build legs and
-  `prune caches` succeeded, `diff coverage` was skipped, and the sanitizer matrix collapsed to
-  one skipped `matrix.name`. So a dispatch checks the YAML, `format`, `build-test` and
-  `cache-prune`. An edit to `coverage` or `sanitizers` is first run by the next code PR. The
-  [[Backlog]] entry on testing sanitizer workflow edits is the open half of this.
+- **A dispatch runs the same jobs as a `master` push.** Until S8-D3 that was clang-format,
+  the four build legs and `prune caches`, with `diff coverage` skipped and the sanitizer matrix
+  collapsed to one skipped `matrix.name` (#120's push run, `37971487921`, Oct 9). Since S8-D3
+  it is every leg, the sanitizers included, and `diff coverage` builds without scoring. So a
+  dispatch now checks every job except the diff gate, which only a code PR runs.
 - No dispatch was triggered to show this, because on an unchanged `master` it would have
   repeated #120's push run.
 
@@ -496,7 +493,7 @@ into the runner image, because it never runs `apt-get update`.
 **`xorg-dev` became an explicit list**: `libx11-dev`, `libxrandr-dev`, `libxinerama-dev`,
 `libxcursor-dev`, `libxi-dev` and `libxext-dev`, which is exactly what GLFW 3.4's CMake checks
 for. A configure that fails with "headers not found" means GLFW grew a dependency: add its
-`-dev` package to all three lists, not `xorg-dev` back. `ci.yml`'s GOTCHA comment on
+`-dev` package to all three lists, not `xorg-dev` back. `ci.yml`'s comment on
 `build-test` says the same.
 
 **Measured effect** (S8-P2, Oct 13), over every successful first-attempt PR run of `ci.yml`
