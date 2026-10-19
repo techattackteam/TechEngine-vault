@@ -252,12 +252,13 @@ type.
   every compile call on the Linux legs is cacheable. Added Oct 19 at Miguel's request, out of
   S8-P7; this line was written at the close, because the card went onto the board only.
   Merged as #143 (`83ba4d47`, Oct 19).
-- [ ] **S8-P8** · Match the routine prompt note to what the lane does · P3 · 🤖 Auto · 1h ·
+- [x] **S8-P8** · Match the routine prompt note to what the lane does · P3 · 🟡 Light · 1h ·
   done: [[Autonomous Lane - Routine Prompt]]'s test line runs
   `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug`, and its PR step re-sends the
   body once after creation to strip the harness's attribution footer. Vault-only; the report
   asks Miguel to paste the prompt into the routine and to re-point the cron for Oct 25.
-- [ ] **S8-P9** · Let the Auto lane start and close its own cards · P3 · 🟡 Light · 1h ·
+  Moved to attended work on Oct 19. Landed in vault `a3d9c3a` (Oct 19).
+- [x] **S8-P9** · Let the Auto lane start and close its own cards · P3 · 🟡 Light · 1h ·
   done: `.claude/commands/card-start.md` and `card-close.md` each gain a section for the Auto
   lane. The lane grounds an Auto card with `/card-start` before working it (order gate only,
   brief into the run report), and closes its own Auto cards with the whole of `/card-close`,
@@ -266,7 +267,7 @@ type.
   instead of a merged PR; S8-D1 passed both gates only because Miguel waived them by hand.
   [[Autonomous Lane - Design]] decision 7 records the change. Rescoped by Miguel on Oct 19
   from the vault-only gate alone, and worked attended with S8-P8, because the lane likely
-  cannot edit its own commands either.
+  cannot edit its own commands either. Merged as #145 (`17e7df88`, Oct 19).
 - [x] **S8-T20** · Drop the six remaining `GOTCHA:` and `NOTE:` labels · P3 · 🤖 Auto · 1h ·
   done: the comments in `Assert.hpp`, `Log.hpp` (two), `AssertCapture.hpp`, `AssertTests.cpp`
   and `engine/app/tests/diagnostics/DiagnosticsTests.cpp` keep their sentences and lose the

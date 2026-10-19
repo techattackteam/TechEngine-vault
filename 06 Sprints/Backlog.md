@@ -362,6 +362,13 @@ groups are kept, because they show where future work will land.
   or the first time a level-3 build breaks again.
   **Near miss Oct 6:** #117 added `InputLogSystem::onRecovered`, whose parameter only an Info
   log reads. It got `[[maybe_unused]]` by hand before the commit; nothing would have caught it.
+- #prio/medium · **Does the lane's sandbox let it edit the Sprint Board?**: on Oct 19 the
+  14:15 fire's edit to S8-P8's board line was refused as instruction poisoning, together with
+  its edit to its own prompt ([[2026-10-19 14-15 Auto Run]]). Only that one board edit was
+  tried. If every board edit is refused, step 9 never runs, every fire re-picks its card, and
+  S8-P9's closes cannot land. The fallback would be a close written into the run report for
+  Miguel to apply. Found at S8-P8's close on Oct 19, 2026. **Trigger:** the first fire after
+  the new prompt is pasted that moves or closes a card.
 - #prio/low · **Ten `GOTCHA:` and `NOTE:` labels remain outside the C++ tree**:
   `CONVENTIONS.md` § *Comments* says the label rule also holds in CMake, CI and config files,
   but S8-T20 (#144) grepped only `engine/`, `apps/`, `sdk/` and `tests/`. On `master` at
