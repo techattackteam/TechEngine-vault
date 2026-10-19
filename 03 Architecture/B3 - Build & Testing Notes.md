@@ -366,6 +366,36 @@ run 1 took 14 minutes end to end and run 2 under 8, because the cold `diff cover
 and the cold `win ASan` build both sit on the critical path. And the fixes listed in
 [[Backlog]] under *Builds, not tests, set CI wall time* are `ci.yml` edits, so they are Miguel's.
 
+### Jolt's precompiled header is never cached (S8-P7, 2026-10-19)
+
+Every build has had **139 uncacheable calls**. They are Jolt's 138 TUs plus the object that
+builds Jolt's PCH. Jolt's own CMake (`Jolt/Jolt.cmake`) calls `target_precompile_headers(Jolt
+PRIVATE Jolt.h)` on every config except `ReleaseCoverage`. ccache refuses a PCH unless its
+`sloppiness` setting allows it, and ours is the default, which is empty. Its log says so for
+each call: the PCH object needs `pch_defines,time_macros`, and each TU that uses the PCH needs
+`time_macros`. All 139 are counted as `Could not use precompiled header`.
+
+Measured on Oct 19 in the cloud sandbox, `linux-debug` with clang-tidy on as CI runs it, on
+engine `39943f19`. Each shape had a fresh cache dir and two builds from an empty build dir.
+
+| Shape | Cacheable | Warm hits | Cold build | Warm build |
+|---|---|---|---|---|
+| As CI runs it today | 276 / 415 | 276 / 276 | 254 s | 135 s |
+| `CCACHE_SLOPPINESS=pch_defines,time_macros` and `-Xclang -fno-pch-timestamp` | 415 / 415 | 415 / 415 | 244 s | 115 s |
+| `CMAKE_DISABLE_PRECOMPILE_HEADERS=ON` | 414 / 414 | 414 / 414 | 274 s | 114 s |
+
+Either fix saves about 20 seconds on a warm Linux build. Without the PCH, a cold build
+costs about 30 seconds more. Each time is one sample on a shared machine, so read the
+seconds as rough. clang-tidy is still most of the warm build, and ccache never caches it.
+
+Two things this does not prove. The Windows legs also report 139 uncacheable calls, out of
+410 (run 39162335162), but their `ccache -s` gives no reason, so the PCH as the cause there is
+likely and not confirmed. And the sloppiness shape was tested only together with
+`-fno-pch-timestamp`, which ccache's manual requires for clang. The first shape is a `ci.yml`
+edit; the second is a `cmake/deps.cmake` edit, or a `DISABLE_PRECOMPILE_HEADERS` property on
+the `Jolt` target only. Both are Miguel's, tracked in [[Backlog]] under *Builds, not tests,
+set CI wall time*.
+
 ### How it got here
 
 | Shape | What went wrong |

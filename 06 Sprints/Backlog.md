@@ -415,15 +415,19 @@ groups are kept, because they show where future work will land.
 
 - #prio/high · **Builds, not tests, set CI wall time**: on run 38367963268 (Oct 13, 2026) a PR
   run took 12.6 min. Its critical path is `clang-format` (10 s), then `diff coverage` (4.1 min),
-  which `sanitizers` waits on, then `win ASan` (8.1 min). Three causes, from the leg logs:
+  which `sanitizers` waits on, then `win ASan` (8.1 min). Four causes, from the leg logs:
   - The four PR-only builds (`diff coverage`, `linux TSan`, `linux UBSan`, `win ASan`) hit
     ccache 0% and took 150-237 s each. A PR restores caches only from its own ref or from
     `master`, and `master` never runs those jobs, so every PR's first run builds them cold.
   - `linux-clang` Debug and Release hit ccache 99% and still build for about 185 s, because
     clang-tidy runs there and ccache does not cache it.
   - The `needs: coverage` gate puts 4.1 min in front of the sanitizer legs.
+  - Jolt's precompiled header makes 139 compile calls uncacheable on every leg. Allowing it
+    through ccache's `sloppiness`, or turning off the PCH on the `Jolt` target, saved about
+    20 s on a warm local Linux build (S8-P7, [[B3 - Build & Testing Notes]] § *ccache keys*).
 
-  All three fixes are `.github/workflows/ci.yml` edits, outside the Auto lane. Found while
+  The fixes are `.github/workflows/ci.yml` edits (the PCH one may be `cmake/deps.cmake`
+  instead), outside the Auto lane. Found while
   measuring the test step for S8-D3's evidence. **Trigger:** the test-strategy decision
   (S8-D3), since both change `ci.yml`.
 - #prio/high · **Memory-management design note**: the engine-wide map (lifetime tiers,
