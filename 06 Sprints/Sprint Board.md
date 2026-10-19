@@ -58,6 +58,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S8-T21** · Turn off Jolt's precompiled header so ccache caches Jolt · P1 · 🟡 Light · 30m: #143, branch `S8-T21/jolt-no-pch`. Added Oct 19 at Miguel's request, out of S8-P7. One `set_target_properties(Jolt PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)` in `cmake/deps.cmake`. Green locally on `linux-debug` (414 of 414 calls cacheable, 678 tests passed); the Windows legs are first proven by #143's own CI. Miguel reviews and merges.
 
 
 ## ✅ Done: Sprint 08

@@ -425,6 +425,7 @@ groups are kept, because they show where future work will land.
   - Jolt's precompiled header makes 139 compile calls uncacheable on every leg. Allowing it
     through ccache's `sloppiness`, or turning off the PCH on the `Jolt` target, saved about
     20 s on a warm local Linux build (S8-P7, [[B3 - Build & Testing Notes]] § *ccache keys*).
+    **In review as S8-T21, #143**, which turns off the PCH on the `Jolt` target.
 
   The fixes are `.github/workflows/ci.yml` edits (the PCH one may be `cmake/deps.cmake`
   instead), outside the Auto lane. Found while

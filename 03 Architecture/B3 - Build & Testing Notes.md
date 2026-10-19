@@ -393,8 +393,8 @@ Two things this does not prove. The Windows legs also report 139 uncacheable cal
 likely and not confirmed. And the sloppiness shape was tested only together with
 `-fno-pch-timestamp`, which ccache's manual requires for clang. The first shape is a `ci.yml`
 edit; the second is a `cmake/deps.cmake` edit, or a `DISABLE_PRECOMPILE_HEADERS` property on
-the `Jolt` target only. Both are Miguel's, tracked in [[Backlog]] under *Builds, not tests,
-set CI wall time*.
+the `Jolt` target only. S8-T21 (#143) takes the second shape, on the `Jolt` target only,
+because it covers the MSVC legs too and its own PR tests it, where a `ci.yml` edit is not.
 
 ### How it got here
 
