@@ -263,6 +263,16 @@ type.
   label, as `CONVENTIONS.md` § *Comments* requires since S8-T10. A grep for `GOTCHA:`, `NOTE:`
   and `IMPORTANT:` under `engine/`, `apps/`, `sdk/` and `tests/` returns nothing.
   Comment-only; existing tests pass unedited.
+- [ ] **S8-P10** · Measure whether #143 made CI faster · P3 · 🤖 Auto · 1h ·
+  done: the second `ci.yml` push run on `master` after #143 (S8-T21) merges, which is the
+  first one warm under the new ccache key, is compared per build leg against run 39162335162
+  (Oct 18, before #143): cacheable, uncacheable and hit counts from `ccache stats`, and the
+  `Build` step's duration. The first code PR opened after that run is compared the same way,
+  on its four build legs, against #142's PR run. The result goes into
+  [[B3 - Build & Testing Notes]] § *ccache keys* → *Jolt's precompiled header is never cached*,
+  including whether Windows still has 3 uncacheable calls. Report-only, from the Actions API.
+  Until that second `master` run exists, a fire reports that it is waiting and leaves the
+  card in To Do.
 
 ### Story I: Week 2 fill
 
@@ -324,6 +334,8 @@ S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
   (six):** S8-P2, S8-P4, S8-P6, S8-P7 and S8-P8 are vault-only or report-only, and S8-P3 is
   report-only. S8-P4 is P2 so the lane takes it early, for S8-D1. With no Auto card open, the
   morning fire screens papers and the afternoon fire sweeps one module.
+- S8-P10 was added on Oct 19 at Miguel's request, to check #143's CI speed-up; it is
+  report-only and waits on a second `master` run after #143 merges.
 - Two more were added on Oct 19, bringing the total to fourteen: S8-T20 is a code PR, and S8-P9
   (`.claude/`) is docs-only. S8-T20 touches only `engine/base` and diagnostics tests, which no
   attended week-2 card changes; S8-T18 and S8-T19 take `engine/app` and `apps/`.

@@ -43,6 +43,7 @@ kanban-plugin: board
 - [ ] **S8-P8** · Match the routine prompt note to what the lane does · P3 · 🤖 Auto · 1h: the xvfb test line and the footer re-send step; Miguel pastes it and re-points the cron for Oct 25.
 - [ ] **S8-P9** · Let a vault-only card pass `/card-start` and `/card-close` · P3 · 🤖 Auto · 1h: one line in each command; a vault-only card skips the branch gate and closes on its vault commit.
 - [ ] **S8-T20** · Drop the six remaining `GOTCHA:` and `NOTE:` labels · P3 · 🤖 Auto · 1h: comment-only, in `engine/base` and two diagnostics tests; the sentences stay.
+- [ ] **S8-P10** · Measure whether #143 made CI faster · P3 · 🤖 Auto · 1h: after #143 merges and a second `master` run exists; ccache stats and Build step times against run 39162335162, result in B3; report-only.
 
 
 ## Story I: Week 2 fill
