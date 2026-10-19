@@ -242,27 +242,37 @@ type.
   `refs/pull/N/merge` serves only that PR, that `sanitizers` and `coverage` never run on
   `master`, and why pushing them on `master` costs more billed minutes than it saves.
   Vault-only.
-- [ ] **S8-P7** · Measure whether Jolt's precompiled header defeats ccache · P3 · 🤖 Auto · 1-2h ·
+- [x] **S8-P7** · Measure whether Jolt's precompiled header defeats ccache · P3 · 🤖 Auto · 1-2h ·
   done: a local `linux-debug` build, run twice under ccache, reports with `ccache -sv` whether
   the 138 Jolt objects and Jolt's PCH object are the 139 uncacheable calls, and why. The result
   goes into [[B3 - Build & Testing Notes]] § *ccache keys*; any fix touches `ci.yml` and stays
-  Miguel's. Report-only.
+  Miguel's. Report-only. Worked Oct 19 by the morning auto run.
+- [x] **S8-T21** · Turn off Jolt's precompiled header so ccache caches Jolt · P1 · 🟡 Light · 30m ·
+  done: `cmake/deps.cmake` sets `DISABLE_PRECOMPILE_HEADERS ON` on the `Jolt` target only, and
+  every compile call on the Linux legs is cacheable. Added Oct 19 at Miguel's request, out of
+  S8-P7; this line was written at the close, because the card went onto the board only.
+  Merged as #143 (`83ba4d47`, Oct 19).
 - [ ] **S8-P8** · Match the routine prompt note to what the lane does · P3 · 🤖 Auto · 1h ·
   done: [[Autonomous Lane - Routine Prompt]]'s test line runs
   `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug`, and its PR step re-sends the
   body once after creation to strip the harness's attribution footer. Vault-only; the report
   asks Miguel to paste the prompt into the routine and to re-point the cron for Oct 25.
-- [ ] **S8-P9** · Let a vault-only card pass `/card-start` and `/card-close` · P3 · 🤖 Auto · 1h ·
-  done: `.claude/commands/card-start.md` skips the `<card ID>/<slug>` branch gate for a
-  vault-only Design or Process card, and `.claude/commands/card-close.md` takes that card's vault
-  commit on the vault's `origin/master` as its close gate instead of a merged PR. One line in each
-  command. S8-D1 passed both gates only because Miguel waived them by hand on Oct 19.
-- [ ] **S8-T20** · Drop the six remaining `GOTCHA:` and `NOTE:` labels · P3 · 🤖 Auto · 1h ·
+- [ ] **S8-P9** · Let the Auto lane start and close its own cards · P3 · 🟡 Light · 1h ·
+  done: `.claude/commands/card-start.md` and `card-close.md` each gain a section for the Auto
+  lane. The lane grounds an Auto card with `/card-start` before working it (order gate only,
+  brief into the run report), and closes its own Auto cards with the whole of `/card-close`,
+  the Dashboard's *Current focus* included; attended cards stay Miguel's. Both commands also
+  let a vault-only Design or Process card skip the branch gate and close on its vault commit
+  instead of a merged PR; S8-D1 passed both gates only because Miguel waived them by hand.
+  [[Autonomous Lane - Design]] decision 7 records the change. Rescoped by Miguel on Oct 19
+  from the vault-only gate alone, and worked attended with S8-P8, because the lane likely
+  cannot edit its own commands either.
+- [x] **S8-T20** · Drop the six remaining `GOTCHA:` and `NOTE:` labels · P3 · 🤖 Auto · 1h ·
   done: the comments in `Assert.hpp`, `Log.hpp` (two), `AssertCapture.hpp`, `AssertTests.cpp`
   and `engine/app/tests/diagnostics/DiagnosticsTests.cpp` keep their sentences and lose the
   label, as `CONVENTIONS.md` § *Comments* requires since S8-T10. A grep for `GOTCHA:`, `NOTE:`
   and `IMPORTANT:` under `engine/`, `apps/`, `sdk/` and `tests/` returns nothing.
-  Comment-only; existing tests pass unedited.
+  Comment-only; existing tests pass unedited. Merged as #144 (`b7e64c1e`, Oct 19).
 - [ ] **S8-P10** · Measure whether #143 made CI faster · P3 · 🤖 Auto · 1h ·
   done: the second `ci.yml` push run on `master` after #143 (S8-T21) merges, which is the
   first one warm under the new ccache key, is compared per build leg against run 39162335162

@@ -362,6 +362,14 @@ groups are kept, because they show where future work will land.
   or the first time a level-3 build breaks again.
   **Near miss Oct 6:** #117 added `InputLogSystem::onRecovered`, whose parameter only an Info
   log reads. It got `[[maybe_unused]]` by hand before the commit; nothing would have caught it.
+- #prio/low · **Ten `GOTCHA:` and `NOTE:` labels remain outside the C++ tree**:
+  `CONVENTIONS.md` § *Comments* says the label rule also holds in CMake, CI and config files,
+  but S8-T20 (#144) grepped only `engine/`, `apps/`, `sdk/` and `tests/`. On `master` at
+  `b7e64c1e`, `.github/workflows/ci.yml` has six (five `GOTCHA:`, one `NOTE:`), and
+  `ci-docs.yml`, `.clang-format`, `cmake/coverage.cmake` and `cmake/coverage_report.cmake`
+  have one each. Each sentence stays and only the label goes. The two workflow files are
+  outside the Auto lane, so the card is attended or splits. Found at S8-T20's close on
+  Oct 19, 2026. **Trigger:** the next card that edits `ci.yml`, such as S8-D3's follow-ups.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers
@@ -422,13 +430,12 @@ groups are kept, because they show where future work will land.
   - `linux-clang` Debug and Release hit ccache 99% and still build for about 185 s, because
     clang-tidy runs there and ccache does not cache it.
   - The `needs: coverage` gate puts 4.1 min in front of the sanitizer legs.
-  - Jolt's precompiled header makes 139 compile calls uncacheable on every leg. Allowing it
-    through ccache's `sloppiness`, or turning off the PCH on the `Jolt` target, saved about
-    20 s on a warm local Linux build (S8-P7, [[B3 - Build & Testing Notes]] § *ccache keys*).
-    **In review as S8-T21, #143**, which turns off the PCH on the `Jolt` target.
+  - **Fixed by S8-T21** (#143, `83ba4d47`, Oct 19): Jolt's precompiled header made 139
+    compile calls uncacheable on every leg, and the PCH is now off on the `Jolt` target. 3
+    Windows calls are still uncacheable for an unlogged reason ([[B3 - Build & Testing Notes]]
+    § *ccache keys*). S8-P10 measures the CI time saved.
 
-  The fixes are `.github/workflows/ci.yml` edits (the PCH one may be `cmake/deps.cmake`
-  instead), outside the Auto lane. Found while
+  The three open fixes are `.github/workflows/ci.yml` edits, outside the Auto lane. Found while
   measuring the test step for S8-D3's evidence. **Trigger:** the test-strategy decision
   (S8-D3), since both change `ci.yml`.
 - #prio/high · **Memory-management design note**: the engine-wide map (lifetime tiers,

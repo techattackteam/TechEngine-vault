@@ -388,13 +388,17 @@ Either fix saves about 20 seconds on a warm Linux build. Without the PCH, a cold
 costs about 30 seconds more. Each time is one sample on a shared machine, so read the
 seconds as rough. clang-tidy is still most of the warm build, and ccache never caches it.
 
-Two things this does not prove. The Windows legs also report 139 uncacheable calls, out of
-410 (run 39162335162), but their `ccache -s` gives no reason, so the PCH as the cause there is
-likely and not confirmed. And the sloppiness shape was tested only together with
-`-fno-pch-timestamp`, which ccache's manual requires for clang. The first shape is a `ci.yml`
-edit; the second is a `cmake/deps.cmake` edit, or a `DISABLE_PRECOMPILE_HEADERS` property on
-the `Jolt` target only. S8-T21 (#143) takes the second shape, on the `Jolt` target only,
-because it covers the MSVC legs too and its own PR tests it, where a `ci.yml` edit is not.
+The sloppiness shape was tested only together with `-fno-pch-timestamp`, which ccache's manual
+requires for clang. The first shape is a `ci.yml` edit; the second is a `cmake/deps.cmake`
+edit, or a `DISABLE_PRECOMPILE_HEADERS` property on the `Jolt` target only. S8-T21 (#143,
+`83ba4d47`, Oct 19) takes the second shape, on the `Jolt` target only, because it covers the
+MSVC legs too and its own PR tests it, where a `ci.yml` edit is not.
+
+The Windows legs had also reported 139 uncacheable calls out of 410 (run 39162335162), with no
+reason in their `ccache -s`. #143's own run (39231921663) confirms the PCH was the cause there
+too: `win-msvc Debug` reports 3 uncacheable calls out of 409, and `linux-clang Debug` reports
+414 of 414 cacheable. The last 3 Windows calls still have no logged reason. Whether the change
+shortens CI runs is not measured yet; S8-P10 measures it.
 
 ### How it got here
 

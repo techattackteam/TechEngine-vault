@@ -16,9 +16,9 @@ there to answer one.
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | Opus 5.5 (`claude-opus-5-5`), read off the routine on 2026-09-26. The lane's risk is judgment on bug fixes, not throughput. |
 | `cron_expression` | `7 8,13 * * 1-5`: **08:07 and 13:07 UTC, weekdays** (09:07 and 14:07 in Lisbon summer time), read off the routine on 2026-09-26. Cut from four fires on **2026-08-31**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
-| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27; read off the routine on 2026-10-11 (last fire Oct 9 14:08, next Oct 12 09:07 Lisbon). The routine's prompt was last updated on Oct 1. |
+| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27; read off the routine on 2026-10-11 (last fire Oct 9 14:08, next Oct 12 09:07 Lisbon). The routine's prompt was last updated on Oct 1. The text below was revised on Oct 19 (S8-P8, S8-P9); the routine runs it only once Miguel pastes it, after S8-P9's PR merges, because steps 3 and 5 read the commands that PR changes. |
 | **Why two and not four** | **Claude's weekly usage limit**, not the CI budget. Four fires a weekday spent enough of the weekly allowance to compete with Miguel's own attended sessions, which are the lane's whole point. See [[Autonomous Lane - Design]] § *Cost model*. |
-| **DST** | **Breaks on 2026-10-25**, when Lisbon drops to UTC+0. Cron stays UTC, so every fire shifts an hour earlier in local terms. Re-point the expression then, or accept the shift. |
+| **DST** | **Breaks on 2026-10-25**, when Lisbon drops to UTC+0. Cron stays UTC, so every fire shifts an hour earlier in local terms. To keep 09:07 and 14:07 Lisbon, set `7 9,14 * * 1-5` between the last summer fire (Fri Oct 23, 14:07) and the first winter one (Mon Oct 26); both times stay on the right side of step 4's 12:00 UTC split. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |
 
 ## The environment, as measured
@@ -144,8 +144,11 @@ Read, in order: CLAUDE.md, CONVENTIONS.md, docs/00 Dashboard/Dashboard.md,
 docs/06 Sprints/Sprint Board.md, docs/08 AI/Autonomous Lane - Design.md.
 Then read the notes in the most recent earlier day's folder under docs/07 Journal/autoruns/,
 if there is one. If they name a PR whose CI had not settled, check that PR now and carry the
-result into today's report. If they name a PR at all, check whether it has merged. A merged PR closes its
-card: move that card to Done, in step 9's format, before picking anything.
+result into today's report.
+THEN CLOSE WHAT HAS MERGED, BEFORE PICKING ANYTHING. For every "🤖 Auto" card in 👀 Review / Demo
+whose PR has merged into origin/master, read .claude/commands/card-close.md and follow it,
+including its section "When the Auto lane runs this". An attended card is never yours to
+close, merged or not. A close opens no PR, so it does not count against step 2's cap.
 
 STEP 4: PICK ONE CARD.
 From the Sprint Board's To Do column, take the highest-priority card tagged "🤖 Auto".
@@ -222,6 +225,8 @@ entry. If the module already has a leftovers entry, update it in place instead: 
 now fixed, add what is new, and change the date.
 
 STEP 5: DO THE WORK.
+GROUND THE CARD FIRST. Read .claude/commands/card-start.md and follow it as its section "When
+the Auto lane runs this" says. A sweep has no card and skips this.
 Follow CLAUDE.md and CONVENTIONS.md exactly. Rule 0 is match the surrounding file.
 BEFORE TOUCHING CODE, CHECK MIGUEL'S FILES. List the files changed by every open PR in the
 engine repo, and by the branch of every card in the Sprint Board's In Progress column. If your
@@ -239,8 +244,10 @@ any change under .github/workflows/, it was mis-scoped: stop, do not improvise, 
 the report so it can be re-planned as an attended card.
 
 STEP 6: IF IT CHANGED CODE, PROVE IT.
-  cmake --preset linux-debug && cmake --build --preset linux-debug && ctest --preset linux-debug
+  cmake --preset linux-debug && cmake --build --preset linux-debug
+  LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug
 Note there is NO preset called plain "linux" on this leg; each config has its own.
+The sandbox has no display, so the window tests fail without xvfb-run, as CI runs them.
 A red build or a failing test means NO PR. Report what broke and stop there.
 You may build here. This is the carve-out in CLAUDE.md's "Miguel compiles" rule, and it
 applies only to this unattended lane and only to the Linux presets.
@@ -254,6 +261,9 @@ the engine working tree and must never be committed.
 NEVER merge. NEVER enable auto-merge. NEVER push to master in either repository.
 NEVER put "Co-Authored-By: Claude", "Generated with Claude Code", or any other AI attribution
 in a commit message or PR body. Write in Miguel's voice: what changed and why.
+THE HARNESS APPENDS AN ATTRIBUTION FOOTER TO EVERY PR BODY YOU CREATE. Right after creating
+the PR, send the same body once more with update_pull_request, then re-read the PR to confirm
+the footer is gone. Editing the body triggers no CI.
 THE AUTHOR FIELD COUNTS AS ATTRIBUTION TOO. Before committing, confirm with
 `git log -1 --format='%an <%ae> / %cn <%ce>'` that both are Miguel Faria. Step 1 sets it; this
 is the check that it held.
@@ -267,19 +277,16 @@ STEP 9: MOVE THE CARD ON THE BOARD. THE BOARD IS THE ONLY STATE THE NEXT FIRE RE
 The Sprint Board's columns are this lane's state. A card left in To Do after a fire worked on
 it is a card the next fire either redoes or refuses, and both have happened. So before the
 report, put the card where the next fire needs to find it:
-  - Every `done:` clause met and no PR owed (a vault-only card): move it to ✅ Done. Write the
-    entry the way the ones already there are written: `- [x]`, the card line, then
-    `**<Mon D>**` and two or three sentences on what closed and what was left out. The
-    `done:` block does not come along; the sentences replace it.
+  - Every `done:` clause met and no PR owed (a vault-only card): commit the work to the vault,
+    then close the card the way step 3 closes a merged one.
   - A PR opened: move it to 👀 Review / Demo, with the PR number and branch on the line. It is
-    Miguel's to merge. The fire that later finds the PR merged (step 3) moves the card to Done,
-    with the merge sha and the PR number.
+    Miguel's to merge. The fire that later finds the PR merged closes the card (step 3).
   - Anything left needs Miguel (a judgement call, a clause outside the gate, a card step 5
     stopped): move it to 👀 Review / Demo, and say on the line exactly what he must decide.
   - A card no fire touched stays in To Do, untouched.
-Move the entry, never copy it. Only the board line is yours. Closing a card also touches other
-notes (a design note's status line, a Known Issues row, the sprint note): that is Miguel's
-`/card-close`, so list what it owes under "Needs you" instead of doing it.
+Move the entry, never copy it. A close is the whole of card-close.md, not only the board line:
+the sprint note, the design note, Known Issues, the Backlog and the Dashboard's Current focus.
+Never advance the Dashboard's "Reconciled against" stamp.
 
 STEP 10: WRITE THE REPORT, UNLESS THERE IS NOTHING TO SAY.
 A fire that changed nothing, opened no PR and found nothing worth filing writes NOTHING: no
@@ -335,6 +342,19 @@ thing this lane can produce.
   so the run's job when the gate was wrong is to notice and stop, not to improvise past it.
 - **Step 7 repeats four rules the lane is most likely to break**: the branch name, the staging
   ban, the merge ban, and AI attribution. All four have a history in this repo.
+- **Step 6 runs `ctest` under `xvfb-run`** (2026-10-19). Without a display the window cases
+  fail on GLFW error 65550. Every fire since 2026-09-27 already ran it that way; the prompt
+  now says so.
+- **Step 7 re-sends the PR body** (2026-10-19). The harness adds the footer itself, so a clean
+  body cannot prevent it. Fires had re-sent it unprompted since #114, and #144 kept the footer
+  because nothing wrote the step down.
+- **The lane runs `/card-start` and `/card-close` on its own Auto cards** (2026-10-19, S8-P9,
+  Miguel's call). A board-only move left the rest of every close owed to Miguel, and S8-P7's
+  sprint-note line was still owed when S8-T21 closed. Attended cards stay his to close, because
+  their context lives in his session.
+- **The lane cannot edit this note or its own prompt.** On 2026-10-19 the sandbox refused that
+  edit as instruction poisoning, which is the right call. Every change to the prompt is
+  attended work, and Miguel pastes it into the routine.
 - **Step 9 exists because the board was read and never written.** Through 2026-09-04 every
   fire read the To Do column as its input and left it as it found it. S5-P2 sat in To Do a day
   after its PR merged, S5-P3 sat there needing a call, and four fires in a row reported an
