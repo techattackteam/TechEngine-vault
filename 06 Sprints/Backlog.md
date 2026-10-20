@@ -474,7 +474,8 @@ groups are kept, because they show where future work will land.
   - **Fixed by S8-T21** (#143, `83ba4d47`, Oct 19): Jolt's precompiled header made 139
     compile calls uncacheable on every leg, and the PCH is now off on the `Jolt` target. 3
     Windows calls are still uncacheable for an unlogged reason ([[B3 - Build & Testing Notes]]
-    § *ccache keys*). S8-P10 measures the CI time saved.
+    § *ccache keys*). S8-P10 measured it on Oct 20: about 85 s off `linux-clang Debug`,
+    4-24 s off Windows, and no reliable change on `linux-clang Release`.
 
   The three open fixes are `.github/workflows/ci.yml` edits, outside the Auto lane. Found while
   measuring the test step for S8-D3's evidence. **Trigger:** the test-strategy decision

@@ -394,10 +394,36 @@ MSVC legs too and its own PR tests it, where a `ci.yml` edit is not.
 The Windows legs had also reported 139 uncacheable calls out of 410 (run 39162335162), with no
 reason in their `ccache -s`. #143's own run (39231921663) confirms the PCH was the cause there
 too: `win-msvc Debug` reports 3 uncacheable calls out of 409, and `linux-clang Debug` reports
-414 of 414 cacheable. The last 3 Windows calls still have no logged reason. Whether the change
-shortens `master` runs is not measured yet; S8-P10 measures it. **On a PR it first made things
+414 of 414 cacheable. The last 3 Windows calls still have no logged reason. What it saved on CI is in
+*What #143 saved on CI*, below. **On a PR it first made things
 worse:** the four PR-only legs had no cache to hit, so they compiled Jolt cold without the PCH,
 and #146's PR run took 17.5 minutes against #142's 14.5 (*Four legs start every PR cold*).
+
+### What #143 saved on CI (S8-P10, 2026-10-20)
+
+Read from the Actions API: `ccache -s` and the `Build` step's duration, one sample each. The
+`master` pair is run 39162335162 (#142's merge, before #143) against run 39294075221 (#144's
+merge), the first `master` run warm under the deps hash #143 changed. The PR pair is #142's run
+39161117189 against #146's first run 39300560487, the first code PR after that.
+
+| Leg | Cacheable | `master` hits / misses | `master` build | PR hits / misses | PR build |
+|---|---|---|---|---|---|
+| `linux-clang Debug` | 276/415 → 414/414 | 263/13 → 414/0 | 203 → 116 s | 263/13 → 405/9 | 203 → 118 s |
+| `linux-clang Release` | 276/415 → 414/414 | 263/13 → 414/0 | 189 → 154 s | 263/13 → 405/9 | 144 → 173 s |
+| `win-msvc Debug` | 271/410 → 406/409 | 258/13 → 406/0 | 46 → 27 s | 258/13 → 397/9 | 32 → 28 s |
+| `win-msvc Release` | 271/410 → 406/409 | 258/13 → 406/0 | 47 → 23 s | 258/13 → 397/9 | 41 → 28 s |
+
+- **`linux-clang Debug` gained the most: about 85 s, on both pairs.** That is four times the
+  20 s the sandbox measured, plausibly because the runner has fewer cores for Jolt's 138 TUs.
+- **`linux-clang Release` did not get reliably faster** (−35 s on `master`, +29 s on the PR).
+  With every call a hit it still builds for 154 s, so something ccache does not cover sets
+  that leg's time; clang-tidy is the known candidate ([[Backlog]], *Builds, not tests, set CI
+  wall time*). This data cannot separate the two.
+- **Windows saved 4 to 24 s.** Its build step was already short.
+- **Windows still has 3 uncacheable calls out of 409**, on every run after #143, `master` and
+  PR alike. `ccache -s` still gives no reason.
+- The `master` pair flatters the change: #144 changed only comments, so its run missed nothing,
+  while #142's missed 13. The PR pair, with 9 and 13 misses, is the fairer comparison.
 
 ### How it got here
 
