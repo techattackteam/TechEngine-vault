@@ -51,7 +51,9 @@ groups are kept, because they show where future work will land.
     repeats `MathTests.cpp`. About 35 lines. A test covers `baseVersion()`, so it is not dead.
   - The log-capture guards: `SinkGuard` (`engine/base/tests/diagnostics/LogTests.cpp:50-70`),
     `LogCaptureGuard` (`engine/base/tests/diagnostics/AssertTests.cpp:68-83`) and
-    `GraphLogCaptureGuard` (`engine/core/tests/systems/TaskGraphTests.cpp:140-160`). Use one
+    `GraphLogCaptureGuard` (`engine/core/tests/systems/TaskGraphTests.cpp:140-160`), and since
+    S8-T10 `CacheLogCaptureGuard` (`engine/core/tests/resources/ResourceCacheTests.cpp:170-194`,
+    added by the core sweep on Oct 20). Use one
     guard in `te_test_support`. About 30 lines. It needs a new header, and which record fields
     the shared guard copies is a choice.
 
@@ -217,62 +219,40 @@ groups are kept, because they show where future work will land.
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
   parallel executor shows one system node dominates a tick.
 
-- #prio/low · **Three public symbols in core have no caller and no test**: `toString(Role)`
-  (`engine/core/include/TechEngine/core/SimulationContext.hpp:13-23`, the only reason the header
-  includes `<string>`), `ComponentRegistry::tagOf`
-  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:68`, defined at
-  `engine/core/src/scene/ComponentRegistry.cpp:42`) and `Writer::size()`
-  (`engine/core/include/TechEngine/core/serialization/Writer.hpp:87`). `toString(Role)` lost its
-  last callers when the log lines from #63 went away. Every serialization test reads the
-  buffer's own `size()`. `EventRegistry::tagOf` is tested and stays. The simpler shape deletes all three, about
-  25 lines. The sweep did not fix this, because the three are public API. Found by the code sweep on
-  Oct 1, 2026. **Trigger:** the next edit to any of the three headers.
-  **Fired Oct 11:** S8-T1 (#126) edited `Writer.hpp` and S8-T3 (#127) edited
-  `ComponentRegistry.hpp`. Re-checked against `39943f19`: all three still have no caller and no
-  test, and only `tagOf`'s declaration moved, from `:56` to `:68`.
-
-- #prio/low · **Two Scene paths re-implement `ComponentRegistry::denseId`**:
-  `Scene::addComponentInternal` and `Scene::removeComponentInternal`
-  (`engine/core/src/scene/Scene.cpp:593-603`) and `ArchetypeStorage::denseId<T>`
-  (`engine/core/src/scene/ArchetypeStorage.hpp:154-158`) each write `find`, the same
-  "Component type is not registered" `TE_CHECK`, and `->denseId`. That is exactly the body of
-  `ComponentRegistry::denseId` (`engine/core/src/scene/ComponentRegistry.cpp:24-28`). The
-  simpler shape calls `m_registry->denseId(type)`, which removes about 8 lines. This fix met the
-  sweep's bar, but today's PR slot was already used. Found by the code sweep on Oct 1, 2026.
-
-- #prio/low · **`ArchetypeStorage::componentRaw` is written twice**: the const and non-const
-  overloads (`engine/core/src/scene/ArchetypeStorage.cpp:82-109`) have the same 12-line body.
-  The simpler shape is the `std::as_const` plus `const_cast` forwarding that
-  `EventStreamManager::getStream` already uses (`engine/core/src/events/EventStreamManager.cpp:45-47`).
-  It removes about 10 lines. This fix met the sweep's bar, but today's PR slot was already used.
-  Found by the code sweep on Oct 1, 2026.
-
-- #prio/low · **`Scene::unparent` repeats `setParent`'s detach**: `setParent` validates the old
-  parent and siblings and then unlinks the child (`engine/core/src/scene/Scene.cpp:301-317` and
-  `:356-368`). `unparent` performs the same validation and the same unlink
-  (`engine/core/src/scene/Scene.cpp:426-447`). The simpler shape is one private member that
-  validates and unlinks a child, and both callers use it. It would remove about 20 lines. The
-  `HierarchyTests` cases cover both paths. Found by the code sweep on Oct 1, 2026.
-  **Trigger:** the next change to hierarchy linking.
-  **Fired Oct 11:** S8-T3 (#127) added `Hierarchy::m_lastChild`, and both copies gained the same
-  last-child check and update, so the duplication grew. Citations re-resolved against `39943f19`.
-
-- #prio/low · **`ArchetypeStorage`'s typed mutations exist only for tests**: the
-  `addComponent<T>` and `removeComponent<T>` templates
-  (`engine/core/src/scene/ArchetypeStorage.hpp:55-90`) repeat the type-erased
-  `addComponent` and `removeComponent` that `Scene` uses (`engine/core/src/scene/ArchetypeStorage.cpp:49-76`).
-  `ComponentStorage::set` (`engine/core/include/TechEngine/core/scene/ComponentStorage.hpp:107`)
-  exists only for the typed path and one `ArchetypeStorageTests` case. The simpler shape keeps
-  the type-erased path and makes the typed one a two-line forward, or deletes it. That would
-  remove about 30 lines, but the scene tests call it about 85 times, so the choice is yours.
-  Found by the code sweep on Oct 1, 2026. **Trigger:** the next `ArchetypeStorage` API change.
-
-- #prio/low · **`InputDeliveryTests` still builds the engine services by hand**:
-  `InputDeliveryFixture` (`engine/core/tests/systems/InputDeliveryTests.cpp:226-244`) builds the
-  same seven services that `TechEngineTests::EngineServices` now builds for the executor and
-  scene-event fixtures. Deriving from it is the same edit S8-T17 made to those two. S8-T17's card
-  did not name this copy, so the lane left it. Found at S8-T17, Oct 15. **Trigger:** the next
-  change to that fixture, or a code sweep of `core`'s tests.
+- #prio/medium · **Code sweep leftovers: core**: Found by the code sweep on Oct 20, 2026
+  ([[2026-10-20 15-09 Auto Run]]). #149 fixed nine findings; these need a decision, a new
+  header, or cost about as much as they save. It folds in the two Oct 1 entries #149 did not fix.
+  - `Scene::unparent` (`engine/core/src/scene/Scene.cpp:417-455`) repeats `setParent`'s
+    old-link validation and unlink (`:301-317`, `:356-368`). One private member would serve
+    both, about 20 lines, but `setParent` validates the destination between the two halves,
+    so the split is a choice. S8-T3 grew both copies with the last-child link.
+  - `ArchetypeStorage`'s typed `addComponent<T>` and `removeComponent<T>`
+    (`engine/core/src/scene/ArchetypeStorage.hpp:56-90`) exist only for tests and repeat the
+    type-erased path; `ComponentStorage<T>::set` (`ComponentStorage.hpp:101`) goes with them.
+    About 30 lines, but the scene tests call them about 85 times.
+  - `ArchetypeStorage::component<T>`'s const and non-const bodies are identical
+    (`engine/core/src/scene/ArchetypeStorage.hpp:96-114`). The `std::as_const` forward that
+    #149 gave `componentRaw` removes about 8 lines.
+  - `ArchetypeStorage::addEdge` and `removeEdge` (`engine/core/src/scene/ArchetypeStorage.cpp:203-225`)
+    differ only in the transition map and the signature edit. About 8 lines.
+  - `Scene::fromWorldToLocal` (`Scene.cpp:183-187`) and `setParent(…, ReparentMode)`
+    (`:403-409`) repeat the determinant check and the inverse-and-decompose. About 5 lines.
+  - `ArchetypeStorage::eachEntity` (`ArchetypeStorage.hpp:129-141`) hand-writes what
+    `Query`'s `IterationGuard` (`Query.hpp:66`) does. Sharing it puts a new `internal::` symbol
+    in a public header. About 6 lines.
+  - `EntitySlots::destroy` (`engine/core/src/scene/EntitySlots.cpp:26`) repeats `contains()`'s
+    condition, and `clear()` (`:63`) repeats its retire-or-bump step. About 6 lines.
+  - Three identical global-state guards: `SceneEventStateGuard` (`engine/core/tests/scene/SceneEventTests.cpp:63`),
+    `InputDeliveryStateGuard` (`engine/core/tests/systems/InputDeliveryTests.cpp:50`) and
+    `ExecutorStateGuard` (`engine/core/tests/systems/SerialExecutorTests.cpp:43`). One template
+    guard needs a new test header, about 30 lines. Moving the state and guard into
+    `InputDeliveryFixture` saves about 38 more across its 19 cases.
+  - `HierarchyTests` and `TransformTests` repeat the registry, built-in registration and
+    `Scene` setup about 33 times. A `SceneFixture` beside `registerBuiltInSceneComponents` in
+    `tests/scene/SceneTestRegistry.hpp` saves about 60 lines.
+  - The pack tests copy one scratch fixture (`engine/core/tests/resources/PackTests.cpp:68`,
+    `engine/core/tests/assets/PackSourceTests.cpp:58`), `viewOf` and `bytesOf`, and `patch<T>`
+    (`PackTests.cpp:123`, `BootRecordTests.cpp:105`). One test header, about 30 lines.
 
 ## client
 
