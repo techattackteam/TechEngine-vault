@@ -349,15 +349,6 @@ groups are kept, because they show where future work will land.
   S8-P9's closes cannot land. The fallback would be a close written into the run report for
   Miguel to apply. Found at S8-P8's close on Oct 19, 2026. **Trigger:** the first fire after
   the new prompt is pasted that moves or closes a card.
-- #prio/low · **Ten `GOTCHA:` and `NOTE:` labels remain outside the C++ tree**:
-  `CONVENTIONS.md` § *Comments* says the label rule also holds in CMake, CI and config files,
-  but S8-T20 (#144) grepped only `engine/`, `apps/`, `sdk/` and `tests/`. On `master` at
-  `b7e64c1e`, `.github/workflows/ci.yml` has six (five `GOTCHA:`, one `NOTE:`), and
-  `ci-docs.yml`, `.clang-format`, `cmake/coverage.cmake` and `cmake/coverage_report.cmake`
-  have one each. Each sentence stays and only the label goes. The two workflow files are
-  outside the Auto lane, so the card is attended or splits. Found at S8-T20's close on
-  Oct 19, 2026. **Trigger:** the next card that edits `ci.yml`, such as S8-D3's follow-ups.
-  **Fired Oct 19:** S8-D3 drops all ten. Delete this entry when its PR merges.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers
@@ -418,15 +409,6 @@ groups are kept, because they show where future work will land.
 
   **Trigger:** the repository goes private, or `win ASan`'s test step passes 4 minutes.
 
-- #prio/medium · **Make sanitizer workflow edits testable in hosted CI**: PR #93
-  changed the Linux TSan test step but received only docs-only stand-in checks.
-  A manual `workflow_dispatch` on `master` cannot validate it because `sanitizers`
-  runs only for `pull_request`. The local WSL TSan suite passed, but the hosted leg
-  remains unverified. Find a targeted validation path that preserves the normal
-  PR-only sanitizer cost. **Trigger:** before the next sanitizer workflow edit;
-  inspect the next code PR's Linux TSan result for #93's first hosted evidence.
-  **Fired Oct 19:** S8-D3 runs the sanitizers on `master` pushes and dispatches, so a dispatch
-  now validates a sanitizer workflow edit. Delete this entry when its PR merges.
 - #prio/low · **`delete_branch_on_merge` is off**: [[ADR-009 - Branching strategy & merge rules]]
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a
@@ -442,26 +424,13 @@ groups are kept, because they show where future work will land.
   header. [[Project - Design]] § *Entry point and presentation boundary* records the
   divergence. **Trigger:** the next ADR-017 decision amendment.
 
-- #prio/high · **Builds, not tests, set CI wall time**: on run 38367963268 (Oct 13, 2026) a PR
-  run took 12.6 min. Its critical path is `clang-format` (10 s), then `diff coverage` (4.1 min),
-  which `sanitizers` waits on, then `win ASan` (8.1 min). Four causes, from the leg logs:
-  - The four PR-only builds (`diff coverage`, `linux TSan`, `linux UBSan`, `win ASan`) hit
-    ccache 0% and took 150-237 s each. A PR restores caches only from its own ref or from
-    `master`, and `master` never runs those jobs, so every PR's first run builds them cold.
-  - `linux-clang` Debug and Release hit ccache 99% and still build for about 185 s, because
-    clang-tidy runs there and ccache does not cache it.
-  - The `needs: coverage` gate puts 4.1 min in front of the sanitizer legs.
-  - **Fixed by S8-T21** (#143, `83ba4d47`, Oct 19): Jolt's precompiled header made 139
-    compile calls uncacheable on every leg, and the PCH is now off on the `Jolt` target. 3
-    Windows calls are still uncacheable for an unlogged reason ([[B3 - Build & Testing Notes]]
-    § *ccache keys*). S8-P10 measured it on Oct 20: about 85 s off `linux-clang Debug`,
-    4-24 s off Windows, and no reliable change on `linux-clang Release`.
-
-  The three open fixes are `.github/workflows/ci.yml` edits, outside the Auto lane. Found while
-  measuring the test step for S8-D3's evidence. **Trigger:** the test-strategy decision
-  (S8-D3), since both change `ci.yml`.
-  **Fired Oct 19:** S8-D3 takes the first and third causes. When its PR merges, cut this entry
-  down to the clang-tidy cause alone.
+- #prio/low · **clang-tidy is never cached on the `linux-clang` legs**: with 99.76% ccache hits,
+  `linux-clang Debug` and `Release` still build for 91-142 s (#148, Oct 19), because clang-tidy
+  runs on every first-party TU and ccache does not cache it. Off the critical path since S8-D3:
+  a PR's slowest leg is `win ASan`'s test step (203 s). The other causes of slow CI were fixed
+  by S8-T21 (#143) and S8-D3 (#147) ([[B3 - Build & Testing Notes]] § *Four legs start every
+  PR cold*). Found while measuring the test step for S8-D3's evidence, Oct 13, 2026.
+  **Trigger:** a linux-clang leg becomes the PR's slowest leg.
 - #prio/high · **Memory-management design note**: the engine-wide map (lifetime tiers,
   per-module memory, handles-not-pointers). **Trigger:** after M5 + M6 + R1 are real.
 - #prio/medium · **Point later dependency allocator hooks at the profiler**: Jolt

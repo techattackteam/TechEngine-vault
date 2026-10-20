@@ -303,7 +303,7 @@ S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
   `return m_scene;`. Behaviour-preserving; the existing cases keep their assertions. Lands before
   Sprint 09's editor startup load adds another hook that reads the scene. Merged as #146
   (`4563411d`, Oct 19).
-- [ ] **S8-D3** · Cut a PR's CI wall time · P1 · 🟢 Deep · 4-6h ·
+- [x] **S8-D3** · Cut a PR's CI wall time · P1 · 🟢 Deep · 4-6h ·
   done: `diff coverage`, `win ASan`, `linux UBSan` and `linux TSan` also run on `master` pushes
   and dispatches, so `master` holds a ccache for each and a PR's first push restores it. On a
   push, `diff coverage` builds and saves its cache but skips the diff gate. No leg `needs:`

@@ -355,12 +355,23 @@ PR run (39300560487) took 17.5 minutes with 0 cache hits on all four legs, again
 these legs it meant compiling Jolt cold without its precompiled header. So the four legs now
 also run on every `master` push and dispatch, `diff coverage` there builds without scoring a
 diff, and no leg waits for `diff coverage` any more
-([[ADR-008 - v2 build & testing baseline]]'s amendment of Oct 19). Expected: a PR's first push
-close to #139's warm second run (under 8 minutes), lower once the coverage gate is gone. Not
-measured yet; the next code PR after S8-D3 measures it.
+([[ADR-008 - v2 build & testing baseline]]'s amendment of Oct 19).
+
+**Measured after S8-D3 (#147, Oct 19-20)**, one run per row:
+
+| PR run | End to end | The four legs' cache hits | Their Build step |
+|---|---|---|---|
+| #146, before S8-D3 | 17.5 min | 0% | 268-316 s |
+| #147, gate removed, still cold | 9.9 min | 0% | 283-345 s |
+| #148, first push after `master` saved them | **4.9 min** | 99.76% (one changed file) | 9-18 s |
+
+On #148 the critical path is `win ASan`'s **test** step (203 s), not a build. That is the next
+lever, in [[Backlog]] → *Test tiers and parallel ctest*.
 
 **Storage:** `cache-prune` keeps one entry per family on `master`, so four families add four
-entries, roughly 0.3-0.6 GB at today's sizes. **If the repository goes private**, the `master`
+entries. Checked at #149's merge (Oct 20): the prune deleted 9 stale entries, `master` held
+exactly one `ccache-v2-<leg>` per leg (eight), and all of `master`'s caches came to about
+1.27 GB. **If the repository goes private**, the `master`
 run becomes a build-only warm job or a nightly one.
 
 ### Jolt's precompiled header is never cached (S8-P7, 2026-10-19)
