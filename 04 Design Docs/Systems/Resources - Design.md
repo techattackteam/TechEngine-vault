@@ -73,6 +73,7 @@ built or run.
 | One reference visitor over `visit` serves the scene writer, the reader's second pass, the scene's acquire set and the bake. The scene header has no dependency table. | ADR-026 §3 |
 | A live `AssetRef<T>` names only an asset its scene holds. An editor edit acquires the new asset at once and releases the old one when the scene reloads. | ADR-026 §4 |
 | The mesh is the second resource type. Before T4 the editor writes one in code, and until R1 it is loaded, not drawn. | Miguel, Oct 18; § *Reference fields* |
+| A loaded scene is a cache entry, and its references are that entry's dependencies, so releasing the scene releases them. | ADR-024 §3 §8, Miguel, Oct 20; § *Reference fields* |
 
 ### Decided: packs and the runtime layout
 
@@ -359,13 +360,24 @@ Not built: Sprint 09's cards build it.
 - **The lifecycle.** The startup load and every later scene change acquire the new scene's ids
   before releasing the old scene's (ADR-024 §4), so content the two share never reloads. Nothing
   else releases a scene's acquires.
+- **Where the acquires live** (decided Oct 20, at S8-D2). The scene is an entry in the cache. Its
+  loader keeps the file's bytes as the payload and names no dependencies, because a load task
+  cannot touch the live `Scene`. On the simulation thread, after the loading phase publishes the
+  entry, the load streams the bytes into the live `Scene` and frees them, so no parsed copy is
+  kept (ADR-024 §8). It then walks the live scene and adds each distinct id as a dependency of
+  the scene entry, through a call only the owner makes, and runs another loading phase.
+  Releasing the scene entry releases its references, and the cycle check and the shutdown log
+  cover them unchanged. Keeping the set beside the live `Scene` was rejected: it would repeat the
+  cache's dependency bookkeeping outside it, and it needs a release that takes no type.
 - **The editor.** An inspector edit runs as a loading phase: it acquires the new asset and fills
   the field. The asset it replaced stays held until the scene reloads (T1).
 - **The mesh.** It is Sprint 09's second resource type, because the hard-coded triangle in
   `engine/client/src/render/FrameRenderer.cpp` is its consumer. Until T4's importers, the editor
   writes a mesh asset in code, the way S8-T13 writes the startup scene. Until R1 it is loaded and
   never drawn; tests and a runtime log line prove the load. Drawing it needs render's fence and
-  a GPU copy keyed by handle, which are R1's.
+  a GPU copy keyed by handle, which are R1's. Its payload is a placeholder with the triangle's
+  shape: R1's renderer ADR owns the mesh format and replaces it, which costs only a blob version
+  bump, because the editor regenerates the mesh on every run.
 
 ### Pack layout and the boot record
 
@@ -555,12 +567,6 @@ build profiles each carry their own scene list (both from memory).
   candidates, and the answer may amend ADR-025 §7. Owner: T2, with T5's distributable.
 - **Whether `PackReader::open` rejects non-zero `flags`.** Today it ignores them, so a future
   compressed pack would be read as raw bytes. Owner: whoever adds compression behind `flags`.
-- **Where a loaded scene keeps its acquires.** ADR-024 §3's "an entry holds acquires on its
-  dependencies" fits, but a scene cannot load like other entries: a load task writes only its
-  own entry (ADR-024 §4), and a scene streams into the live `Scene`, which only the simulation
-  thread may touch. So the scene's read and its acquire set run on the owner inside the loading
-  phase, and whether the set lives on a scene entry or beside the live `Scene` is open. Owner:
-  Sprint 09's first reference card, cut by S8-D2.
 - **The editor's stopped, playing and paused states.** Decided Oct 10: only Play ticks; stopped
   and paused do not, and the simulation thread stays alive and idle between commands. Today every
   App ticks from the end of the startup phase until stop (`engine/app/src/SimulationThread.cpp:188-200`), so the

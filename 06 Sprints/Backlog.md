@@ -327,6 +327,11 @@ groups are kept, because they show where future work will land.
   T1, when the editor can open another scene.
 ## etc: cross-cutting
 
+- #prio/high · **Revise the [[Roadmap]]**: Miguel finds it hard to follow when he comes back to
+  it (Oct 20, at S8-D2). The revision should also reshape R1: it is likely several ADRs (meshes,
+  materials, the PBR pipeline), and they start from paper research, while the Roadmap names one
+  renderer ADR. Sprint 09's mesh is a placeholder that R1 replaces ([[Resources - Design]] §
+  *Reference fields*). **Trigger:** the Sprint 08 boundary `/sprint-plan` (Oct 24-25).
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the
   file's path, which is not a required context, and #95 also touched code, so `ci.yml`

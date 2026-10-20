@@ -158,8 +158,60 @@ the cards against it is a separate 🟡 Light step.
   task writes only its own entry (ADR-024 §4), while a scene streams into the live `Scene`,
   which only the simulation thread touches. So the scene's read and its acquire set run on the
   owner inside the loading phase, and the card decides whether the set lives on a scene entry
-  or beside the live `Scene` ([[Resources - Design]] § *Open questions*). Every other reference
-  card builds on that answer, so it is the chain's root and likely 🟢.
+  or beside the live `Scene`. Every other reference card builds on that answer, so it is the
+  chain's root and likely 🟢.
+  **Settled here instead, Oct 20:** the cards after the root could not be sized past an open
+  fork, so Miguel chose at `/card-start` that the scene is a cache entry and its references are
+  that entry's dependencies ([[Resources - Design]] § *Reference fields*). The cut is below.
+
+#### Sprint 09's cut
+
+Drafts for `/sprint-plan`, which gives them `S9-` IDs and checks them against capacity. Two
+Backlog triggers fire inside them: routing the startup load through the cache (card 1) and the
+shared asset-creation call (card 5). Cards 2 and 4 depend on nothing, so they can run beside
+card 1.
+
+1. **The scene loads as a cache entry** · P1 · 🟢 Deep · 4-6h · done: a loader under
+   `SCENE_KIND` keeps the scene's bytes as its payload and names no dependencies.
+   `RuntimeApp::simulationStartupLoad()` requests the startup scene through `m_resources`, with
+   its `PackSource` held as a member and set as the cache's source, then streams the payload into
+   the live `Scene` and frees the bytes. The scene's handle is released in
+   `simulationShutdown()`, so the shutdown log names nothing. A new call, made only by the owner,
+   adds a dependency to a Ready entry, with the same cycle check a completion gets. Where the
+   scene's handle lives is settled at `/card-start`; if it is `App.hpp`, D6 is fixed in that PR.
+2. **Reference fields and the reference walk** · P1 · 🟢 Deep · 4-6h · done: a component with
+   `visit` can hold `Entity` and `AssetRef<T>` fields (ADR-026 §2). One reference visitor over
+   `visit` sees only those two types. `SceneAsset::write` saves an `Entity` as its target's row
+   and an `AssetRef<T>` as its id, and `SceneAsset::read` maps rows back to entities in a second
+   pass after the last row. A round-trip test with a test component proves both, including a
+   reference to a later row and empty fields.
+3. **The loaded scene acquires its references** · P1 · 🟠 Moderate · 2-3h · done: after
+   streaming, the startup load walks the live `Scene`, adds each distinct id once as a
+   dependency of the scene entry, runs a loading phase, then fills each `AssetRef<T>` handle.
+   Tests prove one acquire per distinct id, none left after the scene is released, and that a
+   reference that fails to load fails the startup load. Follows 1 and 2.
+4. **The mesh resource type** · P1 · 🟠 Moderate · 2-3h · done: a `Mesh` payload with its own
+   blob kind and type tag, a loader registered in both apps, and a row in `AssetIndex`'s table
+   of asset kinds. A test writes a mesh and loads it back through the cache. The payload is a
+   placeholder with the hard-coded triangle's shape, float3 positions and `u32` indices
+   (`engine/client/src/render/FrameRenderer.cpp:33-34`); R1's renderer ADR owns the real format
+   and replaces it.
+5. **The editor writes a mesh and a component that references it** · P1 · 🟠 Moderate · 2-3h ·
+   done: the editor writes the triangle as a mesh asset in code, the way it writes the startup
+   scene, through one asset-creation call that `writeStartupScene` also uses. A registered
+   component with an `AssetRef<Mesh>` field sits on an entity of a newly created startup scene
+   and is saved with it. The component holds only the mesh reference, and its name, settled at
+   `/card-start`, must not decide how R1 splits the mesh from its material. Follows 2 and 4.
+6. **The editor reads its startup scene through the cache** · P2 · 🟠 Moderate · 2-3h · done:
+   when the project names a startup scene, `EditorApp::simulationStartupLoad()` loads it through
+   `m_resources` with `LooseSource` as the source, along the same path as the runtime, so a later
+   launch opens on it instead of an empty scene. The TODO at `apps/editor/src/EditorApp.cpp:54`
+   goes. Follows 1 and 3.
+7. **The bake packs what the startup scene reaches** · P1 · 🟠 Moderate · 2-3h · done:
+   `Project::exportTo` walks the startup scene's references and packs each reached asset into its
+   side's pack when the target ships that side, instead of the scene alone. What an id the index
+   does not know does to the export is settled at `/card-start`. The runtime logs the mesh it
+   loaded, which proves the whole path. Follows 2 and 5.
 
 ### Story G: Resource cache · stretch
 

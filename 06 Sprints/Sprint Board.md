@@ -31,7 +31,6 @@ kanban-plugin: board
 
 ## Story F: Decide Sprint 09's references
 
-- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: cut against S8-D1's Decided rows before Oct 24. Follows S8-D1. The first reference card must settle where a loaded scene keeps its acquires (scene entry or beside the live `Scene`); it is the chain's root ([[Resources - Design]] § *Open questions*).
 
 
 ## Story G: Resource cache · stretch
@@ -49,6 +48,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: cut against S8-D1's Decided rows before Oct 24. Follows S8-D1. The first reference card must settle where a loaded scene keeps its acquires (scene entry or beside the live `Scene`); it is the chain's root ([[Resources - Design]] § *Open questions*).
 
 
 ## 👀 Review / Demo
