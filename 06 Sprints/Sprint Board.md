@@ -40,7 +40,6 @@ kanban-plugin: board
 
 ## Story H: Auto lane and fired backlog
 
-- [ ] **S8-P10** · Measure whether #143 made CI faster · P3 · 🤖 Auto · 1h: after #143 merges and a second `master` run exists; ccache stats and Build step times against run 39162335162, result in B3; report-only.
 
 
 ## Story I: Week 2 fill
@@ -59,6 +58,8 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 08
 
+- [x] **S8-P10** · Measure whether #143 made CI faster · P3 · 🤖 Auto · 1h: report-only, **Oct 20**, worked by the morning auto run, vault `618afdd`. The result is [[B3 - Build & Testing Notes]] § *What #143 saved on CI*: `linux-clang Debug`'s build step dropped by about 85 s on both the `master` and the PR pair, four times what the sandbox predicted; Windows saved 4 to 24 s; `linux-clang Release` showed no reliable change (−35 s on `master`, +29 s on the PR), because with every call a hit it still builds for over 150 s. Windows still has 3 uncacheable calls out of 409 on every run after #143, with no logged reason. **"The second `master` run after #143" read as #144's run** (39294075221): #143's own run was the first, and it was cold under the deps hash #143 changed. **That pair flatters the change**, because #144 changed only comments and its run missed nothing; the PR pair (#142 against #146) is the fairer one. Completes Story H. **Retro:**
+	- One sample per leg; the seconds are rough, the counts exact.
 - [x] **S8-T18** · Make `App::m_scene` private · P2 · 🟠 Moderate · 2-3h: #146 `4563411d`, **Oct 19**. Every check on #146 passed. #146 has no body and no review conversation, so this entry comes from the card, the diff and the `/card-start` session. A subclass now reaches the scene only as `simulationStartupLoad(Scene&)`'s parameter, and `SimulationThread`, already a friend, passes `app.m_scene` ([[Simulation Thread - Design]] § *Lifecycle*). Unblocks S8-T19, which edits the same files, and Sprint 09's editor startup load. Story I stays open for S8-D3 and S8-T19.
 	  - **The clause named one probe line, but the tests needed more.** `RuntimeProbe` read `m_scene` in five places, not one. Both probes also called the hook directly, so they lost the scene they now have to pass. `AppTests`'s lifecycle probe overrides the hook too, and the card did not name it. No artifact said what the replacement was, so `/card-start` stopped before scaffolding.
 	  - **Tests reach the scene through a friend.** Miguel rejected both shapes offered at `/card-start`: a test-access friend, and a protected accessor guarded by a main-thread `TE_CHECK`. He then chose the friend over the explicit-instantiation access loophole, because few readers recognise the loophole. `App` names `TechEngineTests::AppTestAccess`, which lives in `te_test_support`. It is the first test type that a production header names.

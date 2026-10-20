@@ -274,7 +274,7 @@ type.
   label, as `CONVENTIONS.md` § *Comments* requires since S8-T10. A grep for `GOTCHA:`, `NOTE:`
   and `IMPORTANT:` under `engine/`, `apps/`, `sdk/` and `tests/` returns nothing.
   Comment-only; existing tests pass unedited. Merged as #144 (`b7e64c1e`, Oct 19).
-- [ ] **S8-P10** · Measure whether #143 made CI faster · P3 · 🤖 Auto · 1h ·
+- [x] **S8-P10** · Measure whether #143 made CI faster · P3 · 🤖 Auto · 1h ·
   done: the second `ci.yml` push run on `master` after #143 (S8-T21) merges, which is the
   first one warm under the new ccache key, is compared per build leg against run 39162335162
   (Oct 18, before #143): cacheable, uncacheable and hit counts from `ccache stats`, and the
@@ -284,6 +284,8 @@ type.
   including whether Windows still has 3 uncacheable calls. Report-only, from the Actions API.
   Until that second `master` run exists, a fire reports that it is waiting and leaves the
   card in To Do.
+  Report-only, closed Oct 20 (vault `618afdd`): [[B3 - Build & Testing Notes]] § *What #143
+  saved on CI*.
 
 ### Story I: Week 2 fill
 
