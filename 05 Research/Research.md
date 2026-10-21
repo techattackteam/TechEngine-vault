@@ -6,11 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://dl.acm.org/doi/10.1145/324133.324234 - **Scheduling Multithreaded Computations by Work Stealing** | JACM 1999 (Multi-threading/task graph)
-- [ ] https://www.gdcvault.com/play/1022186/Parallelizing-the-Naughty-Dog-Engine - **Parallelizing the Naughty Dog Engine Using Fibers** | GDC 2015 (Multi-threading/task graph)
-- [ ] https://ieeexplore.ieee.org/document/6166348 - **A Design Pattern for Parallel Programming of Games** | IEEE TCIAIG 2012 (Multi-threading/task graph)
-- [ ] https://dl.acm.org/doi/10.1145/301618.301633 - **Cache-Conscious Structure Layout** | PLDI 1999 (ECS)
-- [ ] https://arxiv.org/abs/2606.14919 - **The Essence of Entity Component System** | ACM SAC 2026 (ECS)
 - [ ] https://ieeexplore.ieee.org/document/7854097 - **Decoupling the Entity-Component-System Pattern using Semantic Traits for Reusable Realtime Interactive Systems** | IEEE SEARIS 2015 (ECS)
 - [ ] https://arxiv.org/abs/2504.14815 - **A Mapping Study of the Entity Component System Pattern** | IEEE/ACM GAS 2025 (ECS)
 - [ ] https://scholar.afit.edu/etd/5042/ - **Comparison of Archetypal Entity-Component Systems and Relational Databases** | AFIT 2021 (ECS)
@@ -47,6 +42,16 @@ kanban-plugin: board
 	Lê, Pop, Cohen and Zappa Nardelli prove an optimized Chase-Lev deque correct on ARM and POWER and give a C11 version; the reference for P2's work-stealing deque memory orders.
 - [ ] https://dl.acm.org/doi/10.1145/1073970.1073974 - **Dynamic Circular Work-Stealing Deque** | SPAA 2005 (Multi-threading/task graph)
 	Chase and Lev's growable circular work-stealing deque, the algorithm behind most job systems; the base design for P2's work-stealing, read together with the PPoPP 2013 paper on its memory orders.
+- [ ] https://dl.acm.org/doi/10.1145/324133.324234 - **Scheduling Multithreaded Computations by Work Stealing** | JACM 1999 (Multi-threading/task graph)
+	Blumofe and Leiserson prove the randomized work-stealing scheduler's T1/P + O(T∞) time and S1·P space bounds, the theory behind Cilk; background for P2's work-stealing, which the Chase-Lev deque cards above would implement.
+- [ ] https://www.gdcvault.com/play/1022186/Parallelizing-the-Naughty-Dog-Engine - **Parallelizing the Naughty Dog Engine Using Fibers** | GDC 2015 (Multi-threading/task graph)
+	Christian Gyrling's talk on the fiber job system, frame-centric pipelining and allocators behind The Last of Us Remastered at 60 fps; a talk, not a paper, and a useful contrast for P1 and P2, since TechEngine's `JobSystem` runs plain tasks on threads and has no fibers.
+- [ ] https://ieeexplore.ieee.org/document/6166348 - **A Design Pattern for Parallel Programming of Games** | IEEE HPCC 2012 (Multi-threading/task graph)
+	AlBahnassi, Mudur and Goswami propose Sayl, a task-parallel pattern with data-flow dependencies whose task graph changes from frame to frame and spans frames; close to P1's executor problem, but the card said IEEE TCIAIG, search found the paper only at HPCC 2012, and the IEEE page was unreachable, so the id 6166348 was not confirmed against it.
+- [ ] https://dl.acm.org/doi/10.1145/301618.301633 - **Cache-Conscious Structure Layout** | PLDI 1999 (ECS)
+	Chilimbi, Hill and Larus speed up pointer-heavy programs by clustering and coloring data into cache blocks (ccmorph, ccmalloc); background for the data-oriented layout ADR-006 already chose, since archetype columns sidestep the pointer structures it targets.
+- [ ] https://arxiv.org/abs/2606.14919 - **The Essence of Entity Component System** | ACM SAC 2026 (ECS)
+	Tasnim and Zhao give archetype ECS a formal model of entity creation, component composition, system execution and archetype migration, with invariants; directly relevant to TechEngine's archetype `Scene`, as a check on its structural-mutation and determinism rules.
 
 
 ## Rendering 👽
