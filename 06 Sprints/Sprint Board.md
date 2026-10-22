@@ -43,12 +43,11 @@ kanban-plugin: board
 
 ## Story I: Week 2 fill
 
-- [ ] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h: Fri, if there is room. Follows S8-T18; where the subclass lives is settled at `/card-start`.
 
 
 ## 🔨 In Progress
 
-- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: cut against S8-D1's Decided rows before Oct 24. Follows S8-D1. The first reference card must settle where a loaded scene keeps its acquires (scene entry or beside the live `Scene`); it is the chain's root ([[Resources - Design]] § *Open questions*).
+- [ ] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h: Fri, if there is room. Follows S8-T18; where the subclass lives is settled at `/card-start`.
 
 
 ## 👀 Review / Demo
@@ -57,6 +56,9 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 08
 
+- [x] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: vault-only, **Oct 20**, vault `516b1c7`, closed Oct 20. Seven draft cards (2 🟢, 5 🟠) sit under S8-D2 in the sprint note, for `/sprint-plan` to number and size against capacity. **The root card's fork was settled here, not by the root card.** The card left "where a loaded scene keeps its acquires" to Sprint 09's first reference card, but then the cards after it could not be sized past an open fork. Miguel chose that the scene is a cache entry and its references are that entry's dependencies; keeping the set beside the live `Scene` was rejected ([[Resources - Design]] § *Reference fields*, with a new Decided row and the open question deleted). **The mesh is a placeholder.** Miguel flagged its format as render work, so the payload takes the hard-coded triangle's shape and R1's renderer ADR owns the real one; the component that references it holds only the mesh, so its name cannot decide R1's split between mesh and material. **Found at `/card-start`:** when a startup scene already exists, the editor does not read it (`apps/editor/src/EditorApp.cpp:53-55`), although the design note says it "creates or adopts" one. That became card 6, and the note's sentence is still wrong until that card lands. The Roadmap revision went to [[Backlog]], because R1 is likely several ADRs built on paper research. Completes Story F and unblocks the Oct 24-25 `/sprint-plan`. **Retro:**
+	- **A card that cuts a chain cannot leave the chain's root decision to the first card it cuts.** Under the decide-first trial, that leaves every later card unsized. `/card-start` caught it before any card was written.
+	- **The work commit is titled "Planning sprint 9" and names no card**, unlike `61354dc` (S8-D1) or `618afdd` (S8-P10). Searching the vault log for S8-D2 misses it, so this entry is the only link back to the card.
 - [x] **S8-D3** · Cut a PR's CI wall time · P1 · 🟢 Deep · 4-6h: #147 `74b53985`, **Oct 19**, closed Oct 20; vault `13a1232`. **A PR's first push went from 17.5 min to 4.9.** The four PR-only legs now also run on `master` pushes and dispatches, so `master` holds their ccache, and every leg waits only for `clang-format`. Probe #148 (closed unmerged) restored 99.76% of its calls on all four legs, and their Build step fell from about 300 s to 9-18 s. Removing the coverage gate alone took #147's own run, still cold, to 9.9 min. **The no-leak check passed at #149's merge** (`d5948705`): its prune deleted 9 stale entries, and `master` holds exactly one `ccache-v2-<leg>` per leg, eight in all, about 1.27 GB with everything else. `cache-prune` needed no change for this. Recorded as dated amendments to [[ADR-008 - v2 build & testing baseline]] and [[ADR-009 - Branching strategy & merge rules]] §4, with the measurements in [[B3 - Build & Testing Notes]] § *Four legs start every PR cold*. Story I stays open for S8-T19. **Retro:**
 	- **Rescoped at `/card-start`, before any work.** The card was a test-strategy decision (tiers, run policy, process isolation). Miguel named the real goal, a PR that does not take 15 minutes, and #146's run showed that builds set that time, not tests. Module-scoped test runs were rejected: the module chain makes most PRs test most modules, and the build is the slow part. The tier work and its evidence went to [[Backlog]] → *Test tiers and parallel ctest*, with two forks already answered.
 	- **#143 had made PRs slower, and nothing measured it.** S8-P7 and S8-T21 measured warm builds, but a PR's critical path was the four legs that are always cold. There, compiling Jolt without its PCH cost about 3 minutes (#146: 17.5 min against #142's 14.5). The lesson: measure the cold path a PR actually waits on, not only the warm one.
@@ -160,9 +162,6 @@ kanban-plugin: board
 	  - Miguel's first `readRange` ended by calling itself instead of reading. Every level held an open stream until Windows ran out of handles, so each of the eight success cases failed with `IoError` after about 550 ms. The past-end and miss cases passed, because they return before the call. At Miguel's request, Claude wrote the seek and the read, plus the `tellg() < 0` guard that `read` also has.
 	  - Diff coverage first failed at 84% against the 85% gate, on three `IoError` paths. A permission case now covers the failed open on Linux, and it calls `SKIP` where the file still opens (Windows, or root). CI then reached 89%. A failed `tellg` and a read that fails after the range check stay uncovered, because no test can set them up.
 	  - Claude wrote the scaffold, the tests and the `readRange` fix. Miguel wrote the header bodies and the first `readRange`. The PR has no body or review conversation, and the squash is titled "Headers blob", so this entry is the only record of the two signature calls.
-
-
-
 
 %% kanban:settings
 ```

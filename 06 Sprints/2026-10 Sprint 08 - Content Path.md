@@ -150,7 +150,7 @@ the cards against it is a separate 🟡 Light step.
   settles the mesh as the second resource type, how a mesh is authored before T4, and whether
   it is drawn through a published copy or only loaded until R1. If the field shape is hard to
   reverse, it gets its own ADR. Starts from S8-P4's brief. Follows S8-T3.
-- [ ] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h ·
+- [x] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h ·
   done: Sprint 09's mesh and reference cards are cut against S8-D1's Decided rows before the
   Oct 24 boundary, each with a `done:` clause and a size. Follows S8-D1.
   **The first reference card must settle where a loaded scene keeps its acquires** (found
@@ -163,6 +163,7 @@ the cards against it is a separate 🟡 Light step.
   **Settled here instead, Oct 20:** the cards after the root could not be sized past an open
   fork, so Miguel chose at `/card-start` that the scene is a cache entry and its references are
   that entry's dependencies ([[Resources - Design]] § *Reference fields*). The cut is below.
+  Closed Oct 20 (vault `516b1c7`).
 
 #### Sprint 09's cut
 
