@@ -6,11 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://ieeexplore.ieee.org/document/7854097 - **Decoupling the Entity-Component-System Pattern using Semantic Traits for Reusable Realtime Interactive Systems** | IEEE SEARIS 2015 (ECS)
-- [ ] https://arxiv.org/abs/2504.14815 - **A Mapping Study of the Entity Component System Pattern** | IEEE/ACM GAS 2025 (ECS)
-- [ ] https://scholar.afit.edu/etd/5042/ - **Comparison of Archetypal Entity-Component Systems and Relational Databases** | AFIT 2021 (ECS)
-- [ ] https://dl.acm.org/doi/10.1145/3152778 - **A Survey on Software Architectures for Game Engines** | ACM CIE 2017 (ECS)
-- [ ] https://www.cs.ubc.ca/~pai/papers/KrySound01.pdf - **Continuous Contact Simulation for Sound** (Audio)
 - [ ] http://graphics.cs.cmu.edu/projects/pat/ - **Precomputed Acoustic Transfer** | ACM SIGGRAPH 2006 (Audio)
 - [ ] https://www.microsoft.com/en-us/research/publication/parametric-directional-coding-for-precomputed-sound-propagation/ - **Parametric Directional Coding for Precomputed Sound Propagation (Project Triton)** | ACM SIGGRAPH 2018 (Audio)
 - [ ] https://gamma.cs.unc.edu/PrecompWave/ - **Precomputed Wave Simulation for Real-Time Sound Propagation** | ACM SIGGRAPH 2010 (Audio)
@@ -52,6 +47,16 @@ kanban-plugin: board
 	Chilimbi, Hill and Larus speed up pointer-heavy programs by clustering and coloring data into cache blocks (ccmorph, ccmalloc); background for the data-oriented layout ADR-006 already chose, since archetype columns sidestep the pointer structures it targets.
 - [ ] https://arxiv.org/abs/2606.14919 - **The Essence of Entity Component System** | ACM SAC 2026 (ECS)
 	Tasnim and Zhao give archetype ECS a formal model of entity creation, component composition, system execution and archetype migration, with invariants; directly relevant to TechEngine's archetype `Scene`, as a check on its structural-mutation and determinism rules.
+- [ ] https://downloads.hci.informatik.uni-wuerzburg.de/2015-ieeevr-searis-semantic-traits.pdf - **Decoupling the Entity-Component-System Pattern using Semantic Traits for Reusable Realtime Interactive Systems** | IEEE SEARIS 2015 (ECS)
+	Wiebusch and Latoschik add semantic traits to ECS so that entities can be classified after the fact, decoupling them from class definitions (Simulator X); background at most, because TechEngine's components are plain C++ types with no runtime semantic layer. The card's IEEE link (7854097) was not confirmed to be this paper, so the link now points at the authors' PDF.
+- [ ] https://arxiv.org/abs/2504.14815 - **A Mapping Study of the Entity Component System Pattern** | IEEE/ACM GAS 2025 (ECS)
+	Voisard, Serra, Politowski, Petrillo and Guéhéneuc map the ECS literature (25 relevant papers of 82) and find more reported benefits than downsides, possibly from novelty bias; a cheap index for choosing further ECS reading, not a source of design decisions for the archetype `Scene`.
+- [ ] https://scholar.afit.edu/etd/5042/ - **Comparison of Archetypal Entity-Component Systems and Relational Databases** | AFIT 2021 (ECS)
+	Could not resolve: scholar.afit.edu is unreachable from this session, and search found no AFIT thesis with this title; the closest is Compton's *An Investigation of Data Storage in Entity-Component Systems* (AFIT 2022, scholar.afit.edu/etd/5353), so 5042 may be a different thesis.
+- [ ] https://dl.acm.org/doi/10.1145/3152778 - **A Survey on Software Architectures for Game Engines** | ACM CIE 2017 (ECS)
+	Could not resolve: dl.acm.org is unreachable from this session, and searches for the DOI and the title in ACM Computers in Entertainment found no matching paper or authors.
+- [ ] https://www.cs.ubc.ca/~pai/papers/KrySound01.pdf (Audio)
+	Could not resolve: the PDF host is unreachable from this session, and no paper titled *Continuous Contact Simulation for Sound* exists in search; the closest are van den Doel, Kry and Pai's *FoleyAutomatic* (SIGGRAPH 2001) and Kry and Pai's *Continuous Contact Simulation for Smooth Surfaces* (TOG 2003).
 
 
 ## Rendering 👽
