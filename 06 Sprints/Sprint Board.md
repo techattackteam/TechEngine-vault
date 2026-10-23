@@ -48,6 +48,7 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 - [ ] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h
+- [ ] **S8-D4** · Prepare Sprint 09 · P1 · 🟠 Moderate · 2-3h
 
 
 ## 👀 Review / Demo

@@ -164,55 +164,137 @@ the cards against it is a separate 🟡 Light step.
   fork, so Miguel chose at `/card-start` that the scene is a cache entry and its references are
   that entry's dependencies ([[Resources - Design]] § *Reference fields*). The cut is below.
   Closed Oct 20 (vault `516b1c7`).
+- [ ] **S8-D4** · Prepare Sprint 09 · P1 · 🟠 Moderate · 2-3h ·
+  done: `/sprint-prep` updates *Sprint 09's cut* below for the product layer set on Oct 23
+  ([[Capability Map]], [[Roadmap]]): it proposes Sprint 09's goal, keeps or retags the seven M6
+  drafts (🤖 Claude where they fit), adds the cards for the editor and renderer briefs that E1
+  and the renderer ADR need, and gives a rough count by weight. The first run of the split
+  planning, added Oct 23; no prep brief card exists for this sprint, so the prep reads the
+  design notes itself.
 
 #### Sprint 09's cut
 
-Drafts for `/sprint-plan`, which gives them `S9-` IDs and checks them against capacity. Two
-Backlog triggers fire inside them: routing the startup load through the cache (card 1) and the
-shared asset-creation call (card 5). Cards 2 and 4 depend on nothing, so they can run beside
-card 1.
+Drafts for `/sprint-plan`, which gives them `S9-` IDs and fits them to capacity. S8-D2 cut
+cards 1-7 on Oct 20; S8-D4 retagged them and added 8-14 on Oct 23, with Miguel's picks.
 
-1. **The scene loads as a cache entry** · P1 · 🟢 Deep · 4-6h · done: a loader under
-   `SCENE_KIND` keeps the scene's bytes as its payload and names no dependencies.
-   `RuntimeApp::simulationStartupLoad()` requests the startup scene through `m_resources`, with
-   its `PackSource` held as a member and set as the cache's source, then streams the payload into
-   the live `Scene` and frees the bytes. The scene's handle is released in
-   `simulationShutdown()`, so the shutdown log names nothing. A new call, made only by the owner,
-   adds a dependency to a Ready entry, with the same cycle check a completion gets. Where the
-   scene's handle lives is settled at `/card-start`.
-2. **Reference fields and the reference walk** · P1 · 🟢 Deep · 4-6h · done: a component with
+- **Proposed goal:** close M6. The startup scene and the mesh it references load through the
+  resource cache, in the runtime from packs and in the editor from loose files. This is M6's
+  second half; E1 · Editor and export starts beside it with its decisions (cards 8-11), and its
+  build starts once card 10 cuts the first T1 cards.
+- **First Design card:** card 8, the editor brief, then card 9, the editor ADR. T1's panels are
+  a story of about 4-6 cards, **unsized** until card 10. No showcase card: M6 has no video, and
+  E1 does not end this sprint.
+- **Coverage gap:** the editor has no design note, so card 10 writes one.
+- **Fired [[Backlog]] entries:** card 1 (route the startup load through the cache), card 5 (one
+  shared call to create a scene asset) and card 14 (the cache's shutdown order). Two more fire
+  at the boundary itself: *the vault does not know about `clientapp`* is `/sprint-plan`'s drift
+  check, and *Revise the Roadmap* looks met by the Oct 23 goal ladder, except its R1 question,
+  which card 12 takes.
+- **[[Known Issues]]:** D3 and D5 neither block nor touch these cards.
+- **Lane:** enabled, but the 🤖 cards run only after S8-P11's PR merges and Miguel pastes the new
+  prompt into the routine. The cron must be re-pointed before Mon Oct 26 09:07.
+- **Rough count:** Miguel 3 🟢, 3 🟠 and 1 🟡; 🤖 Claude 4 cards; 🤖 Auto 3 cards. That is light
+  against two weekends, so `/sprint-plan` should keep a slot for the first T1 cards.
+
+##### Story: M6's scene and its references (Miguel)
+
+Cut against [[Resources - Design]] § *Reference fields* and ADR-026.
+
+1. **T · The scene loads as a cache entry** · P1 · 🟢 Deep · 4-6h · done: a loader under
+   `SCENE_KIND` keeps the scene's bytes as its payload and names no dependencies. One `core`
+   function requests a scene through a cache, streams the payload into the live `Scene`, frees
+   the bytes and returns the scene's handle (§ *Reference fields*, *One load for every app*).
+   `RuntimeApp::simulationStartupLoad()` calls it, with its `PackSource` held as a member and set
+   as the cache's source. The handle is released in `simulationShutdown()`, so the shutdown log
+   names nothing. A new call, made only by the owner, adds a dependency to a Ready entry, with
+   the same cycle check a completion gets. The function's name and header, and where the handle
+   lives, are settled at `/card-start`. *From a fired Backlog entry.*
+2. **T · Reference fields and the reference walk** · P1 · 🟢 Deep · 4-6h · done: a component with
    `visit` can hold `Entity` and `AssetRef<T>` fields (ADR-026 §2). One reference visitor over
    `visit` sees only those two types. `SceneAsset::write` saves an `Entity` as its target's row
    and an `AssetRef<T>` as its id, and `SceneAsset::read` maps rows back to entities in a second
    pass after the last row. A round-trip test with a test component proves both, including a
    reference to a later row and empty fields.
-3. **The loaded scene acquires its references** · P1 · 🟠 Moderate · 2-3h · done: after
-   streaming, the startup load walks the live `Scene`, adds each distinct id once as a
+3. **T · The loaded scene acquires its references** · P1 · 🟠 Moderate · 2-3h · done: after
+   streaming, card 1's function walks the live `Scene`, adds each distinct id once as a
    dependency of the scene entry, runs a loading phase, then fills each `AssetRef<T>` handle.
    Tests prove one acquire per distinct id, none left after the scene is released, and that a
    reference that fails to load fails the startup load. Follows 1 and 2.
-4. **The mesh resource type** · P1 · 🟠 Moderate · 2-3h · done: a `Mesh` payload with its own
-   blob kind and type tag, a loader registered in both apps, and a row in `AssetIndex`'s table
-   of asset kinds. A test writes a mesh and loads it back through the cache. The payload is a
-   placeholder with the hard-coded triangle's shape, float3 positions and `u32` indices
+
+Cards 1 and 2 depend on nothing, so either can open the sprint.
+
+##### Story: the mesh path, from the editor to the runtime · 🤖 Claude
+
+Claude cuts nothing further and decides the rest under [[Planning Workflow - Artifact Gate]] §
+*The 🤖 Claude gate*, listing each decision in its PR. Headless and proven by `ctest`, per the
+Sprint 09 trial terms. Off Miguel's files: card 4 touches neither app's startup, and card 7,
+which edits `RuntimeApp.cpp`, waits for card 3 to merge.
+
+4. **T · The mesh resource type** · P1 · 🤖 Claude · 2-3h · done: a `Mesh` payload with its own
+   blob kind and type tag, its loader, and a row in `AssetIndex`'s table of asset kinds. A test
+   registers the loader in a cache, writes a mesh and loads it back. The payload is a placeholder
+   with the hard-coded triangle's shape, float3 positions and `u32` indices
    (`engine/client/src/render/FrameRenderer.cpp:33-34`); R1's renderer ADR owns the real format
-   and replaces it.
-5. **The editor writes a mesh and a component that references it** · P1 · 🟠 Moderate · 2-3h ·
+   and replaces it. The apps register the loader in cards 6 and 7. Depends on nothing.
+5. **T · The editor writes a mesh and a component that references it** · P1 · 🤖 Claude · 2-3h ·
    done: the editor writes the triangle as a mesh asset in code, the way it writes the startup
-   scene, through one asset-creation call that `writeStartupScene` also uses. A registered
-   component with an `AssetRef<Mesh>` field sits on an entity of a newly created startup scene
-   and is saved with it. The component holds only the mesh reference, and its name, settled at
-   `/card-start`, must not decide how R1 splits the mesh from its material. Follows 2 and 4.
-6. **The editor reads its startup scene through the cache** · P2 · 🟠 Moderate · 2-3h · done:
-   when the project names a startup scene, `EditorApp::simulationStartupLoad()` loads it through
-   `m_resources` with `LooseSource` as the source, along the same path as the runtime, so a later
-   launch opens on it instead of an empty scene. The TODO at `apps/editor/src/EditorApp.cpp:54`
-   goes. Follows 1 and 3.
-7. **The bake packs what the startup scene reaches** · P1 · 🟠 Moderate · 2-3h · done:
+   scene, through one asset-creation call that `writeStartupScene` also uses, and the `TODO` on
+   `writeStartupScene` (`apps/editor/src/EditorApp.cpp:79`) goes. A component with an
+   `AssetRef<Mesh>` field, registered in the editor, sits on an entity of a newly created startup
+   scene and is saved with it. It holds only the mesh reference, and its name must not decide how
+   R1 splits the mesh from its material. Follows 2 and 4. *From a fired Backlog entry.*
+6. **T · The editor reads its startup scene through the cache** · P2 · 🤖 Claude · 2-3h · done:
+   when the project names a startup scene, `EditorApp::simulationStartupLoad()` registers the
+   scene and mesh loaders and calls card 1's function with `LooseSource` as the cache's source,
+   so a later launch opens on the saved scene instead of an empty one. The `TODO` at
+   `apps/editor/src/EditorApp.cpp:45` goes. Follows 1, 3 and 5.
+7. **T · The bake packs what the startup scene reaches** · P1 · 🤖 Claude · 2-3h · done:
    `Project::exportTo` walks the startup scene's references and packs each reached asset into its
-   side's pack when the target ships that side, instead of the scene alone. What an id the index
-   does not know does to the export is settled at `/card-start`. The runtime logs the mesh it
-   loaded, which proves the whole path. Follows 2 and 5.
+   side's pack when the target ships that side, instead of the scene alone. The runtime registers
+   the mesh loader and card 5's component, and a `RuntimeAppTests` case over an export proves the
+   runtime loads the mesh. What an id the index does not know does to the export is Claude's call.
+   Follows 2, 3 and 5. Miguel's windowed run then closes M6's Definition of Done.
+
+##### Story: E1's opening decisions (Miguel)
+
+Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window - Design]] §
+*Open questions*. The ADR is heavy, so nothing under it is sized.
+
+8. **D · Write the editor's capability brief** · P1 · 🟠 Moderate · 2-3h · done: `/brief editor`
+   writes `01 Product/Capabilities/Editor - Brief.md`, linked from the map's § *Editor*. Miguel
+   decides every line; Claude interviews. It says whether E1 includes a project launcher,
+   reopening the last scene, and any Play state, because three [[Backlog]] entries trigger on the
+   first editor UI card and the launcher is not on the map yet.
+9. **D · Decide the editor's architecture** · P1 · 🟢 Deep · 4-6h · done: `/adr` drafts the
+   editor ADR from the brief and card 11's report, with the Unity and Unreal baseline. It decides
+   whether ImGui shares the window and which thread draws it (ADR-015 § *Consequences*), how
+   panels read the `Scene` (published copies or main's fence, ADR-024 §6), how an edit reaches the
+   simulation thread, and what the stopped state is ([[Resources - Design]] § *Open questions*).
+   Miguel accepts it. Follows 8 and 11.
+10. **D · Write the editor's design note and cut the first T1 cards** · P1 · 🟡 Light · 1-2h ·
+    done: a new `Editor - Design` note holds the ADR's mechanism and indexes it in its *Decided*
+    rows, and the first T1 panel cards are cut against it, each with a `done:` clause and a size.
+    Follows 9.
+11. **P · Research brief for the editor ADR** · P2 · 🤖 Auto · 2-3h · done: a report compares how
+    Unity, Unreal and Godot run editor UI beside the simulation and render threads, and how
+    ImGui-based editors hand draw data to a render thread that owns GL. It names its sources,
+    marks what is from memory, and maps each answer onto ADR-018's threads and [[Window - Design]]
+    § *The frame command buffer* without choosing. Report-only, best done in week 1.
+
+##### Alongside: the renderer brief, and one Auto test
+
+12. **D · Write the renderer's capability brief** · P2 · 🟠 Moderate · 2-3h · done:
+    `/brief renderer` writes `01 Product/Capabilities/Renderer - Brief.md`, linked from the map's
+    § *Renderer*. It also answers the Backlog's R1 question: one renderer ADR, or several (meshes,
+    materials, the physically based pipeline).
+13. **P · Research brief for the renderer ADR** · P3 · 🤖 Auto · 2-3h · done: a report compares
+    how Filament, Godot 4, Unity's URP and Unreal split the device seam, the mesh format and the
+    physically based material model, against the brief's targets, and maps each onto ADR-005's
+    device seam (F22) without choosing. Report-only. Follows 12.
+14. **T · Prove the cache shuts down after the app's own shutdown** · P3 · 🤖 Auto · 1-2h ·
+    done: an `AppTests` case drives the real simulation thread and proves that the app's releases
+    in `simulationShutdown()` land before `ResourceCache::shutdown()` logs what is still counted.
+    Only `engine/app/tests/AppTests.cpp` changes. Follows 1. *From a fired Backlog entry.*
 
 ### Story G: Resource cache · stretch
 

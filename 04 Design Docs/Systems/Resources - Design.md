@@ -74,6 +74,7 @@ built or run.
 | A live `AssetRef<T>` names only an asset its scene holds. An editor edit acquires the new asset at once and releases the old one when the scene reloads. | ADR-026 §4 |
 | The mesh is the second resource type. Before T4 the editor writes one in code, and until R1 it is loaded, not drawn. | Miguel, Oct 18; § *Reference fields* |
 | A loaded scene is a cache entry, and its references are that entry's dependencies, so releasing the scene releases them. | ADR-024 §3 §8, Miguel, Oct 20; § *Reference fields* |
+| Loading a scene through the cache is one `core` function, which every app's startup load calls with its own source. | Miguel, Oct 23; § *Reference fields* |
 
 ### Decided: packs and the runtime layout
 
@@ -369,6 +370,12 @@ Not built: Sprint 09's cards build it.
   Releasing the scene entry releases its references, and the cycle check and the shutdown log
   cover them unchanged. Keeping the set beside the live `Scene` was rejected: it would repeat the
   cache's dependency bookkeeping outside it, and it needs a release that takes no type.
+- **One load for every app** (decided Oct 23, at S8-D4). The steps above, from the request to
+  filling the handles, are one function in `core`, because the cache, the scene asset and the
+  live `Scene` all live there. The runtime calls it with its `PackSource` as the cache's source,
+  the editor with its `LooseSource`, and a dedicated server will call it too, so it cannot live
+  in `ClientApp`. Copying the steps into each app was rejected: the copies would drift. Its name
+  and header are Sprint 09's first reference card's to settle.
 - **The editor.** An inspector edit runs as a loading phase: it acquires the new asset and fills
   the field. The asset it replaced stays held until the scene reloads (T1).
 - **The mesh.** It is Sprint 09's second resource type, because the hard-coded triangle in
