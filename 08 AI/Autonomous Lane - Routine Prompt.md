@@ -154,6 +154,8 @@ STEP 4: PICK ONE CARD.
 From the Sprint Board's To Do column, take the highest-priority card tagged "🤖 Auto" or
 "🤖 Claude". On equal priority, take the "🤖 Claude" card: it may sit on the sprint's critical
 path. Within one 🤖 Claude story, take its cards in the order the sprint note gives.
+A card whose text says "not before <day>" waits until that day: leave it in To Do and take
+the next one. The standing prep brief is the usual case.
 Take exactly one. Only To Do counts. A card in Review / Demo is waiting on Miguel and this lane
 never re-enters it; a card in In Progress is attended work.
 If no Auto card is open, the fallback depends on which fire you are.

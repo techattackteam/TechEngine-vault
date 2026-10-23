@@ -1,36 +1,23 @@
 # 🧠 AI as Technical Lead: Charter
 
-How AI (Claude Code) is used on TechEngine. The role is **technical lead**, not
-autocomplete. Highest leverage is better architecture decisions, not faster
-typing.
+The rules for how AI (Claude Code) works on TechEngine: what it is for, who decides, and who
+writes the code. The day-to-day how-to is [[Working with Claude - Operating Guide]]; the
+machine-facing rules are the repo-root `CLAUDE.md`.
 
-## Use AI for
-- Architecture reviews and trade-off analysis
-- Rendering / graphics design discussions
-- ECS and systems design
-- Feature decomposition (Epic → Story → Task)
-- Code review of finished work
-- Research summaries and technique evaluation
+## The role
 
-## Avoid
-- Using AI mainly to generate boilerplate.
-- Accepting designs without understanding the trade-offs.
-- Skipping the ADR when AI proposes a load-bearing decision.
-
-## Cadence
-Anchored to the real weekly rhythm on the [[Dashboard]], **not** a daily standup.
-
-- **Week 2 of every sprint, Tuesday to Friday**: `/sprint-prep` decides and drafts the next
-  sprint.
-- **Sprint boundary (every 2nd weekend)**: `/sprint-plan`: retro, then fit the draft to the
-  new sprint.
-- **The other weekend**: weekly review; refine tasks.
-- **Deep days (Mon / Thu + one weekend day)**: implementation; call AI to design first and
-  review after. Light/relaxed days are for docs, ADR drafting, and reading.
+- **Technical lead**: architecture reviews, trade-offs, systems and rendering design, feature
+  decomposition, code review, research. The highest leverage is better decisions, not faster
+  typing.
+- **Pair** on Miguel's own cards, and **implementer** of the 🤖 Claude features he picks
+  (§ *Who writes the code*).
+- **Scrum master** on process (§ *As scrum master*).
 
 ## Rules of engagement
 - AI should **push back** on a rewrite unless evidence justifies it.
-- Decisions that stick get an [[ADR Index|ADR]], AI drafts, you accept.
+- AI **argues against Miguel's idea** before he commits to it, and never lets a design be
+  accepted without its trade-offs on the table.
+- Decisions that stick get an [[ADR Index|ADR]]: AI drafts, Miguel accepts.
 - Ground every recommendation in the actual repo, not generic advice.
 
 ## Compare against Unity and Unreal (2026-10-11)
@@ -54,9 +41,8 @@ On **process** (sprint planning, backlog grooming, retro, demo/planning) Claude 
 - **Co-create the plan**: build the Epic → Story → Task breakdown *together*: Claude
   drafts and challenges, Miguel decides scope. Tasks sized to one 2-6h session with a
   clear done-condition.
-- **Run the ceremonies**: `/sprint-prep` (week 2), `/sprint-plan` (every 2nd weekend, absorbs
-  that weekend's review, never both), `/weekly-review` (the other weekend);
-  keep [[Sprint Board]], [[Roadmap]], and [[Dashboard]] in sync.
+- **Run the ceremonies** on the schedule in [[Dashboard]] § *Rhythm*, never a daily standup,
+  and keep [[Sprint Board]], [[Roadmap]] and [[Dashboard]] in sync.
 - **Guard capacity & sustainability**: size to the real weekly rhythm; call over-scope
   and burnout risk out loud.
 - **Surface impediments** early; log blockers on the Dashboard.
@@ -90,6 +76,3 @@ The honest read: this trades more implementation ownership for throughput, and t
 review. Sprint 09 is the first trial, critical path included, and its retro checks how many
 of the lane's decisions Miguel reversed. If the reviews stop feeling worth it, untagging the
 features reverses it.
-
-See [[Working with Claude - Operating Guide]] for the day-to-day workflow. Machine-facing
-rules live in the repo-root `CLAUDE.md`.

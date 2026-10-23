@@ -27,15 +27,17 @@ Keep only the stories needed for this sprint. Link rationale rather than repeati
 Do not invent task acceptance criteria before that decision. Remove this example
 if no story needs it. -->
 
-## 🤖 Auto lane
+## 🤖 Lanes
 
-<!-- Cards the unattended lane may take, planned in /sprint-plan's Auto pass and tagged
-· P2 · 🤖 Auto. They also appear under their story above; list their IDs here so the lane's
-share of the sprint is visible. If there are none, say why (for example, the routine is
-paused). See [[Autonomous Lane - Design]]. -->
+<!-- Cards the unattended lane may take. They also appear under their story above; list
+their IDs here so the lane's share of the sprint is visible. If there are none, say why (for
+example, the routine is paused). See [[Autonomous Lane - Design]] and
+[[Planning Workflow - Artifact Gate]] § The 🤖 Claude gate. -->
 
-- Auto cards: <IDs, or "none" and the reason>
-- Attended slots freed: <which cards moved off Miguel's days>
+- 🤖 Claude features: <story names, or "none" and the reason>
+- 🤖 Auto cards: <IDs, or "none" and the reason>
+- Standing prep: <the brief's ID (not before Mon of week 2) and the prep card's ID (Tue to Fri of week 2)>
+- PR load: <PR-producing lane cards per sprint week, against one PR per fire>
 
 ## Definition of Done
 

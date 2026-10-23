@@ -44,9 +44,9 @@ capacity table does **not** change.
 | 2 | Does a cloud run build before it opens a PR? | **Yes. Linux presets plus `ctest`, and a red build opens no PR.** CLAUDE.md's "Miguel compiles" rule is about his ownership of the toolchain, and he is not present in this lane, so the rule has no referent here. | 2026-08-30 |
 | 3 | Where does the daily report land? | **One vault note per fire, in `docs/07 Journal/autoruns/<date>/`**, falling back to a rolling GitHub issue in the engine repo if a cloud session cannot reach the vault repo. Until 2026-09-26, all of a day's fires appended to one shared note; those were split per fire. | 2026-09-26 |
 | 4 | Does the run get the vault? | **Yes, and it does not clone it.** The routine checks it out as a second `sources` repo, and the session symlinks it to `docs/` as its first act. Proven by the probe; no credential of any kind is involved. | 2026-08-30 |
-| 5 | Does the run watch its own PR? | **Yes. It reports whether its PR is failing CI**, not just that it opened one. Mechanism is unsettled, see § *Watching the PR*. | 2026-08-30 |
+| 5 | Does the run watch its own PR? | **Yes. It reports whether its PR is failing CI**, not just that it opened one: push early, check late (§ *Watching the PR*). | 2026-08-30 |
 | 6 | Does the lane inherit the attended entry prompt? | **No. It gets its own.** The attended one assumes a human is present to compile, to decide and to answer a question mid-run. | 2026-08-30 |
-| 7 | Does the lane move its card on the [[Sprint Board]]? | **Yes, and the columns are its state.** Done when every clause is met, Review / Demo when a PR is open or what is left needs Miguel. It grounds each Auto card with `/card-start` before working it, and closes its own Auto cards with the whole of `/card-close`, the Dashboard's *Current focus* included. Attended cards stay Miguel's to close. Widened from "only the board line" on 2026-10-19 (S8-P9). | 2026-10-19 |
+| 7 | Does the lane move its card on the [[Sprint Board]]? | **Yes, and the columns are its state.** Done when every clause is met, Review / Demo when a PR is open or what is left needs Miguel. It grounds each 🤖 Auto or 🤖 Claude card with `/card-start` before working it, and closes its own cards with the whole of `/card-close`, the Dashboard's *Current focus* included. Attended cards stay Miguel's to close. Widened from "only the board line" on 2026-10-19 (S8-P9). | 2026-10-19 |
 | 8 | Does the lane screen papers for the research chatbot? | **Yes, as report-only fallback work, and it never approves.** With no Auto card open, it screens a few cards from [[Research]]'s *TO VALIDATE* column into *MIGUEL REVIEW*: real title, stable link, one-sentence fit. An off-roadmap paper gets a "recommend reject" line; rejecting and approving (`/paper-validate`) stay Miguel's. Which column the chatbot ingests from is still undecided (Sep 19 review). | 2026-09-26 |
 | 9 | Does the lane hunt for unnecessary code? | **Yes: with no Auto card open, the afternoon fire sweeps one module** for duplication, dead code and speculative abstractions, in rotation, and records the module's line count. It fixes every finding that needs no design decision: dead code nothing references (tests included, public API allowed, `sdk/` never), duplicates anywhere in one module, and copied test code. The fixes go in one PR with no size cap, one commit per finding, titled "Code sweep: <module>" on a `sweep/<module>-<date>` branch. Sweeps have no board card; that branch prefix is the one exception to CLAUDE.md rule 9. What is left goes into one rolled-up [[Backlog]] entry per module. The morning fire keeps the freshness check and paper screening. Widened from "obvious findings under ~100 lines, one entry each" on 2026-10-01. | 2026-10-01 |
 | 10 | Does the lane build features? | **Yes: 🤖 Claude features**, picked by Miguel at `/sprint-plan`. The lane writes their engine logic and takes their design-note-level decisions, listing each in the PR; ADR-level decisions stay Miguel's. During the Sprint 09 trial they may sit on the critical path. The gate is [[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate*, and why the split exists is [[Technical Lead Charter]] § *Who writes the code*. | 2026-10-23 |
@@ -66,13 +66,13 @@ only while the local REPL is idle. The `durable` flag has no effect. Neither sur
 going to sleep, which is the whole requirement.
 
 **The routine is live**, created 2026-08-30 and cut to two fires a weekday on 2026-08-31. Its
-configuration is in [[Autonomous Lane - Routine Prompt]] § *Routine configuration*. Everything
-below has been observed working except the PR path, see § *State*.
+configuration is in [[Autonomous Lane - Routine Prompt]] § *Routine configuration*. Every step
+below has run unattended since September; its first merged PR was #66 on 2026-09-03.
 
 ```mermaid
 flowchart LR
-    R["Routine fires<br/>weekday morning"] --> D["Clone the vault<br/>into docs/ over HTTPS"]
-    D --> C["Pick the top eligible<br/>Auto card"]
+    R["Routine fires<br/>twice a weekday"] --> D["Vault checked out beside<br/>the engine, linked as docs/"]
+    D --> C["Pick the top eligible<br/>🤖 Auto or 🤖 Claude card"]
     C --> W["Work it in the<br/>cloud sandbox"]
     W --> B{"Code card?"}
     B -->|yes| V["cmake --preset linux-debug<br/>+ ctest"]
@@ -89,16 +89,8 @@ flowchart LR
 
 ## Watching the PR
 
-Decision 5 says the run reports its PR's CI result. **How is not settled**, and the three
-shapes are a real trade rather than a detail.
-
-| Shape | Cost | Report quality |
-|---|---|---|
-| **Wait in-session**, polling until the checks settle | ~16 min of wall clock the run sits idle | Same-day and complete |
-| **Next-day pickup**: open the PR, end the run, and let tomorrow's run read yesterday's result | Free | Lags a day, and a red PR sits unreported overnight |
-| **A webhook trigger** on the PR's check failure, firing a second routine that diagnoses it | Free, and it is the shape `RemoteTrigger` already supports | Same-day, and it reacts instead of polling |
-
-**Decided 2026-08-30: none of the three as written. Push early, check late.** The run opens
+**Decided 2026-08-30: push early, check late.** Polling in-session wastes about 16 minutes of
+a run, and leaving it to the next day leaves a red PR unreported overnight. The run opens
 its PR as soon as the work is green locally, then continues with the rest of its card list,
 then reads the PR's checks as its last act before writing the report. CI runs during work the
 session was doing anyway, so the wait costs nothing and the report is same-day.
@@ -106,42 +98,8 @@ session was doing anyway, so the wait costs nothing and the report is same-day.
 **Floor:** if the checks have not settled by then, the report says so, and the next day's run
 reads the result as its first act. A red PR is therefore reported within one day at worst.
 
-The webhook stays the upgrade path if that floor ever gets hit often. It is not worth a second
-routine before the first one has run.
-
-## Getting the vault into the sandbox
-
-**A routine's `job_config.ccr.session_context.sources` is an array**, so it checks out more
-than one repository. The vault rides the same GitHub authorization the engine repo does, and
-no token, PAT or deploy key is involved.
-
-```json
-"sources": [
-  {"git_repository": {"url": "https://github.com/techattackteam/TechEngine"}},
-  {"git_repository": {"url": "https://github.com/techattackteam/TechEngine-vault"}}
-]
-```
-
-**Proven by the 2026-08-30 probe run.** Both repos land as siblings under `/home/user`, the
-engine one arrives with no `docs/`, and `ln -s /home/user/TechEngine-vault docs` makes the
-whole vault readable at the path every rule assumes. Auth needed no token: the clones are
-https, and a global `url.https://github.com/.insteadOf git@github.com:` rewrite is configured,
-so even the ssh-form URL in `CLAUDE.md` resolves. The authorization question is closed.
-
-**The symlink was not safe in the engine tree, and now is.** `.gitignore` held `/docs/`, and a
-pattern with a trailing slash matches a directory only. The mount is a *symlink*, so git saw it
-as untracked and an auto PR could have committed it. Confirmed by the probe: `git check-ignore`
-found no match. The pattern is now `/docs`, and the routine prompt also forbids `git add -A`.
-
-**Considered: make the vault public.** No longer needed, and it was always the weaker option.
-It publishes the whole project brain, including the vision and the company intent, which is a
-much larger decision than this lane. It also fixes reads only, since pushing the daily report
-still needs a credential.
-
-**Closed without a test.** The `workflow` token scope no longer matters, because workflow edits
-are outside § *Eligibility*, so the lane never attempts the push that scope would block. A cold
-`FetchContent` configure may be slow, but that is a cost to measure on the first runs rather
-than a reason to reopen decision 2.
+A webhook trigger on the PR's check failure, firing a second routine, stays the upgrade path
+if that floor ever gets hit often.
 
 ## Eligibility
 
@@ -150,7 +108,7 @@ keeps carrying the kind ([[Planning Workflow - Artifact Gate]] § *Task attribut
 rides the **weight** axis instead, because weight already answers "which slot does this run
 in":
 
-`· P2 · 🤖 Auto` joins `🟢 Deep` / `🟠 Moderate` / `🟡 Light`.
+`· P2 · 🤖 Auto` and `· P1 · 🤖 Claude` join `🟢 Deep` / `🟠 Moderate` / `🟡 Light`.
 
 **Eligible.** Research and technique evaluation. Vault freshness and drift checks. Backlog
 trigger sweeps. Paper screening for [[Research]] (decision 8). Code sweeps for duplication and
@@ -222,107 +180,21 @@ of the eligibility list.
 starts squeezing Miguel's attended sessions, the fallback work gives way first: paper
 screening, then the code sweep. The features are what the lane is now for.
 
-## State
+## Lessons the lane runs on
 
-**Written, 2026-08-30.** `CLAUDE.md` carries the build carve-out and the HTTPS clone command.
-[[Planning Workflow - Artifact Gate]] carries 🤖 Auto on the weight axis and § *The 🤖 Auto
-gate*. `/sprint-plan` fills the two lanes separately and adds no board column.
-[[Technical Lead Charter]] § *The autonomous lane* carries the exception, and
-[[Working with Claude - Operating Guide]] points at it. The interface exists as
-[[Autonomous Lane - Routine Prompt]] and [[Autonomous Run Report Template]].
+The probes and first fires (2026-08-30 to 2026-09-04) found these. Most are now structural, in
+the setup script or the prompt ([[Autonomous Lane - Routine Prompt]] § *Why the prompt is shaped
+this way*); the rest are rules that still bite. The full probe log is in this note's history at
+vault `731986a` and in the run reports under `07 Journal/autoruns/`.
 
-**Probed 2026-08-30**, one-shot, `trig_01LDrC66Jkra1mDkgav4Pevr`, read-only and no CI. The
-two-source checkout, the symlink, vault reads and the toolchain are all confirmed. Measured
-environment in [[Autonomous Lane - Routine Prompt]] § *The environment, as measured*.
-
-**Four things the probe broke that reasoning had gotten wrong**, all now fixed in the prompt:
-
-| Found | Consequence |
+| Lesson | Where it lives now |
 |---|---|
-| **There is no `linux` configure preset.** Each config has its own (`linux-debug`, `linux-release`, …), unlike the Windows leg where one covers both. | The prompt's build line was simply invalid. |
-| **Both checkouts arrive shallow (50 commits) and on a detached HEAD**, with a stale local `master`. The vault's sat 16 commits behind its real tip. | A naive push is rejected non-fast-forward, and the error reads like an auth failure. Step 2 now re-anchors both repos first. |
-| **`.gitignore`'s `/docs/` does not match a symlink.** A trailing slash matches directories only. | An auto PR could have committed the vault mount. Pattern is now `/docs`. |
-| **The one-shot fired twice**, 58 seconds apart. | Harmless for a probe. For a PR-opening lane it is two PRs per card. Step 3 is now an idempotency check. |
+| The vault mount is a **symlink**, and `.gitignore`'s `/docs/` matches directories only, so an auto PR could have committed it. | `.gitignore` says `/docs`; the prompt bans `git add -A`. |
+| A prompt edit in the vault **does not reach the running routine**. | Every prompt change owes Miguel a manual paste. |
+| With no Auto card open and a static `master`, the **second fire has no work by construction**, and it still spends the weekly usage. | Pause the routine, or seed the lane, across a gap with no cards. |
+| A card left in To Do after a fire touched it reads as untaken. | Decision 7: the board's columns are the lane's state. |
+| `allowed_tools` is **not a sandbox**; a probe with four read-only tools used others anyway. | The lane's safety rests on the prompt and on branch protection. |
 
-**Probe 2, same day**, `trig_01Gp38qRCui3rwoNHaXR6DK1`. It confirmed the `.gitignore` fix, and
-it closed the two remaining questions with real numbers.
-
-- **The vault push works.** After the re-anchor, `git push --dry-run origin master` returns
-  *Everything up-to-date*. Probe 1's rejection was a stale ref, never auth, as suspected.
-- **The engine builds and its tests pass**, in **85 seconds** cold: configure 20 s, build 64 s,
-  `ctest` 1 s. Build tree 479 MB. The lane's build carve-out costs about a minute and a half,
-  not the many minutes `FetchContent` had me worried about.
-- **But a cold sandbox cannot build at all until five apt packages are installed.** Configure
-  dies at 8 seconds on GLFW's X11 and Wayland headers, and the error names none of them. The
-  runner logs `No setup script configured`, so the environment supports a setup script and that
-  is the right home for it. The prompt does it meanwhile.
-- **`allowed_tools` is not a sandbox.** Probe 2 was created with four read-only tools and used
-  `Write`, `ToolSearch`, GitHub MCP tools and `PushNotification` regardless. The lane's safety
-  rests on the prompt and on branch protection, never on that field.
-
-**It also found a vault bug that has nothing to do with this lane.** The [[Dashboard]]'s
-`Reconciled against` sha, `50ca9360`, does not exist in the current history. The same commit is
-now `875991e2`, so `master` was rewritten after the Aug 29 check. The stamp is repointed with
-its date unchanged, because repointing is not re-earning. Every engine sha the vault records
-from before that rewrite is suspect.
-
-**Probe 3, on the new `TechEngineLinux` environment**, `trig_014YiZDGZyMKqdMGp7DjiFkJ`. The
-environment's **setup script** does the three jobs the prompt used to, before Claude Code even
-starts, so they are structural now rather than instructions a run might skip.
-
-- **The build passes with the run touching no apt.** Configure 18 s, build 54 s, `ctest` 1 s,
-  **200 of 200 tests passing**. About 75 seconds end to end.
-- **The vault mount, the re-anchor and the deps were all already done** on arrival.
-- **One finding worth the whole probe.** The image ships `/root/.gitconfig` naming
-  `Claude <noreply@anthropic.com>`. Without the environment's `GIT_AUTHOR_*` and
-  `GIT_COMMITTER_*` variables, **every autonomous commit would have violated CLAUDE.md rule 10
-  by default.** Those variables override it, confirmed: `git var GIT_AUTHOR_IDENT` resolves to
-  `Miguel Faria <miguel.al.faria@gmail.com>`. They are load-bearing, not cosmetic.
-- **One cosmetic gap.** The vault checkout stays `SHALLOW` where the engine comes out
-  `COMPLETE`. It commits and pushes fine, so nothing is blocked.
-
-**First end-to-end run, 2026-08-30**, `trig_01YLjHhWfxnHepEgEyKDwoAo`, on the real 9-step
-prompt. It landed [[2026-08-30 17-40 Auto Run]] and two [[Backlog]] entries, committed and authored as
-`Miguel Faria`, no AI attribution. **The chain works end to end.**
-
-It also earned its keep as a critic. Four corrections came out of it, all now in the prompt.
-
-| Found | Why it mattered |
-|---|---|
-| **The setup script runs once and is then cached, but the repos are re-fetched every run.** The deps and the symlink survive; the git re-anchor does not. | Step 1 had been softened to "verify, do not redo". It is back to doing the work every time. |
-| **The engine repo arrives shallow too**, not just the vault. | Its task is `git log <stamp>..origin/master`. A shallow clone makes a valid old sha fail `cat-file`, which is **indistinguishable from a sha a rewrite removed**, and step 4 sends those to opposite answers. It would have reported a false finding. |
-| **Rule 10 names the trailer and the `Generated with` line, and never the author field.** | That is the one place an unattended lane breaks the rule by default rather than by slipping. Now in § *Hard stops* and in the prompt. |
-| **Step 4 never said whether to fix what it finds**, and the template's wording pulls toward filing. | It filed, correctly. The opposite reading would have quietly rewritten six Accepted artifacts. Now explicit: file, never fix. |
-
-**The work itself was real.** It confirmed no design note describes code the four commits moved
-past, then went further than asked: it resolved **all 30 `file:line` citations** in the durable
-artifacts and found **8 pointing at the wrong line**, none of which fail loudly. It also caught
-[[ADR-013 - Profiler (Tracy-backed instrumentation)]] and [[Profiler - Design]] both pinning
-Tracy `v0.13.1` against a tree on `v0.14.1`, where the tag is a wire-protocol lock. Both are
-carded and neither was touched.
-
-**The routine went live 2026-08-30** and ran unattended for the first time on 2026-08-31,
-filing a [[Backlog]] trigger sweep. It was cut from four fires a weekday to **two** the same
-day, on Claude's weekly usage limit rather than on CI; § *Cost model* carries the reasoning.
-Note when creating or recreating one: pass `clear_mcp_connections: true` immediately after, as
-the server attaches Google Drive and Claude Code Remote by default and `mcp_connections: []` on
-create is ignored.
-
-**Observed across four fires, 2026-08-31 and 2026-09-01** (S5-P1). The report shape holds: one
-note per day, a section appended per fire, and each fire reading what the earlier ones did
-rather than redoing it. The sharpest evidence is the Sep-1 second fire declining to re-enter
-S5-P3, because the morning fire had taken it and left it open. Since 2026-09-26 each fire
-writes its own note in a day folder instead (decision 3); reading the earlier fires is unchanged.
-
-**Three gaps the watching found.**
-
-| Found | Consequence |
-|---|---|
-| **A prompt edit in the vault does not reach the running routine.** `1f4ebfb` updated [[Autonomous Lane - Routine Prompt]] on Aug 31, and the fire five hours later still received the old four-fire text. | The vault is supposed to be the copy you edit against. Nothing propagates it, so every prompt change owes a manual paste into the routine. |
-| **An empty Auto lane leaves a second fire with no work by construction.** With no card takeable and a static `master`, both report-only fallbacks are exhausted by the first fire. | The fire still spends the weekly usage allowance, which is the cost the schedule was cut on. Pause the routine, or seed the lane, across a gap with no cards. |
-| **The lane read the board and never wrote it.** S5-P2 sat in To Do a day after #66 merged, S5-P3 sat there needing a call, and the Sep 3 and Sep 4 fires all reported an empty lane while refusing both. | A finished or stalled card in To Do is indistinguishable from an untaken one. Decision 7: the lane moves its card, and Review / Demo means "needs Miguel". Prompt step 9. |
-
-**The PR path is proven.** S5-P2 branched, built and opened #66 (`S5-P2/log-level-fallback`)
-unattended; Miguel merged it on 2026-09-03 as `0ac1a9b0`. The **one-PR-per-day cap** first
-bound on 2026-10-01, blocking an afternoon sweep after the morning PR had already merged, and
-it became one per fire the same day (§ *Cost model*).
+**Considered and rejected: making the vault public** so the lane could read it. It publishes
+the whole project brain, the company intent included, which is a far larger decision than this
+lane, and the second `sources` entry made it unnecessary (decision 4).

@@ -1,29 +1,16 @@
 # 🤝 Working with Claude: Operating Guide
 
 How to get high-quality, high-performance engine work out of Claude Code without
-burning out. This is the *human* playbook; the machine-facing rules live in the
-repo-root `CLAUDE.md` (auto-loaded every session), and the role is defined in
-[[Technical Lead Charter]].
+burning out. This is the *how-to*. The rules (Claude's role, who decides, who writes the code)
+are the [[Technical Lead Charter]]; the machine-facing rules are the repo-root `CLAUDE.md`.
 
 ---
 
 ## Division of labor
 
-**Who writes what is set by the card's tag** ([[Technical Lead Charter]] § *Who writes the
-code*, 2026-10-23):
-
-- **🟢 Deep and 🟠 Moderate cards are yours.** Claude pairs: design, scaffolds, review, and a
-  function or two when you hand one over.
-- **🤖 Auto cards** run in the weekday cloud routine: light cards, sweeps, refactors, research.
-- **🤖 Claude features** are Claude's end to end, in the same routine. You pick them at
-  `/sprint-plan` and review every PR, including the decisions it lists.
-
-In any session you are present in, Claude is also:
-
-- Your technical lead: design and architecture, trade-offs, decomposition, research, ADRs.
-- Your reviewer, and the one to ask when you're stuck.
-- **Scrum master on process**: co-creates the sprint plan (epics → tasks) *with* you as
-  an equal driver, runs the ceremonies, and proposes 🤖 Claude features.
+The card's tag decides who writes it ([[Technical Lead Charter]] § *Who writes the code*):
+your 🟢 and 🟠 cards are yours, with Claude pairing; 🤖 Auto and 🤖 Claude cards run in the
+weekday lane, and you review their PRs, on a 🟡 day.
 
 Rule of thumb for your own cards: bring Claude **decisions, designs, and finished code to
 review**. Work you would rather not write belongs in a 🤖 Claude feature, picked at planning.
@@ -58,17 +45,8 @@ follow that calendar. Match the session type to the day's mode:
 | Relaxed | Optional light planning / docs, or rest | - |
 | Off | No engine work | - |
 
-Ceremonies: `/sprint-prep` in **week 2** of each sprint (Tuesday to Friday) decides and drafts
-the next sprint; **every 2nd weekend** (the sprint boundary) `/sprint-plan` runs the retro and
-fits that draft; and `/weekly-review` runs on the weekend in between. `/sprint-plan`
-**absorbs** the weekly review, so never run both on the same weekend. Run them on whichever
-weekend day you work; see the [[Dashboard]] weekend rule.
-
-## One task per session
-
-Start focused, finish, `/clear`, next. When a new idea appears mid-task, it goes
-to [[Backlog]], not into the current diff. Long, wandering sessions are where
-context rot and sloppy changes come from.
+Ceremonies (`/sprint-prep`, `/sprint-plan`, `/weekly-review`) run on the schedule in
+[[Dashboard]] § *Rhythm*.
 
 ## Writing style (notes)
 
@@ -114,25 +92,20 @@ flowchart TD
   CR & TR --> PR["You open the PR"]
   PR --> CC["/card-close<br/>board · note · Known Issues"]
   SUN(["Weekend, non-boundary"]) --> WR["/weekly-review"]
-  LSUN(["Every 2nd weekend, sprint boundary"]) --> SP["/sprint-plan<br/>demo + retro + plan<br/>(absorbs the weekly review)"]
-  SP --> FB
+  WK2(["Week 2, Tue to Fri"]) --> PREP["/sprint-prep<br/>goal, decisions, draft cards"]
+  PREP --> SP["/sprint-plan · boundary weekend<br/>retro + fit the draft<br/>(absorbs the weekly review)"]
+  PREP --> FB
 ```
 
-- **Cadence commands fire on the calendar:** `/weekly-review` on non-boundary weekends;
-  `/sprint-plan` every 2nd weekend (the sprint boundary, read off the sprint note's end
-  date, not the month) which absorbs the review and then feeds `/feature-breakdown`.
+- **Cadence commands fire on the calendar** ([[Dashboard]] § *Rhythm*); the rest fire on a
+  trigger.
 - **Work commands fire on a trigger, not the clock:** a load-bearing decision → `/adr`;
   decomposing a feature → `/feature-breakdown`; assessing existing code → `/arch-review`;
   before any commit → `/code-review`.
-- **Task bracketing is a command pair again** (S3-P2, 2026-08-13), and it is deliberately not a
-  revival of the `/task-start` + `/task-wrap` that S2-T14 retired. Those enforced vault-in-repo
-  friction, which the split removed. `/card-start`'s freshness check exists **because of** that
-  same split, and `/card-close` automates the annotation this note already asked for by hand.
-  Branch discipline is still CLAUDE.md rule 9: cut from a **freshly fetched `origin/master`**,
-  name it `<card ID>/<slug>`. **You cut it and move the card to In Progress**; `/card-start`
-  treats both as gates and stops if either is missing. **You open the PR**, and a merged branch is dead (squash + linear history), never
-  reused. The card's annotation is the retro's raw material, and it is a vault commit that needs
-  no PR.
+- **A card is bracketed by `/card-start` and `/card-close`.** You cut the branch (CLAUDE.md
+  rule 9) and move the card to In Progress; `/card-start` treats both as gates and stops if
+  either is missing. You open the PR, and a merged branch is dead (squash and linear history),
+  never reused. The close's board entry is the retro's raw material.
 - **`/card-close` reads the PR conversation, not just the diff.** A merged diff is an end state,
   so it cannot show what was written and then deleted, or what review caught. Those are usually
   the best lines on a card, and they exist only in the PR.
@@ -163,28 +136,14 @@ Claude route to it. All are **read-only or research**: they report, they don't e
    Small diffs make this possible.
 2. **Silent rewrites.** Claude is instructed to bias toward refactor and to
    demand evidence before a rewrite. Hold it to that (see [[Principles]] #2).
-3. **Context rot.** Long sessions degrade quality. One task, then `/clear`.
+3. **Context rot.** Long sessions degrade quality. One task, then `/clear`; a new idea
+   mid-task goes to [[Backlog]], not into the current diff.
 4. **Skipping verification.** "It builds / it doesn't" is stated every time.
    Rendering changes get a visual check, not a claim.
 5. **Scope creep & burnout.** Capacity is finite. Claude is told your schedule
    and to flag when a session runs long or scope balloons, let it.
 
-## Using Claude as technical lead, not typist
-
-- Bring it **decisions and designs**, not just "write X." The leverage is in
-  architecture and trade-offs.
-- Make it **argue against your idea** before you commit to it.
-- Everything load-bearing ends in an **ADR** you deliberately Accept.
-
-## Quality & performance stance
-
-- Correctness → clarity → performance, in that order.
-- No optimization without a measurement. Land profiling hooks before big perf work.
-- Deterministic core systems (ECS, resources, serialization, math) get **unit
-  tests**; rendering gets **demo + before/after captures**. Catch2 v3 + CTest, one test
-  exe per module: `TechEngineBaseTests`, `TechEngineAppTests` and `TechEngineSDKSmoke`
-  (ctest name `sdk-smoke`) run on every CI leg.
-
 ---
 
-_Related: [[Technical Lead Charter]] · repo-root `CLAUDE.md`_
+_Related: [[Technical Lead Charter]] (the rules) · repo-root `CLAUDE.md` § *Performance* and
+§ *Testing* (the quality stance)_

@@ -351,7 +351,12 @@ type.
   and `/sprint-plan` keeps the retro, the drift check, capacity, IDs, the board, and planting
   both standing cards. The artifact gate's decide-first trial becomes § *Decide first, then
   plan*, and the Dashboard's Rhythm records the prep slot. Added Oct 23 at Miguel's request,
-  worked attended. The routine runs the new prompt only once Miguel pastes it.
+  worked attended. **Scope added again the same evening:** a sweep of the AI-facing files
+  fixed the rules today's change left stale, then the Charter became the rules and the
+  Operating Guide the how-to, the cadence kept one home in the Dashboard's Rhythm,
+  [[Autonomous Lane - Design]]'s probe log shrank to a lessons table, `/card-close` caps Done
+  entries and rewrites *Current focus* instead of appending, and the `techengine` output style
+  was removed after its trial. The routine runs the new prompt only once Miguel pastes it.
 
 ### Story I: Week 2 fill
 
