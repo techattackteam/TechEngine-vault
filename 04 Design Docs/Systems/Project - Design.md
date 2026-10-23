@@ -46,7 +46,7 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Audience** | Editor only. The runtime has a fixed bootstrap and never reads a manifest. | ADR-017 § *Decision* 1 |
 | **Placement** | `apps/editor/src/project/`, compiled into the editor executable. Not a library. | ADR-017 § *Decision* 2 |
 | **Bootstrap seam** | Each executable subclasses `App`. The editor mounts in `init()`; the runtime mounts `assets` beside its executable (ADR-025 §7). One `MountTable` belongs to the base. | ADR-017 § *Decision* 3; ADR-018 §3 |
-| **Format** | `project.toml`, parsed with toml++ in its non-throwing mode. | [[Roadmap]] § *M3* |
+| **Format** | `project.toml`, parsed with toml++ in its non-throwing mode. | [[Roadmap]] § *Done: the foundation chain* (M3) |
 | **Filename** | Fixed. `project.toml`, never a scan for an extension. | Fixes v1's two sources of truth for the name |
 | **Schema** | `name`, and one `[export.<target>]` table per export target holding its `startupScene` (a `ResourceId`). Only `export.client` exists so far. Changed 2026-10-12 at S8-T7 from one top-level `exportStartupScene`. Nothing else. | See *The manifest*; ADR-025 §7 |
 | **Root** | Derived from the manifest's own location. Never stored inside it. | See *The manifest* |
@@ -509,7 +509,6 @@ pins to root, name, shader dir and asset dirs.
   this note builds the *how* for, plus the alternatives and the reversal triggers.
 - [[ADR-006 - v2 core architecture & module layout]] §1 (module and executable graph, and the
   undefined `tooling` tier) · §4 (composition root and `EngineContext`)
-- [[Roadmap]] § *M3: the dev testbed* (`Roadmap.md:105-114`) for the minimal-manifest rule.
 - [[Known Issues]] **D3** (symlinks)
 - v1 prior art at the `v1-reference` tag: `runtime/editor/src/project/Project.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp` ·

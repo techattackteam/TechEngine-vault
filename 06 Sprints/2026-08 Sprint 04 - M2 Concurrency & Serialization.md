@@ -4,8 +4,8 @@
 - **Dates:** **Sat Aug 22 to Fri Sep 4, 2026.** The first 2-week sprint ([[Dashboard]]
   § *Rhythm*). Weekly review on the Aug 29-30 weekend; the Sep 5-6 boundary weekend is day 1
   of Sprint 05.
-- **Epic:** M2 · concurrency + serialization ([[Roadmap]] → *The chain*)
-- **Decisions behind it:** [[Roadmap]] § *M2: what the concurrency ADR must settle* ·
+- **Epic:** M2 · concurrency + serialization ([[Roadmap]] → *Done: the foundation chain*)
+- **Decisions behind it:** [[Roadmap]] § *Why this order* ·
   [[ADR-005 - v2 tech stack & toolchain]] (the reserved trait seam; binary serialization named
   critical path) · [[ADR-007 - v2 networking & ECS replication foundation]] §7 ·
   [[Task Graph - Execution Flow]] § *Open questions*

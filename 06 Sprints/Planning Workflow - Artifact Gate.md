@@ -20,6 +20,10 @@ So pick deliberately, with both readers in mind.
 
 ## Where plans come from
 
+**The product picks the goal; design notes source its work** (2026-10-23). The next goal is the
+first unfinished one on the [[Roadmap]]'s goal ladder, and what its systems must support is in
+the [[Capability Map]] and each system's capability brief. Everything below starts from there.
+
 **Start from design notes; refine the [[Backlog]] after the other sources.**
 
 The note is the entry point at planning. An ADR is opened only when a decision's *rationale*
@@ -80,6 +84,21 @@ in that category.
 
 Today the check fires on ADR-007's replication half only: [[Scene - Design]] covers the ECS,
 and replication has no note. It is not in play until the netcode lane.
+
+### Coverage check: a system with no capability brief
+
+At planning, ask this of every **system whose ADR the goal needs**: does it have a capability
+brief in `01 Product/Capabilities/`, from [[Capability Brief Template]]?
+
+If it does not, writing it is a **Design card ordered before the ADR card** (Principles P3). The
+product owner decides every line of it; Claude interviews and drafts. An ADR with no brief is
+decided by taste.
+
+**What is exempt:** process and meta ADRs, and an ADR that amends a system without changing what
+it supports. A brief is about *what*, so an ADR that only changes *how* needs none.
+
+As of 2026-10-23 no brief exists, so the check fires for every Phase 1 system ADR: the renderer
+(E2), terrain (E5), transport (E10), scripting with ADR-010's acceptance (E11) and game UI (E12).
 
 ## The trap this prevents
 
@@ -381,8 +400,8 @@ matters beyond the card goes into the design note.
 
 ## Lean model this collapses to
 
-1. **Source the work** from a design note's *Decided* rows against the code (see *Where plans
-   come from*). Read [[Backlog]] last: task valid fired entries, then refine the rest by
+1. **Pick the goal** from the [[Roadmap]] and check its systems' briefs, then **source the
+   work** from a design note's *Decided* rows against the code (see *Where plans come from*). Read [[Backlog]] last: task valid fired entries, then refine the rest by
    priority and choose one to three with Miguel.
 2. **One decision artifact**, where one is owed. An ADR *or* a design note, rarely both, per
    the gate above. Often neither. A light one is drafted in planning. A heavy one becomes a

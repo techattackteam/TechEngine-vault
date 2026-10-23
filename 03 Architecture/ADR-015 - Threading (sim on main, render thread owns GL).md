@@ -33,7 +33,7 @@
 OpenGL is why this decides now, not the job system. GLFW pins window creation and event
 polling to the process's main thread, and a GL context is current on exactly one thread at a
 time. Whichever thread owns the context, every other thread must reach it through data, and
-retrofitting that seam across a written renderer is a rewrite ([[Roadmap]] § *M2*). So the
+retrofitting that seam across a written renderer is a rewrite ([[Roadmap]] § *Why this order*). So the
 topology is decided before M4 builds the first window, and before M5 writes the executor
 against a pool interface.
 

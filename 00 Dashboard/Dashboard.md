@@ -12,8 +12,8 @@
 | **Sprint goal** | The editor exports a project into `.tepack` files, and the runtime loads the exported startup scene from the packs beside its executable before its first Tick. |
 | **Current focus** | Sprint 08 met its goal on Oct 15, and every card has closed except S8-P11, the new split of who writes the code and the two-part planning, whose PR is not open yet. Next: `/sprint-plan` on Oct 24-25 fits Sprint 09 from S8-D2's cut (the scene as a cache entry, reference fields and the mesh), plants the first standing prep cards, and picks the first 🤖 Claude features. Hub: [[Resources - Design]]. |
 | **Top blocker** | None. The routine's cron must be re-pointed to `7 9,14 * * 1-5` between Fri Oct 23 14:07 and Mon Oct 26 09:07, for the clock change ([[Autonomous Lane - Routine Prompt]]). |
-| **Next milestone** | M6 content: Resources and project-to-scene binding. |
-| **Direction** | Fresh start ([[ADR-004 - Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
+| **Next milestone** | M6 content closes in Sprint 09; then **E1 · Editor and export**, the first showcase ([[Roadmap]]). |
+| **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one monthly showcase at a time (E1 to E13, [[Capability Map]]); Phase 2 builds the reference game, TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23. |
 | **Reconciled against** | engine `39943f19` (2026-10-18) |
 
 **Reading that stamp** ([[ADR-012 - Vault repository split]] §6): the vault is its own repo,

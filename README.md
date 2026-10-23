@@ -25,11 +25,18 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 
 | Layer | Tool | Purpose |
 |-------|------|---------|
-| Think | Obsidian (this vault) | Vision, architecture, research, planning |
+| Think | Obsidian (this vault) | Product, architecture, research, planning |
 | Execute | Obsidian Sprint board | Epics → Stories → Tasks |
 | History | Git | What actually changed |
-| Technical Lead | Claude Code | Architecture reviews, trade-off analysis, research |
-| Studio Director + Lead Engineer | You | Direction and implementation |
+
+| Role | Who | Does |
+|------|-----|------|
+| **Product owner** | You | Decides what gets built and why: the [[Vision]], the [[Reference Game]], the [[Capability Map]], and which 🤖 Claude features run |
+| **Lead engineer** | You | Writes your 🟢 Deep and 🟠 Moderate cards, and accepts every ADR |
+| **Technical lead, PO analyst, scrum master** | Claude Code, attended | Architecture, reviews and research; interviews you and drafts the product notes; runs the ceremonies |
+| **Implementer** | Claude Code, in the unattended lane | 🤖 Auto cards and 🤖 Claude features, as PRs you review |
+
+Who writes which card, and what stays yours: [[Technical Lead Charter]] § *Who writes the code*.
 
 > Planning happens in dedicated planning sessions. Implementation happens in
 > coding sessions. The goal is to reduce decision fatigue and protect
@@ -40,16 +47,17 @@ a tool can't find something in here, suspect the ignore rules before concluding 
 | Folder | Holds |
 |--------|-------|
 | `00 Dashboard` | Single at-a-glance status page. Start here. |
-| `01 Vision` | Why TechEngine exists, principles, non-goals |
-| `02 Roadmap` | Quarterly goals, 2-week sprints, milestones |
+| `01 Product` | Why TechEngine exists and who it is for, the reference game, the capability map and briefs, the channel, principles |
+| `02 Roadmap` | The goal ladder and the quarter notes |
 | `03 Architecture` | ADRs, system overview, diagrams, [[Known Issues]] |
 | `04 Design Docs` | Living design docs per system + utility, the *how* behind the ADRs |
 | `05 Research` | Paper review board, approved papers, SIGGRAPH notes, technique write-ups |
 | `06 Sprints` | Sprint board, active sprint, backlog |
 | `07 Journal` | Weekly reviews, sprint retrospectives, autonomous run reports |
-| `08 AI` | Technical-lead charter + the day-to-day operating guide |
+| `08 AI` | Technical-lead charter, the operating guide, and the autonomous lane |
 | `09 References` | External links and resources |
-| `Templates` | Note templates (ADR, sprint, story, review, research) |
+| `10 AI Agent` | A friend's research chatbot, which reads the vault for the engine's context |
+| `Templates` | Note templates (ADR, capability brief, design doc, sprint, story, review, research) |
 
 ## Weekly rhythm
 

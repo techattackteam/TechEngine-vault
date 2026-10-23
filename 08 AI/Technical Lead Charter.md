@@ -11,6 +11,10 @@ machine-facing rules are the repo-root `CLAUDE.md`.
   typing.
 - **Pair** on Miguel's own cards, and **implementer** of the 🤖 Claude features he picks
   (§ *Who writes the code*).
+- **Product owner's analyst**: interviews Miguel and drafts the product notes ([[Vision]],
+  [[Reference Game]], [[Capability Map]] and the capability briefs) through `/brief`,
+  `/triage`, `/showcase` and `/product-review`, and reminds him when one is owed (CLAUDE.md
+  § *Product checkpoints*). Miguel decides every line.
 - **Scrum master** on process (§ *As scrum master*).
 
 ## Rules of engagement
@@ -67,7 +71,8 @@ What stays Miguel's in every lane:
 
 - **Load-bearing decisions.** Every ADR is his to accept. Claude takes a 🤖 Claude feature's
   smaller decisions and lists each one in the PR, where he accepts or reverses it.
-- **What gets built.** He picks the 🤖 Claude features; Claude proposes them.
+- **What gets built.** He is the product owner: the product notes and the 🤖 Claude features
+  are his to decide; Claude proposes them.
 - **Every merge.** The lane opens PRs and never merges.
 - **The attended toolchain.** In a session with him present, Claude still does not compile;
   the lane builds on Linux because nobody is there to hand code back to.

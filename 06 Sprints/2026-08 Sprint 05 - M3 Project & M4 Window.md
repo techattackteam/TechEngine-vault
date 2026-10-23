@@ -5,7 +5,7 @@
   because Sprint 04 met its goal on day 9 and left an empty board
   ([[Dashboard]] § *Rhythm* → an early close moves the boundary). Sat → Fri is intact and the
   next boundary is **Sat Sep 12**. Weekly review on the Sep 5-6 weekend.
-- **Epic:** M3 · project **+** M4 · window ([[Roadmap]] → *The chain*), **two rungs in one
+- **Epic:** M3 · project **+** M4 · window ([[Roadmap]] → *Done: the foundation chain*), **two rungs in one
   box**, decided 2026-08-30 with the capacity numbers on the table. See *Capacity note*.
 - **Decisions behind it:** [[ADR-017 - Bootstrapping (editor manifest, fixed runtime layout)]]
   (Accepted 2026-08-31, **written mid-sprint out of S5-D1**, see *Artifact gate*) ·
@@ -13,7 +13,7 @@
   [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 (M4's gate, Accepted) ·
   [[ADR-006 - v2 core architecture & module layout]] §1 (`platform` owns window + input) ·
   [[ADR-008 - v2 build & testing baseline]] §4 case 3 (glad2 is the one vendored dep) ·
-  [[Roadmap]] § *M3: the dev testbed*
+  [[Project - Design]] § *The manifest*
 
 ## 🎯 Sprint goal
 

@@ -62,6 +62,10 @@ Keep one topic per note, and link instead of duplicating. Full rules: repo-root 
 | `/weekly-review [notes]`       | Weekend review → writes the journal + updates dashboard    |
 | `/sprint-prep [focus]`         | Week 2: next sprint's goal, decisions and draft cards     |
 | `/sprint-plan [focus]`         | Boundary weekend: retro, then fit the draft to capacity   |
+| `/brief <system>`              | Product: interview you, then draft a system's capability brief, before its first ADR |
+| `/triage <idea>`               | Product: weigh a new idea against the Capability Map before anyone designs it |
+| `/showcase <goal>`             | Product: outline a goal's showcase video                   |
+| `/product-review [focus]`      | Product: review the Vision, Reference Game and map at a quarter or phase boundary |
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
 | `/arch-review <area>`          | Technical-lead review of a system (analysis, no edits)    |
 | `/feature-breakdown <feature>` | Epic → Story → session-sized Tasks                        |
@@ -79,7 +83,10 @@ before commits, **`/clear`** between tasks.
 
 ```mermaid
 flowchart TD
-  IDEA["New idea / feature"] --> FB["/feature-breakdown<br/>→ Backlog"]
+  IDEA["New idea / feature"] --> TRI["/triage<br/>does the product need it?"]
+  TRI --> FB["/feature-breakdown<br/>→ Backlog"]
+  SYSNEW["A system's first ADR"] --> BR["/brief<br/>what it must support"]
+  BR --> DEC
   DEC["Load-bearing decision"] --> ADR["/adr<br/>draft → you Accept"]
   SYS["Assess a built system"] --> AR["/arch-review<br/>analysis only"]
   AR -. may surface .-> DEC
@@ -99,6 +106,9 @@ flowchart TD
 
 - **Cadence commands fire on the calendar** ([[Dashboard]] § *Rhythm*); the rest fire on a
   trigger.
+- **Product commands fire on a trigger too:** an idea → `/triage`; a system's first ADR →
+  `/brief`; a goal ending → `/showcase`; a quarter or phase opening → `/product-review`. Claude
+  reminds you when one is owed (CLAUDE.md § *Product checkpoints*).
 - **Work commands fire on a trigger, not the clock:** a load-bearing decision → `/adr`;
   decomposing a feature → `/feature-breakdown`; assessing existing code → `/arch-review`;
   before any commit → `/code-review`.

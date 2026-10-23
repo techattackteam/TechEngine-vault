@@ -177,8 +177,8 @@ skipping any that today's earlier fires already screened. For each one:
   - Find the paper's real title and a stable link to the paper itself (the PDF, or an arXiv
     abstract page). Never take a title from a URL slug. If the link is an index, a
     bibliography, a project page with no identifiable paper, or unreachable, do not guess.
-  - Read the abstract, and enough of the paper to judge how it fits TechEngine's Roadmap and
-    design notes.
+  - Read the abstract, and enough of the paper to judge how it fits TechEngine's Capability
+    Map (docs/01 Product/Capability Map.md), its Roadmap and its design notes.
   - Move the card to "TO VALIDATE - MIGUEL REVIEW", in the format already used there:
       - [ ] <stable link> - **<title>** | <venue> <year> (<topic>)
       	<one sentence: what the paper is, and how it fits TechEngine>

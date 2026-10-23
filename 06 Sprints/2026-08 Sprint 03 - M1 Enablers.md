@@ -4,7 +4,7 @@
 - **Dates:** **Sat Aug 1 to Fri Aug 28, 2026.** Four weeks, Sat to Fri, and the **first clean
   cycle**, since Sprint 02 closed 4 weeks early (see its note). Review and planning fall on the
   **Aug 29 to 30** weekend, which is day 1 of Sprint 04.
-- **Epic:** M1 · enablers ([[Roadmap]] → *The chain*)
+- **Epic:** M1 · enablers ([[Roadmap]] → *Done: the foundation chain*)
 - **Decisions behind it:** [[ADR-006 - v2 core architecture & module layout]] §1 §4 §5 §6 ·
   [[ADR-005 - v2 tech stack & toolchain]] · [[v1 Code Audit]] F28 · F30 · F19
 

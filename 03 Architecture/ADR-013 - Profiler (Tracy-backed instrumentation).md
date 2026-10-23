@@ -31,7 +31,7 @@
 
 M1's job is the vocabulary later modules are written *against*, and the Profiler is the
 half of it that cannot be retrofitted cheaply: a system born with zones is free, adding
-zones to twenty written systems is a sweep ([[Roadmap]] § *Why this shape*). It is also
+zones to twenty written systems is a sweep ([[Roadmap]] § *Why this order*). It is also
 CLAUDE.md's own precondition: "measure before optimizing" has no instrument until this
 exists, and **M2's threading ADR is explicitly gated on it** ([[Roadmap]] M2), because
 landing a work-stealing pool without a profiler is optimizing blind.

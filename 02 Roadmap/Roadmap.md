@@ -1,202 +1,137 @@
 # 🗺️ Roadmap
 
-**The order, not the dates.** Sequence is knowable; timing is not. [[Sprint Board|Sprints]]
-execute. Reviewed at each sprint-boundary planning session.
+**The order, not the dates.** Sprints execute it ([[Sprint Board]]); the quarter notes and
+sprint notes own the dates. `/sprint-prep` reads this page to pick the next goal. What each
+system must support is in the [[Capability Map]], derived from the [[Reference Game]].
 
-Two halves, and they work differently:
+**Where we are:** the foundation chain (M0 to M5) is done, and M6, content, closes in Sprint 09.
+Then Phase 1 starts: engine goals E1 to E13, about a month each, each ending in a showcase video
+([[Channel]]). Phase 2 is the game itself, TechAttack.
 
-- **The chain (M0-M6)**: ordered by **irreversibility**: what later code is written *against*
-  goes first, even where a later rung could technically be built sooner. This order is a
-  commitment.
-- **The lanes (after M6)**: order **within** a lane is real; order **across** lanes is a
-  sprint-planning call, not a roadmap one. Lanes are `P` perf · `T` tools · `R` render ·
-  `N` net · `A` authoring · `S` sim · `C` content.
+## Phase 1: the engine, one showcase a month
 
-Cadence: sprint length, week shape, ceremony anchor → [[Dashboard]] § Rhythm. Not repeated here.
+Each goal is sized to about two sprints and is done when its showcase is out. **Needs** is the
+critical path; **Alongside** can run at the same time without blocking it, and is the natural
+source of 🤖 Claude features. **Map** names the [[Capability Map]] section whose deeper brief
+must exist before the goal's first ADR.
 
-## Shape
+| Goal | The showcase shows | Needs | Alongside | Map |
+|---|---|---|---|---|
+| **M6 · Content** 🔨 now | (no video) The runtime loads scenes and meshes from packs, with references | Sprint 09's cards | The editor brief | |
+| **E1 · Editor and export** | Build a scene in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
+| **E2 · First renderer** | Imported models with physically based materials, in the runtime and the editor's scene view | R1, after the **renderer ADR** | T4 import · T3 viewport tools | Renderer, content pipeline |
+| **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | | Renderer |
+| **E4 · Fog and god rays** | Volumetric fog and light shafts | R4 | The terrain brief and ADR | Renderer |
+| **E5 · Voxel terrain** | Editable voxel terrain, dig and place, smooth or blocky, voxel size per world | W1, after the **terrain ADR** | P1 parallel executor | World and terrain |
+| **E6 · Endless world** | A generated world with biomes and ores, streaming about 1 km around the viewer | W2 · the precision check ([[Reference Game]] § *Decided*) | T7 terrain tools | World and terrain |
+| **E7 · Water and trees** | Static water with reflections; trees and rocks across the biomes | R6 · R7 · W5 | | Renderer, world and terrain |
+| **E8 · Global illumination** | Bounced light that follows terrain edits and the day and night cycle | R5 | | Renderer |
+| **E9 · Walk it** | A first-person character on the terrain, among rigid bodies | S1 · S2 | C2 audio | Physics, audio |
+| **E10 · Together** | 2 to 8 clients on a Windows dedicated server, moving with prediction | N1, after the **transport ADR** · N2 · N3 · N4 | | Networking |
+| **E11 · Scripted** | A game rule written as a user script and hot-reloaded | A1, after **accepting ADR-010** and the **scripting ADR** | T6 play in the editor | Authoring |
+| **E12 · Game UI** | A HUD, menus and an inventory, built in code and in the visual designer | A2, after **its own ADR** | | Game UI |
+| **E13 · Saving** | The server autosaves and reloads the world, its edits, machines and inventories | W4 | | Persistence |
 
-```mermaid
-flowchart TB
-  M0["M0 · base ✅"] --> M1["M1 · enablers ✅"]
-  M1 --> M2["M2 · concurrency &amp; serialization ✅"] & M3["M3 · project ✅"]
-  M2 & M3 --> M4["M4 · window ✅"] & M5["M5 · scene &amp; scheduling ✅"]
-  M5 --> M6["M6 · content"] & P["⚡ P1 → P2"] & S["🎮 S1 physics"] & N["🌐 N1 → N5"]
-  M4 --> R
-  M6 --> R["🎨 R1 → R2 → R3"] & T["🔧 T1 → T5"]
-  R --> T & A["✍️ A1 → A2"]
-```
+E10 is the goal most likely to need splitting: four networking rungs in one month is a lot. At
+one goal a month, Phase 1 runs about thirteen months after M6.
 
-## The chain
+## Phase 2: TechAttack
 
-| #      | Rung                        | Contents                                                                                                                                                                                                                                              | Gate                                                                                                                                             |
-| ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **M0** | `base`                      | Logger · Assert · Clock · headless fixed-timestep loop                                                                                                                                                                                                | [[ADR-011 - Diagnostics (Logger & Assert)]] 🟢                                                                                                   |
-| **M1** | enablers                    | math · **file access** `IFileAccess` (F30) · Events (F28) · **Profiler hooks + memory tracking** · StringId/interning · deterministic RNG · crash handler                                                                                             | Profiler ADR · Events redesign                                                                                                                   |
-| **M2** | concurrency + serialization | thread topology · **GL context ownership** · pool **interface** + a four-worker pool · **binary serialization + ADR-005's trait seam**                                                                                                                | **threading ADR**, gated on M1's Profiler · **serialization ADR**                                                                                |
-| **M3** | project ‖ M2                | root + `project.toml` (toml++) · path/mount resolution · **the rest of `FileAccess`'s mutating half**: `createDirectory` · `remove` · `copy` · `move` · `rename`. `write` itself shipped at S4-T7 · shader + asset dirs · **`projects/dev/` testbed** | none: toml, not the binary format                                                                                                                |
-| **M4** | window                      | GLFW window · GL 4.5 context **on its owning thread** · raw input · clear + triangle                                                                                                                                                                  | M2's context-ownership call                                                                                                                      |
-| **M5** | Scene & scheduling          | SlotMap/HandleMap · `Scene`/ECS + `Schedule` + executor · command buffer · transform hierarchy · engine-coded input events. The FrameAllocator was dropped on Oct 10 with no consumer; see R1                                                     | [[ADR-020 - System scheduling and task-graph execution]] Accepted Sep 12, amended Sep 26. ✅ **Closed Oct 9**: event and input delivery shipped in Sprint 07 |
-| **M6** | content                     | Resources (CPU, 64-bit ids, async loads) · scene document · `.tepack` reader and writer · minimal bake · runtime layout and boot record · project↔scene binding. Hub: [[Resources - Design]]                                                          | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] + [[ADR-025 - Content packs (.tepack and the runtime load path)]], both **Accepted** Oct 10 |
+The game starts after E13, on a complete core, with one devlog per stage: **G1** gather, craft
+and build · **G2** automate · **G3** survive · **Demo**, free to download. The stages and what
+each one adds live in [[Reference Game]] § *Two phases*.
 
-## The lanes
+## Rung catalogue
 
-Listed in a suggested default order. The only hard edges are shown in *needs*.
+The work items the goals are built from. The codes stay because cards, ADRs and design notes
+cite them. Order **within** a lane is real.
 
-| ID     | Rung                        | Contents                                                                                   | Needs / gate                                                                |
-| ------ | --------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| **P1** | parallel executor on        | `publish` opened to workers · levels running concurrently · **TSan leg green**              | M5 · M2                                                                     |
-| **T1** | editor - panels             | dock · hierarchy · inspector · console/cvars · Profiler panel · scene save                 | M6, ImGui only, no engine renderer                                         |
-| **T2** | export slice                | editor save and export commands over M6's bake; the runtime load itself is M6 (ADR-025 §6) | T1 · M6                                                                     |
-| **R1** | renderer v0                 | device seam (F22) · mesh + shader + material · camera · frustum culling · one forward pass | M6 · **renderer ADR**, which also decides whether a per-frame allocator is owed |
-| **T3** | editor - viewport           | 3D scene view · picking (F21) · gizmos                                                     | R1                                                                          |
-| **N1** | transport                   | ENet/GNS/yojimbo pick · connect/disconnect · reliable + unreliable channels                | **netcode transport ADR**                                                   |
-| **A1** | scripting SDK               | user Systems + Scripts over `te_sdk` · game-DLL load + hot-reload · soft references and async mid-run loads (ADR-024 §5) | M5 · M6 · [[ADR-010 - User authoring model (Systems & Scripts)]] + scripting ADR |
-| **A2** | game UI                     | 2D pass · font/text · layout · input routing · script-drivable                             | R1 · **own ADR**                                                            |
-| **S1** | physics                     | Jolt, authoritative, fixed phase                                                          | M5                                                                          |
-| **N2** | replication slice           | 2 processes, 1 replicated `Transform`                                                      | N1 · M5                                                                     |
-| **R2** | render graph                | passes · shadows · depth prepass · post · GPU zones per pass                               | R1                                                                          |
-| **T4** | import                      | assimp/stb in the editor, writing runtime-form files that M6's bake packs (ADR-025 §6) | T1 · M6                                                                     |
-| **N3** | snapshot/delta replication  | real encoder · dirty sets · per-component byte counters                                    | N2                                                                          |
-| **C1** | animation & skinning        | skeleton/clip assets · sampling System · GPU skinning                                      | T4 · R1                                                                     |
-| **P2** | job system - tuning         | work-stealing · Jolt pool integration (F15)                                                | P1 + measurement                                                            |
-| **N4** | prediction + reconciliation | client prediction · rollback · server correction                                           | N3                                                                          |
-| **R3** | signature rendering         | scattering · volumetric fog · god rays · auto-exposure + bloom                             | R2                                                                          |
-| **N5** | interest management         | relevance sets over R2's culling                                                           | N3 · R2                                                                     |
-| **T5** | packaging                   | distributable build · launcher args · no dev deps                                          | T2 · T4                                                                     |
-| **C2** | audio                       | miniaudio                                                                                  | -                                                                           |
-
-**A rung closes when its gate is Accepted and its unlock is demonstrable**, not when every
-listed item is polished. Rungs overlap; the chain order is the commitment, the lane interleave
-is not.
+| Rung | Contents | Needs | Goal |
+|---|---|---|---|
+| 🔧 **T1** · Editor panels | Dock · hierarchy · inspector · console and cvars · Profiler panel · scene save | M6. ImGui only. | E1 |
+| 🔧 **T2** · Export | The editor's save and export commands over M6's bake | T1 · M6 | E1 |
+| 🔧 **T3** · Viewport tools | Picking (F21) and gizmos in the scene view | R1 | E2, alongside |
+| 🔧 **T4** · Import and asset browser | glTF loaded through assimp, writing runtime-form files that M6's bake packs (ADR-025 §6) · an asset browser | T1 · M6 | E2, alongside |
+| 🔧 **T5** · Packaging | Distributable build · launcher arguments · no dev dependencies | T2 · T4 | Demo |
+| 🔧 **T6** · Play in the editor | Run the game inside the editor and return to the edited state | T1 · A1 | E11, alongside |
+| 🔧 **T7** · Terrain tools | Sculpt and paint voxel terrain, and set up generation, in the editor | W1 · T3 | E6, alongside |
+| 🎨 **R1** · Renderer v0 | Device seam (F22) · meshes, shaders and physically based materials · camera · frustum culling | M6 · **renderer ADR**, which also decides whether a per-frame allocator is owed | E2 |
+| 🎨 **R2** · Render graph and lighting | Passes · lights and shadows · depth prepass · post (auto-exposure, bloom) · GPU zones per pass | R1 | E3 |
+| 🎨 **R3** · Sky and sun | Physically based atmosphere · a moving sun · day and night | R2 | E3 |
+| 🎨 **R4** · Volumetric fog | Volumetric fog · god rays | R3 | E4 |
+| 🎨 **R5** · Global illumination | Bounced light on a world that changes | R2 · W1 | E8 |
+| 🎨 **R6** · Water | Static water with reflections and a shoreline | R2 | E7 |
+| 🎨 **R7** · Foliage rendering | Trees and rocks drawn in large numbers out to the view distance | R1 · W2 | E7 |
+| 🌍 **W1** · Voxel terrain | Voxel data · smooth and blocky meshing · colliders · dig and place · voxel size per world | R1 · **terrain ADR** | E5 |
+| 🌍 **W2** · Endless world | Procedural generation with biomes and ores · chunk streaming and terrain LOD around the viewer | W1 | E6 |
+| 🌍 **W3** · Static terrain | Heightmap terrain that cannot be edited, with grid building | R1 | After the demo |
+| 🌍 **W4** · Persistence | The server autosaves and loads the world, its edits, machines and players | W1 · N2 | E13 |
+| 🌍 **W5** · Vegetation placement | Trees and rocks placed by the generator, per biome | W2 | E7 |
+| 🎮 **S1** · Physics | Jolt, authoritative, in the fixed phase · rigid bodies | Nothing left | E9 |
+| 🎮 **S2** · Character controller | First-person movement on voxel terrain | S1 · W1 | E9 |
+| 🌐 **N1** · Transport | ENet, GNS or yojimbo · connect by address · reliable and unreliable channels | **Transport ADR** | E10 |
+| 🌐 **N2** · Replication slice | Two processes, one replicated `Transform` | N1 | E10 |
+| 🌐 **N3** · Snapshots and deltas | Real encoder · dirty sets · per-component byte counters | N2 | E10 |
+| 🌐 **N4** · Prediction | Client prediction · rollback · server correction | N3 | E10 |
+| 🌐 **N5** · Interest management | Relevance sets over the streamed world | N3 · W2 | G3 |
+| ✍️ **A1** · Scripting SDK | C++ Systems and Scripts over the SDK · game-DLL load and hot reload · soft references and mid-run loads (ADR-024 §5) | M6 · [[ADR-010 - User authoring model (Systems & Scripts)]] accepted + **scripting ADR** | E11 |
+| ✍️ **A2** · Game UI | 2D pass · font and text · layout · input routing · a code API and a visual designer in the editor | R1 · **its own ADR** | E12 |
+| ⚡ **P1** · Parallel executor | `publish` opened to workers · levels running concurrently · TSan leg green | Nothing left | E5, alongside |
+| ⚡ **P2** · Job-system tuning | Work stealing · Jolt pool integration (F15) | P1 and a measurement | G2 |
+| 🎞️ **C1** · Animation and skinning | Skeleton and clip assets · a sampling System · GPU skinning | T4 · R1 | G3 |
+| 🎞️ **C2** · Audio | miniaudio · 3D sound effects · music · a basic reverb | Nothing | E9, alongside |
 
 ## Guardrails
 
-Three places where the split costs nothing only if a rule holds.
+- **R1 goes behind ADR-005's device seam (F22)**, or R2 is a rewrite instead of a wrapper. That
+  rule is the whole reason splitting the renderer is safe.
+- **A2 is not ImGui.** ImGui is an editor dependency ([[ADR-006 - v2 core architecture & module layout]]
+  §1). Game UI is shipped, skinnable and script-driven, needs its own ADR (retained or
+  immediate, layout, styling, input routing), and drags in a font rasterizer, which moves `stb`
+  from editor-only to shared.
+- **A goal is about a month: split it, never stretch it.** The first half gets the showcase.
+- **Alongside work never blocks its goal.** If an alongside rung turns out to be needed, it
+  moves to *Needs* and the order is reviewed, not silently stretched.
 
-- **R1 goes behind ADR-005's device seam (F22)**: or R2 is a rewrite instead of a wrapper.
-  That rule is the whole reason splitting the renderer is safe.
-- **A2 is not ImGui.** ImGui is an editor dep ([[ADR-006 - v2 core architecture & module layout]] §1);
-  game UI is shipped, skinnable and script-driven, needs its own ADR
-  (retained vs immediate, layout, styling, input routing), and drags in a font rasterizer:
-  `stb` would go from editor-only to shared.
-- **N1 is independent of everything**: it needs sockets, nothing more. The cheapest lane head
-  to start when a sprint has odd capacity left over.
+## Why this order
 
-### M2: what the concurrency ADR settled
+- **The product decides (2026-10-23).** The [[Capability Map]] sets what each system supports,
+  and the [[Channel]] sets the rhythm: one showcase a month.
+- **Editor first, then the renderer.** E1 is the work already understood; E2 is the first
+  renderer, and every later showcase builds on it.
+- **Look before world.** Sky, light and fog (E3, E4) work on any scene, so they come before the
+  voxel world exists.
+- **Global illumination after the world.** Bounced light has to follow terrain that players
+  dig and place, so its approach is chosen against the real voxel world (E8), not a static one.
+- **Walking, then networking, then gameplay systems.** Scripting, UI and saving are written
+  server-authoritative from the start ([[ADR-007 - v2 networking & ECS replication foundation]]),
+  and the game starts on a complete core.
+- **The chain went first because later code is written against it.** Threading and GL context
+  ownership, the serialization seam, paths, profiler zones and the System interface were cheap
+  to decide early and a sweep across twenty written systems later.
+- **Concurrency is turned on at P1, alongside the voxel terrain.** Chunk meshing is the first
+  real parallel load, so races surface there, across a handful of systems rather than thirty.
 
-> M2 carries a **second, independent** ADR since 2026-08-02: serialization, which shares the
-> rung but not the subject. Why it sits here: § *Why this shape*. The two are unrelated and
-> can be written in either order.
+## Done: the foundation chain
 
-OpenGL is why this is early, not the job system. GLFW pins **window creation and
-`glfwPollEvents` to the main thread**, while a GL context is current on **exactly one thread at
-a time**, so if a render thread exists it owns the context and the main thread never issues a
-GL call. Input polling and drawing therefore sit on different threads from the first line of
-M4. Retrofitting that across a written renderer is a rewrite, which is why the decision
-outranks its own implementation.
-
-The ADR settled: **thread topology** (main / sim / render / workers) · **who owns the GL
-context** and how work reaches it · **pool shape** · how [[Task Graph - Execution Flow]]'s
-levels map onto it. M2 shipped a **four-worker pool** (ADR-015 §3, amended 2026-08-24) so M5's
-executor can use the real interface; **P1** opens `publish` to those workers and
-**P2** tunes them.
-
-ADR-018 later moved simulation off main onto a dedicated thread; ADR-019 then fixed the
-shared time model. [[Concurrency - Design]] shows the current topology.
-
-### M3: the dev testbed
-
-`projects/dev/` at repo root, beside `apps/`, **data, not a CMake target**. The project the
-editor loads by default, and the home for dev shaders, test scenes and throwaway assets.
-Runtime uses a fixed exported layout when M6 defines it. From M3 on, "does this work" is
-answered by running the editor testbed rather than by a throwaway `main.cpp`.
-
-**Keep the M3 manifest minimal.** This line read "root, name, shader dir, asset dirs" until
-2026-09-04. Three of those four are gone: the root is **derived** from the manifest's own
-location, and the shader and asset directories are a **convention** the bootstrap derives from
-the root, so naming them was configuration nothing varied. **The M3 schema is `name`, and
-nothing else** ([[Project - Design]] § *The manifest*). Scene binding and the asset registry
-are M6 work; writing the full schema at M3 designs it against a `Scene` and a resource model
-that do not exist yet, which is the mistake M3 exists to avoid.
+| Rung | What shipped | Closed |
+|---|---|---|
+| **M0** · Base | Logger · Assert · Clock · headless fixed-timestep loop ([[ADR-011 - Diagnostics (Logger & Assert)]]) | Jul 30, [[2026-08 Sprint 02 - Base Foundation]] |
+| **M1** · Enablers | Math · file access · Events and `StringId` · Profiler hooks and memory tracking ([[ADR-013 - Profiler (Tracy-backed instrumentation)]], [[ADR-014 - Events (buffered streams) & StringId]]). The deterministic RNG and the crash handler were deferred and are not built. | Aug 20, [[2026-08 Sprint 03 - M1 Enablers]] |
+| **M2** · Concurrency and serialization | Thread topology and GL ownership · a four-worker pool · binary serialization and the trait seam ([[ADR-015 - Threading (sim on main, render thread owns GL)]], [[ADR-016 - Serialization (binary primitives & describe-once seam)]]) | Aug 30, [[2026-08 Sprint 04 - M2 Concurrency & Serialization]] |
+| **M3** · Project | `project.toml` with toml++, holding only the name · mount resolution · `FileAccess`'s mutating half · the `projects/dev/` testbed ([[Project - Design]] § *The manifest*) | Sep 12, [[2026-08 Sprint 05 - M3 Project & M4 Window]] |
+| **M4** · Window | GLFW window · GL 4.5 context on its owning thread · raw input · clear and triangle | Sep 12, [[2026-08 Sprint 05 - M3 Project & M4 Window]] |
+| **M5** · Scene and scheduling | Slot maps · `Scene` and ECS · `Schedule` and executor · command buffer · transform hierarchy · event and input delivery ([[ADR-020 - System scheduling and task-graph execution]]) | Oct 9, [[2026-09 Sprint 06 - Scene & Scheduling]] and [[2026-09 Sprint 07 - Scene Events and Input Boundary]] |
 
 ## Deliberately absent
 
-Recorded so they read as decisions, not oversights: particles · terrain · navmesh/AI ·
-LOD & streaming · save games · localization.
-
-## Dated horizon
-
-Only the current and next sprint carry dates. Everything past that is the ladder, undated.
-
-| Dates | Sprint | Rung |
-|-------|--------|------|
-| Jul 25 - Jul 31 | [[2026-08 Sprint 02 - Base Foundation]] | **M0 ✅**: goal met Jul 30; sprint **closed 4 weeks early** |
-| Aug 1 - Aug 28 | [[2026-08 Sprint 03 - M1 Enablers]] | **M1 ✅** closed Aug 20, 8 days early; both gates Accepted Aug 2. RNG · crash handler **carry** (memory tracking shipped at S3-T5) |
-| Aug 22 to Aug 28 | [[2026-08 Sprint 04 - M2 Concurrency & Serialization]] | **M2 ✅**: threading + serialization ADRs Accepted day 1, first code against each. **Closed Aug 30 on day 9**, and the boundary moved a week early rather than the box running to Sep 4 |
-| Aug 29 to Sep 11 | [[2026-08 Sprint 05 - M3 Project & M4 Window]] | **M3 editor testbed + M4 complete.** Simulation independence also shipped; runtime packaging remains M6. Closed Sep 12. |
-| Sep 12 to Sep 25 | [[2026-09 Sprint 06 - Scene & Scheduling]] | **M5 in progress:** Scene and serial scheduling shipped; Miguel reported repeated values and headless/windowed parity in the closeout showcase. |
-| Sep 26 to Oct 9 | [[2026-09 Sprint 07 - Scene Events and Input Boundary]] | **M5 ✅** closed Oct 9: Scene event delivery at the Tick barrier and engine-coded input delivery during the consuming Tick. |
-| Oct 10 to Oct 23 | [[2026-10 Sprint 08 - Content Path]] | **M6, vertical slice:** the editor bakes a project into packs and the runtime loads the exported startup scene. The cache core is P2 stretch; the mesh and reference fields follow in Sprint 09. |
+Recorded so they read as decisions, not oversights: particles · mesh LOD (terrain LOD is W2) ·
+localization · platforms beyond Windows and Linux. Terrain, streaming, saving and AI left this
+list on 2026-10-23, when TechAttack became the reference game.
 
 ## Quarters
 
-- **2026 Q3 (Jul-Sep)**: *Foundation & Direction* → [[2026-Q3]]
+- **2026 Q3 (Jul-Sep)**: *Foundation and Direction* → [[2026-Q3]]
 - **2026 Q4 (Oct-Dec)**: *Close the Chain, Open the Lanes* → [[2026-Q4]]
-- **2027 Q1 and beyond**: a theme is written **at the boundary planning session that opens
-  it**, never earlier. A quarter gets a direction, not a feature list.
-
-## Why this shape: 2026-07-31
-
-- **Horizontal build order, not the C2 vertical slice.** Sprint 01's retro re-sequenced C2
-  into Sprint 03; that is **reversed here**: the engine is built module by module instead.
-  [[Dashboard]] and [[2026-Q3]] still say C2 (→ S2-P3).
-- **The chain is ordered by irreversibility.** Every M-rung is a decision later code is written
-  *against*: threading and the serialization seam (M2), paths (M3), the System interface
-  (M5). Each is cheap now and a sweep later. Past M6 that stops being true, which is why the
-  tail is lanes and not more numbers.
-- **Serialization moved M6 → M2, 2026-08-02.** It was at M6 by **association with
-  *content*, not by dependency**: the serializer needs `base` and a trait/registration seam,
-  not a `Scene`, a window or a resource cache. Nothing upstream of M6 was holding it there.
-  Meanwhile it fails the chain's own irreversibility test the hardest: ADR-005 reserved the
-  trait seam and already calls binary serialization *"on the critical path"*; ADR-007 §7
-  makes **serializable** one of the three facts every component registers. So at M6 the
-  ordering was inverted: **M5 declares every component type and M6 every resource against a
-  seam that does not exist yet**, then both get swept when it does, plus T2/T4 (bake +
-  export) and N3's snapshot encoder, which share the format. Moving it costs nothing now
-  and removes the largest remaining retrofit. **M6 keeps Resources + scene binding and is
-  left gateless**, the one rung without a gate, which is its own question for a planning
-  session.
-- **Concurrency decided at M2, run at P1, tuned at P2.** The GL context-ownership question
-  cannot wait for the window. A pool with one worker never *runs* concurrently, so races and
-  hidden global state stay invisible until workers are turned on: cheap to find across three
-  systems, expensive across thirty, and `linux-tsan` is already a CI leg. Only *tuning* waits
-  for measurement.
-- **Editor panels (T1) before the renderer (R1).** ImGui draws through its own GL backend, so
-  hierarchy + inspector + console need no engine renderer, and being able to *see* the
-  `Scene` makes everything after it cheaper to debug. Only the 3D viewport needs R1, so it
-  splits out as T3.
-- **Thin slices ahead of full systems, three times.** T2 proves the editor→runtime bake
-  boundary (since Oct 10, M6's minimal bake proves it under ADR-025), N2 proves ADR-007, R1 proves the device seam, each before the full version
-  (T4/T5, N3-N5, R2/R3) is built on an untested assumption. ADR-006 § Context is explicit that
-  replication cannot be retrofitted; the same logic applies to the other two.
-- **`Scene`/ECS at M5, not after Resources.** Components hold resource handles and the renderer
-  *is* a System (ADR-006 §5), so building Resources first designs its handle/lifetime model
-  against an imaginary ECS, then wires it twice.
-- **Project at M3, ahead of the window.** The manifest is toml++ (already a `core` dep), *not*
-  the binary asset format, so nothing about it waits on the serialization ADR. Early it buys a
-  known home for shaders before the first GL work, and a standing testbed.
-- **cvars + dev console left M1 for the T1 editor lane, 2026-08-02.** T1 already carries
-  `console/cvars`, and cvars without a console panel to drive them is a config parser with no
-  consumer. Recorded because the row was dropped out of M1's contents inside a table reflow,
-  where it read as formatting rather than a decision.
-- **Profiler hooks at M1, panel at T1.** A system born with zones is free; adding zones to
-  twenty systems later is a sweep. **Settled 2026-08-02** in
-  [[ADR-013 - Profiler (Tracy-backed instrumentation)]]: hooks at M1 against the Tracy
-  desktop app; the in-editor panel is a T1 decision with three routes still open (§3).
-- **Reflection is not a gap.** [[ADR-005 - v2 tech stack & toolchain]] already decided C++20
-  with **no reflection** and a hand-rolled trait seam, with a re-litigation trigger. The seam
-  belongs to M2's serialization ADR.
-- **Q4/Q1 renderer features kept, demoted.** Scattering, volumetrics and god rays were written
-  as dated quarter goals before a v2 renderer ADR existed; they survive as **R3**, behind the
-  render graph that has to carry them.
+- **2027 Q1 and beyond**: a theme is written at the planning session that opens the quarter,
+  never earlier. A quarter gets a direction, not a feature list.

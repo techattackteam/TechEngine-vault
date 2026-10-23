@@ -82,7 +82,7 @@ flowchart TD
 *   **Architecture:**
     *   **Multi-Index RAG System:**
         *   *Index A (Theory):* Academic Papers.
-        *   *Index B (Architecture):* Vault Markdown files (`01 Vision`, `02 Roadmap`, `03 Architecture`, `04 Design Docs`).
+        *   *Index B (Architecture):* Vault Markdown files (`01 Product`, `02 Roadmap`, `03 Architecture`, `04 Design Docs`).
         *   *Index C (Codebase):* Engine C++ source code (`.hpp`, `.cpp`, `.inl`) indexed with symbol graphs (classes, functions, namespaces).
     *   **Router / Query Decomposer:** Agent detects whether a query is asking about theory, engine specifics, or both, and routes to the right indices.
 *   **Deliverables:**
