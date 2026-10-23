@@ -47,7 +47,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h
 
 
 ## 👀 Review / Demo
@@ -55,6 +54,12 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 08
+
+- [x] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h: #153 `19f57f68`, **Oct 23**, with vault `731986a`, `73ebc92` and `d4d5f79`. #153 has no body and no review conversation, so this entry comes from the card, the diff and the attended session. Completes Story H.
+	- **The PR carried more than any clause named.** Besides the split, the two-part planning and the sweep the card records, it shipped the product owner commands (`/brief`, `/triage`, `/showcase`, `/product-review`) and CLAUDE.md § *Product checkpoints*, built on the product layer of vault `d4d5f79` ([[Capability Map]], [[Reference Game]], the E1-E13 [[Roadmap]]).
+	- **Deleted on the way:** the `techengine` output style, after its trial, and the Codex leftovers #95 missed (`AGENTS.md`, `.codex/agents`).
+	- **Retro:** a 🟡 1-2h card absorbed an evening of process work, and the product layer, the biggest change of the four, never got a card of its own. Scope that grows twice should become a new card, not a third *scope added* line.
+	- **Unblocks:** Sprint 09's 🤖 Claude story, once Miguel pastes the new routine prompt and re-points the cron.
 
 - [x] **S8-D4** · Prepare Sprint 09 · P1 · 🟠 Moderate · 2-3h: vault-only, **Oct 23**, vault `77cfe54`. The first `/sprint-prep`, run with no prep brief. *Sprint 09's cut* in the sprint note now has 14 drafts: it proposes closing M6 and opening E1, moves the mesh path (cards 4-7) to the first 🤖 Claude feature, and adds the editor and renderer briefs, the editor ADR, and three Auto cards. Completes Story F and unblocks the Oct 24-25 `/sprint-plan`.
 	- **Not in the card: one decision changed cards 1, 3 and 6.** Miguel chose that loading a scene through the cache is one `core` function that every app calls ([[Resources - Design]] § *Reference fields*, with a new Decided row). Because of that, card 6 is glue. To keep the lane off Miguel's files, card 4 no longer registers loaders in the apps, and card 7 waits for card 3.

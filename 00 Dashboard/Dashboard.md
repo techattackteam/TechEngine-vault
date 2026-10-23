@@ -10,8 +10,8 @@
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
 | **Sprint** | [[2026-10 Sprint 08 - Content Path]] *(Oct 10-23)*, planned Oct 11. Sprint 07 closed Oct 9 and closed M5 ([[2026-10-11 Sprint 07 Retrospective]]). |
 | **Sprint goal** | The editor exports a project into `.tepack` files, and the runtime loads the exported startup scene from the packs beside its executable before its first Tick. |
-| **Current focus** | Sprint 08 met its goal on Oct 15. Every card has closed except S8-P11, the new split of who writes the code, whose PR #153 is open. Next: `/sprint-plan` on Oct 24-25 fits S8-D4's Sprint 09 cut, which closes M6 (the scene and its mesh load through the cache), opens E1 with the editor brief and ADR, and makes the mesh path the first 🤖 Claude feature. Hub: [[Resources - Design]]. |
-| **Top blocker** | None. The routine's cron must be re-pointed to `7 9,14 * * 1-5` between Fri Oct 23 14:07 and Mon Oct 26 09:07, for the clock change ([[Autonomous Lane - Routine Prompt]]). |
+| **Current focus** | Sprint 08 is complete: S8-P11 closed last (#153), bringing the new split of who writes the code, the two-part planning and the product owner commands. Next: `/sprint-plan` on Oct 24-25 fits S8-D4's Sprint 09 cut, which closes M6, opens E1 with the editor brief and ADR, and runs the mesh path as the first 🤖 Claude feature. Hub: [[Resources - Design]]. |
+| **Top blocker** | The 🤖 lane runs the old prompt. Before Mon Oct 26 09:07, Miguel re-points the routine's cron to `7 9,14 * * 1-5` for the clock change and pastes the new prompt, which #153 made safe to paste ([[Autonomous Lane - Routine Prompt]]). |
 | **Next milestone** | M6 content closes in Sprint 09; then **E1 · Editor and export**, the first showcase ([[Roadmap]]). |
 | **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one monthly showcase at a time (E1 to E13, [[Capability Map]]); Phase 2 builds the reference game, TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23. |
 | **Reconciled against** | engine `39943f19` (2026-10-18) |

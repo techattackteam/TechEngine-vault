@@ -421,7 +421,7 @@ type.
   card in To Do.
   Report-only, closed Oct 20 (vault `618afdd`): [[B3 - Build & Testing Notes]] § *What #143
   saved on CI*.
-- [ ] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h ·
+- [x] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h ·
   done: [[Technical Lead Charter]] § *Who writes the code* holds the three lanes (Miguel's 🟢
   and 🟠 cards with Claude pairing, 🤖 Auto, and 🤖 Claude features). [[Planning Workflow -
   Artifact Gate]] § *The 🤖 Claude gate* says what Claude may decide, with the Sprint 09 trial
@@ -439,6 +439,9 @@ type.
   [[Autonomous Lane - Design]]'s probe log shrank to a lessons table, `/card-close` caps Done
   entries and rewrites *Current focus* instead of appending, and the `techengine` output style
   was removed after its trial. The routine runs the new prompt only once Miguel pastes it.
+  The same PR also shipped the four product owner commands and CLAUDE.md § *Product
+  checkpoints*, over the product layer of vault `d4d5f79`, which no clause named. Merged as
+  #153 (`19f57f68`, Oct 23).
 
 ### Story I: Week 2 fill
 

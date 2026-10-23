@@ -347,6 +347,10 @@ groups are kept, because they show where future work will land.
   T1, when the editor can open another scene.
 ## etc: cross-cutting
 
+- #prio/low · **Two comments still name the old SDK smoke target**: `sdk/CMakeLists.txt:9` and
+  `.github/workflows/ci.yml:79` say `te_sdk_smoke`, while the target is `TechEngineSDKSmoke`
+  (ctest `sdk-smoke`). The Markdown copies were fixed in #153. Found at S8-P11's close, Oct 23.
+  **Trigger:** the next card that edits either file.
 - #prio/high · **Revise the [[Roadmap]]**: Miguel finds it hard to follow when he comes back to
   it (Oct 20, at S8-D2). The revision should also reshape R1: it is likely several ADRs (meshes,
   materials, the PBR pipeline), and they start from paper research, while the Roadmap names one
