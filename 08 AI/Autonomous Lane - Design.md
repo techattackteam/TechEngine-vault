@@ -49,6 +49,7 @@ capacity table does **not** change.
 | 7 | Does the lane move its card on the [[Sprint Board]]? | **Yes, and the columns are its state.** Done when every clause is met, Review / Demo when a PR is open or what is left needs Miguel. It grounds each Auto card with `/card-start` before working it, and closes its own Auto cards with the whole of `/card-close`, the Dashboard's *Current focus* included. Attended cards stay Miguel's to close. Widened from "only the board line" on 2026-10-19 (S8-P9). | 2026-10-19 |
 | 8 | Does the lane screen papers for the research chatbot? | **Yes, as report-only fallback work, and it never approves.** With no Auto card open, it screens a few cards from [[Research]]'s *TO VALIDATE* column into *MIGUEL REVIEW*: real title, stable link, one-sentence fit. An off-roadmap paper gets a "recommend reject" line; rejecting and approving (`/paper-validate`) stay Miguel's. Which column the chatbot ingests from is still undecided (Sep 19 review). | 2026-09-26 |
 | 9 | Does the lane hunt for unnecessary code? | **Yes: with no Auto card open, the afternoon fire sweeps one module** for duplication, dead code and speculative abstractions, in rotation, and records the module's line count. It fixes every finding that needs no design decision: dead code nothing references (tests included, public API allowed, `sdk/` never), duplicates anywhere in one module, and copied test code. The fixes go in one PR with no size cap, one commit per finding, titled "Code sweep: <module>" on a `sweep/<module>-<date>` branch. Sweeps have no board card; that branch prefix is the one exception to CLAUDE.md rule 9. What is left goes into one rolled-up [[Backlog]] entry per module. The morning fire keeps the freshness check and paper screening. Widened from "obvious findings under ~100 lines, one entry each" on 2026-10-01. | 2026-10-01 |
+| 10 | Does the lane build features? | **Yes: 🤖 Claude features**, picked by Miguel at `/sprint-plan`. The lane writes their engine logic and takes their design-note-level decisions, listing each in the PR; ADR-level decisions stay Miguel's. During the Sprint 09 trial they may sit on the critical path. The gate is [[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate*, and why the split exists is [[Technical Lead Charter]] § *Who writes the code*. | 2026-10-23 |
 
 **Decision 2 is the one to watch.** It is the first carve-out from a CLAUDE.md rule rather
 than an application of one, and it is what makes decision 1 safe. A small logic fix that
@@ -172,6 +173,10 @@ decisions are Miguel's. Anything touching `.github/workflows/`. Anything whose d
 needs a Windows leg, a demo capture or a visual check. Anything on the sprint's critical path,
 since an unattended lane cannot be a dependency.
 
+**A 🤖 Claude card has its own gate** (decision 10). It may take design-note-level decisions,
+add engine logic and, during the Sprint 09 trial, sit on the critical path. The Linux proof,
+the workflow ban and the file check above still hold.
+
 ## Hard stops
 
 - **It never merges.** A routine opens a PR and stops. This is not negotiable. #50 merged
@@ -193,7 +198,7 @@ An Auto card costs zero of Miguel's day capacity and is **not free**.
 
 | Cost | Amount | Notes |
 |---|---|---|
-| PR review | ~15 min each | Real capacity. Budget it on a 🟡 day, not on top of a 🟢 evening. |
+| PR review | ~15 min each; ~30-45 min for a 🤖 Claude PR | Real capacity. Budget it on a 🟡 day, not on top of a 🟢 evening. A 🤖 Claude PR also lists decisions to accept or reverse. |
 | CI, code card | 16.1 billed min | Measured, ADR-008 §9. At two per weekday that is ~650 min/month against the ~2k budget, about a third; at one, ~320 and about 16%. |
 | CI, vault or report card | 0 | Vault commits take no PR, and a docs-only or `.claude/**` PR draws no CI since #54. |
 | **Claude weekly usage** | the binding one | Every fire spends the weekly allowance whether or not it opens a PR, so a report-only day is **not** free here the way it is on the CI row. This is what cut the schedule from four fires to two on 2026-08-31. |
@@ -212,6 +217,10 @@ never bound, because it is per day and was already one.
 
 Prefer report-only and vault cards anyway. They cost nothing and they are the lowest-risk half
 of the eligibility list.
+
+**🤖 Claude features spend the most usage per fire** (2026-10-23). If the weekly allowance
+starts squeezing Miguel's attended sessions, the fallback work gives way first: paper
+screening, then the code sweep. The features are what the lane is now for.
 
 ## State
 

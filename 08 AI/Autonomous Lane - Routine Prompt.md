@@ -16,7 +16,7 @@ there to answer one.
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | Opus 5.5 (`claude-opus-5-5`), read off the routine on 2026-09-26. The lane's risk is judgment on bug fixes, not throughput. |
 | `cron_expression` | `7 8,13 * * 1-5`: **08:07 and 13:07 UTC, weekdays** (09:07 and 14:07 in Lisbon summer time), read off the routine on 2026-09-26. Cut from four fires on **2026-08-31**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
-| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27; read off the routine on 2026-10-11 (last fire Oct 9 14:08, next Oct 12 09:07 Lisbon). The routine's prompt was last updated on Oct 1. The text below was revised on Oct 19 (S8-P8, S8-P9); the routine runs it only once Miguel pastes it, after S8-P9's PR merges, because steps 3 and 5 read the commands that PR changes. |
+| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27; read off the routine on 2026-10-11 (last fire Oct 9 14:08, next Oct 12 09:07 Lisbon). The routine's prompt was last updated on Oct 1. The text below was revised on Oct 19 (S8-P8, S8-P9); the routine runs it only once Miguel pastes it, after S8-P9's PR merges, because steps 3 and 5 read the commands that PR changes. Revised again on Oct 23 (S8-P11) for 🤖 Claude cards in steps 3, 4, 5 and 10; paste it only after S8-P11's PR merges, because step 5 relies on the `/card-start` section that PR adds. |
 | **Why two and not four** | **Claude's weekly usage limit**, not the CI budget. Four fires a weekday spent enough of the weekly allowance to compete with Miguel's own attended sessions, which are the lane's whole point. See [[Autonomous Lane - Design]] § *Cost model*. |
 | **DST** | **Breaks on 2026-10-25**, when Lisbon drops to UTC+0. Cron stays UTC, so every fire shifts an hour earlier in local terms. To keep 09:07 and 14:07 Lisbon, set `7 9,14 * * 1-5` between the last summer fire (Fri Oct 23, 14:07) and the first winter one (Mon Oct 26); both times stay on the right side of step 4's 12:00 UTC split. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |
@@ -145,13 +145,15 @@ docs/06 Sprints/Sprint Board.md, docs/08 AI/Autonomous Lane - Design.md.
 Then read the notes in the most recent earlier day's folder under docs/07 Journal/autoruns/,
 if there is one. If they name a PR whose CI had not settled, check that PR now and carry the
 result into today's report.
-THEN CLOSE WHAT HAS MERGED, BEFORE PICKING ANYTHING. For every "🤖 Auto" card in 👀 Review / Demo
+THEN CLOSE WHAT HAS MERGED, BEFORE PICKING ANYTHING. For every "🤖 Auto" or "🤖 Claude" card in 👀 Review / Demo
 whose PR has merged into origin/master, read .claude/commands/card-close.md and follow it,
 including its section "When the Auto lane runs this". An attended card is never yours to
 close, merged or not. A close opens no PR, so it does not count against step 2's cap.
 
 STEP 4: PICK ONE CARD.
-From the Sprint Board's To Do column, take the highest-priority card tagged "🤖 Auto".
+From the Sprint Board's To Do column, take the highest-priority card tagged "🤖 Auto" or
+"🤖 Claude". On equal priority, take the "🤖 Claude" card: it may sit on the sprint's critical
+path. Within one 🤖 Claude story, take its cards in the order the sprint note gives.
 Take exactly one. Only To Do counts. A card in Review / Demo is waiting on Miguel and this lane
 never re-enters it; a card in In Progress is attended work.
 If no Auto card is open, the fallback depends on which fire you are.
@@ -236,12 +238,20 @@ A REFACTOR MUST PASS THE TESTS AS THEY STAND. If you have to edit a test to make
 pass, the behaviour changed: undo it and report the card as mis-scoped. If no test covers the
 code you refactor, say so plainly in the PR body. A sweep's test-only cleanup (step 4) is the
 one exception, because the tests are what it refactors.
-A code change is in scope only when the card's done-condition fully specifies the behaviour.
-If you find yourself choosing how something should behave, that is a decision, and it is
-Miguel's.
-If the card turns out to need a decision, a Windows leg, a demo capture, a visual check, or
-any change under .github/workflows/, it was mis-scoped: stop, do not improvise, and say so in
-the report so it can be re-planned as an attended card.
+ON A "🤖 Auto" CARD, a code change is in scope only when the card's done-condition fully
+specifies the behaviour. If you find yourself choosing how something should behave, that is a
+decision, and it is Miguel's.
+ON A "🤖 Claude" CARD, you implement a feature and you may decide. Read
+docs/06 Sprints/Planning Workflow - Artifact Gate.md § "The 🤖 Claude gate" and follow it.
+Take the decisions it allows, and write each one, with its reason, under a "Decisions I took"
+heading in the PR body and in the report. A decision it keeps for Miguel (an ADR-level one,
+or one that changes an existing Decided row) stops the card: open no PR, and put the question
+and your proposed answer on the card's board line (step 9). A "🤖 Claude" Design card is
+vault-only: take its decisions, write the design note, cut the rest of the story into the
+sprint note and the board's To Do with the same tag, and close it (step 9).
+If a card turns out to need a decision its gate does not allow, a Windows leg, a demo
+capture, a visual check the gate does not allow yet, or any change under .github/workflows/,
+it was mis-scoped: stop, do not improvise, and say so in the report so it can be re-planned.
 
 STEP 6: IF IT CHANGED CODE, PROVE IT.
   cmake --preset linux-debug && cmake --build --preset linux-debug
@@ -298,7 +308,8 @@ first note. Never edit an earlier fire's note.
 Commit straight to the vault's master and push. Pull first: an earlier fire may have pushed
 since your checkout. The vault takes no branch, no PR and no CI. The engine repo is PR-only.
 Lead with the "Needs you" section. Miguel reads this after a full work day, so it must be
-triageable in two minutes. Say plainly what is unverified. A false "green" is the worst
+triageable in two minutes. A "🤖 Claude" card's decisions go in it, one line each, because
+accepting or reversing them is his. Say plainly what is unverified. A false "green" is the worst
 thing this lane can produce.
 ```
 
@@ -352,6 +363,10 @@ thing this lane can produce.
   Miguel's call). A board-only move left the rest of every close owed to Miguel, and S8-P7's
   sprint-note line was still owed when S8-T21 closed. Attended cards stay his to close, because
   their context lives in his session.
+- **Step 5 splits on the tag** (2026-10-23, S8-P11). A 🤖 Auto card still may not decide; a
+  🤖 Claude card may, inside its gate, and must write every decision down where Miguel reviews
+  it. Step 4 prefers a 🤖 Claude card on a tie because the Sprint 09 trial lets it sit on the
+  critical path ([[Autonomous Lane - Design]] decision 10).
 - **The lane cannot edit this note or its own prompt.** On 2026-10-19 the sandbox refused that
   edit as instruction poisoning, which is the right call. Every change to the prompt is
   attended work, and Miguel pastes it into the routine.

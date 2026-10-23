@@ -9,27 +9,24 @@ repo-root `CLAUDE.md` (auto-loaded every session), and the role is defined in
 
 ## Division of labor
 
-**You are the principal driver and programmer.** You write the engine, for
-mastery and ownership. Claude is your **technical lead + pair, not your
-implementer**:
+**Who writes what is set by the card's tag** ([[Technical Lead Charter]] § *Who writes the
+code*, 2026-10-23):
 
-- Design & architecture, trade-offs, decomposition, research, ADRs.
-- Boilerplate & scaffolding *on request* (headers, glue, build/test scaffolds).
-- Review of code you wrote, and answers when you're stuck.
+- **🟢 Deep and 🟠 Moderate cards are yours.** Claude pairs: design, scaffolds, review, and a
+  function or two when you hand one over.
+- **🤖 Auto cards** run in the weekday cloud routine: light cards, sweeps, refactors, research.
+- **🤖 Claude features** are Claude's end to end, in the same routine. You pick them at
+  `/sprint-plan` and review every PR, including the decisions it lists.
+
+In any session you are present in, Claude is also:
+
+- Your technical lead: design and architecture, trade-offs, decomposition, research, ADRs.
+- Your reviewer, and the one to ask when you're stuck.
 - **Scrum master on process**: co-creates the sprint plan (epics → tasks) *with* you as
-  an equal driver, runs the ceremonies, see [[Technical Lead Charter]].
+  an equal driver, runs the ceremonies, and proposes 🤖 Claude features.
 
-Rule of thumb: bring Claude **decisions, designs, and finished code to review**,
-not "build this feature for me."
-
-**A second, unattended lane exists on paper** ([[Autonomous Lane - Design]], 2026-08-30). It
-runs 🤖 Auto cards in a weekday cloud routine while you are at the day job, and for that one
-narrow class it *does* write engine code, build it on Linux and open a PR. The boundary is the
-artifact gate's § *The 🤖 Auto gate* and the exception is spelled out in
-[[Technical Lead Charter]] § *The autonomous lane*.
-
-**The section above is still the whole rule for any session you are present in.** Nothing runs
-yet: no routine is configured.
+Rule of thumb for your own cards: bring Claude **decisions, designs, and finished code to
+review**. Work you would rather not write belongs in a 🤖 Claude feature, picked at planning.
 
 ## The core loop (every non-trivial task)
 
@@ -40,7 +37,8 @@ yet: no routine is configured.
    where most mistakes die, cheaply.
 2. **Scaffold (optional)**: ask Claude for boilerplate/skeletons if it saves
    time. You own the logic that goes inside them.
-3. **Implement**: *you* write it. One task at a time.
+3. **Implement**: *you* write it, or hand Claude a function. One task at a time. A 🤖 Claude
+   feature skips this loop: the lane implements it, and you review its PRs.
 4. **Verify**: it must build; run the editor/demo if rendering changed. "Done"
    requires evidence.
 5. **Review**: hand the diff to Claude (`/code-review`, or `/code-review ultra`
@@ -56,12 +54,13 @@ follow that calendar. Match the session type to the day's mode:
 |------|--------------|----------|
 | Deep | Implementation | `/card-start` → core loop → `/code-review` → `/card-close` |
 | Moderate | Lighter implementation: finish/refactor, wrap up | same, shorter |
-| Light | Read code/docs, small fixes, ADR drafting | `/arch-review`, `/adr` |
+| Light | Review the lanes' PRs, read code/docs, ADR drafting | `/card-review`, `/arch-review`, `/adr` |
 | Relaxed | Optional light planning / docs, or rest | - |
 | Off | No engine work | - |
 
-Ceremonies: **every 2nd weekend** (the sprint boundary) `/sprint-plan` (demo + retro +
-next-sprint planning), and `/weekly-review` on the weekend in between. `/sprint-plan`
+Ceremonies: `/sprint-prep` in **week 2** of each sprint (Tuesday to Friday) decides and drafts
+the next sprint; **every 2nd weekend** (the sprint boundary) `/sprint-plan` runs the retro and
+fits that draft; and `/weekly-review` runs on the weekend in between. `/sprint-plan`
 **absorbs** the weekly review, so never run both on the same weekend. Run them on whichever
 weekend day you work; see the [[Dashboard]] weekend rule.
 
@@ -83,7 +82,8 @@ Keep one topic per note, and link instead of duplicating. Full rules: repo-root 
 | Command                        | Use it for                                                |
 | ------------------------------ | --------------------------------------------------------- |
 | `/weekly-review [notes]`       | Weekend review → writes the journal + updates dashboard    |
-| `/sprint-plan [focus]`         | 2-week sprint planning → retro + next sprint, sized to capacity |
+| `/sprint-prep [focus]`         | Week 2: next sprint's goal, decisions and draft cards     |
+| `/sprint-plan [focus]`         | Boundary weekend: retro, then fit the draft to capacity   |
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
 | `/arch-review <area>`          | Technical-lead review of a system (analysis, no edits)    |
 | `/feature-breakdown <feature>` | Epic → Story → session-sized Tasks                        |

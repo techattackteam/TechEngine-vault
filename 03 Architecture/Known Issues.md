@@ -77,26 +77,3 @@ misbehaves, and a caller that does gets no error to notice.
 
 **Trigger:** the next change to `Log.cpp`'s sink table, or a sink that can be null at its
 removal site.
-
-### D6: `App` builds its scene before the registry it hands it
-
-`App::m_scene` sits in the first `private:` block, above `m_registry`, so it is constructed
-first: `m_scene(m_registry)` binds a reference to a `ComponentRegistry` that does not exist yet.
-Members are destroyed in reverse order, so the scene also outlives the registry by a few
-destructors. The same holds for `m_eventRegistry`, whose streams the scene builds in
-`finalizeSimulation()`.
-
-**Silent because nothing uses the registry at either end today.** `Scene`'s constructor and
-`ArchetypeStorage`'s constructor only store the pointer, and teardown destroys the component
-columns through their own virtual destructors. The first constructor or destructor that calls
-the registry reads a dead or unbuilt object. A Release build shows no symptom, and only the ASan
-leg might catch it.
-
-`engine/app/include/TechEngine/app/App.hpp:39` and `:47`, `engine/app/src/App.cpp:32`, at
-`4563411d` (S8-T18, #146, which moved the member from below `m_eventRegistry`).
-
-**Proposed fix**: move `m_scene` back between `m_eventRegistry` and `m_schedule`, in its own
-`private:` block.
-
-**Trigger:** the next change to `App.hpp`'s members (S8-T19 edits that header), or `Scene`'s
-constructor or destructor starting to use the registry.

@@ -4,7 +4,8 @@ Where a sprint's work comes from, how an item earns paperwork, and how its tasks
 and typed.
 
 Read this at **grooming** and at **sprint planning**. Every call in it is meant to be
-deliberate rather than reflex. It is wired into `/feature-breakdown` and `/sprint-plan`.
+deliberate rather than reflex. It is wired into `/feature-breakdown`, `/sprint-prep` and
+`/sprint-plan`.
 
 **These artifacts have two readers: you and Claude.**
 
@@ -183,26 +184,34 @@ When the gate says an item needs an artifact and none exists, decide **when** it
 
 | Decision weight | When | Becomes |
 |---|---|---|
-| **Light.** A short note, the call is essentially clear, and no spike or research is needed. | **Drafted in the planning session**, on the boundary weekend | Part of the ceremony, *not* a sprint task |
+| **Light.** A short note, the call is essentially clear, and no spike or research is needed. | **Drafted in `/sprint-prep`**, in week 2 of the closing sprint | Part of the ceremony, *not* a sprint task |
 | **Heavy.** An ADR, or a note gated on a spike or on research. | A **task in the sprint** | Deep or Moderate weight, ordered *before* the story it unblocks. That story stays **unsized**, per *Don't size past an open decision*. |
 
 At planning, **flag every item the gate wants an artifact for and that does not have one.**
 Draft the light ones on the spot. Schedule the heavy ones.
 
-### Trial from Sprint 08: decide first, then plan
+### Decide first, then plan
 
-**Started Oct 10, 2026, at Miguel's request.** On this boundary the heavy artifacts are not
-sprint tasks. The ADR and every other decision the sprint goal needs are written and accepted
-**first**, at the start of the new sprint. Only then does `/sprint-plan` run, and it cuts
-sized Dev cards against accepted decisions, so no story is left unsized.
+**The rule since 2026-10-23**, after a trial from Sprint 08. Planning is split in two, so the
+decisions a sprint goal needs are made **before** its cards are cut, and the boundary weekend
+stays a dev day.
 
-The rules above still hold where this trial does not reach: an open decision is still never
-sized past. The trial only moves when that decision gets made. `/sprint-plan` itself is not
-changed yet; the Sprint 08 retro decides whether the trial becomes the rule.
+| Half | When | Does |
+|---|---|---|
+| `/sprint-prep` | Week 2 of the closing sprint, Tuesday to Friday, as the standing `Prepare Sprint <n+1>` Design card | Proposes the goal, settles the light decisions, names the heavy ones, drafts the cards with the 🤖 Auto and 🤖 Claude passes |
+| `/sprint-plan` | The boundary weekend | Retro, drift check, fits the draft to capacity, assigns IDs, resets the board |
 
-**What to watch at the retro.** Whether the decision work left the board empty for long
-(the failure § *Rhythm* on the [[Dashboard]] records from August), and whether the Dev cards
-held up better than cards cut by a Design task in the middle of a sprint.
+A 🤖 Auto **prep brief** card runs from the Monday of week 2 and gives the prep its reading
+list. Both standing cards are planted by `/sprint-plan` on day 1 of every sprint.
+
+**A heavy decision the prep finds** gets `/adr` before the boundary when the sprint has a slot
+left. Otherwise it becomes a **day-1 Design card** of the next sprint, ordered before every card
+it unblocks, the way ADR-024 and ADR-025 opened Sprint 08. The rules above still hold: an open
+decision is never sized past.
+
+**Evidence from the trial.** Sprint 08 decided ADR-024 and ADR-025 on day 1 and met its goal on
+day 6. S8-D1 and S8-D2 decided and cut Sprint 09's work inside week 2, which is the shape
+`/sprint-prep` now makes routine.
 
 Never let implementation start on an item that warranted an artifact and has none
 (CLAUDE.md rule 2).
@@ -293,6 +302,9 @@ cadence).
   routine ([[Autonomous Lane - Design]]). See the eligibility gate below, which is narrower
   than the other three weights and is the reason this one is not simply "🟡 Light, but a robot
   does it".
+- 🤖 **Claude** is a small feature that Claude owns end to end in the same unattended lane,
+  engine logic included. It is picked at planning and carried on the story, so its cards
+  inherit it. See § *The 🤖 Claude gate* below.
 
 **The pick rule has an order.** Weight fits the day *first*, so never a 🟢 Deep task on a light
 Tuesday. Then take the highest **priority** among what fits.
@@ -329,6 +341,44 @@ that always stops wastes its slot.
 costs 16.1 billed CI minutes. Budget the review on a 🟡 day and cap code cards at one per
 weekday. Cost table in [[Autonomous Lane - Design]] § *Cost model*.
 
+### The 🤖 Claude gate
+
+**Decided 2026-10-23.** A 🤖 Claude feature is a small feature that Claude implements on its
+own: it cuts the cards, takes the feature's design decisions, writes the engine logic, builds
+and tests on Linux, and opens PRs. Miguel picks it at planning and reviews every PR. Why the
+split exists: [[Technical Lead Charter]] § *Who writes the code*.
+
+**What makes a good one.** About 2 to 5 cards. Contained: mostly one module, or behind an
+existing seam, and nothing Miguel's cards build against in the same sprint. Its ADR-level
+decisions already exist. Good sources are work Miguel would rather not write (plumbing, file
+handling, glue) and features the [[Roadmap]] or a design note already names.
+
+**What Claude may decide**, by the gate's own rows:
+
+| Row of the gate | Inside a 🤖 Claude feature |
+|---|---|
+| Reversible, local or obvious | Claude decides and lists it in the PR. |
+| Design note: non-trivial, settled direction, one module | Claude decides, writes or updates the design note, and keeps building. If Miguel's review disagrees, the work goes back. |
+| ADR: hard to reverse or cross-module | Never Claude's. It exists before planning picks the feature, or the feature's first card drafts it as **Proposed** and nothing is built until Miguel accepts it. |
+
+A decision that changes an existing *Decided* row counts as ADR-level here, whatever its size.
+
+**How it is planned.** When the feature still needs design-note decisions, its first card is
+a 🤖 Claude Design card: Claude takes them, writes the note, and cuts the rest of the story
+onto the board and into the sprint note. Otherwise its cards are cut at planning.
+
+**How it reports.** Every PR body has a *Decisions I took* section, one line per decision with
+its reason, which Miguel accepts or reverses in review. At `/card-close`, any decision that
+matters beyond the card goes into the design note.
+
+**Trial terms, decided 2026-10-23; Sprint 09's retro reviews them:**
+- Unlike 🤖 Auto, a 🤖 Claude feature **may sit on the sprint's critical path**, so the trial
+  tests the lane under real load.
+- **Sprint 09 takes headless features only**, proven by `ctest`. From Sprint 10, a feature
+  may end in Review / Demo with "needs Miguel's visual check" on its board line.
+- Everything else in § *The 🤖 Auto gate* still applies: Linux proof, no
+  `.github/workflows/`, and off the files of Miguel's cards.
+
 ## Lean model this collapses to
 
 1. **Source the work** from a design note's *Decided* rows against the code (see *Where plans
@@ -337,7 +387,8 @@ weekday. Cost table in [[Autonomous Lane - Design]] § *Cost model*.
 2. **One decision artifact**, where one is owed. An ADR *or* a design note, rarely both, per
    the gate above. Often neither. A light one is drafted in planning. A heavy one becomes a
    **Design** task, and the breakdown stops there.
-3. **Implementation.** Always, and Miguel writes it.
+3. **Implementation.** Always. Miguel writes his own cards, and Claude writes a 🤖 Claude
+   feature (§ *The 🤖 Claude gate*).
 4. **Docs.** A Definition of Done line, not a stage.
 
 Every task in steps 2 and 3 carries a **kind** in its ID, plus **priority and weight** as
@@ -345,31 +396,32 @@ Every task in steps 2 and 3 carries a **kind** in its ID, plus **priority and we
 
 ## Running a planning session
 
-`/sprint-plan` is the umbrella ceremony. It **contains** the breakdown and the gate.
+Planning is two ceremonies (§ *Decide first, then plan*). `/sprint-prep` **contains** the
+breakdown and the gate; `/sprint-plan` fits its draft to the new sprint.
 
-The other commands are **triggered out of it**. They are not run in sequence after it.
+The other commands are **triggered out of them**. They are not run in sequence after them.
 
 ```mermaid
 flowchart TD
-    A["/sprint-plan · boundary weekend"] --> B["Gather: roadmap · quarter · sprint ·<br/>design notes' Decided rows vs the code"]
+    BR["🤖 Prep brief · lane, from Mon of week 2"] --> A
+    A["/sprint-prep · week 2, Tue to Fri"] --> B["Gather: roadmap · quarter · sprint ·<br/>design notes' Decided rows vs the code"]
     B --> B2["Backlog last: validate fired entries;<br/>rank the rest by priority"]
-    B2 --> C{"Sprint ending?"}
-    C -->|yes| D["Retro first"]
-    C -->|no| E["Propose ONE headline goal"]
-    D --> E
-    E --> E1["Refine backlog: task valid fired entries;<br/>choose 1-3 more with Miguel"]
-    E1 --> E2{"System in play<br/>has a design note?"}
-    E2 -->|no| E3["Coverage gap: say it ·<br/>Design task THIS sprint"]
+    B2 --> E["Propose ONE headline goal"]
+    E --> E2{"System in play<br/>has a design note?"}
+    E2 -->|no| E3["Coverage gap: say it ·<br/>Design card"]
     E2 -->|yes| F["Co-create Epic → Story → Task"]
     E3 --> F
     F --> G{"Artifact gate, per item"}
-    G -->|light note| H["Draft it now, in session"]
-    G -->|"heavy: ADR / spike"| I["Design task ·<br/>story below it stays UNSIZED"]
-    G -->|neither| J["Straight to Dev task"]
-    H --> K["Every task: kind in the ID ·<br/>priority + weight"]
+    G -->|light note| H["Decide it now, in session"]
+    G -->|"heavy: ADR / spike"| I["/adr before the boundary, or a<br/>day-1 Design card · story UNSIZED"]
+    G -->|neither| J["Straight to a Dev draft"]
+    H --> K["Draft cut in the closing sprint note ·<br/>kind · priority · weight · lane passes"]
     I --> K
     J --> K
-    K --> L["Write sprint note · board · roadmap · dashboard"]
+    K --> SP["/sprint-plan · boundary weekend"]
+    SP --> D["Retro · drift check"]
+    D --> FIT["Fit to capacity · assign IDs ·<br/>plant the two standing cards"]
+    FIT --> L["Write sprint note · board · roadmap · dashboard"]
     L --> M(["Later, on coding days"])
     M --> N["ADR task → /adr"]
     M --> O["Gnarly or new feature → /feature-breakdown"]
@@ -381,10 +433,10 @@ flowchart TD
 | Situation | Command | Timing |
 |---|---|---|
 | The gate flagged an **ADR**, which is always heavy and always its own task | `/adr <decision>` | Later, on a deep or moderate day. *Not* inside the ceremony. |
-| A **light design note** | None. Use the Design Doc template. | Drafted **with Claude during planning** |
+| A **light design note** | None. Use the Design Doc template. | Drafted **with Claude during `/sprint-prep`** |
 | A **spike** task | None. Just code it. | Its scheduled day. It feeds the artifact afterwards. |
 | A story **too big to decompose** inside the ceremony | `/feature-breakdown <feature>` | A dedicated pass, or pre-groom it the week before |
 | A **new feature appears mid-sprint** | `/feature-breakdown` | Decompose it in isolation, and park the tasks in the backlog |
 
-**Mental model.** `/sprint-plan` is the whole board. `/feature-breakdown` zooms into one card.
+**Mental model.** `/sprint-prep` decides and drafts the next board; `/sprint-plan` fits it. `/feature-breakdown` zooms into one card.
 `/adr` executes one decision the gate demanded.

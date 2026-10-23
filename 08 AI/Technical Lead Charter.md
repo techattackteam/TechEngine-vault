@@ -20,7 +20,10 @@ typing.
 ## Cadence
 Anchored to the real weekly rhythm on the [[Dashboard]], **not** a daily standup.
 
-- **Sprint boundary (every 2nd weekend)**: retro + planning + architecture discussion.
+- **Week 2 of every sprint, Tuesday to Friday**: `/sprint-prep` decides and drafts the next
+  sprint.
+- **Sprint boundary (every 2nd weekend)**: `/sprint-plan`: retro, then fit the draft to the
+  new sprint.
 - **The other weekend**: weekly review; refine tasks.
 - **Deep days (Mon / Thu + one weekend day)**: implementation; call AI to design first and
   review after. Light/relaxed days are for docs, ADR drafting, and reading.
@@ -51,38 +54,42 @@ On **process** (sprint planning, backlog grooming, retro, demo/planning) Claude 
 - **Co-create the plan**: build the Epic → Story → Task breakdown *together*: Claude
   drafts and challenges, Miguel decides scope. Tasks sized to one 2-6h session with a
   clear done-condition.
-- **Run the ceremonies**: `/sprint-plan` (every 2nd weekend, absorbs that weekend's review,
-  never both), `/weekly-review` (the other weekend);
+- **Run the ceremonies**: `/sprint-prep` (week 2), `/sprint-plan` (every 2nd weekend, absorbs
+  that weekend's review, never both), `/weekly-review` (the other weekend);
   keep [[Sprint Board]], [[Roadmap]], and [[Dashboard]] in sync.
 - **Guard capacity & sustainability**: size to the real weekly rhythm; call over-scope
   and burnout risk out loud.
 - **Surface impediments** early; log blockers on the Dashboard.
 
-Facilitation, not implementation: this hat never becomes "Claude writes the engine."
+Facilitation, not implementation: the scrum master hat writes no engine code. Claude writes
+engine code only where § *Who writes the code* says so.
 
-## The autonomous lane (2026-08-30)
+## Who writes the code (2026-10-23)
 
-There is now **one narrow exception** to "Claude does not implement", and it is deliberately
-written here rather than buried, because it is the only place this charter bends.
+Until Oct 23 the rule was "Miguel writes the engine, Claude advises", with the unattended lane
+as its one narrow exception (2026-08-30). Sprints 07 and 08 broke it in practice: Miguel
+handed Claude the file-handling and plumbing work he did not want to write, and each session
+had to override the old default by hand. The split is now set by the card's tag.
 
-In an **unattended weekday cloud routine**, Claude works cards that pass the artifact gate's
-§ *The 🤖 Auto gate*: research, freshness checks, paper screening, code sweeps for duplication
-and dead code, CI diagnosis, mechanical sweeps, test scaffolding, **small well-scoped bug fixes**, and (since 2026-09-26)
-**behaviour-preserving refactors and small fully specified code changes**. It builds and tests
-them on Linux, opens a PR, and stops. Full model in [[Autonomous Lane - Design]].
+| Card | Who writes it | How |
+|---|---|---|
+| 🟢 Deep, 🟠 Moderate | **Miguel**, with Claude pairing | He writes it. He may hand Claude a function or two to fill in, uncompiled. He builds. |
+| 🤖 Auto | **The unattended lane** | Light cards, research, sweeps, behaviour-preserving refactors, small fully specified changes ([[Planning Workflow - Artifact Gate]] § *The 🤖 Auto gate*). |
+| 🤖 Claude | **Claude, end to end, in the same lane** | A small feature Miguel picks at planning. Claude takes its design decisions and writes its engine logic ([[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate*). |
 
-What did **not** change, and what keeps the exception narrow:
+What stays Miguel's in every lane:
 
-- **Every decision is still Miguel's.** A card the gate routes to an ADR or a design note is
-  disqualified by question 1, so the lane can never author a decision.
-- **Nothing merges itself.** The lane opens a PR. Miguel reviews and merges.
-- **Nothing on the critical path is Auto.** The lane is never a dependency.
-- **The attended lane is unchanged.** In a session with Miguel present, Claude still advises
-  and reviews, and still does not compile.
+- **Load-bearing decisions.** Every ADR is his to accept. Claude takes a 🤖 Claude feature's
+  smaller decisions and lists each one in the PR, where he accepts or reverses it.
+- **What gets built.** He picks the 🤖 Claude features; Claude proposes them.
+- **Every merge.** The lane opens PRs and never merges.
+- **The attended toolchain.** In a session with him present, Claude still does not compile;
+  the lane builds on Linux because nobody is there to hand code back to.
 
-The honest read: this trades a slice of implementation ownership for the weekday hours that
-were otherwise dead. If the review load ever stops feeling worth it, disabling one routine
-reverses the whole thing.
+The honest read: this trades more implementation ownership for throughput, and the price is
+review. Sprint 09 is the first trial, critical path included, and its retro checks how many
+of the lane's decisions Miguel reversed. If the reviews stop feeling worth it, untagging the
+features reverses it.
 
 See [[Working with Claude - Operating Guide]] for the day-to-day workflow. Machine-facing
 rules live in the repo-root `CLAUDE.md`.

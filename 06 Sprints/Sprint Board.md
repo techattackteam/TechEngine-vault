@@ -47,7 +47,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h: Fri, if there is room. Follows S8-T18; where the subclass lives is settled at `/card-start`.
+- [ ] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h
 
 
 ## 👀 Review / Demo
@@ -55,6 +55,13 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 08
+
+- [x] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h: #151 `4eb988a2`, **Oct 22**. Every check on #151 passed. #151 has no body and no review conversation, so this entry comes from the card, the diff and the `/card-start` session. `RuntimeApp` and `EditorApp` now derive from `ClientApp`, which owns the client, implements the six client hooks, and takes the role and the window title ([[Simulation Thread - Design]] § *Lifecycle*). Claude wrote the code at Miguel's request. Completes Story I; it unblocks nothing.
+	- **Where it lives was settled at `/card-start`:** a static lib under `apps/clientapp/`, not an engine module. `app` stays presentation-agnostic, and the five-lib graph of [[ADR-006 - v2 core architecture & module layout]] §1 is unchanged, so no amendment was needed. A future runtime-server simply does not link it. Because it reuses `techengine_module()`, the target is spelled `TechEngineClientapp` and the IDE files it under *engine*.
+	- **No clause said how the client starts.** Both `init()` overrides ended with the same `m_client.start(...)` call, but the editor must mount and index first, so the subclass cannot own `init()`. Miguel chose a protected `startClient()` that each `init()` calls last, over a `final` `init()` with a new hook. It throws when the client does not start, as both `init()` overrides did.
+	- **`runtimeRole()` had a second caller that the card did not name:** `PackSource::open` in the runtime's startup load. It now passes `Role::Client`.
+	- **D6 was folded in, by Miguel's choice.** `m_scene` sits after `m_eventRegistry` again, so the scene is built after the registry it binds. The entry is deleted from [[Known Issues]].
+	- **Retro:** the first push failed diff coverage at 82%. Every missing line was old code that had never been covered, but moving it into a new file put it in the diff. One new `RuntimeAppTests` case (runtime `init()` starts the client, and a second start throws) raised it to 87% without the `[skip-coverage]` bypass. "Existing tests pass unedited" still holds, because the case is new. The render-failure paths stay untested ([[Backlog]] → `client`).
 
 - [x] **S8-D2** · Cut Sprint 09's mesh and reference cards · P2 · 🟡 Light · 1-2h: vault-only, **Oct 20**, vault `516b1c7`, closed Oct 20. Seven draft cards (2 🟢, 5 🟠) sit under S8-D2 in the sprint note, for `/sprint-plan` to number and size against capacity. **The root card's fork was settled here, not by the root card.** The card left "where a loaded scene keeps its acquires" to Sprint 09's first reference card, but then the cards after it could not be sized past an open fork. Miguel chose that the scene is a cache entry and its references are that entry's dependencies; keeping the set beside the live `Scene` was rejected ([[Resources - Design]] § *Reference fields*, with a new Decided row and the open question deleted). **The mesh is a placeholder.** Miguel flagged its format as render work, so the payload takes the hard-coded triangle's shape and R1's renderer ADR owns the real one; the component that references it holds only the mesh, so its name cannot decide R1's split between mesh and material. **Found at `/card-start`:** when a startup scene already exists, the editor does not read it (`apps/editor/src/EditorApp.cpp:53-55`), although the design note says it "creates or adopts" one. That became card 6, and the note's sentence is still wrong until that card lands. The Roadmap revision went to [[Backlog]], because R1 is likely several ADRs built on paper research. Completes Story F and unblocks the Oct 24-25 `/sprint-plan`. **Retro:**
 	- **A card that cuts a chain cannot leave the chain's root decision to the first card it cuts.** Under the decide-first trial, that leaves every later card unsized. `/card-start` caught it before any card was written.

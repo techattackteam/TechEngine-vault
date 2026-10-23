@@ -256,6 +256,13 @@ groups are kept, because they show where future work will land.
 
 ## client
 
+- #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
+  purpose, so `ClientApp`'s failure handling has no test. That covers the stop it requests from
+  the render thread, the stop in `mainThreadUpdate()` when `failed()` is set, and the throw in
+  `shutdown()` (`apps/clientapp/src/ClientApp.cpp:16-18`, `:52-54`, `:67-69`, S8-T19, #151).
+  They were untested before the move too. **Trigger:** the next change to how `Client` reports
+  a render failure, or to `ClientApp`'s handling of it.
+
 ## app
 
 - #prio/medium · **Expose project system contribution and pre-session selection**:

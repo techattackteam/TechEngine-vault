@@ -19,6 +19,11 @@ Link the PR or card. Include the relevant error when a run is blocked.
 - **CI:** <observed result, or still pending>
 - **Local verification:** <preset, test result, or exact failure>
 
+## Decisions I took
+
+For a 🤖 Claude card only: one line per decision, with its reason and where it lives (the PR,
+or the design note). Miguel accepts or reverses each one. Omit this section on any other fire.
+
 ## What changed
 
 Describe the useful outcome and link the affected artifact.

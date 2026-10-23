@@ -24,6 +24,7 @@ was Accepted during S5-T14 review and implemented by #81. ADR-018 ownership rema
 | Keep the value mailbox and publish once after an iteration that advances ticks. | Render handoff and pacing below; Sep 8 |
 | Main and simulation hooks have separate thread affinity and staged failure cleanup. | Lifecycle below; ADR-018 §3 |
 | `App::m_scene` is private: a subclass reaches the scene only as the startup load's parameter, so no main-thread hook can name it. | Lifecycle below; S8-T18 (#146) |
+| `RuntimeApp` and `EditorApp` derive from `ClientApp` (`apps/clientapp/`), which owns the client and implements its hooks. It is a static lib under `apps/`, not an engine module, so `app` stays presentation-agnostic and a runtime-server never links it. | ADR-006 §1; S8-T19 (#151) |
 | Simulation executes fixed ticks and a no-delta publication hook; render owns variable presentation work. | ADR-019 §1 §2, Accepted |
 | One EngineContext Clock supplies all lanes; tick state stays per simulation. | ADR-019 §3, Accepted |
 | Render keeps two received snapshots with tick boundary times; mailbox remains single-slot. | ADR-019 §3, Accepted |
@@ -221,7 +222,7 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 
 | Hook | Thread and responsibility |
 |---|---|
-| `init()` | Main; mounts/services and client window/render startup. Only mandatory initialization override. |
+| `init()` | Main; mounts/services and client window/render startup. Only mandatory initialization override. A `ClientApp` ends its `init()` with `startClient()`, which throws if the client does not start; the subclass does not own `init()`, because the editor mounts and indexes before the window opens (S8-T19, #151). |
 | `configureSimulation()` | Main, once, after `init()` and before the simulation thread starts; registers components, events and resource loaders, and adds the selected systems to the schedule; each system names its settings asset here (ADR-024 §4). `App` then builds the streams, freezes the registry and builds the graph. |
 | `mainThreadUpdate()` / `shouldClose()` | Main only; wait for events and read published status. No live simulation references. |
 | `wakeMainThread()` / `renderTiming()` | Any thread; wake a blocked main loop and report copied render timing. Overrides must be thread-safe. |
@@ -230,7 +231,7 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 | Each fixed tick | Simulation; not a hook. Ingress is consumed, then the executor runs the scheduled systems and the barrier. `fixedUpdate` was removed in S6-T9 (#92). |
 | `publishSnapshot(simulation)` | Simulation; fixed context only, once after catch-up for extraction/publication; initial publication before readiness. |
 | `simulationShutdown()` | Simulation; release simulation-owned state, including the app's resource handles. Right after it returns, the simulation thread calls `ResourceCache::shutdown()`, which waits for the in-flight load batches and logs every entry still counted (S8-T11, #142; [[Resources - Design]] § *Loads on the job system, as built*). |
-| `shutdown()` | Main; stop/join rendering and destroy resources after simulation joins. |
+| `shutdown()` | Main; stop/join rendering and destroy resources after simulation joins. `ClientApp`'s override stops the client and throws if the render thread failed; a subclass that adds its own shutdown calls it. |
 
 **Editor play states, decided 2026-10-10 and owned by T1.** The editor's simulation can be
 stopped, playing or paused. Only playing ticks; stopped and paused do not, as in Unity and

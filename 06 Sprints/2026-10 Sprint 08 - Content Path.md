@@ -179,7 +179,7 @@ card 1.
    the live `Scene` and frees the bytes. The scene's handle is released in
    `simulationShutdown()`, so the shutdown log names nothing. A new call, made only by the owner,
    adds a dependency to a Ready entry, with the same cycle check a completion gets. Where the
-   scene's handle lives is settled at `/card-start`; if it is `App.hpp`, D6 is fixed in that PR.
+   scene's handle lives is settled at `/card-start`.
 2. **Reference fields and the reference walk** · P1 · 🟢 Deep · 4-6h · done: a component with
    `visit` can hold `Entity` and `AssetRef<T>` fields (ADR-026 §2). One reference visitor over
    `visit` sees only those two types. `SceneAsset::write` saves an `Entity` as its target's row
@@ -339,6 +339,19 @@ type.
   card in To Do.
   Report-only, closed Oct 20 (vault `618afdd`): [[B3 - Build & Testing Notes]] § *What #143
   saved on CI*.
+- [ ] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h ·
+  done: [[Technical Lead Charter]] § *Who writes the code* holds the three lanes (Miguel's 🟢
+  and 🟠 cards with Claude pairing, 🤖 Auto, and 🤖 Claude features). [[Planning Workflow -
+  Artifact Gate]] § *The 🤖 Claude gate* says what Claude may decide, with the Sprint 09 trial
+  terms. `CLAUDE.md`, `/card-start`, `/sprint-plan`, [[Working with Claude - Operating
+  Guide]], [[Autonomous Lane - Design]] decision 10 and [[Autonomous Lane - Routine Prompt]]
+  agree with it, so the Sprint 09 boundary plans under the new split. **Scope added the same
+  day:** planning splits in two. A new `/sprint-prep` decides and drafts the next sprint in
+  week 2 (Tuesday to Friday) as a standing Design card, fed by a standing 🤖 Auto prep brief,
+  and `/sprint-plan` keeps the retro, the drift check, capacity, IDs, the board, and planting
+  both standing cards. The artifact gate's decide-first trial becomes § *Decide first, then
+  plan*, and the Dashboard's Rhythm records the prep slot. Added Oct 23 at Miguel's request,
+  worked attended. The routine runs the new prompt only once Miguel pastes it.
 
 ### Story I: Week 2 fill
 
@@ -374,7 +387,7 @@ S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
   build is the slow part. The tier work and its evidence moved to [[Backlog]] → *etc:
   cross-cutting* (*Test tiers and parallel ctest*). Recorded as dated amendments to
   [[ADR-008 - v2 build & testing baseline]] and [[ADR-009 - Branching strategy & merge rules]].
-- [ ] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h ·
+- [x] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h ·
   done: `RuntimeApp` and `EditorApp` stop hosting the client the same way twice. One
   client-hosting `App` subclass owns the client and implements
   `publishSnapshot`, `mainThreadUpdate`, `wakeMainThread`, `renderTiming`, `shouldClose` and
@@ -384,7 +397,8 @@ S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
   probes S8-T18 already changed. Where the subclass lives is settled at `/card-start`:
   `engine/app` would link the client into every executable, a future server included. Follows
   S8-T18, because both edit the same files. P3, so it
-  goes back to the [[Backlog]] if Friday has no room.
+  goes back to the [[Backlog]] if Friday has no room. Merged as #151 (`4eb988a2`, Oct 22): the
+  subclass is `ClientApp`, a static lib under `apps/clientapp/`.
 
 ## 🤖 Auto lane
 
