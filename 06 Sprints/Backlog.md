@@ -289,6 +289,19 @@ groups are kept, because they show where future work will land.
   `TE_LOGGER_DEBUG` or keep only the summary line. **Trigger:** the first scene with more than a
   handful of entities, or the first card that draws them.
 
+- #prio/medium · **The vault does not know about `clientapp` yet**: #151 (S8-T19, Oct 22)
+  added `TechEngineClientApp`, a static library under `apps/clientapp/` that both executables
+  link, and the vault still describes the old shape. Found by the freshness check on Oct 23
+  ([[2026-10-23 10-09 Auto Run]]). **Trigger:** S8-T19's `/card-close`, or the Oct 24-25
+  `/sprint-plan` drift check if the card is still open.
+  - [[ADR-006 - v2 core architecture & module layout]] §1's graph has `editor & runtime -->
+    app & client`, and its prose and [[ADR-008 - v2 build & testing baseline]]'s layout call
+    everything under `apps/` a leaf executable. No note records why `clientapp` sits under
+    `apps/` rather than `engine/`; only the comment in `apps/clientapp/CMakeLists.txt:1-3` does.
+  - [[Known Issues]] **D6** still reads as open, but #151 applied its proposed fix:
+    `m_scene` sits between `m_eventRegistry` and `m_schedule` in its own `private:` block
+    (`engine/app/include/TechEngine/app/App.hpp:49-50`).
+
 ## net
 
 - #prio/medium · **Assign NetIds at the Tick barrier**: connect server-authoritative NetId

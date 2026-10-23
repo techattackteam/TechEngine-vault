@@ -6,11 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] http://graphics.cs.cmu.edu/projects/pat/ - **Precomputed Acoustic Transfer** | ACM SIGGRAPH 2006 (Audio)
-- [ ] https://www.microsoft.com/en-us/research/publication/parametric-directional-coding-for-precomputed-sound-propagation/ - **Parametric Directional Coding for Precomputed Sound Propagation (Project Triton)** | ACM SIGGRAPH 2018 (Audio)
-- [ ] https://gamma.cs.unc.edu/PrecompWave/ - **Precomputed Wave Simulation for Real-Time Sound Propagation** | ACM SIGGRAPH 2010 (Audio)
-- [ ] https://gamma.cs.unc.edu/GSOUND/ - **GSound: Interactive Sound Propagation for Games** | AES 2011 (Audio)
-- [ ] https://kunzhou.net/2016/sound-transport.pdf - **Bidirectional Sound Transport: Interactive Sound Propagation with Bidirectional Path Tracing** | ACM SIGGRAPH Asia 2016 (Audio)
 - [ ] https://objf.ai/papers/Obrien-2002-SSF/Obrien-2002-SSF.pdf - **Synthesizing Sounds from Rigid-Body Simulations** | ACM SIGGRAPH / SCA 2002 (Audio)
 - [ ] http://graphics.cs.cmu.edu/projects/shells/ - **Harmonic Shells: A Practical and High-Performance Method for Elastic Sound Synthesis** | ACM SIGGRAPH Asia 2012 (Audio)
 
@@ -57,7 +52,16 @@ kanban-plugin: board
 	Could not resolve: dl.acm.org is unreachable from this session, and searches for the DOI and the title in ACM Computers in Entertainment found no matching paper or authors.
 - [ ] https://www.cs.ubc.ca/~pai/papers/KrySound01.pdf (Audio)
 	Could not resolve: the PDF host is unreachable from this session, and no paper titled *Continuous Contact Simulation for Sound* exists in search; the closest are van den Doel, Kry and Pai's *FoleyAutomatic* (SIGGRAPH 2001) and Kry and Pai's *Continuous Contact Simulation for Smooth Surfaces* (TOG 2003).
-
+- [ ] https://www.graphics.cornell.edu/pubs/2006/JBP06.pdf - **Precomputed Acoustic Transfer: Output-sensitive, Accurate Sound Generation for Geometrically Complex Vibration Sources** | ACM SIGGRAPH 2006 (Audio)
+	Recommend reject: James, Barbič and Pai precompute each rigid object's vibration modes and fit their sound radiation with multipole sources, which synthesizes contact sounds instead of playing recorded clips; C2 is miniaudio playback with no synthesis in scope, and the card's CMU project link was replaced by Cornell's PDF.
+- [ ] https://www.microsoft.com/en-us/research/wp-content/uploads/2018/10/paramd.pdf - **Parametric Directional Coding for Precomputed Sound Propagation** | ACM SIGGRAPH 2018 (Audio)
+	Raghuvanshi and Snyder bake a wave simulation per scene into a ~100 MB parametric encoding that a cheap runtime filter plays back with directional effects (the work behind Project Triton); background for a future C2 propagation step, which would be a bake stage beside ADR-025's pack bake rather than anything the engine needs before then.
+- [ ] https://www.microsoft.com/en-us/research/wp-content/uploads/2016/10/PrecomputedWaveSimSoundPropagation.pdf - **Precomputed Wave Simulation for Real-Time Sound Propagation of Dynamic Sources in Complex Scenes** | ACM SIGGRAPH 2010 (Audio)
+	Recommend reject: Raghuvanshi et al.'s first precomputed wave method stores early reflections per source-listener pair and late reverb per room, and the 2018 directional-coding paper above supersedes it; the card's `PrecompWave` project link is now `PrecompWaveSim`, so it points at the Microsoft Research PDF instead.
+- [ ] https://gamma.cs.unc.edu/GSOUND/gsound_aes41st.pdf - **GSound: Interactive Sound Propagation for Games** | AES 2011 (Audio)
+	Schissler and Manocha find reflection and diffraction paths with cheap CPU ray tracing, with no precomputation, so dynamic scenes work; the most practical of these audio cards for C2, as background for occlusion that could reuse Jolt's ray casts.
+- [ ] https://kunzhou.net/2016/sound-transport.pdf - **Interactive Sound Propagation with Bidirectional Path Tracing** | ACM SIGGRAPH Asia 2016 (Audio)
+	Recommend reject: Cao, Ren, Schissler, Manocha and Zhou bring bidirectional path tracing with multiple importance sampling to acoustics, which is research-grade propagation well beyond C2's miniaudio playback; the card's title was the algorithm's name (Bidirectional Sound Transport), not the paper's.
 
 ## Rendering 👽
 
