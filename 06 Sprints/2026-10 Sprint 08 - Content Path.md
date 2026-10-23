@@ -164,13 +164,13 @@ the cards against it is a separate 🟡 Light step.
   fork, so Miguel chose at `/card-start` that the scene is a cache entry and its references are
   that entry's dependencies ([[Resources - Design]] § *Reference fields*). The cut is below.
   Closed Oct 20 (vault `516b1c7`).
-- [ ] **S8-D4** · Prepare Sprint 09 · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S8-D4** · Prepare Sprint 09 · P1 · 🟠 Moderate · 2-3h ·
   done: `/sprint-prep` updates *Sprint 09's cut* below for the product layer set on Oct 23
   ([[Capability Map]], [[Roadmap]]): it proposes Sprint 09's goal, keeps or retags the seven M6
   drafts (🤖 Claude where they fit), adds the cards for the editor and renderer briefs that E1
   and the renderer ADR need, and gives a rough count by weight. The first run of the split
   planning, added Oct 23; no prep brief card exists for this sprint, so the prep reads the
-  design notes itself.
+  design notes itself. Closed Oct 23 (vault `77cfe54`).
 
 #### Sprint 09's cut
 

@@ -48,7 +48,6 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 - [ ] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h
-- [ ] **S8-D4** · Prepare Sprint 09 · P1 · 🟠 Moderate · 2-3h
 
 
 ## 👀 Review / Demo
@@ -56,6 +55,11 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 08
+
+- [x] **S8-D4** · Prepare Sprint 09 · P1 · 🟠 Moderate · 2-3h: vault-only, **Oct 23**, vault `77cfe54`. The first `/sprint-prep`, run with no prep brief. *Sprint 09's cut* in the sprint note now has 14 drafts: it proposes closing M6 and opening E1, moves the mesh path (cards 4-7) to the first 🤖 Claude feature, and adds the editor and renderer briefs, the editor ADR, and three Auto cards. Completes Story F and unblocks the Oct 24-25 `/sprint-plan`.
+	- **Not in the card: one decision changed cards 1, 3 and 6.** Miguel chose that loading a scene through the cache is one `core` function that every app calls ([[Resources - Design]] § *Reference fields*, with a new Decided row). Because of that, card 6 is glue. To keep the lane off Miguel's files, card 4 no longer registers loaders in the apps, and card 7 waits for card 3.
+	- **Coverage gap:** the editor has no design note, so card 10 writes one after the editor ADR. **Stale citation:** S8-D2's card 6 cited `EditorApp.cpp:54`; since #151 and #152 the `TODO` is at `:45`.
+	- **Retro:** the 🤖 Claude trial depends on two hand steps: S8-P11's PR (#153, open) has to merge, and the new prompt has to be pasted into the routine.
 
 - [x] **S8-T19** · Host the client in one `App` subclass · P3 · 🟠 Moderate · 2-3h: #151 `4eb988a2`, **Oct 22**. Every check on #151 passed. #151 has no body and no review conversation, so this entry comes from the card, the diff and the `/card-start` session. `RuntimeApp` and `EditorApp` now derive from `ClientApp`, which owns the client, implements the six client hooks, and takes the role and the window title ([[Simulation Thread - Design]] § *Lifecycle*). Claude wrote the code at Miguel's request. Completes Story I; it unblocks nothing.
 	- **Where it lives was settled at `/card-start`:** a static lib under `apps/clientapp/`, not an engine module. `app` stays presentation-agnostic, and the five-lib graph of [[ADR-006 - v2 core architecture & module layout]] §1 is unchanged, so no amendment was needed. A future runtime-server simply does not link it. Because it reuses `techengine_module()`, the target is spelled `TechEngineClientapp` and the IDE files it under *engine*.
