@@ -60,7 +60,7 @@ decision in its PR. Headless and proven by `ctest`, per the Sprint 09 trial term
 files: S9-T4 touches neither app's startup, and S9-T7, which edits `RuntimeApp.cpp`, waits for
 S9-T3 to merge.
 
-- [ ] **S9-T4** · The mesh resource type · P1 · 🤖 Claude · 2-3h ·
+- [x] **S9-T4** · The mesh resource type · P1 · 🤖 Claude · 2-3h ·
   done: a `Mesh` payload with its own blob kind and type tag, its loader, and a row in
   `AssetIndex`'s table of asset kinds. A test registers the loader in a cache, writes a mesh and
   loads it back. The payload is a placeholder with the hard-coded triangle's shape, float3

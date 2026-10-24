@@ -13,7 +13,8 @@ the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), an
 #132, 2026-10-12), id generation with the editor's startup scene (S8-T13, #138, 2026-10-15),
 the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #141,
 2026-10-18), its loads on the `JobSystem` (S8-T11, #142, 2026-10-18), and the scene as a cache
-entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24).
+entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), and the mesh resource type
+(S9-T4, #155, 2026-10-24).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -164,8 +165,9 @@ paths. The index is not persisted, and rebuilding it on file changes waits for f
 the project load. Miguel settled these at `/card-start`:
 
 - **An asset kind is a magic paired with a type tag.** The index reads the first 16 bytes (the
-  header and the id) and looks the magic up in a table in `AssetIndex.cpp`. Scene is its only
-  row, with `SCENE_TYPE_TAG` (`"TechEngine.Scene"`) beside `SCENE_KIND` in `SceneAsset.hpp`. A
+  header and the id) and looks the magic up in a table in `AssetIndex.cpp`. Scene was its first
+  row, with `SCENE_TYPE_TAG` (`"TechEngine.Scene"`) beside `SCENE_KIND` in `SceneAsset.hpp`; the
+  mesh is the second (S9-T4). A
   record holds the id, the type tag, the side and the virtual path, which is the "name" the
   pack's names block also stores.
 - **Anything else is skipped with a warning**: a directory (silently), a file under 16 bytes,
@@ -406,6 +408,15 @@ acquires are the rest of Sprint 09's Story A.
   a GPU copy keyed by handle, which are R1's. Its payload is a placeholder with the triangle's
   shape: R1's renderer ADR owns the mesh format and replaces it, which costs only a blob version
   bump, because the editor regenerates the mesh on every run.
+- **The mesh as built** (S9-T4, #155, 2026-10-24): `Mesh` in
+  `engine/core/include/TechEngine/core/mesh/Mesh.hpp`, a folder of its own because `resources/`
+  holds the cache and the packs, not the types they load. One struct is both the asset and the
+  cache payload, shaped like `SceneAsset`: an id, `std::vector<Vec3>` positions and `u32`
+  indices, with `write` and `read`. `MESH_KIND` is magic "TEMS", version 1, and `MESH_TYPE_TAG`
+  is `"TechEngine.Mesh"`; a mesh file is `.temesh`. `read` returns `Malformed` for an index past
+  the last position, an index count that is not whole triangles, or bytes after the indices, and
+  assigns the mesh only on success. `loadMesh` names no dependencies. Nothing registers it until
+  S9-T6 and S9-T7.
 
 ### Pack layout and the boot record
 

@@ -59,11 +59,12 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T4** · The mesh resource type · P1 · 🤖 Claude · 2-3h: PR #155, branch `S9-T4/mesh-resource`, opened Oct 24 by the lane. `Mesh` in a new `core/mesh/` folder, its loader and the index row; Linux build and `ctest` green. Miguel reviews and merges, and accepts or reverses the seven decisions listed in the PR body.
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T4** · The mesh resource type · P1 · 🤖 Claude · 2-3h: #155 `ca141d2`, **Oct 24**. The lane's first 🤖 Claude card. `Mesh` in `core/mesh/` with its blob kind, type tag and loader, and the second row of `AssetIndex`'s table of asset kinds ([[Resources - Design]] § *Reference fields*, *The mesh*). #155 has no review conversation, so this entry comes from the card, the PR body and the diff. Miguel merged its seven *Decisions I took* unchanged, so nothing was reversed. Unblocks S9-T5 with S9-T2.
+	- **Retro:** the fire that built it ran on a Saturday, outside the weekday cron, so the card started two days before the sprint note's Mon Oct 26.
 - [x] **S9-T1** · The scene loads as a cache entry · P1 · 🟢 Deep · 4-6h: #154 `5786fd47`, **Oct 24**. #154 has no body and no review conversation, so this entry comes from the card, the diff and the session. The runtime's startup load now goes through the cache, as `SceneAsset::load` ([[Resources - Design]] § *Reference fields*). Miguel wrote the logic against Claude's scaffold. Unblocks S9-T3 (with S9-T2) and S9-T8; Story A stays open.
 	- **"Frees the bytes" had no mechanism.** `resolve` returns a const payload, so a second owner call was needed beside the one the card named: `takePayload` moves the bytes out and leaves an empty payload. `/card-start` also settled the name (a `SceneAsset` member), the handle's home (`App::m_sceneHandle`, released by the base `simulationShutdown()`), and that a failed `addDependency` leaves its holder Ready.
 	- **Review changed the design:** a second load of A, with A released but not yet drained, revived the entry with no bytes and failed as `Truncated`. `load` now drains frees first. A scene that is still held is refused with a warning and the new `ReadError::AlreadyLoaded` (Miguel's call), and `out` is written only on success.
