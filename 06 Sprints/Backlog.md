@@ -53,7 +53,9 @@ groups are kept, because they show where future work will land.
     `LogCaptureGuard` (`engine/base/tests/diagnostics/AssertTests.cpp:68-83`) and
     `GraphLogCaptureGuard` (`engine/core/tests/systems/TaskGraphTests.cpp:140-160`), and since
     S8-T10 `CacheLogCaptureGuard` (`engine/core/tests/resources/ResourceCacheTests.cpp:170-194`,
-    added by the core sweep on Oct 20). Use one
+    added by the core sweep on Oct 20). S9-T1 added two more: `RuntimeLogCaptureGuard`
+    (`apps/runtime/tests/RuntimeAppTests.cpp:440`) and `SceneLoadLogCaptureGuard`
+    (`engine/core/tests/scene/SceneAssetTests.cpp:538`), each with its own id-matching helper. Use one
     guard in `te_test_support`. About 30 lines. It needs a new header, and which record fields
     the shared guard copies is a choice.
 

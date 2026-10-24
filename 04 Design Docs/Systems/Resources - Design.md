@@ -12,7 +12,8 @@ the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), an
 `AssetIndex` and loose source (S8-T6, #131, 2026-10-12), the client export target (S8-T7,
 #132, 2026-10-12), id generation with the editor's startup scene (S8-T13, #138, 2026-10-15),
 the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #141,
-2026-10-18), and its loads on the `JobSystem` (S8-T11, #142, 2026-10-18).
+2026-10-18), its loads on the `JobSystem` (S8-T11, #142, 2026-10-18), and the scene as a cache
+entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -75,6 +76,9 @@ built or run.
 | The mesh is the second resource type. Before T4 the editor writes one in code, and until R1 it is loaded, not drawn. | Miguel, Oct 18; § *Reference fields* |
 | A loaded scene is a cache entry, and its references are that entry's dependencies, so releasing the scene releases them. | ADR-024 §3 §8, Miguel, Oct 20; § *Reference fields* |
 | Loading a scene through the cache is one `core` function, which every app's startup load calls with its own source. | Miguel, Oct 23; § *Reference fields* |
+| That function is `SceneAsset::load`. The app holds the scene's handle in `App::m_sceneHandle` and releases it in the base `simulationShutdown()`. | Miguel, Oct 24; § *Reference fields* |
+| A scene is loaded at most once while it is held: a second load warns and returns `ReadError::AlreadyLoaded`. A released scene is drained before it loads again. | Miguel, Oct 24; § *Reference fields* |
+| A dependency the owner adds to a Ready entry that fails returns its error and leaves the holder Ready; a completion's failed dependency still fails its holder. | Miguel, Oct 24; § *The cache as built* |
 
 ### Decided: packs and the runtime layout
 
@@ -221,8 +225,8 @@ generator of its own: ids are created only in the editor, by `AssetIndex::genera
 ### The cache as built
 
 **As built** (S8-T10, #141, 2026-10-18), in `engine/core/{include/TechEngine/core,src}/resources/`.
-`App` owns it and closes loader registration right after `configureSimulation()`. No product
-code requests a resource yet, so the tests are its only caller. Miguel settled these at
+`App` owns it and closes loader registration right after `configureSimulation()`. Its first
+product caller is the runtime's startup load, since S9-T1. Miguel settled these at
 `/card-start`:
 
 - **One cache holds every type**, behind a `StringId` type tag, rather than a `ResourceCache<T>`
@@ -249,6 +253,16 @@ code requests a resource yet, so the tests are its only caller. Miguel settled t
 - **A null dependency id is a `TE_CHECK`**, not a skipped reference. An empty authored field is
   valid content (ADR-026 §2), but the reference walk skips it before any id reaches a loader's
   list, so the check stands.
+
+S9-T1 (#154, 2026-10-24) added two owner-only calls, settled at its `/card-start`:
+
+- **`addDependency(holder, id)` adds a dependency to a Ready entry.** It shares one private
+  helper with the completion path, so it gets the same unknown-id and cycle checks. On failure
+  it returns the error, holds no acquire and leaves the holder Ready; only a completion marks its
+  holder Failed. A holder that is not Ready is a `TE_CHECK`.
+- **`takePayload(handle, out)` moves a Ready payload out** and leaves a default one in its place;
+  it returns `false` for any entry that is not Ready. It exists because `resolve` returns a const
+  payload, and the scene load must free its bytes while the entry stays held.
 
 ### Loads on the job system, as built
 
@@ -349,7 +363,8 @@ following ADR-024 §10's vocabulary.
 ### Reference fields
 
 Decided on Oct 18 at S8-D1 ([[ADR-026 - Reference fields and scene-held acquires]], Accepted Oct 19).
-Not built: Sprint 09's cards build it.
+Partly built: the scene as a cache entry landed with S9-T1; the fields, the walk and the
+acquires are the rest of Sprint 09's Story A.
 
 | Job | What the reference walk does |
 |---|---|
@@ -374,8 +389,14 @@ Not built: Sprint 09's cards build it.
   filling the handles, are one function in `core`, because the cache, the scene asset and the
   live `Scene` all live there. The runtime calls it with its `PackSource` as the cache's source,
   the editor with its `LooseSource`, and a dedicated server will call it too, so it cannot live
-  in `ClientApp`. Copying the steps into each app was rejected: the copies would drift. Its name
-  and header are Sprint 09's first reference card's to settle.
+  in `ClientApp`. Copying the steps into each app was rejected: the copies would drift.
+- **As built** (S9-T1, #154, 2026-10-24): `SceneAsset::load(cache, scene, out)` in
+  `SceneAsset.hpp`. The payload is `SceneBytes`, a struct only so the scene has its own type tag;
+  `SceneAsset::write` still writes a byte vector. `load` drains frees, requests, refuses a scene
+  that is still held, runs a loading phase, takes the bytes out with `takePayload` and reads them
+  into the `Scene`, so they die with the call. On any failure it releases its acquire and leaves
+  `out` untouched. An id absent for the role fails as `Malformed`. The walk and the reference
+  phase are S9-T3's.
 - **The editor.** An inspector edit runs as a loading phase: it acquires the new asset and fills
   the field. The asset it replaced stays held until the scene reloads (T1).
 - **The mesh.** It is Sprint 09's second resource type, because the hard-coded triangle in
@@ -503,21 +524,24 @@ a folder. Until the export command decides that layout, the runtime reads the fi
 ### The runtime's startup load
 
 Built at S8-T9 (#139, 2026-10-15) as `RuntimeApp::simulationStartupLoad()` in
-`apps/runtime/src/RuntimeApp.cpp`. It reads the scene directly, without a cache, because no
-cache existed yet. S8-T10 has since built one (§ *The cache as built*), and routing this path
-through it is a [[Backlog]] entry with no card. Miguel settled these at `/card-start`:
+`apps/runtime/src/RuntimeApp.cpp`. Since S9-T1 (#154, 2026-10-24) it loads the scene through
+the cache: `RuntimeApp` holds its `PackSource` as a member, sets it as the cache's source,
+registers the scene loader in `configureSimulation()`, and calls `SceneAsset::load` into
+`m_sceneHandle` (§ *Reference fields*). Miguel settled these at S8-T9's `/card-start`:
 
 - **`RuntimeApp` takes a folder and mounts `<folder>/assets` in `init()`**, through a protected
   `mountAssets()` that the headless tests call, since `init()` also opens the window. `main`
   passes `<exe dir>/Dev`, the dev project's first export, and ignores `Dev(1)` and later. This
   is a development stopgap against ADR-025 §7, which still says `<exe dir>/assets`.
 - **The order:** open `assets://common.tepack`, read its boot record, `PackSource::open` the
-  client's packs at `assets://`, then `find` and `read` the startup scene into the live scene.
+  client's packs at `assets://`, then `find` and load the startup scene into the live scene.
 - **A missing or broken file returns its own error unchanged** (`FileError::NotFound`,
   `ReadError::Truncated`). **A missing startup scene is `ReadError::Malformed`**: a
   `common.tepack` with no boot record, a null startup-scene id, or an id the client's packs do not
   hold. No error enum outside the editor means "not here", and these are all export errors.
-- **`find` must say `Present` before `read`**, because `PackSource::read` asserts on any other id.
+- **The runtime keeps its own `find` before the load**, so an id the client's packs do not hold
+  stays `Malformed`. Through the cache alone, an unknown id would come back as
+  `UnknownResource`.
 - After a successful load, the runtime logs the scene's tree with each entity's local position,
   because nothing draws entities yet.
 

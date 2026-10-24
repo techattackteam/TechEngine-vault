@@ -28,7 +28,7 @@ Drafted by S8-D4's `/sprint-prep` on Oct 23 ([[2026-10 Sprint 08 - Content Path]
 
 ### Story A: M6's scene and its references (Miguel)
 
-- [ ] **S9-T1** · The scene loads as a cache entry · P1 · 🟢 Deep · 4-6h ·
+- [x] **S9-T1** · The scene loads as a cache entry · P1 · 🟢 Deep · 4-6h ·
   done: a loader under `SCENE_KIND` keeps the scene's bytes as its payload and names no
   dependencies. One `core` function requests a scene through a cache, streams the payload into
   the live `Scene`, frees the bytes and returns the scene's handle ([[Resources - Design]] §

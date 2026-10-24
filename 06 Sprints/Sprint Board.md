@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: M6's scene and its references
 
-- [ ] **S9-T1** · The scene loads as a cache entry · P1 · 🟢 Deep · 4-6h: a `SCENE_KIND` loader keeps the bytes; one `core` function requests, streams, frees and returns the handle; the runtime's startup load calls it with its `PackSource`; the owner can add a dependency to a Ready entry. Name, header and handle home settled at `/card-start`.
 - [ ] **S9-T2** · Reference fields and the reference walk · P1 · 🟢 Deep · 4-6h: `Entity` and `AssetRef<T>` fields, one reference visitor over `visit`, rows and ids saved, a second read pass; a round-trip test.
 - [ ] **S9-T3** · The loaded scene acquires its references · P1 · 🟠 Moderate · 2-3h: one acquire per distinct id as dependencies of the scene entry, handles filled, none left after release, a failed reference fails the load. Follows S9-T1 and S9-T2.
 
@@ -64,6 +63,13 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 09
+
+- [x] **S9-T1** · The scene loads as a cache entry · P1 · 🟢 Deep · 4-6h: #154 `5786fd47`, **Oct 24**. #154 has no body and no review conversation, so this entry comes from the card, the diff and the session. The runtime's startup load now goes through the cache, as `SceneAsset::load` ([[Resources - Design]] § *Reference fields*). Miguel wrote the logic against Claude's scaffold. Unblocks S9-T3 (with S9-T2) and S9-T8; Story A stays open.
+	- **"Frees the bytes" had no mechanism.** `resolve` returns a const payload, so a second owner call was needed beside the one the card named: `takePayload` moves the bytes out and leaves an empty payload. `/card-start` also settled the name (a `SceneAsset` member), the handle's home (`App::m_sceneHandle`, released by the base `simulationShutdown()`), and that a failed `addDependency` leaves its holder Ready.
+	- **Review changed the design:** a second load of A, with A released but not yet drained, revived the entry with no bytes and failed as `Truncated`. `load` now drains frees first. A scene that is still held is refused with a warning and the new `ReadError::AlreadyLoaded` (Miguel's call), and `out` is written only on success.
+	- **Written, then deleted:** `SceneAsset::write` briefly took `SceneBytes`; it went back to a byte vector, because `SceneBytes` exists only as the cache's type key.
+	- **Retro:** the first CI attempt's two slowest legs were cancelled by hand because their live log page was blank, but their logs show them working: linux-clang Debug had passed 700 of 700, and win ASan was at 628 with none failed. The re-run cost those minutes again, win ASan at twice the rate. A blank log under the 20-minute job timeout is not a hang.
+
 
 
 

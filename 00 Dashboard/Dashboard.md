@@ -10,7 +10,7 @@
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
 | **Sprint** | [[2026-10 Sprint 09 - Close M6]] *(Oct 24 - Nov 6)*, planned Oct 24. Sprint 08 closed all 36 cards ([[2026-10-24 Sprint 08 Retrospective]]). |
 | **Sprint goal** | The startup scene and the mesh it references load through the resource cache, in the runtime from packs and in the editor from loose files, which closes M6. E1 makes its first decisions beside it: the editor brief and the editor ADR. |
-| **Current focus** | Day 1 of Sprint 09. Miguel opens with S9-T1 and S9-T2 (Story A) and S9-D1, the editor brief; the lane's first 🤖 Claude card, S9-T4, starts on Mon Oct 26. Story B's later cards wait on Story A. Hub: [[Resources - Design]]. |
+| **Current focus** | S9-T1 merged on Oct 24, so the runtime's startup scene now loads as a cache entry. Next in Story A are S9-T2, the reference fields, and then S9-T3, which needs both; S9-D1, the editor brief, runs beside them. The lane's first 🤖 Claude card, S9-T4, starts on Mon Oct 26, and S9-T8 is now unblocked. Hub: [[Resources - Design]]. |
 | **Top blocker** | None. The routine runs the Oct 23 prompt on `7 9,14 * * 1-5` ([[Autonomous Lane - Routine Prompt]]). |
 | **Next milestone** | M6 content closes in Sprint 09 with Miguel's windowed run; then **E1 · Editor and export**, the first showcase ([[Roadmap]]). Phase 1 opens when M6 closes, so `/product-review` runs first at the Sprint 09 boundary (Nov 7-8). |
 | **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one monthly showcase at a time (E1 to E13, [[Capability Map]]); Phase 2 builds the reference game, TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23. |
