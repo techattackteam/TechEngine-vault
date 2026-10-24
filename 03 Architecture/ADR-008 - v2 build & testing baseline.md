@@ -71,6 +71,10 @@
   per code PR, re-measured*). **Reversal trigger:** the repository goes private. Then the
   `master` run becomes a build-only warm job, or moves to a nightly schedule. The cost
   argument and the measurements are in B3 § *Four legs start every PR cold*. S8-D3.
+- **Amended 2026-10-24, vocabulary:** §1's tree comment "`/apps/` leaf exes" reads "leaf exes,
+  plus `clientapp/`, the static lib both client executables link". It is built with
+  `techengine_module()`, so its target is `TechEngineClientapp`. S8-T19 (#151);
+  [[ADR-006 - v2 core architecture & module layout]]'s Oct 24 entry.
 
 ## Context
 

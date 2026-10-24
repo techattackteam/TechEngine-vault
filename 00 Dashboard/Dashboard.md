@@ -8,13 +8,13 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
-| **Sprint** | [[2026-10 Sprint 08 - Content Path]] *(Oct 10-23)*, planned Oct 11. Sprint 07 closed Oct 9 and closed M5 ([[2026-10-11 Sprint 07 Retrospective]]). |
-| **Sprint goal** | The editor exports a project into `.tepack` files, and the runtime loads the exported startup scene from the packs beside its executable before its first Tick. |
-| **Current focus** | Sprint 08 is complete: S8-P11 closed last (#153), bringing the new split of who writes the code, the two-part planning and the product owner commands. Next: `/sprint-plan` on Oct 24-25 fits S8-D4's Sprint 09 cut, which closes M6, opens E1 with the editor brief and ADR, and runs the mesh path as the first 🤖 Claude feature. Hub: [[Resources - Design]]. |
-| **Top blocker** | The 🤖 lane runs the old prompt. Before Mon Oct 26 09:07, Miguel re-points the routine's cron to `7 9,14 * * 1-5` for the clock change and pastes the new prompt, which #153 made safe to paste ([[Autonomous Lane - Routine Prompt]]). |
-| **Next milestone** | M6 content closes in Sprint 09; then **E1 · Editor and export**, the first showcase ([[Roadmap]]). |
+| **Sprint** | [[2026-10 Sprint 09 - Close M6]] *(Oct 24 - Nov 6)*, planned Oct 24. Sprint 08 closed all 36 cards ([[2026-10-24 Sprint 08 Retrospective]]). |
+| **Sprint goal** | The startup scene and the mesh it references load through the resource cache, in the runtime from packs and in the editor from loose files, which closes M6. E1 makes its first decisions beside it: the editor brief and the editor ADR. |
+| **Current focus** | Day 1 of Sprint 09. Miguel opens with S9-T1 and S9-T2 (Story A) and S9-D1, the editor brief; the lane's first 🤖 Claude card, S9-T4, starts on Mon Oct 26. Story B's later cards wait on Story A. Hub: [[Resources - Design]]. |
+| **Top blocker** | None. The routine runs the Oct 23 prompt on `7 9,14 * * 1-5` ([[Autonomous Lane - Routine Prompt]]). |
+| **Next milestone** | M6 content closes in Sprint 09 with Miguel's windowed run; then **E1 · Editor and export**, the first showcase ([[Roadmap]]). Phase 1 opens when M6 closes, so `/product-review` runs first at the Sprint 09 boundary (Nov 7-8). |
 | **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one monthly showcase at a time (E1 to E13, [[Capability Map]]); Phase 2 builds the reference game, TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23. |
-| **Reconciled against** | engine `39943f19` (2026-10-18) |
+| **Reconciled against** | engine `19f57f6` (2026-10-24) |
 
 **Reading that stamp** ([[ADR-012 - Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -22,19 +22,22 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline 39943f19..origin/master
+git log --oneline 19f57f6..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (`CLAUDE.md` § *How to work here*, rule 2). Distance is a signal, not
 proof: it cannot tell you *which* note drifted, only that nobody has looked.
 
-**Latest check: Oct 18, 2026**, against fetched `origin/master` at `39943f19`, covering the 17
-engine commits since `82d7a11c`. It was a spot-check of the systems the week touched, not a full
-reconciliation: [[Resources - Design]]'s as-built sections were read against the code, and the
-claims the week added to four other notes were spot-checked. Two rows in
-[[Simulation Thread - Design]] were fixed, and ADR-024 §1's `IResourceCache<T>` row was amended
-to the single `ResourceCache`. Details in [[2026-10-18 Weekly Review]] § *Artifact drift*.
+**Latest check: Oct 24, 2026**, against fetched `origin/master` at `19f57f6`, covering the 10
+engine commits since `39943f19`. It checked the systems those commits touched, not every note:
+[[Resources - Design]] § *The runtime's startup load* and [[Simulation Thread - Design]]'s
+S8-T18 and S8-T19 rows match the code, and no note cites the five symbols the sweeps deleted.
+Fixed: ADR-024 §8 was amended to say a scene is a cache entry whose parsed copy is never cached,
+with its hub row reworded; ADR-006 and ADR-008 gained `clientapp`; and
+[[Task Graph - Execution Flow]] (the removed demo), [[Window - Design]] (who owns `Client`) and
+one line citation in [[Project - Design]] were corrected. Details in
+[[2026-10-24 Sprint 08 Retrospective]].
 
 **Latest full reconciliation: Oct 10, 2026**, against fetched `origin/master` at `82d7a11c`,
 covering the 63 engine commits since `01ed7a30`. Every Systems design note was read against
@@ -77,10 +80,10 @@ first, then plan*). `/sprint-prep` runs as a standing Design card in **week 2, T
 Friday**, and drafts the next sprint; a 🤖 Auto prep brief feeds it from the Monday. The
 boundary's `/sprint-plan` then only runs the retro and fits the draft.
 
-→ **Next ceremony:** `/sprint-plan` for the Sprint 08 boundary on **Oct 24-25**, after S8-D2
-has cut Sprint 09's cards; its retro records the verdict on the decide-first trial. If
-that weekend is lost, it falls back to Mon Oct 26 or Thu Oct 29. Sprint 08's mid-sprint review is
-[[2026-10-18 Weekly Review]].
+→ **Next ceremony:** `/weekly-review` for Sprint 09's mid-sprint on **Oct 31 - Nov 1**; if that
+weekend is lost, it falls back to Mon Nov 2 or Thu Nov 5. Then S9-D5 runs `/sprint-prep` between
+Tue Nov 3 and Fri Nov 6, and `/sprint-plan` for the Sprint 09 boundary runs on **Nov 7-8**, after
+`/product-review` if M6 has closed, because closing it opens Phase 1.
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
 
@@ -147,7 +150,7 @@ Build order from here: the [[Roadmap]] ladder: **chain M0-M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005-008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop, [[2026-08 Sprint 02 - Base Foundation]] | ✅ goal met (Jul 30); sprint closed Aug 2 |
-| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9); 🔨 **M6** in Sprint 08: decided Oct 10, vertical slice first |
+| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9); 🔨 **M6**: the vertical slice shipped in Sprint 08, and Sprint 09 closes it |
 
 _Tasks → [[Sprint Board]]._
 
@@ -201,7 +204,7 @@ Recently locked. Full set in [[ADR Index]]:
   to Claude and the Codex files were removed. The routine has run
   twice each weekday since Sep 27 (it was paused Sep 4-26); Sprint 07 gave it eight cards and
   it opened twelve PRs, all merged. Reports land one note per fire in
-  `07 Journal/autoruns/<date>/`. Its cron needs re-pointing for the Oct 25 clock change.
+  `07 Journal/autoruns/<date>/`. Its cron was re-pointed for the Oct 25 clock change on Oct 23, and Sprint 08 gave it thirteen cards and ten PRs, all merged.
 - [ ] renderer · netcode transport · scripting SDK · game UI → owed ADRs, each gating a rung ([[Roadmap]])
 - [x] **How long is a sprint?** **2 weeks, decided 2026-08-20**, § *Rhythm*. Two sprints in
   a row closed with the calendar still running, and the unplanned tail is where momentum died.
@@ -211,17 +214,17 @@ Recently locked. Full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (2026-10-18)
+## Health check (2026-10-24)
 
-- **Delivery:** Sprint 08 met its goal on Oct 15 (day 6) and closed its P2 stretch on Oct 18.
-  Every Dev card is done; Story F (S8-D1, S8-D2) and two Auto cards (S8-P7, S8-P8) are left.
-  [[Sprint Board]] holds the live plan.
+- **Delivery:** Sprint 08 closed all 36 cards; its goal was met on day 6. Sprint 09 commits
+  about six 🟢 slots of about ten, with E1's first panels as the stretch. [[Sprint Board]] holds
+  the live plan.
 - **Evidence:** Miguel's windowed run on Oct 15 loaded the exported startup scene in
-  `runtime.exe` (S8-T9's entry on the board). The cache is proven by tests only, because no
-  product code requests a resource yet.
-- **Sustainability:** no rest day for two weekends (rib injury, no karting). Keep Fri Oct 23
-  light and one day of the Oct 24-25 weekend off. Claude wrote much of this sprint's engine
-  logic at Miguel's request; the retro decides whether that split stays.
-- **Artifact health:** reconciled against `39943f19` on Oct 18 as a spot-check of the touched
-  systems ([[2026-10-18 Weekly Review]] § *Artifact drift*). ADR-024 §1 was amended the same
-  day to the single `ResourceCache` that S8-T10 built.
+  `runtime.exe`. The cache is still proven by tests only; S9-T1 is the first product code that
+  loads through it.
+- **Sustainability:** week 2 of Sprint 08 was hard after a car crash, and Oct 24-25 is the third
+  weekend in a row with no rest day, by Miguel's choice. The Oct 31 - Nov 1 weekend keeps one rest
+  day. Since Oct 23, Miguel writes his own 🟢 and 🟠 cards, so Sprint 09's cards may close slower
+  than Sprint 08's.
+- **Artifact health:** reconciled against `19f57f6` on Oct 24, a check of the systems the final
+  week touched ([[2026-10-24 Sprint 08 Retrospective]]). The last full reconciliation was Oct 10.

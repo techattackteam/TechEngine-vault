@@ -59,15 +59,6 @@ groups are kept, because they show where future work will land.
 
 ## platform
 
-- #prio/low · **Log the OS detail where `FileAccess` maps a filesystem error**: `CONVENTIONS.md`
-  § *Error handling* says the mapping site logs it, but every `ec` in `FileAccess.cpp` and
-  `MountTable.cpp` collapses to `FileError::IoError` or `NotFound` with nothing logged.
-  **Trigger:** the first `IoError` that someone has to diagnose.
-  **Fired Oct 11:** S8-T1's first `readRange` (#126) failed all eight success cases with
-  `IoError`, and the cause (the function called itself until Windows ran out of handles) was
-  found by reading the code, because nothing logged the OS error. Re-checked against
-  `39943f19`: `FileAccess.cpp` and `MountTable.cpp` still log nothing where they map an error.
-
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
   [[ADR-014 - Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
@@ -115,16 +106,11 @@ groups are kept, because they show where future work will land.
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
   **Fired Oct 11:** S8-T1 (#126) added `FileAccess::readRange`. The three calls are still
-  `const`, and the note's *Open questions* still records the options.
+  `const`, and the note's *Open questions* still records the options. **Re-armed Oct 24:** not
+  picked for Sprint 09, which edits no `FileAccess` signature; the trigger is now the SDK
+  boundary (A1) or the next signature change.
 
 ## core
-
-- #prio/medium · **Route the runtime's startup scene load through the resource cache**:
-  `RuntimeApp::simulationStartupLoad()` reads its scene straight from the pack source, written
-  before a cache existed (S8-T9). S8-T10 built one and nothing uses it, so the runtime still
-  holds no entry, no count and no handle for the scene it loaded
-  ([[Resources - Design]] § *The runtime's startup load*). **Trigger:** the first resource a
-  scene hard-references, or T1's scene change.
 
 - #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
   `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
@@ -213,7 +199,9 @@ groups are kept, because they show where future work will land.
   Sep 27. **Trigger:** the next change to `ComponentRegistry`'s registration call.
   **Fired Oct 11:** S8-T3 (#127) changed `registerComponent`'s body to fill the serialization
   adapters, and it still takes the tag as an argument
-  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:45`).
+  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:45`). **Re-armed Oct 24:**
+  not picked for Sprint 09; the trigger is now the next change to `registerComponent`'s
+  signature.
 
 - #prio/low · **Intra-system chunking for heavy systems**: parallelize a system's entity
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
@@ -282,32 +270,11 @@ groups are kept, because they show where future work will land.
   state) is load-bearing and likely needs an ADR. Found at the ownership review, Sep 27.
   **Trigger:** the project-contribution entry above, or the first editor Play and Stop.
 
-- #prio/low · **No test proves the cache shuts down after the app's own shutdown**: S8-T11
-  (#142) made `SimulationThread` call `ResourceCache::shutdown()` right after
-  `app.simulationShutdown()`, so the app's releases land before the cache logs what is still
-  counted. `ResourceCacheTests` prove the cache's wait and log, but no `AppTests` case drives
-  the real thread through that order ([[Resources - Design]] § *Loads on the job system, as
-  built*). **Trigger:** the first product code that requests a resource, or any change to the
-  simulation thread's shutdown path.
-
 - #prio/low · **The runtime logs every loaded entity at `INFO`**: after the startup load,
   `RuntimeApp::logSceneTree` writes one `INFO` line per entity (S8-T9, #139). That is useful
   while nothing draws entities, but a real scene would flood the log. Drop the lines to
   `TE_LOGGER_DEBUG` or keep only the summary line. **Trigger:** the first scene with more than a
   handful of entities, or the first card that draws them.
-
-- #prio/medium · **The vault does not know about `clientapp` yet**: #151 (S8-T19, Oct 22)
-  added `TechEngineClientApp`, a static library under `apps/clientapp/` that both executables
-  link, and the vault still describes the old shape. Found by the freshness check on Oct 23
-  ([[2026-10-23 10-09 Auto Run]]). **Trigger:** S8-T19's `/card-close`, or the Oct 24-25
-  `/sprint-plan` drift check if the card is still open.
-  - [[ADR-006 - v2 core architecture & module layout]] §1's graph has `editor & runtime -->
-    app & client`, and its prose and [[ADR-008 - v2 build & testing baseline]]'s layout call
-    everything under `apps/` a leaf executable. No note records why `clientapp` sits under
-    `apps/` rather than `engine/`; only the comment in `apps/clientapp/CMakeLists.txt:1-3` does.
-  - [[Known Issues]] **D6** still reads as open, but #151 applied its proposed fix:
-    `m_scene` sits between `m_eventRegistry` and `m_schedule` in its own `private:` block
-    (`engine/app/include/TechEngine/app/App.hpp:49-50`).
 
 ## net
 
@@ -329,12 +296,6 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
-- #prio/medium · **One shared call to create a scene asset**: `EditorApp::writeStartupScene`
-  checks the path, generates the id, writes the file and adds the index record, which is what a
-  content browser's *New Scene* also needs. An `AssetIndex::createScene(files, scene, side, name,
-  out)` returning `FileError::AlreadyExists` for a taken path was proposed at S8-T13 on Oct 15 and
-  deferred by Miguel; the code carries a `TODO` on `writeStartupScene`. **Trigger:** the next asset
-  kind's writer (Sprint 09's mesh), or the content browser.
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
@@ -351,11 +312,6 @@ groups are kept, because they show where future work will land.
   `.github/workflows/ci.yml:79` say `te_sdk_smoke`, while the target is `TechEngineSDKSmoke`
   (ctest `sdk-smoke`). The Markdown copies were fixed in #153. Found at S8-P11's close, Oct 23.
   **Trigger:** the next card that edits either file.
-- #prio/high · **Revise the [[Roadmap]]**: Miguel finds it hard to follow when he comes back to
-  it (Oct 20, at S8-D2). The revision should also reshape R1: it is likely several ADRs (meshes,
-  materials, the PBR pipeline), and they start from paper research, while the Roadmap names one
-  renderer ADR. Sprint 09's mesh is a placeholder that R1 replaces ([[Resources - Design]] §
-  *Reference fields*). **Trigger:** the Sprint 08 boundary `/sprint-plan` (Oct 24-25).
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the
   file's path, which is not a required context, and #95 also touched code, so `ci.yml`
@@ -371,13 +327,6 @@ groups are kept, because they show where future work will land.
   or the first time a level-3 build breaks again.
   **Near miss Oct 6:** #117 added `InputLogSystem::onRecovered`, whose parameter only an Info
   log reads. It got `[[maybe_unused]]` by hand before the commit; nothing would have caught it.
-- #prio/medium · **Does the lane's sandbox let it edit the Sprint Board?**: on Oct 19 the
-  14:15 fire's edit to S8-P8's board line was refused as instruction poisoning, together with
-  its edit to its own prompt ([[2026-10-19 14-15 Auto Run]]). Only that one board edit was
-  tried. If every board edit is refused, step 9 never runs, every fire re-picks its card, and
-  S8-P9's closes cannot land. The fallback would be a close written into the run report for
-  Miguel to apply. Found at S8-P8's close on Oct 19, 2026. **Trigger:** the first fire after
-  the new prompt is pasted that moves or closes a card.
 - #prio/low · **`static` helpers that now belong to a class**: the Sep 29 rule
   (`CONVENTIONS.md` § *Internal linkage*, history in [[B4 - Code Conventions]]) makes a helper
   that serves a class's member functions a private member. About 22 older `static` helpers
@@ -396,7 +345,9 @@ groups are kept, because they show where future work will land.
   **Fired Oct 18:** the weekly review's drift check ran it against `39943f19` with
   `--exclude` for `07 Journal`, `05 Research`, `09 References` and [[v1 Code Audit]]. It reported
   67 of 237 citations, and every one was a v1 path or a card's historical `done:` clause, so
-  those four excludes are not enough to make it a gate yet.
+  those four excludes are not enough to make it a gate yet. **Re-armed Oct 24:** not picked for
+  Sprint 09; the trigger is now an exclude for historical card text, or the next full
+  reconciliation.
 - #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly**: report-once is per call site through a function-local static (ADR-011 §5), and
   `catch_discover_tests` hides that by giving every Catch2 case its own process. Two
@@ -447,7 +398,9 @@ groups are kept, because they show where future work will land.
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
   crosses one of the existing patterns.
   **Fired Oct 18:** S8-T10 (#141) added a third `check` to `ci.yml`, for
-  `internal::g_(componentTypeSlot|resourceTypeTag)` under `engine/core/include/`.
+  `internal::g_(componentTypeSlot|resourceTypeTag)` under `engine/core/include/`. **Re-armed
+  Oct 24:** not picked for Sprint 09; the trigger is now a fourth gate, or the next rename that
+  crosses a pattern.
 - #prio/low · **Reconcile ADR-017's `main()` clause**: each executable defines `main()`
   and calls `runApp<AppType>()`; ADR-017 § *Decision* 3 instead places `main()` in a shared
   header. [[Project - Design]] § *Entry point and presentation boundary* records the

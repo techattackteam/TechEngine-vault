@@ -11,6 +11,13 @@
   generic typed API instead of per-type copies, and that is kept. A dependency arrives as an
   untyped id, and dependency acquires and the cycle check cross types, so one store is what can
   route them. S8-T10 (#141); confirmed by Miguel at the Oct 18 weekly review.
+- **Amended 2026-10-24, decision:** §8's "a scene is an entry, not a cached resource" → a
+  scene is a `ResourceCache` entry whose payload is its file's bytes until they are streamed
+  into the live `Scene`, and whose dependencies are the ids its components reference. No
+  parsed copy is cached, which is what "not cached" protected. Miguel chose the cache entry on
+  Oct 20, so that releasing the scene releases its references through the cache's own counts
+  ([[Resources - Design]] § *Reference fields*). S8-D2; recorded at the Sprint 08 boundary
+  drift check.
 - **Partially supersedes:** each rowed in [[ADR Index]] § *Partial supersessions*.
   - ADR-006 §4, the **`ResourceRegistry& resources` field** of the `EngineContext` sketch, and
     §5's "injected via `EngineContext`" for this one service (§4 below). The DI rule, context
@@ -146,6 +153,10 @@ not an error, never loaded, never resolved. So a dedicated server can load a sce
 client mesh. A replicated component carries the `ResourceId`, never a handle (ADR-007 §2).
 
 ### 8. A scene is an entry, not a cached resource
+
+> **Amended 2026-10-24:** a scene is a `ResourceCache` entry. Its payload is the file's bytes
+> until they are streamed, and its references are its dependencies; only the parsed copy is
+> never cached (S8-D2).
 
 - A scene has a `ResourceId` and is stored like any resource, but loading streams it into the
   one live `Scene`, and no parsed copy is cached. There is one in-memory scene type (§10).
