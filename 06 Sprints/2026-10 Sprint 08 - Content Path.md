@@ -421,7 +421,7 @@ type.
   card in To Do.
   Report-only, closed Oct 20 (vault `618afdd`): [[B3 - Build & Testing Notes]] § *What #143
   saved on CI*.
-- [ ] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h ·
+- [x] **S8-P11** · Write the new split of who writes the code · P2 · 🟡 Light · 1-2h ·
   done: [[Technical Lead Charter]] § *Who writes the code* holds the three lanes (Miguel's 🟢
   and 🟠 cards with Claude pairing, 🤖 Auto, and 🤖 Claude features). [[Planning Workflow -
   Artifact Gate]] § *The 🤖 Claude gate* says what Claude may decide, with the Sprint 09 trial
@@ -439,6 +439,8 @@ type.
   [[Autonomous Lane - Design]]'s probe log shrank to a lessons table, `/card-close` caps Done
   entries and rewrites *Current focus* instead of appending, and the `techengine` output style
   was removed after its trial. The routine runs the new prompt only once Miguel pastes it.
+  Merged as #153 (`19f57f6`, Oct 23); the prompt was pasted and the cron re-pointed the same
+  night.
 
 ### Story I: Week 2 fill
 
@@ -530,9 +532,13 @@ S8-D2 on Tue, S8-D3 on Thu, S8-T19 on Fri.
   `projects/dev` logs `NoStartupScene` and the editor keeps running (Miguel's run, Oct 12).
   S8-T13 created that scene on Oct 15 (#138 `7aca05bb`); the startup export now runs in the
   editor's startup load and writes into `<exe dir>/<project name>/assets/`, numbered when taken.
-- [ ] Touched design notes ([[Resources - Design]], [[Serialization - Design]],
+- [x] Touched design notes ([[Resources - Design]], [[Serialization - Design]],
   [[Project - Design]], [[Simulation Thread - Design]], [[File Access - Design]]) describe what
   shipped; validation records keep tests, CI, attended runs and unrun checks apart.
+  Met Oct 24 by the boundary drift check against `19f57f6`, after the Oct 18 spot-check against
+  `39943f19`. It fixed one line citation in [[Project - Design]], amended ADR-024 §8, ADR-006 and
+  ADR-008, and corrected [[Task Graph - Execution Flow]] and [[Window - Design]]
+  ([[2026-10-24 Sprint 08 Retrospective]]).
 
 ## Capacity note
 
@@ -558,8 +564,23 @@ save).
 
 ## Sprint review (end)
 
-<!-- Keep this section while the sprint is active. Fill it at the end. -->
+Every card closed by Oct 23. The goal was met on Oct 15 (day 6), and its evidence is under
+*Definition of Done*. One line per story; the Done entries these replace are in the vault
+history at `d622e92`.
 
-- Link what shipped and the demo or artifact that proves it.
+- **Story A/B, primitives and scenes:** S8-T1 #126 · S8-T2 and S8-T3 #127, all Oct 11.
+- **Story C, packs:** S8-T4 and S8-T14 #128 · S8-T5 #129, all Oct 11.
+- **Story D, index and export:** S8-T6 #131 · S8-T7 #132, both Oct 12.
+- **Story E, the startup load:** S8-T8 #134 (Oct 13) · S8-T13 #138 and S8-T9 #139 (Oct 15). The
+  demo is Miguel's windowed run of Oct 15: `runtime.exe` logged the loaded startup scene.
+- **Story F, Sprint 09's decisions:** S8-D1, ADR-026 (Oct 19) · S8-D2, the cut (Oct 20) ·
+  S8-D4, the first `/sprint-prep` (Oct 23).
+- **Story G, the cache (stretch):** S8-T10 #141 · S8-T11 #142, both Oct 18; proven by tests only.
+- **Story H, Auto lane and fired backlog:** S8-P1 #130 · S8-P4 report (Oct 12) · S8-T12 #133 ·
+  S8-P2 vault (Oct 13) · S8-P3 report (Oct 14) · S8-T15 #135 · S8-T16 #136 · S8-T17 #137
+  (Oct 15) · S8-P5 #140 · S8-P6 vault (Oct 16) · S8-P7 report · S8-T21 #143 · S8-T20 #144 ·
+  S8-P9 #145 · S8-P8 vault (Oct 19) · S8-P10 report (Oct 20) · S8-P11 #153 (Oct 23).
+- **Story I, week 2 fill:** S8-T18 #146 · S8-D3 #147 (Oct 19; a PR's first push from 17.5 to 4.9
+  minutes) · S8-T19 #151 (Oct 22).
 
-Retrospective: [[07 Journal]]
+Retrospective: [[2026-10-24 Sprint 08 Retrospective]]

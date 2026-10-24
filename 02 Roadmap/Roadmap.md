@@ -4,7 +4,8 @@
 sprint notes own the dates. `/sprint-prep` reads this page to pick the next goal. What each
 system must support is in the [[Capability Map]], derived from the [[Reference Game]].
 
-**Where we are:** the foundation chain (M0 to M5) is done, and M6, content, closes in Sprint 09.
+**Where we are:** the foundation chain (M0 to M5) is done, and M6, content, closes in
+[[2026-10 Sprint 09 - Close M6]] (Oct 24 to Nov 6), which also makes E1's first decisions.
 Then Phase 1 starts: engine goals E1 to E13, about a month each, each ending in a showcase video
 ([[Channel]]). Phase 2 is the game itself, TechAttack.
 
@@ -17,7 +18,7 @@ must exist before the goal's first ADR.
 
 | Goal | The showcase shows | Needs | Alongside | Map |
 |---|---|---|---|---|
-| **M6 · Content** 🔨 now | (no video) The runtime loads scenes and meshes from packs, with references | Sprint 09's cards | The editor brief | |
+| **M6 · Content** 🔨 now | (no video) The runtime loads scenes and meshes from packs, with references | Sprint 09's Story A and the mesh path (🤖 Claude) | The editor brief and ADR | |
 | **E1 · Editor and export** | Build a scene in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
 | **E2 · First renderer** | Imported models with physically based materials, in the runtime and the editor's scene view | R1, after the **renderer ADR** | T4 import · T3 viewport tools | Renderer, content pipeline |
 | **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | | Renderer |

@@ -58,6 +58,12 @@
   2. The 2026-07-24 entry's "no separate serialized-scene asset" reads **"no second in-memory
      scene type"**. A scene document on disk is an asset (ADR-024 §8); the runtime ECS container
      is still always `Scene`.
+- **Amended 2026-10-24, vocabulary (positioning only; no decision reversed):** §1's
+  *Executables* table and graph read `editor & runtime --> app & client` through
+  **`clientapp`**, a static lib under `apps/clientapp/` that both executables link to host the
+  client. It is not a sixth engine module: `app` stays presentation-agnostic, and a future
+  `runtime-server` does not link it, so the five-lib graph is unchanged. S8-T19 (#151);
+  [[Simulation Thread - Design]] records the placement.
 
 ## Context
 

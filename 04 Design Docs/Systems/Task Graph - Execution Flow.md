@@ -114,10 +114,9 @@ the same graph and per-node buffer boundary for the later parallel executor.
 S6-T9 connected this path to the simulation thread in PR #92 (`2a50f8cb`). `App`
 registers built-in components, accepts app-specific registration, freezes the registry,
 builds the graph and executor once, then executes that instance on each fixed tick.
-`RuntimeApp` configures a Movement/Gravity/Collision demo. Since S7-T8 (#101) its tests
-also prove next-Tick, zero-Tick and multi-Tick event delivery through those systems.
-Miguel reports expected component values and headless/windowed parity in an attended
-Sep 26 showcase; component values are not encoded in a test.
+`RuntimeApp` configured a Movement/Gravity/Collision demo until S8-T14 (#128, Oct 11) removed
+it; it now configures no systems. S7-T8's next-Tick, zero-Tick and multi-Tick event proofs
+stay in `RuntimeAppTests`, through test-only systems that a probe registers.
 
 ADR-022 accepts explicit project contribution and app selection. Each selected
 persistent system gets one startup opportunity to declare access, scheduled event

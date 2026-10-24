@@ -58,6 +58,9 @@ component, which is why `canonical` was chosen first. Only `matchesOnDiskCase` c
 `mklink /D` on Windows. Also revisit if M6's resource loading makes the per-component cost
 measurable, since that decides which way the trade goes.
 
+**Carded Oct 24** as S9-T10 under the three-sprint rule, with the proposed fix chosen by Miguel.
+The entry goes when that PR merges.
+
 ---
 
 ### D5: `removeLogSink(nullptr)` reports success
