@@ -161,7 +161,8 @@ the target, because a vendored file with no recorded provenance cannot be regene
 ## Startup and shutdown order
 
 **Shipped Sep 6, `a053486c` (#76):** `EditorApp` owns `Client`, whose private state owns
-`Window` before `RenderThread`. The temporary `ClientSession` type was folded into `Client`.
+`Window` before `RenderThread`. Since S8-T19 (#151), `ClientApp`, which `RuntimeApp` and
+`EditorApp` both derive from, owns `Client` instead ([[Simulation Thread - Design]] § *Lifecycle*). The temporary `ClientSession` type was folded into `Client`.
 `start()` opens the window and waits for the worker's startup promise; failure joins before
 returning. Since #124 (`bd5788cd`, Oct 9) `start()`, `Window::initialize()` and `open()`
 return a `std::error_code` in the `ClientError` or `WindowError` category instead of `bool`. `stop()` requests cancellation and joins the `std::jthread`, then closes

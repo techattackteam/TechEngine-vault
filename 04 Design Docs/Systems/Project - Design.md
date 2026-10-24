@@ -513,6 +513,6 @@ pins to root, name, shader dir and asset dirs.
 - v1 prior art at the `v1-reference` tag: `runtime/editor/src/project/Project.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp` ·
   `runtime/editor/src/scripting/ScriptsCompiler.cpp`
-- Code: `apps/editor/src/project/` for the type, `apps/editor/src/EditorApp.cpp:19-27`
+- Code: `apps/editor/src/project/` for the type, `apps/editor/src/EditorApp.cpp:26-34`
   for the mount set, and `engine/app/include/TechEngine/app/App.hpp` for shared ownership.
   The demo mount it replaced is gone since #65.

@@ -61,7 +61,7 @@ built or run.
 | Entry storage never relocates. Other threads read published copies or fenced data. | ADR-024 §6 |
 | An id whose side this role never opens gets an absent-for-role entry, not an error. | ADR-024 §7 |
 | Replicated components carry a `ResourceId`, never a handle. | ADR-024 §7, ADR-007 §2 |
-| A scene is an entry with an id, streamed into the live `Scene`, never cached. | ADR-024 §8 |
+| A scene is an entry with an id, streamed into the live `Scene`; no parsed copy is cached. | ADR-024 §8 (amended Oct 24) |
 | Scene components are framed by stable tag and byte length. Per-type versions land with T1's scene save. | ADR-024 §8 |
 | Hot-reload swaps data behind a live handle; eviction is explicit release only. Both wait. | ADR-024 §9 |
 | The cache is `ResourceCache`, owned by `App`; one instance holds every type behind its type tag. | ADR-024 §1 (amended Oct 18); § *The cache as built* |
