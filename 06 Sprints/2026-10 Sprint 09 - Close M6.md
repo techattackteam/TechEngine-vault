@@ -38,7 +38,7 @@ Drafted by S8-D4's `/sprint-prep` on Oct 23 ([[2026-10 Sprint 08 - Content Path]
   adds a dependency to a Ready entry, with the same cycle check a completion gets. The function's
   name and header, and where the handle lives, are settled at `/card-start`. *From a fired
   Backlog entry.*
-- [ ] **S9-T2** · Reference fields and the reference walk · P1 · 🟢 Deep · 4-6h ·
+- [x] **S9-T2** · Reference fields and the reference walk · P1 · 🟢 Deep · 4-6h ·
   done: a component with `visit` can hold `Entity` and `AssetRef<T>` fields (ADR-026 §2). One
   reference visitor over `visit` sees only those two types. `SceneAsset::write` saves an `Entity`
   as its target's row and an `AssetRef<T>` as its id, and `SceneAsset::read` maps rows back to

@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: M6's scene and its references
 
-- [ ] **S9-T2** · Reference fields and the reference walk · P1 · 🟢 Deep · 4-6h: `Entity` and `AssetRef<T>` fields, one reference visitor over `visit`, rows and ids saved, a second read pass; a round-trip test.
 - [ ] **S9-T3** · The loaded scene acquires its references · P1 · 🟠 Moderate · 2-3h: one acquire per distinct id as dependencies of the scene entry, handles filled, none left after release, a failed reference fails the load. Follows S9-T1 and S9-T2.
 
 
@@ -56,13 +55,16 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
-
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T2** · Reference fields and the reference walk · P1 · 🟢 Deep · 4-6h: #157 `1a92dfc2`, **Oct 24**. #157 has no body and no review conversation, so this entry comes from the card, the diff and the session. `AssetRef<T>`, one `ReferenceVisitor`, and a scene save and read that map entities through rows ([[Resources - Design]] § *Reference fields*, *The reference walk as built*). Miguel wrote the logic against Claude's scaffold. Unblocks S9-T3 and S9-T5; Story A stays open on S9-T3.
+	- **No artifact said how a type-erased `writePayload` learns rows.** `/card-start` stopped on it, and Miguel chose to copy each component and rewrite the copy, so `Writer` and `Reader` stay free of context. He also took three defaults: a target with no row saves as empty with a warning, a row past the last entity is `Malformed`, and a vector of `Entity` or `AssetRef` does not compile.
+	- **Written, then deleted:** the first copy block wrote the live component instead of the copy, and the first second pass walked the scratch copies instead of the scene. Both were caught while pairing.
+	- **Retro:** in a fresh `Scene` the loaded entity for row r is `Entity{r, 0}`, so a read that skipped the second pass would still pass. The round-trip tests read into recycled slots to rule that out.
 - [x] **S9-T4** · The mesh resource type · P1 · 🤖 Claude · 2-3h: #155 `ca141d2`, **Oct 24**. The lane's first 🤖 Claude card. `Mesh` in `core/mesh/` with its blob kind, type tag and loader, and the second row of `AssetIndex`'s table of asset kinds ([[Resources - Design]] § *Reference fields*, *The mesh*). #155 has no review conversation, so this entry comes from the card, the PR body and the diff. Miguel merged its seven *Decisions I took* unchanged, so nothing was reversed. Unblocks S9-T5 with S9-T2.
 	- **Retro:** the fire that built it ran on a Saturday, outside the weekday cron, so the card started two days before the sprint note's Mon Oct 26.
 - [x] **S9-T1** · The scene loads as a cache entry · P1 · 🟢 Deep · 4-6h: #154 `5786fd47`, **Oct 24**. #154 has no body and no review conversation, so this entry comes from the card, the diff and the session. The runtime's startup load now goes through the cache, as `SceneAsset::load` ([[Resources - Design]] § *Reference fields*). Miguel wrote the logic against Claude's scaffold. Unblocks S9-T3 (with S9-T2) and S9-T8; Story A stays open.
@@ -70,7 +72,6 @@ kanban-plugin: board
 	- **Review changed the design:** a second load of A, with A released but not yet drained, revived the entry with no bytes and failed as `Truncated`. `load` now drains frees first. A scene that is still held is refused with a warning and the new `ReadError::AlreadyLoaded` (Miguel's call), and `out` is written only on success.
 	- **Written, then deleted:** `SceneAsset::write` briefly took `SceneBytes`; it went back to a byte vector, because `SceneBytes` exists only as the cache's type key.
 	- **Retro:** the first CI attempt's two slowest legs were cancelled by hand because their live log page was blank, but their logs show them working: linux-clang Debug had passed 700 of 700, and win ASan was at 628 with none failed. The re-run cost those minutes again, win ASan at twice the rate. A blank log under the 20-minute job timeout is not a hang.
-
 
 
 

@@ -13,8 +13,8 @@ the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), an
 #132, 2026-10-12), id generation with the editor's startup scene (S8-T13, #138, 2026-10-15),
 the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #141,
 2026-10-18), its loads on the `JobSystem` (S8-T11, #142, 2026-10-18), and the scene as a cache
-entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), and the mesh resource type
-(S9-T4, #155, 2026-10-24).
+entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh resource type
+(S9-T4, #155, 2026-10-24), and the reference fields and their walk (S9-T2, #157, 2026-10-24).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -74,6 +74,7 @@ built or run.
 | An `Entity` field holds the live handle and saves its target's authoring row. An `AssetRef<T>` holds `{ResourceId, ResourceHandle<T>}` and saves the id. An empty field is valid. A replicated component holds a bare `ResourceId`. | ADR-026 §2 |
 | One reference visitor over `visit` serves the scene writer, the reader's second pass, the scene's acquire set and the bake. The scene header has no dependency table. | ADR-026 §3 |
 | A live `AssetRef<T>` names only an asset its scene holds. An editor edit acquires the new asset at once and releases the old one when the scene reloads. | ADR-026 §4 |
+| A scene save rewrites each `Entity` to its row on a copy of the component, so the live scene is untouched. A target with no row saves as empty with a warning, a row past the last entity is `Malformed`, and a vector of `Entity` or `AssetRef` does not compile. | Miguel, Oct 24; § *Reference fields* |
 | The mesh is the second resource type. Before T4 the editor writes one in code, and until R1 it is loaded, not drawn. | Miguel, Oct 18; § *Reference fields* |
 | A loaded scene is a cache entry, and its references are that entry's dependencies, so releasing the scene releases them. | ADR-024 §3 §8, Miguel, Oct 20; § *Reference fields* |
 | Loading a scene through the cache is one `core` function, which every app's startup load calls with its own source. | Miguel, Oct 23; § *Reference fields* |
@@ -359,14 +360,15 @@ following ADR-024 §10's vocabulary.
 - **The reader takes an empty `Scene` and leaves it empty on any failure.** A table that breaks
   the row rules (an id that is not its row, a parent that is not an earlier row, bytes after
   the last entity) is `ReadError::Malformed`. `SceneAsset::id` is set only on success.
-- Entity references in a payload are authoring rows, and asset references `ResourceId`s;
-  loading remaps both in a second pass (§ *Reference fields*). Nothing writes either yet.
+- An `Entity` field is saved as its target's row (`u32`, `0xFFFFFFFF` when empty), and an
+  `AssetRef<T>` as its id (`u64`, zero when empty). The reader maps rows back to entities in a
+  second pass, and S9-T3's load fills the handles (§ *Reference fields*).
 
 ### Reference fields
 
 Decided on Oct 18 at S8-D1 ([[ADR-026 - Reference fields and scene-held acquires]], Accepted Oct 19).
-Partly built: the scene as a cache entry landed with S9-T1; the fields, the walk and the
-acquires are the rest of Sprint 09's Story A.
+Partly built: the scene as a cache entry landed with S9-T1, and the fields and the walk with
+S9-T2. The acquires are S9-T3's, the rest of Sprint 09's Story A.
 
 | Job | What the reference walk does |
 |---|---|
@@ -397,8 +399,18 @@ acquires are the rest of Sprint 09's Story A.
   `SceneAsset::write` still writes a byte vector. `load` drains frees, requests, refuses a scene
   that is still held, runs a loading phase, takes the bytes out with `takePayload` and reads them
   into the `Scene`, so they die with the call. On any failure it releases its acquire and leaves
-  `out` untouched. An id absent for the role fails as `Malformed`. The walk and the reference
-  phase are S9-T3's.
+  `out` untouched. An id absent for the role fails as `Malformed`. The reference phase is
+  S9-T3's.
+- **The reference walk as built** (S9-T2, #157, 2026-10-24): `AssetRef<T>` in
+  `core/resources/AssetRef.hpp`, and `ReferenceVisitor` in `core/serialization/`, an abstract
+  class with `visitEntity` and `visitAsset` hooks. Its `field` recurses into a type with its own
+  `visit`, skips empty fields, and ignores every other type at compile time. Registration fills
+  a third record adapter, `visitReferences`. `Writer` writes an `Entity`'s index only, and
+  `Reader` reads a row back as `Entity{row, 0}`, a form that lives only between the two passes.
+  `write` copies each component into a scratch storage per type and lets `SceneAssetRowWriter`
+  rewrite the copy. `read` walks the live components with `SceneAssetRowReader` after the last
+  row, because a row may name a later one. Both visitors and `SceneAssetEntity` sit in their own
+  private files under `src/scene/` (Miguel, one class per file).
 - **The editor.** An inspector edit runs as a loading phase: it acquires the new asset and fills
   the field. The asset it replaced stays held until the scene reloads (T1).
 - **The mesh.** It is Sprint 09's second resource type, because the hard-coded triangle in
