@@ -20,12 +20,13 @@ product owner, unless a row says otherwise.
 
 ## Editor
 
-**For:** developers building a game. **Goals:** E1; import alongside E2, terrain tools alongside E6, play in the editor alongside E11.
+**For:** developers building a game. **Goals:** E1; import alongside E2, terrain tools alongside E6, play in the editor alongside E11. **Brief:** [[Editor - Brief]].
 
 | | |
 |---|---|
-| **Showcase (E1)** | A hierarchy, an inspector and a simple scene view (a placeholder until the first renderer); save the scene, export it, and run it in the runtime. |
+| **E1, internal demo** | No public video (2026-10-25; P4 is owed to `/product-review`). A hierarchy, an inspector and a placeholder scene view; build a scene, save it, export it, and start the runtime by hand. |
 | **Demo** | Edit scenes · play in the editor and return to the edited state · terrain tools (sculpt, paint, generation settings) · an asset browser with import · a visual game UI designer (§ *Game UI*). |
+| **Later** | After R1: undo, more than one scene, and reopening the last one · a project launcher, with T5 packaging. |
 
 ## Renderer
 

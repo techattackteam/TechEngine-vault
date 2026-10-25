@@ -308,12 +308,12 @@ groups are kept, because they show where future work will land.
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
   editor executable. [[Project - Design]] records the placement and open storage choice.
-  **Trigger:** the first editor UI card.
+  **Trigger:** T5 packaging ([[Editor - Brief]], 2026-10-25).
 - #prio/low · **Reopen the scene the editor had open last.** Per-user state, not
   `project.toml`: the `[export.<target>]` keys change only when a shipped program's first
   scene is chosen ([[Project - Design]] § *The manifest*). Found at S8-T6 on Oct 12, 2026. Its
   storage is [[Project - Design]] § *Open questions*' per-user settings question. **Trigger:**
-  T1, when the editor can open another scene.
+  the rung after R1 that lets the editor open another scene ([[Editor - Brief]], 2026-10-25).
 ## etc: cross-cutting
 
 - #prio/low · **Two comments still name the old SDK smoke target**: `sdk/CMakeLists.txt:9` and
