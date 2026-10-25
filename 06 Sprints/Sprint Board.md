@@ -56,7 +56,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h: PR [#158](https://github.com/techattackteam/TechEngine/pull/158), branch `S9-T5/editor-mesh-asset`, opened Oct 25 by the lane. Linux build and `ctest` green locally. Miguel reviews it and accepts or reverses its seven *Decisions I took*.
+- [ ] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h: PR [#158](https://github.com/techattackteam/TechEngine/pull/158), branch `S9-T5/editor-mesh-asset`, opened Oct 25 by the lane. Linux build and `ctest` green locally. Miguel reviews it and accepts or reverses its seven *Decisions I took*. **Reversed so far (1):** the component is `MeshRenderer`, as in v1, not `MeshReference`; it holds only the mesh until a material exists (Miguel, Oct 25).
 
 
 ## ✅ Done: Sprint 09
