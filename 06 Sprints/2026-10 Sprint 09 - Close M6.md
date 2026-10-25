@@ -44,7 +44,7 @@ Drafted by S8-D4's `/sprint-prep` on Oct 23 ([[2026-10 Sprint 08 - Content Path]
   as its target's row and an `AssetRef<T>` as its id, and `SceneAsset::read` maps rows back to
   entities in a second pass after the last row. A round-trip test with a test component proves
   both, including a reference to a later row and empty fields.
-- [ ] **S9-T3** · The loaded scene acquires its references · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S9-T3** · The loaded scene acquires its references · P1 · 🟠 Moderate · 2-3h ·
   done: after streaming, S9-T1's function walks the live `Scene`, adds each distinct id once as a
   dependency of the scene entry, runs a loading phase, then fills each `AssetRef<T>` handle.
   Tests prove one acquire per distinct id, none left after the scene is released, and that a

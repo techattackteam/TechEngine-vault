@@ -127,6 +127,12 @@ groups are kept, because they show where future work will land.
   treat it as a free. Eviction stays explicit release only. **Trigger:** file watching
   ([[Backlog]] → `platform`) and an editor workflow that needs it.
 
+- #prio/medium · **A scene load does not notice a reference that was already Failed**: the
+  load's loading phase reports only the errors it drains, so a dependency that failed before
+  this load and is still held elsewhere produces no error, and its handle is filled with a
+  Failed entry. It cannot happen at startup, where the cache starts empty. Found while pairing
+  on S9-T3, Oct 25. **Trigger:** T1's scene reload, or any second scene load in one process.
+
 - #prio/low · **A test for `wait()` called from a pool worker**: the `TE_CHECK` added at
   S4-T4 is the only guard, and it has no case, because without it the test hangs rather than
   fails and costs a CI timeout to catch. **Trigger:** a test helper that can fail a case on a

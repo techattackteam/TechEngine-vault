@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: M6's scene and its references
 
-- [ ] **S9-T3** · The loaded scene acquires its references · P1 · 🟠 Moderate · 2-3h: one acquire per distinct id as dependencies of the scene entry, handles filled, none left after release, a failed reference fails the load. Follows S9-T1 and S9-T2.
 
 
 ## Story B: The mesh path · 🤖 Claude
@@ -54,11 +53,17 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
+
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done: Sprint 09
+
+- [x] **S9-T3** · The loaded scene acquires its references · P1 · 🟠 Moderate · 2-3h: #159 `5cc9ed8c`, **Oct 25**. #159 has no body and no review conversation, so this entry comes from the card, the diff and the session. After streaming, `SceneAsset::load` adds each distinct referenced id as a dependency of the scene entry, runs a loading phase and fills every `AssetRef<T>` handle ([[Resources - Design]] § *Reference fields*, *The scene's acquires as built*). Miguel wrote the two visitors and the cache change against Claude's scaffold; at his request, Claude wrote `acquireReferences` and the tree walk in `visitReferences`. Completes Story A and unblocks the lane's S9-T6 and S9-T7.
+	- **No artifact said how the load learns each dependency's slot**, which it needs to fill a handle, or what a failed reference phase leaves in the `Scene`. `/card-start` stopped on both. Miguel chose an out-param on `addDependency` that returns the slot, and a `load` that clears the `Scene` on any failure, as `read` already did.
+	- **Written, then deleted:** the first `visitReferences` walked only the roots, so a child's reference was never acquired. The first collector also wrote a placeholder slot `{0, 0}` into every live handle while it collected. Both were caught while pairing, before the PR.
+	- **A reference absent for the role does not fail the load.** Its handle names the `AbsentForRole` entry, and a test now pins that.
 
 - [x] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h: #158 `abcda239`, **Oct 25**. The editor writes the triangle as `assets/client/Triangle.temesh` when it creates the startup scene, and saves a `MeshRenderer` with its `AssetRef<Mesh>` on the scene's root. Both assets go through one `EditorApp::createAsset` call ([[Resources - Design]] § *Reference fields*, *The mesh component as built*). #158 has no review conversation, so this entry comes from the card, the PR body, the diff and the session. Unblocks S9-T6 and S9-T7 with S9-T3; Story B stays open.
 	- **Reversed (1 of 7 decisions):** the lane named the component `MeshReference` so that it would not decide R1's mesh and material split. Miguel renamed it `MeshRenderer`, as in v1. It holds only the mesh until a material type exists, and that split is not final. The other six decisions merged unchanged.

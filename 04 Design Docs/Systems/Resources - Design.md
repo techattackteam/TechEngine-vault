@@ -14,8 +14,9 @@ the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), an
 the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #141,
 2026-10-18), its loads on the `JobSystem` (S8-T11, #142, 2026-10-18), and the scene as a cache
 entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh resource type
-(S9-T4, #155, 2026-10-24), the reference fields and their walk (S9-T2, #157, 2026-10-24), and
-the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25).
+(S9-T4, #155, 2026-10-24), the reference fields and their walk (S9-T2, #157, 2026-10-24),
+the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25), and the loaded scene's
+acquires of its references (S9-T3, #159, 2026-10-25).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -82,6 +83,8 @@ built or run.
 | That function is `SceneAsset::load`. The app holds the scene's handle in `App::m_sceneHandle` and releases it in the base `simulationShutdown()`. | Miguel, Oct 24; § *Reference fields* |
 | A scene is loaded at most once while it is held: a second load warns and returns `ReadError::AlreadyLoaded`. A released scene is drained before it loads again. | Miguel, Oct 24; § *Reference fields* |
 | A dependency the owner adds to a Ready entry that fails returns its error and leaves the holder Ready; a completion's failed dependency still fails its holder. | Miguel, Oct 24; § *The cache as built* |
+| `addDependency` returns the dependency's slot through an out-param, so the scene load fills its handles without a lookup by id. | Miguel, Oct 25; § *The cache as built* |
+| A reference that fails to be added or loaded fails the scene load, which clears the `Scene` and releases the scene entry. A reference absent for the role is not a failure: its handle names the absent entry. | Miguel, Oct 25; § *Reference fields* |
 
 ### Decided: packs and the runtime layout
 
@@ -260,10 +263,11 @@ product caller is the runtime's startup load, since S9-T1. Miguel settled these 
 
 S9-T1 (#154, 2026-10-24) added two owner-only calls, settled at its `/card-start`:
 
-- **`addDependency(holder, id)` adds a dependency to a Ready entry.** It shares one private
+- **`addDependency(holder, id, out)` adds a dependency to a Ready entry.** It shares one private
   helper with the completion path, so it gets the same unknown-id and cycle checks. On failure
   it returns the error, holds no acquire and leaves the holder Ready; only a completion marks its
-  holder Failed. A holder that is not Ready is a `TE_CHECK`.
+  holder Failed. A holder that is not Ready is a `TE_CHECK`. Since S9-T3 (#159) it writes the
+  dependency's slot to `out`, which is how the scene load fills its handles.
 - **`takePayload(handle, out)` moves a Ready payload out** and leaves a default one in its place;
   it returns `false` for any entry that is not Ready. It exists because `resolve` returns a const
   payload, and the scene load must free its bytes while the entry stays held.
@@ -368,9 +372,9 @@ following ADR-024 §10's vocabulary.
 ### Reference fields
 
 Decided on Oct 18 at S8-D1 ([[ADR-026 - Reference fields and scene-held acquires]], Accepted Oct 19).
-Partly built: the scene as a cache entry landed with S9-T1, the fields and the walk with
-S9-T2, and the editor's mesh and `MeshRenderer` with S9-T5. The acquires are S9-T3's, the rest
-of Sprint 09's Story A.
+Built for the startup load: the scene as a cache entry landed with S9-T1, the fields and the
+walk with S9-T2, the editor's mesh and `MeshRenderer` with S9-T5, and the acquires with S9-T3.
+The bake's walk is S9-T7's.
 
 | Job | What the reference walk does |
 |---|---|
@@ -401,8 +405,16 @@ of Sprint 09's Story A.
   `SceneAsset::write` still writes a byte vector. `load` drains frees, requests, refuses a scene
   that is still held, runs a loading phase, takes the bytes out with `takePayload` and reads them
   into the `Scene`, so they die with the call. On any failure it releases its acquire and leaves
-  `out` untouched. An id absent for the role fails as `Malformed`. The reference phase is
-  S9-T3's.
+  `out` untouched. An id absent for the role fails as `Malformed`. S9-T3 added the reference
+  phase, below.
+- **The scene's acquires as built** (S9-T3, #159, 2026-10-25): after the read, `load` calls a
+  private `acquireReferences`. It walks the live scene's whole tree with
+  `SceneAssetIdCollector`, which keeps each id once in walk order, adds each id with
+  `addDependency` and keeps the returned slots by id, runs a loading phase, then walks again
+  with `SceneAssetHandleFiller` to write each slot into its `AssetRef<T>`. Both visitors sit in
+  their own private files under `src/scene/`. The first error from an add or the phase fails
+  the load: `load` clears the `Scene` and releases the scene's handle, and the drain that frees
+  the entry releases the references already added, so `acquireReferences` undoes nothing itself.
 - **The reference walk as built** (S9-T2, #157, 2026-10-24): `AssetRef<T>` in
   `core/resources/AssetRef.hpp`, and `ReferenceVisitor` in `core/serialization/`, an abstract
   class with `visitEntity` and `visitAsset` hooks. Its `field` recurses into a type with its own
