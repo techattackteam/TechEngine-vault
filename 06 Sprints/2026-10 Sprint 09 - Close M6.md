@@ -92,7 +92,7 @@ S9-T3 to merge.
 Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window - Design]] §
 *Open questions*.
 
-- [ ] **S9-D1** · Write the editor's capability brief · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S9-D1** · Write the editor's capability brief · P1 · 🟠 Moderate · 2-3h ·
   done: `/brief editor` writes `01 Product/Capabilities/Editor - Brief.md`, linked from the map's
   § *Editor*. Miguel decides every line; Claude interviews. It says whether E1 includes a project
   launcher, reopening the last scene, and any Play state, because three [[Backlog]] entries
