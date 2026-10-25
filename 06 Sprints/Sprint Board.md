@@ -21,7 +21,6 @@ kanban-plugin: board
 
 ## Story C: E1's opening decisions
 
-- [ ] **S9-P1** · Research brief for the editor ADR · P2 · 🤖 Auto · 2-3h: Unity, Unreal and Godot editor UI beside the sim and render threads, ImGui over a GL-owning render thread; mapped onto ADR-018 without choosing. Report-only, week 1.
 - [ ] **S9-D2** · Decide the editor's architecture · P1 · 🟢 Deep · 4-6h: `/adr` from the brief and S9-P1; ImGui's window and thread, how panels read the `Scene`, how an edit reaches the sim, the stopped state. Follows S9-D1 and S9-P1.
 - [ ] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h: `Editor - Design` indexes the ADR; T1 cards cut into Story D. Follows S9-D2.
 
@@ -59,6 +58,10 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-P1** · Research brief for the editor ADR · P2 · 🤖 Auto · 2-3h: vault `3f5a227`, **Oct 25**. [[Editor - Research Brief]] compares Unity, Unreal and Godot, and ImGui over a render thread, and maps each finding onto ADR-018, [[Window - Design]] § *The frame command buffer*, [[Editor - Brief]] and S9-D2's four questions without choosing. Run by hand on a Sunday so that the report is in before S9-D2. Unblocks S9-D2; Story C stays open.
+	- **Against the clause's premise:** none of the three engines puts its editor UI and the edited world on different threads in edit mode, so none answers S9-D2's "how panels read the `Scene`" directly. Godot's editor even forces rendering onto its main thread.
+	- **Wider than the clause:** since ImGui 1.92, a render thread needs texture requests staged beside the draw data, and those must not be skipped the way the newest-wins slot skips snapshots. `imgui_impl_glfw` also calls GLFW directly, against [[Window - Design]]'s "GLFW stays inside `platform`" row.
+	- **Retro:** Unity's, Epic's and Godot's documentation sites were unreachable from the sandbox, so the Unity and Unreal rows rest on search extracts of their official pages, and the brief marks each claim from memory.
 - [x] **S9-D1** · Write the editor's capability brief · P1 · 🟠 Moderate · 2-3h: vault `c1502b1`, **Oct 25**. [[Editor - Brief]], the first capability brief, is agreed and linked from [[Capability Map]] § *Editor*. E1 has one project and one scene, runs stopped only, keeps Play alongside E11, and brings the launcher back with T5. Unblocks S9-D2 with S9-P1's report; Story C stays open.
 	- **The clause's premise was wrong:** only the launcher's [[Backlog]] entry triggered on the first editor UI card. Reopen-last triggers when the editor can open another scene, and the session-ownership entry on the first Play and Stop, so the brief decided multiple scenes and Play instead. Both triggers now follow the brief.
 	- **Against the product as written:** E1 ends in an internal demo, not a public video, because showcases are meant to be cinematic. That contradicts P4, [[Channel]] and the [[Roadmap]]'s E1 row, and the brief lists it as owed to the `/product-review` of Nov 7-8, with a `/triage` for what a cinematic needs and the new rung after R1 for undo and multiple scenes.

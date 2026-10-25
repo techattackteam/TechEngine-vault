@@ -97,7 +97,7 @@ Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window
   § *Editor*. Miguel decides every line; Claude interviews. It says whether E1 includes a project
   launcher, reopening the last scene, and any Play state, because three [[Backlog]] entries
   trigger on the first editor UI card and the launcher is not on the map yet.
-- [ ] **S9-P1** · Research brief for the editor ADR · P2 · 🤖 Auto · 2-3h ·
+- [x] **S9-P1** · Research brief for the editor ADR · P2 · 🤖 Auto · 2-3h ·
   done: a report compares how Unity, Unreal and Godot run editor UI beside the simulation and
   render threads, and how ImGui-based editors hand draw data to a render thread that owns GL. It
   names its sources, marks what is from memory, and maps each answer onto ADR-018's threads and
