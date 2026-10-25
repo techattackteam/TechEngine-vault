@@ -174,7 +174,8 @@ start this sprint are P2, so dropping them never costs the goal.
 - PR load: seven PR-producing lane cards (four 🤖 Claude, three 🤖 Auto) over two weeks, about
   three or four a week against a limit of about five. S9-P1, S9-P2 and S9-P3 are report-only and
   free. Review costs about 3-3.5h, which fills both Tuesdays.
-- The routine is enabled on `7 9,14 * * 1-5` with the Oct 23 prompt; its first fire is Mon Oct 26.
+- The routine is enabled at 09:07 and 14:07 Lisbon on weekdays with the Oct 23 prompt; its first
+  weekday fire is Mon Oct 26 ([[Autonomous Lane - Routine Prompt]]).
   Only 2 papers are left to screen, so morning fires with no card open will soon have no papers.
 
 ## Definition of Done
