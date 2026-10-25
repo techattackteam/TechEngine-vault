@@ -16,7 +16,6 @@ kanban-plugin: board
 
 ## Story B: The mesh path · 🤖 Claude
 
-- [ ] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h: one shared asset-creation call, the `EditorApp.cpp:79` `TODO` goes, a component with an `AssetRef<Mesh>` saved on the startup scene. Follows S9-T2 and S9-T4.
 - [ ] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h: loaders registered, S9-T1's function with `LooseSource`, the `EditorApp.cpp:45` `TODO` goes. Follows S9-T1, S9-T3 and S9-T5.
 - [ ] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h: `exportTo` walks the scene's references; the runtime registers the mesh loader and component; a `RuntimeAppTests` case over an export loads the mesh. Follows S9-T2, S9-T3 and S9-T5.
 
@@ -57,6 +56,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h: PR [#158](https://github.com/techattackteam/TechEngine/pull/158), branch `S9-T5/editor-mesh-asset`, opened Oct 25 by the lane. Linux build and `ctest` green locally. Miguel reviews it and accepts or reverses its seven *Decisions I took*.
 
 
 ## ✅ Done: Sprint 09
