@@ -67,7 +67,7 @@ S9-T3 to merge.
   positions and `u32` indices (`engine/client/src/render/FrameRenderer.cpp:33-34`); R1's renderer
   ADR owns the real format and replaces it. The apps register the loader in S9-T6 and S9-T7.
   Depends on nothing.
-- [ ] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h ·
+- [x] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h ·
   done: the editor writes the triangle as a mesh asset in code, the way it writes the startup
   scene, through one asset-creation call that `writeStartupScene` also uses, and the `TODO` on
   `writeStartupScene` (`apps/editor/src/EditorApp.cpp:79`) goes. A component with an
@@ -78,7 +78,7 @@ S9-T3 to merge.
   done: when the project names a startup scene, `EditorApp::simulationStartupLoad()` registers the
   scene and mesh loaders and calls S9-T1's function with `LooseSource` as the cache's source, so a
   later launch opens on the saved scene instead of an empty one. The `TODO` at
-  `apps/editor/src/EditorApp.cpp:45` goes. Follows S9-T1, S9-T3 and S9-T5.
+  `apps/editor/src/EditorApp.cpp:56` goes. Follows S9-T1, S9-T3 and S9-T5.
 - [ ] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h ·
   done: `Project::exportTo` walks the startup scene's references and packs each reached asset into
   its side's pack when the target ships that side, instead of the scene alone. The runtime

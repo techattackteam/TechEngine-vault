@@ -16,7 +16,7 @@ kanban-plugin: board
 
 ## Story B: The mesh path · 🤖 Claude
 
-- [ ] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h: loaders registered, S9-T1's function with `LooseSource`, the `EditorApp.cpp:45` `TODO` goes. Follows S9-T1, S9-T3 and S9-T5.
+- [ ] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h: loaders registered, S9-T1's function with `LooseSource`, the `EditorApp.cpp:56` `TODO` goes. Follows S9-T1, S9-T3 and S9-T5.
 - [ ] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h: `exportTo` walks the scene's references; the runtime registers the mesh loader and component; a `RuntimeAppTests` case over an export loads the mesh. Follows S9-T2, S9-T3 and S9-T5.
 
 
@@ -56,11 +56,14 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h: PR [#158](https://github.com/techattackteam/TechEngine/pull/158), branch `S9-T5/editor-mesh-asset`, opened Oct 25 by the lane. Linux build and `ctest` green locally. Miguel reviews it and accepts or reverses its seven *Decisions I took*. **Reversed so far (1):** the component is `MeshRenderer`, as in v1, not `MeshReference`; it holds only the mesh until a material exists (Miguel, Oct 25).
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T5** · The editor writes a mesh and a component that references it · P1 · 🤖 Claude · 2-3h: #158 `abcda239`, **Oct 25**. The editor writes the triangle as `assets/client/Triangle.temesh` when it creates the startup scene, and saves a `MeshRenderer` with its `AssetRef<Mesh>` on the scene's root. Both assets go through one `EditorApp::createAsset` call ([[Resources - Design]] § *Reference fields*, *The mesh component as built*). #158 has no review conversation, so this entry comes from the card, the PR body, the diff and the session. Unblocks S9-T6 and S9-T7 with S9-T3; Story B stays open.
+	- **Reversed (1 of 7 decisions):** the lane named the component `MeshReference` so that it would not decide R1's mesh and material split. Miguel renamed it `MeshRenderer`, as in v1. It holds only the mesh until a material type exists, and that split is not final. The other six decisions merged unchanged.
+	- **Against the note as written:** it said the editor regenerates the mesh on every run. The editor writes the mesh once, with the startup scene, and reuses the indexed file after that. A blob version bump therefore needs its own migration, which is R1's.
+	- **Retro:** the rename's first push held only the `git mv`, because `git add` aborted on the old path. It was folded into that commit and force-pushed. Check `git show --stat` before pushing.
 - [x] **S9-T2** · Reference fields and the reference walk · P1 · 🟢 Deep · 4-6h: #157 `1a92dfc2`, **Oct 24**. #157 has no body and no review conversation, so this entry comes from the card, the diff and the session. `AssetRef<T>`, one `ReferenceVisitor`, and a scene save and read that map entities through rows ([[Resources - Design]] § *Reference fields*, *The reference walk as built*). Miguel wrote the logic against Claude's scaffold. Unblocks S9-T3 and S9-T5; Story A stays open on S9-T3.
 	- **No artifact said how a type-erased `writePayload` learns rows.** `/card-start` stopped on it, and Miguel chose to copy each component and rewrite the copy, so `Writer` and `Reader` stay free of context. He also took three defaults: a target with no row saves as empty with a warning, a row past the last entity is `Malformed`, and a vector of `Entity` or `AssetRef` does not compile.
 	- **Written, then deleted:** the first copy block wrote the live component instead of the copy, and the first second pass walked the scratch copies instead of the scene. Both were caught while pairing.

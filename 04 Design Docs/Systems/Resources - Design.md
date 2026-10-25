@@ -14,7 +14,8 @@ the boot record, `AssetSource` and the pack source (S8-T5, #129, 2026-10-11), an
 the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #141,
 2026-10-18), its loads on the `JobSystem` (S8-T11, #142, 2026-10-18), and the scene as a cache
 entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh resource type
-(S9-T4, #155, 2026-10-24), and the reference fields and their walk (S9-T2, #157, 2026-10-24).
+(S9-T4, #155, 2026-10-24), the reference fields and their walk (S9-T2, #157, 2026-10-24), and
+the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -367,8 +368,9 @@ following ADR-024 §10's vocabulary.
 ### Reference fields
 
 Decided on Oct 18 at S8-D1 ([[ADR-026 - Reference fields and scene-held acquires]], Accepted Oct 19).
-Partly built: the scene as a cache entry landed with S9-T1, and the fields and the walk with
-S9-T2. The acquires are S9-T3's, the rest of Sprint 09's Story A.
+Partly built: the scene as a cache entry landed with S9-T1, the fields and the walk with
+S9-T2, and the editor's mesh and `MeshRenderer` with S9-T5. The acquires are S9-T3's, the rest
+of Sprint 09's Story A.
 
 | Job | What the reference walk does |
 |---|---|
@@ -418,8 +420,9 @@ S9-T2. The acquires are S9-T3's, the rest of Sprint 09's Story A.
   writes a mesh asset in code, the way S8-T13 writes the startup scene. Until R1 it is loaded and
   never drawn; tests and a runtime log line prove the load. Drawing it needs render's fence and
   a GPU copy keyed by handle, which are R1's. Its payload is a placeholder with the triangle's
-  shape: R1's renderer ADR owns the mesh format and replaces it, which costs only a blob version
-  bump, because the editor regenerates the mesh on every run.
+  shape: R1's renderer ADR owns the mesh format and replaces it. The editor writes the mesh only
+  once (S9-T5, below), so that change also has to replace the old file: the index skips a file
+  at another version, and `createAsset` refuses to overwrite a file the index does not know.
 - **The mesh as built** (S9-T4, #155, 2026-10-24): `Mesh` in
   `engine/core/include/TechEngine/core/mesh/Mesh.hpp`, a folder of its own because `resources/`
   holds the cache and the packs, not the types they load. One struct is both the asset and the
@@ -427,8 +430,18 @@ S9-T2. The acquires are S9-T3's, the rest of Sprint 09's Story A.
   indices, with `write` and `read`. `MESH_KIND` is magic "TEMS", version 1, and `MESH_TYPE_TAG`
   is `"TechEngine.Mesh"`; a mesh file is `.temesh`. `read` returns `Malformed` for an index past
   the last position, an index count that is not whole triangles, or bytes after the indices, and
-  assigns the mesh only on success. `loadMesh` names no dependencies. Nothing registers it until
-  S9-T6 and S9-T7.
+  assigns the mesh only on success. `Mesh::loadPayload` names no dependencies (#156 made the
+  loader hooks members of their payload types). Nothing registers it until S9-T6 and S9-T7.
+- **The mesh component as built** (S9-T5, #158, 2026-10-25): `MeshRenderer` in
+  `core/mesh/MeshRenderer.hpp` holds one `AssetRef<Mesh>`. The name follows v1, whose
+  `MeshRenderer` paired a mesh with a material; it gains its material when R1 adds one, and
+  that split is not final (Miguel, Oct 25). The editor registers it in `configureSimulation()`.
+  When the editor creates the startup scene, it writes the triangle as
+  `assets/client/Triangle.temesh`, a client asset, and puts a `MeshRenderer` on the scene's root.
+  An indexed mesh at that path is reused. Both assets go through `EditorApp::createAsset(path,
+  typeTag, side, write)`: it refuses a path that exists, draws the id, writes the file and adds
+  the index record. The scene's path is checked before the mesh is written, so a refused scene
+  leaves nothing behind.
 
 ### Pack layout and the boot record
 
