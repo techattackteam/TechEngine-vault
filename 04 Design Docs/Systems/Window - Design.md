@@ -32,7 +32,8 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **Render snapshot handoff** | Simulation publishes tick/time-stamped complete values through one shared slot; render owns two private history values. | ADR-019 §3; shipped in #81 |
 | **Main/simulation split** | Main owns events; simulation consumes ordered input and publishes complete render values. Lifecycle and overflow recovery are settled. | ADR-018 §1-3; shipped in #81 |
 | **Module split** | `platform` owns the window and raw input and issues **no GL call ever**. `client` owns the context, glad2 and every GL call. | See *The seam*, 2026-08-30 |
-| **GLFW stays inside `platform`** | `client` never calls a `glfw*` function. Context and presentation operations are methods on `Window`. | See *The seam* |
+| **GLFW stays inside `platform`** | `client` never calls a `glfw*` function. Context and presentation operations are methods on `Window`. The one exception is the editor executable, which links ImGui's GLFW backend. | See *The seam*; ADR-027 §1 |
+| **The editor's ImGui shares this window** | Main builds the ImGui frame and render draws it after the scene, through its own channel and an overlay seam in `client`. Multi-viewport is off in E1. | ADR-027 §1 |
 | **glad2 lives in `client`** | Moved off `platform`'s dependency row. **This reverses ADR-006 §1** and is filed there as a dated `decision` amendment. | ADR-006 §1 amendment, 2026-08-30 |
 | **glad2 is generated, committed, and never fetched** | GL 4.5 core, no extensions, `--reproducible`. Committed under `external/glad/`, wrapped in `cmake/deps.cmake`. The one vendored dep. | ADR-008 §4 case 3 |
 | **Context handoff** | Main creates the window and never makes the context current. The render thread claims it once and holds it until shutdown. | See *Startup and shutdown order* |
@@ -317,9 +318,6 @@ manual run on `master` cannot validate this change. [[Backlog]] tracks that gap.
 
 ## Open questions
 
-- **Does the editor's ImGui share this window or open its own?** Owner: **T1**. ADR-015
-  § *Consequences* already names the ImGui thread as a T1 question, and this note does not
-  pre-empt it.
 - **Frame limiting and latency tuning.** Owner: **R1**. S5-T8 enables vsync; ADR-019 makes
   it configurable and leaves render in charge of pacing. A separate limiter remains future work.
 - **Multiple windows.** No consumer. `Window` is a type rather than a singleton, so nothing

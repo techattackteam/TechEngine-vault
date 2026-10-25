@@ -461,7 +461,9 @@ pins to root, name, shader dir and asset dirs.
   its storage location is undecided. The `cmake.exe` path also needs a home that is not
   `project.toml` and is not committed. Owner: the editor UI and scripting rungs. The editor's
   panel layout is answered at product level: a git-ignored file inside the project, one per
-  user ([[Editor - Brief]], 2026-10-25). Its name and place are the editor ADR's (S9-D2).
+  user ([[Editor - Brief]], 2026-10-25). It is `<project>/editorSettings/layout.ini`, in a
+  git-ignored folder that holds only per-user editor settings (ADR-027 §6), which may also suit
+  the `cmake.exe` path.
 - **Creating a project.** **What** it writes is decided in § *The project layout*.
   The editor's project launcher will write it ([[Backlog]] → *editor & tooling*);
   the UI is not built yet. `projects/dev/` is committed by hand until then.

@@ -94,6 +94,8 @@ mean copy a whole file unchanged. “Drop” means exclude it from this first Sc
 Keep v1's single live Scene object, with one scene loaded at a time. A project can contain
 multiple scene files; loading another replaces the contents of that same Scene. Concurrent
 live Scenes are outside this design and need a concrete use case before reconsideration.
+An editor Play session keeps one live Scene too: the copy is live and the edited original is
+parked, untouched, until Stop makes it live again (ADR-027 §5, Oct 25).
 
 The composition root owns the registry and supplies it to the Scene. Registry metadata
 and any code backing its storage/serialization callbacks must outlive the Scene's component

@@ -102,7 +102,7 @@ Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window
   render threads, and how ImGui-based editors hand draw data to a render thread that owns GL. It
   names its sources, marks what is from memory, and maps each answer onto ADR-018's threads and
   [[Window - Design]] § *The frame command buffer* without choosing. Report-only, best done in week 1.
-- [ ] **S9-D2** · Decide the editor's architecture · P1 · 🟢 Deep · 4-6h ·
+- [x] **S9-D2** · Decide the editor's architecture · P1 · 🟢 Deep · 4-6h ·
   done: `/adr` drafts the editor ADR from the brief and S9-P1's report, with the Unity and Unreal
   baseline. It decides whether ImGui shares the window and which thread draws it (ADR-015 §
   *Consequences*), how panels read the `Scene` (published copies or main's fence, ADR-024 §6), how

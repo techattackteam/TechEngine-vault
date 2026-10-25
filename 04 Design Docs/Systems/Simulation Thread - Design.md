@@ -235,7 +235,9 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 
 **Editor play states, decided 2026-10-10 and owned by T1.** The editor's simulation can be
 stopped, playing or paused. Only playing ticks; stopped and paused do not, as in Unity and
-Unreal, while the user keeps editing the scene. The simulation thread stays alive and idle
+Unreal, while the user keeps editing the scene. Since ADR-027 §4-5 (Oct 25), stopped edits the
+real scene, paused edits the play session, and Stop discards that session's copy; a play
+session is an ADR-022 simulation session. E1 builds stopped only, and Play comes with E11. The simulation thread stays alive and idle
 between commands and runs each editor load command as a loading phase ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4). Today every
 App ticks from the end of the startup phase until stop (`engine/app/src/SimulationThread.cpp:188-200`), so the
 idle state and a wake on command arrival are T1's to build.

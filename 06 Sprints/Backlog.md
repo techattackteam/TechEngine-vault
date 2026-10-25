@@ -314,6 +314,10 @@ groups are kept, because they show where future work will land.
   scene is chosen ([[Project - Design]] § *The manifest*). Found at S8-T6 on Oct 12, 2026. Its
   storage is [[Project - Design]] § *Open questions*' per-user settings question. **Trigger:**
   the rung after R1 that lets the editor open another scene ([[Editor - Brief]], 2026-10-25).
+- #prio/low · **ImGui multi-viewport**: panels dragged out into their own OS windows. Not a
+  Must, but wanted later. ADR-027 §1 keeps it off in E1 and leaves the threaded window glue to
+  build. Found at S9-D2 on Oct 25, 2026.
+
 ## etc: cross-cutting
 
 - #prio/low · **Two comments still name the old SDK smoke target**: `sdk/CMakeLists.txt:9` and

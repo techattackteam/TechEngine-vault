@@ -21,7 +21,6 @@ kanban-plugin: board
 
 ## Story C: E1's opening decisions
 
-- [ ] **S9-D2** · Decide the editor's architecture · P1 · 🟢 Deep · 4-6h: `/adr` from the brief and S9-P1; ImGui's window and thread, how panels read the `Scene`, how an edit reaches the sim, the stopped state. Follows S9-D1 and S9-P1.
 - [ ] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h: `Editor - Design` indexes the ADR; T1 cards cut into Story D. Follows S9-D2.
 
 
@@ -58,6 +57,12 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-D2** · Decide the editor's architecture · P1 · 🟢 Deep · 4-6h: vault `ba93e26`, **Oct 25**. [[ADR-027 - Editor threads, edit commands and play sessions]] is Accepted: main builds the ImGui frame and render draws it, panels read a published view, every edit is a command, and Play ticks a copy that Stop discards. Unblocks S9-D3; Story C stays open.
+	- **The clause's premise was wrong:** it framed "how panels read the `Scene`" as published copies or main's fence under ADR-024 §6, but §6 governs cache entries. ADR-018 §2 already rules out main reading the live `Scene`, so only the copy was open.
+	- **Wider than the clause:** Miguel had Play and Stop decided now rather than at E11, to avoid a rewrite. He chose to play a parked original's copy (Unreal's shape) over Claude's save-and-restore pick, and named the layout folder `editorSettings/`.
+	- **Written, then dropped while drafting:** a hand-written platform backend over `Window` (ImGui's GLFW backend already manages viewports), an editor-only lib (ADR-006 §1 already gives ImGui to the editor executable), and a scene field on every command (unneeded once the original is parked).
+	- **No code behind Q3 and Q4:** the edit command admission and the idle simulation state are designed but unbuilt, so T1 builds both and Story D's size must include them.
+	- **Retro:** planned for Thu Oct 29, run on Sunday as the day's third card on the third weekend without a rest day. The ADR is 146 lines, over the usual 120, because it holds six decisions.
 - [x] **S9-P1** · Research brief for the editor ADR · P2 · 🤖 Auto · 2-3h: vault `3f5a227`, **Oct 25**. [[Editor - Research Brief]] compares Unity, Unreal and Godot, and ImGui over a render thread, and maps each finding onto ADR-018, [[Window - Design]] § *The frame command buffer*, [[Editor - Brief]] and S9-D2's four questions without choosing. Run by hand on a Sunday so that the report is in before S9-D2. Unblocks S9-D2; Story C stays open.
 	- **Against the clause's premise:** none of the three engines puts its editor UI and the edited world on different threads in edit mode, so none answers S9-D2's "how panels read the `Scene`" directly. Godot's editor even forces rendering onto its main thread.
 	- **Wider than the clause:** since ImGui 1.92, a render thread needs texture requests staged beside the draw data, and those must not be skipped the way the newest-wins slot skips snapshots. `imgui_impl_glfw` also calls GLFW directly, against [[Window - Design]]'s "GLFW stays inside `platform`" row.
