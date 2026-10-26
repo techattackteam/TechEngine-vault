@@ -5,7 +5,7 @@
 > it is the E1 hub: plan and ground T1 work from here.
 
 **Module:** `apps/editor` (ImGui, panels, commands) · `app` (command admission, the idle
-simulation) · `client` (the overlay seam) · `core` (the field visitor, the `Name` component)
+simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name` component)
 **Kind:** system
 **Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. Nothing is built yet:
 Sprint 09's Story D, S9-T11 to S9-T19, builds it.
@@ -39,7 +39,7 @@ message. This note says how those messages are shaped.
 | Stopped, Playing, Paused | Only Playing ticks. E1 builds Stopped only, with the simulation thread alive and idle. | ADR-027 §4 |
 | Play ticks a copy | E11 builds it. E1 keeps undo records and the selection in one place that Play can freeze. | ADR-027 §5 |
 | The layout file | `<project>/editorSettings/layout.ini`, git-ignored, written through file access. | ADR-027 §6 |
-| The overlay seam is a callback | `client` calls an overlay on the render thread; the editor fills it with `imgui_impl_opengl3`. | 2026-10-26, § *The overlay seam* |
+| The ImGui hook is an interface | `client` calls an `ImGuiHook` on the render thread; the editor fills it with `imgui_impl_opengl3`. The name says it exists for ImGui only. | 2026-10-26, § *The ImGui hook* |
 | ImGui's GL is the one GL outside `client` | Third-party code in the editor issues GL, on the render thread only. | 2026-10-26; [[Window - Design]] |
 | Every `visit` field has a name | `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it. | 2026-10-26; [[Serialization - Design]] |
 | The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. | 2026-10-26, § *Fields* |
@@ -65,7 +65,7 @@ flowchart LR
     end
     subgraph Render["Render thread"]
         S["Draw the scene snapshot"]
-        O["Overlay: imgui_impl_opengl3"]
+        O["ImGui hook: imgui_impl_opengl3"]
         S --> O
     end
     P -->|"Commands, bounded, never dropped"| A
@@ -78,33 +78,39 @@ flowchart LR
 Each arrow is a copy under a short lock, never a shared reference. The simulation's existing
 render snapshot still feeds the scene draw beside these.
 
-## The overlay seam
+## The ImGui hook
 
-`Client::start` takes an optional overlay. The runtime passes none, so `client` and the runtime
-never link ImGui. The render thread makes three calls on it:
+`Client::start` takes an optional `ImGuiHook*`. The runtime passes none, so `client` and the
+runtime never link ImGui. The render thread makes three calls on it:
 
 | Call | When |
 |---|---|
-| start | Once, after `gladLoadGL` succeeds and before the first frame. |
+| start | Once, after `gladLoadGL` succeeds and before `signalReady`, so main is still blocked in `Client::start`. |
 | draw | Every frame, after the scene draw and before `swapBuffers`, with the framebuffer size. |
 | stop | Once, before the render thread releases the context, also after a failed frame. |
 
-The editor's overlay owns `imgui_impl_opengl3` and the consuming side of both channels. On each
-draw it applies every queued texture request in order, then draws the newest draw data, or the
-last one again when none is new. It uses ImGui's threaded helpers, `ImDrawDataSnapshot` and
-`ImTextureQueue` ([[Editor - Research Brief]] § *Dear ImGui over a render thread*).
+The editor's hook, `ImGuiBridge`, owns `imgui_impl_opengl3` and the consuming side of both
+channels. On each draw it applies every queued texture request in order, then draws the newest
+draw data, or the last one again when none is new. It uses ImGui's threaded helpers,
+`ImDrawDataSnapshot` and `ImTextureQueue` ([[Editor - Research Brief]] § *Dear ImGui over a
+render thread*). They live in `imgui_club`, not in ImGui, so they are a second pinned dependency.
 
 - `imgui_impl_opengl3` embeds its own GL loader. Leave it: glad is private to `client`, and both
   loaders read the same current context.
-- `ImGui_ImplOpenGL3_Init` needs a current context, so it runs in the overlay's start, on the
-  render thread, never in the editor's `init()`.
+- `ImGui_ImplOpenGL3_Init` needs a current GL context, so it runs in the hook's start, on the
+  render thread, never in the editor's `init()`. It also needs the ImGui context, so that
+  context must exist before `startClient()` (§ *The ImGui frame on main*).
+- Starting before `signalReady` keeps the backend's writes to `ImGuiIO` from racing main's
+  `imgui_impl_glfw` init.
 - Main must hand over a snapshot of the draw data, never ImGui's own `ImDrawData`, which the
   next `NewFrame` rewrites while render may still be reading it.
 
 ## The ImGui frame on main
 
-The editor creates the ImGui context in `init()` after `startClient()`, then initializes
-`imgui_impl_glfw` on the window's native handle, which `Window` and `Client` expose to main.
+In `init()`, the editor creates the ImGui context **before** `startClient()`, because the hook's
+start runs inside that call and initializes `imgui_impl_opengl3` against the context. After
+`startClient()` returns, it initializes `imgui_impl_glfw` on the window's native handle, which
+`Window`, `Client` and `ClientApp` expose to main.
 
 - **Callback order bites.** `ImGui_ImplGlfw_InitForOpenGL` with installed callbacks chains the
   callbacks that `Window` set before it. It must run after `Window::open` and
@@ -234,6 +240,6 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 - Built by Sprint 09's Story D ([[2026-10 Sprint 09 - Close M6]]).
 - Today's editor: `apps/editor/src/EditorApp.cpp`; its client base:
   `apps/clientapp/src/ClientApp.cpp`; the loop that idles: `engine/app/src/SimulationThread.cpp:188-200`.
-- The render frame the overlay joins: `engine/client/src/render/RenderThread.cpp:97-134`.
+- The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-134`.
 - The visitors that gain names: `engine/core/include/TechEngine/core/serialization/Writer.hpp:85`,
   `Reader.hpp:97`, `ReferenceVisitor.hpp:24`.
