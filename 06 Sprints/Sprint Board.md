@@ -15,7 +15,6 @@ kanban-plugin: board
 
 ## Story B: The mesh path · 🤖 Claude
 
-- [ ] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h: `exportTo` walks the scene's references; the runtime registers the mesh loader and component; a `RuntimeAppTests` case over an export loads the mesh. Follows S9-T2, S9-T3 and S9-T5.
 
 
 ## Story C: E1's opening decisions
@@ -52,6 +51,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h: `exportTo` walks the scene's references; the runtime registers the mesh loader and component; a `RuntimeAppTests` case over an export loads the mesh. **PR #161**, branch `S9-T7/bake-reached-assets`, opened Oct 26 by the lane. Miguel accepts or reverses its seven *Decisions I took*, and checks the extra commit that drains frees in `App::simulationShutdown()`. His windowed run follows the merge and closes M6.
 
 
 ## ✅ Done: Sprint 09
