@@ -79,7 +79,7 @@ S9-T3 to merge.
   scene and mesh loaders and calls S9-T1's function with `LooseSource` as the cache's source, so a
   later launch opens on the saved scene instead of an empty one. The `TODO` at
   `apps/editor/src/EditorApp.cpp:56` goes. Follows S9-T1, S9-T3 and S9-T5.
-- [ ] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h ·
+- [x] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h ·
   done: `Project::exportTo` walks the startup scene's references and packs each reached asset into
   its side's pack when the target ships that side, instead of the scene alone. The runtime
   registers the mesh loader and S9-T5's component, and a `RuntimeAppTests` case over an export
@@ -180,9 +180,10 @@ start this sprint are P2, so dropping them never costs the goal.
 
 ## Definition of Done
 
-- [ ] A `RuntimeAppTests` case over an export proves that the runtime loads the startup scene
+- [x] A `RuntimeAppTests` case over an export proves that the runtime loads the startup scene
   through the cache with its mesh reference acquired, and that releasing the scene leaves nothing
-  counted at shutdown (S9-T1, S9-T3, S9-T7).
+  counted at shutdown (S9-T1, S9-T3, S9-T7). Oct 26, #161 `c509ac3`: *the startup load acquires the mesh the
+  startup scene references from the client pack*.
 - [x] An `EditorAppTests` case proves that a later launch opens on the saved startup scene through
   the cache (S9-T6). Oct 26, #160 `bff0b6f`: *a later launch opens on the saved startup scene
   through the cache*.

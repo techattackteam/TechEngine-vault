@@ -16,8 +16,9 @@ the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #1
 entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh resource type
 (S9-T4, #155, 2026-10-24), the reference fields and their walk (S9-T2, #157, 2026-10-24),
 the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25), the loaded scene's
-acquires of its references (S9-T3, #159, 2026-10-25), and the editor's startup load through the
-cache (S9-T6, #160, 2026-10-26).
+acquires of its references (S9-T3, #159, 2026-10-25), the editor's startup load through the
+cache (S9-T6, #160, 2026-10-26), and the bake of what the startup scene reaches (S9-T7, #161,
+2026-10-26).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -100,6 +101,7 @@ built or run.
 | Writer and reader both in `core`, at M6; the bake driver stays in the editor. | ADR-025 §6 |
 | The runtime mounts `assets` beside its executable and follows the boot record. | ADR-025 §7 |
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
+| The bake walks the startup scene's file and packs each asset it references. A reference the index does not know fails the export with `UnknownReference`; a reference on a side the target does not ship is listed in the boot record's sides, not packed. | Miguel, Oct 26 (S9-T7); § *Export and the runtime layout* |
 | The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`, numbered `<name>(1)`, `<name>(2)` when that folder exists. Before T2, the editor exports the client target in its startup load, into its own executable folder. | Miguel, Oct 11, 12 and 15; § *Export targets* |
 | The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
 | A source answers `Present`, `AbsentForRole` or `Unknown` through a query; only its `read` returns a `std::error_code`. | Miguel, Oct 11; § *Two sources, one cache* |
@@ -298,7 +300,9 @@ these at `/card-start`:
 - **Shutdown runs after the app's own.** `SimulationThread` calls `ResourceCache::shutdown()`
   right after `app.simulationShutdown()`, so the app's releases land first and the log names
   only real leaks: it waits for every in-flight batch, then warns once per entry whose count is
-  not zero. The destructor calls it again as a safety net for an App whose simulation never
+  not zero. Since S9-T7 the base `simulationShutdown()` drains frees after releasing the scene,
+  because a released scene holds its references until its entry is freed, and every one of them
+  was logged as a leak. The destructor calls it again as a safety net for an App whose simulation never
   ran, and that second call logs the same entries again.
 
 ### Loading phases and other threads
@@ -310,7 +314,7 @@ these at `/card-start`:
 | Scene change (T1 and later) | Simulation, with ticking stopped | Acquire the new scene's references, then release the old scene's, then drain frees. Shared content is never reloaded. |
 | Editor load commands (T1) | Simulation, stopped or paused | Main's UI sends load commands through the main-to-simulation queue. A stopped or paused simulation does not tick, so each command runs as a loading phase; results come back as published copies. |
 | Barrier resource step (A1) | Simulation | After structural commands and NetId assignment: issue the Tick's soft requests, publish finished loads, drain frees. Its order against the event step is A1's to fix. |
-| `simulationShutdown()` | Simulation | The app releases what it holds; then the cache waits for its load batches and logs what is still counted (S8-T11). Nothing releases the leftovers. |
+| `simulationShutdown()` | Simulation | The app releases what it holds and drains frees, so a released scene's references go with it (S9-T7); then the cache waits for its load batches and logs what is still counted (S8-T11). Nothing releases the leftovers. |
 
 The startup load runs **after** readiness on purpose. `SimulationThread::start` blocks main
 until the thread signals ready (`engine/app/src/SimulationThread.cpp:50`), so a load inside
@@ -375,8 +379,7 @@ following ADR-024 §10's vocabulary.
 Decided on Oct 18 at S8-D1 ([[ADR-026 - Reference fields and scene-held acquires]], Accepted Oct 19).
 Built for the startup load: the scene as a cache entry landed with S9-T1, the fields and the
 walk with S9-T2, the editor's mesh and `MeshRenderer` with S9-T5, the acquires with S9-T3, and the editor's load
-with S9-T6.
-The bake's walk is S9-T7's.
+with S9-T6, and the bake's walk with S9-T7.
 
 | Job | What the reference walk does |
 |---|---|
@@ -453,7 +456,7 @@ The bake's walk is S9-T7's.
   is `"TechEngine.Mesh"`; a mesh file is `.temesh`. `read` returns `Malformed` for an index past
   the last position, an index count that is not whole triangles, or bytes after the indices, and
   assigns the mesh only on success. `Mesh::loadPayload` names no dependencies (#156 made the
-  loader hooks members of their payload types). The editor registers it (S9-T6); the runtime's registration is S9-T7's.
+  loader hooks members of their payload types). The editor registers it (S9-T6), and so does the runtime, with `MeshRenderer` (S9-T7).
 - **The mesh component as built** (S9-T5, #158, 2026-10-25): `MeshRenderer` in
   `core/mesh/MeshRenderer.hpp` holds one `AssetRef<Mesh>`. The name follows v1, whose
   `MeshRenderer` paired a mesh with a material; it gains its material when R1 adds one, and
@@ -579,13 +582,22 @@ editor's own executable folder. Both executables build into one `${CMAKE_BINARY_
 a folder. Until the export command decides that layout, the runtime reads the first one,
 `<exe dir>/Dev` (§ *The runtime's startup load*).
 
+**The bake as built** (S9-T7, #161, 2026-10-26). `exportTo` takes the editor's
+`ComponentRegistry`, reads the startup scene's file into a scratch `Scene`, and collects its ids
+with `SceneAsset::collectReferences`, the collector the scene load uses. It walks the file, not
+the live scene, so what is walked is what is packed. The walk is one level deep, because only
+scenes hold references. Every reached id goes into the boot record's sides. A scene that does
+not parse fails the export with its read error, and a scene that references itself is packed
+once. Every failure comes before the project folder is chosen.
+
 ### The runtime's startup load
 
 Built at S8-T9 (#139, 2026-10-15) as `RuntimeApp::simulationStartupLoad()` in
 `apps/runtime/src/RuntimeApp.cpp`. Since S9-T1 (#154, 2026-10-24) it loads the scene through
 the cache: `RuntimeApp` holds its `PackSource` as a member, sets it as the cache's source,
 registers the scene loader in `configureSimulation()`, and calls `SceneAsset::load` into
-`m_sceneHandle` (§ *Reference fields*). Miguel settled these at S8-T9's `/card-start`:
+`m_sceneHandle` (§ *Reference fields*). Since S9-T7 (#161) it also registers `MeshRenderer` and
+the mesh loader, and its scene log names each entity's mesh. Miguel settled these at S8-T9's `/card-start`:
 
 - **`RuntimeApp` takes a folder and mounts `<folder>/assets` in `init()`**, through a protected
   `mountAssets()` that the headless tests call, since `init()` also opens the window. `main`

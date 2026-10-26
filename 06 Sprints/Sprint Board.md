@@ -51,11 +51,15 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h: `exportTo` walks the scene's references; the runtime registers the mesh loader and component; a `RuntimeAppTests` case over an export loads the mesh. **PR #161**, branch `S9-T7/bake-reached-assets`, opened Oct 26 by the lane. Miguel accepts or reverses its seven *Decisions I took*, and checks the extra commit that drains frees in `App::simulationShutdown()`. His windowed run follows the merge and closes M6.
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h: #161 `c509ac3`, **Oct 26**. `exportTo` reads the startup scene's file with the editor's registry, collects its ids with `SceneAsset::collectReferences`, and packs each reached asset into its side's pack. The runtime registers `MeshRenderer` and the mesh loader ([[Resources - Design]] § *Export and the runtime layout*, *The bake as built*). #161 has no review conversation, so this entry comes from the card, the PR body, the diff and the session. Miguel merged its seven *Decisions I took* unchanged, so nothing was reversed. Completes Story B; the windowed run is left to close M6.
+	- **Wider than the card:** the new runtime test found that `App::simulationShutdown()` released the scene without draining frees, so the shutdown log reported every reference of a loaded scene as a leak. The fix shipped as its own commit.
+	- **A test fixture had to change:** the export's tests wrote placeholder scene bytes, and an export that parses the scene rejects those, so the `ExportScratch` fixture now writes real scenes. No assertion changed.
+	- **Raised during the close, filed not built:** Miguel's wanted behaviour for deleting an asset in the editor went to the [[Backlog]] at `#prio/xhigh`. It would change the Decided row that a missing reference fails the scene load.
+	- **Retro:** opening the PR failed twice with an HTTP 500 from GitHub before the third try worked.
 - [x] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h: #160 `bff0b6f`, **Oct 26**. A later launch now loads the named startup scene with `SceneAsset::load` over the editor's `LooseSource`, so it opens on the saved scene with its mesh acquired ([[Resources - Design]] § *Reference fields*, *The editor's load as built*). #160 has no review conversation, so this entry comes from the card, the PR body, the diff and the session. Miguel merged its three *Decisions I took* unchanged, so nothing was reversed. Unblocks nothing; Story B stays open on S9-T7.
 	- **Questions in review, no code change:** Miguel checked that `LooseSource` serves only runtime-form files, with PNG and glTF left to T4's importers (ADR-025 §5 and §6), and asked what `setSource` does. The note now says both.
 	- **Taken out of priority order:** S9-T7 is P1 and S9-T6 is P2, but the lane takes a 🤖 Claude story in the sprint note's order.
