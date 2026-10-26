@@ -19,6 +19,7 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 | Two paths, one seam: trivially-copyable spans copy as raw bytes; everything else is visited. | ADR-016 §1 |
 | One `visit` function per non-POD type; `Writer` and `Reader` are visitors over it. | ADR-016 §2 |
 | The visit function is the reflection seam: P2996 would generate it, nothing downstream moves. | ADR-016 §2, ADR-005 |
+| Every field has a name, passed first: `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it, so no byte changes; the editor's field visitor uses it. Decided 2026-10-26 for the inspector, built by S9-T14. | ADR-016 §2; [[Editor - Design]] § *Fields* |
 | Little-endian on disk and wire, no swap code, compile-time check documents it. | ADR-016 §3 |
 | Blob header is `{magic, u16 formatVersion, flags}`; strings length-prefixed; `StringId` as raw `u64`. | ADR-016 §3 |
 | Encoding adds no nondeterminism: same input bytes, identical output bytes. | ADR-016 §3 |

@@ -19,10 +19,19 @@ kanban-plugin: board
 
 ## Story C: E1's opening decisions
 
-- [ ] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h: `Editor - Design` indexes the ADR; T1 cards cut into Story D. Follows S9-D2.
 
 
 ## Story D: E1's first panels · stretch
+
+- [ ] **S9-T11** · ImGui draws in the editor's window · P2 · 🟢 Deep · 4-6h: the docking branch in the editor only, `client`'s render-thread overlay seam, draw data newest-wins and texture requests in order. Depends on nothing.
+- [ ] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h: a bounded FIFO in `app`, rejects when full, cancels on shutdown; headless `AppTests`. Depends on nothing.
+- [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h: no tick and no spin; wakes on a command or stop; the runtime unchanged; the `InputBuffer` detached. Follows S9-T12.
+- [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: `archive.field("mesh", value.mesh)` everywhere; no byte changes. Must merge before S9-T15 and S9-T17.
+- [ ] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h: a `Name` component on every entity, saved with the scene and printed by the runtime's scene log. Follows S9-T14.
+- [ ] **S9-T16** · The published view and the hierarchy panel · P2 · 🟢 Deep · 4-6h: create, delete, reparent and select as commands, drawn from the published view. Follows S9-T11, S9-T13 and S9-T15.
+- [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename, add and remove components. Follows S9-T14 and S9-T16.
+- [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h: save as a command, the title marker, Save, Discard or Cancel on close. Follows S9-T16.
+- [ ] **S9-T19** · The dock, a placeholder scene view and the remembered layout · P2 · 🟠 Moderate · 2-3h: `editorSettings/layout.ini` through `FileAccess`, git-ignored. Follows S9-T11.
 
 
 
@@ -47,6 +56,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h: `Editor - Design` indexes the ADR; T1 cards cut into Story D. Follows S9-D2.
 
 
 ## 👀 Review / Demo

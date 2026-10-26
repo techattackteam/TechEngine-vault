@@ -28,6 +28,7 @@ the editor alongside E11 (T6); the project launcher with packaging (T5).
 |---|---|---|
 | **Must, E1** | The hierarchy creates, deletes and reparents entities. | Scenario 2 |
 | **Must, E1** | The inspector adds and removes components and edits their fields. | Scenario 2 |
+| **Must, E1** | Every entity has a name. The hierarchy shows it, the inspector renames it, it is saved with the scene, and the runtime's log prints it. Names need not be unique. | Scenarios 1, 2 and 4; `/triage`, 2026-10-26 |
 | **Must, E1** | A placeholder scene view. It does not draw the scene. | No renderer until E2 |
 | **Must, E1** | Save, with an unsaved marker in the title and a prompt on close. | Scenario 3 |
 | **Must, E1** | Export, then the runtime is started by hand. Its log naming the edited entities and values is the proof. | Scenario 4 |
@@ -105,3 +106,5 @@ Definition of Done in the [[Roadmap]] still names a showcase.
 | The layout Must against P1 | It is a must for Miguel's development. | 2026-10-25 |
 | When more than one scene, reopening the last one and undo come back | After the first phase of the renderer (R1) is done, possibly as a rung between T2 and T3. | 2026-10-25 |
 | Why E1 has no video | Showcases are meant to be professional, higher-quality cinematic videos, not generic ones or live footage of editing, and E1 has nothing good enough to show that way. | 2026-10-25 |
+| Entity names | A Must for E1, through `/triage`: names are shown, edited, saved and logged by the runtime. Looking an entity up by name from gameplay is not part of it. | 2026-10-26 |
+| A persistent id per entity, as v1's `Tag` had | Not a product capability. [[ADR-007 - v2 networking & ECS replication foundation]] §1 already decides it: an opt-in component for entities referenced across documents, revisited when prefabs arrive. | 2026-10-26 |

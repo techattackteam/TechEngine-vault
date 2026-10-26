@@ -9,7 +9,7 @@
   [[ADR-018 - Main and simulation threads, render-owned GL]] §1-2 ·
   [[ADR-019 - Fixed simulation ticks, render interpolation and shared clock]] §5 ·
   [[ADR-022 - Project system composition and self-description]] ·
-  [[ADR-026 - Reference fields and scene-held acquires]] §1 §4 · living *how*: `Editor - Design` (S9-D3)
+  [[ADR-026 - Reference fields and scene-held acquires]] §1 §4 · living *how*: [[Editor - Design]]
 
 ## Context
 

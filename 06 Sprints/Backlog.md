@@ -328,6 +328,13 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/low · **Log lines that mention an entity print its name**: Miguel's ask, Oct 26, 2026.
+  Once entities have names (S9-T15), a warning or error about an entity should print its name
+  beside `index:generation`, not the index alone. S9-T15 covers only the runtime's scene log,
+  which [[Editor - Brief]] makes a Must. Today one other line mentions an entity, without naming
+  it: `engine/core/src/scene/SceneAssetRowWriter.cpp:14`. **Trigger:** S9-T15 merges, then the
+  next card that adds or edits a log line about an entity.
+
 - #prio/low · **Two comments still name the old SDK smoke target**: `sdk/CMakeLists.txt:9` and
   `.github/workflows/ci.yml:79` say `te_sdk_smoke`, while the target is `TechEngineSDKSmoke`
   (ctest `sdk-smoke`). The Markdown copies were fixed in #153. Found at S8-P11's close, Oct 23.

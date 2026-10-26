@@ -19,7 +19,7 @@ must exist before the goal's first ADR.
 | Goal | The showcase shows | Needs | Alongside | Map |
 |---|---|---|---|---|
 | **M6 · Content** 🔨 now | (no video) The runtime loads scenes and meshes from packs, with references | Sprint 09's Story A and the mesh path (🤖 Claude) | The editor brief and ADR | |
-| **E1 · Editor and export** | Build a scene in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
+| **E1 · Editor and export** | Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
 | **E2 · First renderer** | Imported models with physically based materials, in the runtime and the editor's scene view | R1, after the **renderer ADR** | T4 import · T3 viewport tools | Renderer, content pipeline |
 | **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | | Renderer |
 | **E4 · Fog and god rays** | Volumetric fog and light shafts | R4 | The terrain brief and ADR | Renderer |
@@ -50,7 +50,7 @@ cite them. Order **within** a lane is real.
 | Rung | Contents | Needs | Goal |
 |---|---|---|---|
 | 🔧 **T1** · Editor panels | Dock · hierarchy · inspector · console and cvars · Profiler panel · scene save | M6. ImGui only. | E1 |
-| 🔧 **T2** · Export | The editor's save and export commands over M6's bake | T1 · M6 | E1 |
+| 🔧 **T2** · Export | The editor's export command over M6's bake. Save is T1's (2026-10-26). | T1 · M6 | E1 |
 | 🔧 **T3** · Viewport tools | Picking (F21) and gizmos in the scene view | R1 | E2, alongside |
 | 🔧 **T4** · Import and asset browser | glTF loaded through assimp, writing runtime-form files that M6's bake packs (ADR-025 §6) · an asset browser | T1 · M6 | E2, alongside |
 | 🔧 **T5** · Packaging | Distributable build · launcher arguments · no dev dependencies | T2 · T4 | Demo |

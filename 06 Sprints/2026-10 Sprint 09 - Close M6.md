@@ -3,7 +3,7 @@
 - **Quarter:** [[2026-Q4]]
 - **Dates:** Saturday Oct 24 - Friday Nov 6, 2026.
 - **Epic:** M6 · content, closed; E1 · Editor and export, opened with its decisions
-  ([[Roadmap]]). Hubs: [[Resources - Design]], and the editor's note once S9-D3 writes it.
+  ([[Roadmap]]). Hubs: [[Resources - Design]] and [[Editor - Design]].
 
 ## Sprint goal
 
@@ -113,10 +113,88 @@ Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window
   rows, and the first T1 panel cards are cut against it into Story D, each with a `done:` clause
   and a size. Follows S9-D2.
 
-### Story D: E1's first panels · ~4-6 tasks · size after S9-D2 · stretch
+### Story D: E1's first panels · 9 tasks · stretch
 
-T1's dock, hierarchy and inspector ([[Roadmap]] § *Rung catalogue*). S9-D3 cuts them; any that
-start this sprint are P2, so dropping them never costs the goal.
+T1's dock, hierarchy, inspector and save ([[Roadmap]] § *Rung catalogue*), cut by S9-D3 on
+Oct 26 against [[Editor - Design]]. Every card is P2, so dropping one never costs the goal. The
+console, cvars and the Profiler panel are Shoulds in [[Editor - Brief]] and stay uncut. Export
+as a command is T2's, not this story's.
+
+- [ ] **S9-T11** · ImGui draws in the editor's window · P2 · 🟢 Deep · 4-6h ·
+  done: ImGui's docking branch, pinned in `cmake/deps.cmake`, links only into the editor, with
+  its GLFW and OpenGL3 backends. `Client::start` takes an optional overlay that the render
+  thread starts after GL loads, draws after the scene and before swap, and stops before it
+  releases the context; the runtime passes none ([[Editor - Design]] § *The overlay seam*).
+  `Window` and `Client` expose the native window to main. Main builds an ImGui frame on each
+  wake and hands render its draw data newest-wins and its texture requests in order, never
+  dropped. A `RenderThreadTests` case with a fake overlay proves the three calls run on the
+  render thread in that order. Windowed: ImGui's demo window draws, and dragging it stays smooth.
+  Depends on nothing.
+- [ ] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h ·
+  done: `app` holds the bounded FIFO that [[Simulation Thread - Design]] § *Input and control
+  handoffs* specifies: main submits without blocking, a full or closed queue rejects visibly and
+  never evicts, a ticking app applies the batch to the live `Scene` before each fixed tick, and
+  commands accepted but not applied at shutdown are reported as cancelled. A command is a type
+  with one virtual `apply` ([[Editor - Design]] § *Commands and the idle simulation*).
+  `AppTests` cases prove FIFO order, a rejection at capacity 1, and the cancelled report. Nothing
+  submits a command yet. Depends on nothing.
+- [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h ·
+  done: an `App` can say that its simulation does not tick (ADR-027 §4). The editor says so, and
+  the runtime keeps ticking unchanged. An idle simulation thread waits until a command arrives or
+  stop is requested, applies the batch as a loading phase, then runs a publication hook, so
+  nothing ticks and nothing spins while Stopped. The editor detaches the `InputBuffer` while
+  Stopped. `AppTests` cases prove that an idle app runs no tick across a wait, that a submitted
+  command is applied and published within one wake, and that stop wakes it. Follows S9-T12.
+- [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h ·
+  done: `field` takes a name first, `archive.field("mesh", value.mesh)`, in `Writer`, `Reader`,
+  `ReferenceVisitor`, every `visit` (`Transform`, `MeshRenderer`) and the test types. A name is
+  a string literal, and `Transform`'s are `position.x`, `rotation.w` and so on. The three
+  visitors ignore the name, so no byte changes: the existing round-trip and scene asset tests
+  pass with only their `visit` bodies edited ([[Serialization - Design]] § *Decided*). Depends on
+  nothing; S9-T15 and S9-T17 follow it.
+- [ ] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h ·
+  done: a `Name` component in `core/scene/components/` holds one `std::string`. `App` registers
+  it with `Transform`, and every new entity carries it, named `Entity` ([[Editor - Design]] §
+  *Entity names*). It is saved and read with the scene, and a scene saved before it loads with
+  the default name. `RuntimeApp::logSceneTree` prints each entity's name beside its index
+  ([[Editor - Brief]], 2026-10-26). Tests: a round trip keeps names, including an empty name and
+  two equal names; a scene without `Name` blocks loads with defaults. Existing tests that count
+  an entity's components are adapted. Follows S9-T14.
+- [ ] **S9-T16** · The published view and the hierarchy panel · P2 · 🟢 Deep · 4-6h ·
+  done: after each applied batch that changed the scene, the simulation publishes the editor
+  view (the hierarchy in tree order with names, the selection, the edit and saved revisions)
+  newest-wins and wakes main ([[Editor - Design]] § *The published view*). A hierarchy panel
+  draws from it and sends create, delete, reparent and select commands. It refuses a drop onto
+  the dragged entity's own subtree, and a command the `Scene` rejects only logs a warning, so the
+  [[Backlog]]'s `bool` mutator entry stays armed. Headless tests apply each command and check
+  the published view. Windowed: the panel shows `projects/dev`'s startup scene. Follows S9-T11,
+  S9-T13 and S9-T15.
+- [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h ·
+  done: `core/serialization` gains the field visitor, and each registered component a field walk
+  in its registry record ([[Editor - Design]] § *Fields*). The published view adds the selected
+  entity's components as field rows. The inspector edits each editable kind, renames the entity,
+  and adds and removes components; every edit is a command that records the old value. How a
+  `Transform` edit updates its world values is settled at `/card-start` (the note's *Open
+  questions*). Tests: a set-field command changes exactly one field, publishes the new row, and
+  records the old value. Follows S9-T14 and S9-T16.
+- [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h ·
+  done: a save command writes the live scene over the startup scene's indexed file on the
+  simulation thread and publishes the saved revision ([[Editor - Design]] § *Save, the unsaved
+  marker and close*). Ctrl+S and a menu item send it. The title shows an unsaved marker while the
+  published revision differs from the saved one. Closing with unsaved edits asks Save, Discard or
+  Cancel, and Cancel keeps the window open. `/card-start` decides what this first kept save does
+  to [[Serialization - Design]]'s trigger for per-type versions. Tests: a save and a reload give
+  the same scene; the saved revision follows a save; a failed write leaves the marker. Follows
+  S9-T16.
+- [ ] **S9-T19** · The dock, a placeholder scene view and the remembered layout · P2 · 🟠 Moderate · 2-3h ·
+  done: a dockspace over the main window holds the panels and a placeholder scene view, with a
+  default layout when none is saved. ImGui writes no file itself: the layout loads from and saves
+  to `project://editorSettings/layout.ini` through `FileAccess` (ADR-027 §6), and
+  `editorSettings/` is git-ignored. Windowed: rearrange the panels, relaunch, and they are where
+  they were. Follows S9-T11; the hierarchy and inspector join the dock as S9-T16 and S9-T17 land.
+
+S9-T11, S9-T12 and S9-T14 depend on nothing, so any of them can open the story. S9-T14 is the
+lane's, and it must merge before S9-T15 and S9-T17 start.
 
 ### Story E: Alongside: the renderer brief
 
@@ -168,11 +246,13 @@ start this sprint are P2, so dropping them never costs the goal.
 - 🤖 Claude features: Story B (S9-T4 to S9-T7), the lane's first, headless under the trial terms
   ([[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate*). It sits on the goal's critical
   path, and its last three cards wait on Story A.
-- 🤖 Auto cards: S9-P1, S9-P2, S9-T8, S9-T9 and S9-T10. None touches a file of Story A, Story C
-  or Story B: S9-T9 and S9-T10 stay in `engine/platform`, and S9-T8 in `AppTests.cpp`.
+- 🤖 Auto cards: S9-P1, S9-P2, S9-T8, S9-T9, S9-T10 and S9-T14. None touches a file of Story A,
+  Story C or Story B: S9-T9 and S9-T10 stay in `engine/platform`, and S9-T8 in `AppTests.cpp`.
+  S9-T14 touches the three visitors and every `visit`, so it must merge before S9-T15 and S9-T17
+  start; S9-T12 and S9-T13 also add cases to `AppTests.cpp`, so S9-T8 should merge first.
 - Standing prep: S9-P3 (not before Mon Nov 2) and S9-D5 (Tue Nov 3 to Fri Nov 6).
-- PR load: seven PR-producing lane cards (four 🤖 Claude, three 🤖 Auto) over two weeks, about
-  three or four a week against a limit of about five. S9-P1, S9-P2 and S9-P3 are report-only and
+- PR load: eight PR-producing lane cards (four 🤖 Claude, four 🤖 Auto) over two weeks, about
+  four a week against a limit of about five. S9-P1, S9-P2 and S9-P3 are report-only and
   free. Review costs about 3-3.5h, which fills both Tuesdays.
 - The routine is enabled at 09:07 and 14:07 Lisbon on weekdays with the Oct 23 prompt; its first
   weekday fire is Mon Oct 26 ([[Autonomous Lane - Routine Prompt]]).
@@ -210,6 +290,11 @@ and 1 🟡: about six 🟢 slots once two 🟠 cards take 🟢 slots. Story D is
   the windowed run once S9-T7 merges.
 - Week 2 of Sprint 08 was hard after a car crash, and this is the third weekend in a row with no
   rest day. If energy dips, Story D and then S9-D4 drop first.
+- **Story D is over the remaining capacity, by Miguel's choice (Oct 26).** S9-D3 cut 9 cards:
+  3 🟢, 5 🟠 and one 🤖 Auto, about 8 🟢 slots. About 5 🟢 slots are free after S9-D3, S9-D4,
+  S9-D5, the weekly review and the windowed run. Miguel kept the whole cut in this sprint because
+  M6's code closed on day 3; every card is P2, so the tail drops into Sprint 10 at no cost to the
+  goal.
 
 ## Sprint review (end)
 
