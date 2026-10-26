@@ -304,6 +304,14 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/xhigh · **Deleting an asset in the editor**: Miguel's wanted behaviour, Oct 26, 2026.
+  Before the delete, a warning lists the scenes that use the asset. After it, each reference
+  points at its type's default asset. Loading a scene with an asset that is not there warns
+  instead of failing. Not decided and not designed. It changes the Decided row "a reference
+  that fails to be added or loaded fails the scene load" ([[Resources - Design]]), and it needs
+  a default asset per resource type, which does not exist yet. Today a deleted file goes
+  unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
+  **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
