@@ -23,8 +23,7 @@ kanban-plugin: board
 
 ## Story D: E1's first panels · stretch
 
-- [ ] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h: a bounded FIFO in `app`, rejects when full, cancels on shutdown; headless `AppTests`. Depends on nothing.
-- [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h: no tick and no spin; wakes on a command or stop; the runtime unchanged; the `InputBuffer` detached. Follows S9-T12.
+- [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h: no tick deadline, no spin; sleeps until S9-T12's command wake or stop; the runtime unchanged; the `InputBuffer` detached. Follows S9-T12.
 - [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: `archive.field("mesh", value.mesh)` everywhere; no byte changes. Must merge before S9-T15 and S9-T17.
 - [ ] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h: a `Name` component on every entity, saved with the scene and printed by the runtime's scene log. Follows S9-T14.
 - [ ] **S9-T16** · The published view and the hierarchy panel · P2 · 🟢 Deep · 4-6h: create, delete, reparent and select as commands, drawn from the published view. Follows S9-T11, S9-T13 and S9-T15.
@@ -62,6 +61,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h: #163 `3165f73`, **Oct 26**. `App::submitCommand` admits a `Command` into a bounded `CommandQueue`, wakes the simulation thread, and the loop applies the batch at the top of each pass ([[Editor - Design]] § *Commands and the idle simulation*). #163 has no body and no review conversation, so this entry comes from the card, the diff and the session. Unblocks S9-T13; Story D stays open.
+	- **The clause's premise was wrong:** "a ticking app applies the batch before each fixed tick" would never apply an edit in the Stopped editor, which does not tick. Miguel chose to apply commands whenever the thread wakes, never inside a tick, and S9-T12, S9-T13 and the note were rewritten before any logic. No artifact said what "reported as cancelled" means either; it is one warning with the count.
+	- **Decided in the card:** the queue is open only while the simulation thread runs, so a submit before the run or after stop is rejected. Asked during the card whether the queue belongs in the editor, Miguel kept it in `app`, because ADR-018 §2 sends the server's console commands the same way.
+	- **Review caught before merge:** a failed startup load left the queue open after the cancel, so a late submit would have been applied by the next run; the queue's own `std::errc` codes; a null command that would crash the simulation thread; `applyCommands` under the wait mutex, which blocked main's submit; and a "Cancelled 0 commands" warning after every run.
+	- **Retro:** that warning looked like a race, because test names with a comma split into two filters when CLion reruns one test by name, so the test sometimes did not run at all. 59 test names on `master` have a comma ([[Backlog]] → cross-cutting). Claude's first reason for reopening the queue on each run, that an existing test would break, was also wrong.
 - [x] **S9-T11** · ImGui draws in the editor's window · P2 · 🟢 Deep · 4-6h: #162 `6df5fa6`, **Oct 26**. `client` calls an `ImGuiHook` on the render thread, and the editor's `ImGuiBridge` carries main's frame across in three snapshots beside ImGui's texture queue ([[Editor - Design]] § *The ImGui hook*). Miguel reports that the demo window draws and the tests pass. #162 has no review conversation, so the findings below come from the session. Unblocks S9-T19, and S9-T16 with S9-T13 and S9-T15; Story D stays open.
 	- **A clause without a referent:** "ImGui's docking branch, pinned" named one dependency, but `ImDrawDataSnapshot` and `ImTextureQueue` live in `imgui_club`, so it is a second pin.
 	- **Against the note as written:** the note created the ImGui context after `startClient()`, but the hook's start initializes `imgui_impl_opengl3` inside that call, so the context now comes first (vault `7fc21ef`). Miguel renamed the "overlay seam" to `ImGuiHook`, and `draw()` lost a framebuffer size the backend never read.

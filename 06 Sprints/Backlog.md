@@ -451,6 +451,12 @@ groups are kept, because they show where future work will land.
   runs outside the editor.
 - #prio/xlow · **Command `/catch-up`**: session re-entry after a multi-day gap. **Trigger:**
   the first session that opens with "where was I".
+- #prio/low · **A comma in a test name stops the IDE from rerunning that test**: Catch2 reads a
+  comma in a test filter as "or", so CLion's rerun of one test splits its name into two filters
+  that match nothing, and the test silently does not run. 59 `TEST_CASE` names on `master` had a
+  comma on Oct 26. Rename them, and decide whether `CONVENTIONS.md` § *Unit tests* bans the
+  comma. Found in S9-T12, where it made a deterministic failure look like a race. **Trigger:**
+  the next test that seems to pass and fail with no code change, or the next sweep of a test file.
 ## Ideas (unsorted)
 
 - _drop raw ideas here; untagged until triage gives them a `#prio/…` and, when useful, a `Trigger:`_

@@ -130,19 +130,23 @@ as a command is T2's, not this story's.
   dropped. A `RenderThreadTests` case with a fake overlay proves the three calls run on the
   render thread in that order. Windowed: ImGui's demo window draws, and dragging it stays smooth.
   Depends on nothing.
-- [ ] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h ·
   done: `app` holds the bounded FIFO that [[Simulation Thread - Design]] § *Input and control
-  handoffs* specifies: main submits without blocking, a full or closed queue rejects visibly and
-  never evicts, a ticking app applies the batch to the live `Scene` before each fixed tick, and
-  commands accepted but not applied at shutdown are reported as cancelled. A command is a type
-  with one virtual `apply` ([[Editor - Design]] § *Commands and the idle simulation*).
-  `AppTests` cases prove FIFO order, a rejection at capacity 1, and the cancelled report. Nothing
-  submits a command yet. Depends on nothing.
+  handoffs* specifies: main submits without blocking, and a full or closed queue rejects visibly
+  and never evicts. The queue is open only while the simulation thread runs. An accepted command
+  wakes the simulation thread, which applies the whole batch to the live `Scene` at the top of
+  each pass of its loop, before that pass's ticks and never inside one, so a command never waits
+  for a tick. Commands accepted but not applied at shutdown are cancelled with one warning that
+  gives their count. A command is a type with one virtual `apply` ([[Editor - Design]] §
+  *Commands and the idle simulation*). Tests prove FIFO order on the live scene, a rejection at
+  capacity 1, a rejection before the run and after stop, and the cancelled report; S9-T13's idle
+  case proves the wake, because every App ticks until then. Nothing submits a command yet.
+  Depends on nothing.
 - [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h ·
   done: an `App` can say that its simulation does not tick (ADR-027 §4). The editor says so, and
-  the runtime keeps ticking unchanged. An idle simulation thread waits until a command arrives or
-  stop is requested, applies the batch as a loading phase, then runs a publication hook, so
-  nothing ticks and nothing spins while Stopped. The editor detaches the `InputBuffer` while
+  the runtime keeps ticking unchanged. An idle simulation thread has no tick deadline: it sleeps
+  until S9-T12's wake for an accepted command, or until stop, applies the batch as a loading
+  phase, then runs a publication hook, so nothing ticks and nothing spins while Stopped. The editor detaches the `InputBuffer` while
   Stopped. `AppTests` cases prove that an idle app runs no tick across a wait, that a submitted
   command is applied and published within one wake, and that stop wakes it. Follows S9-T12.
 - [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h ·

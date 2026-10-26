@@ -670,9 +670,9 @@ build profiles each carry their own scene list (both from memory).
   compressed pack would be read as raw bytes. Owner: whoever adds compression behind `flags`.
 - **The editor's stopped, playing and paused states.** Decided Oct 10: only Play ticks; stopped
   and paused do not, and the simulation thread stays alive and idle between commands. ADR-027 §4-5
-  (Oct 25) adds that Play ticks a copy of the scene and Stop discards it. Today every
-  App ticks from the end of the startup phase until stop (`engine/app/src/SimulationThread.cpp:188-200`), so the
-  idle state and a wake on command arrival are T1's to build in [[Simulation Thread - Design]].
+  (Oct 25) adds that Play ticks a copy of the scene and Stop discards it. Every App
+  still ticks from the end of the startup phase until stop, so the idle state is S9-T13's to
+  build; the wake on a command shipped in S9-T12 ([[Simulation Thread - Design]] § *Lifecycle*).
 - **Changing scene during a run**, and whether that ends an ADR-022 simulation session. The
   cache lives per process either way (ADR-024 §4). M6 loads only the startup scene. Owner: T1.
 - **Where the project names each system's settings asset.** Likely one entry per selected

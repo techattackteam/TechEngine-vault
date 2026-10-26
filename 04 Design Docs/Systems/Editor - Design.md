@@ -8,8 +8,9 @@
 simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name` component)
 **Kind:** system
 **Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. The ImGui hook and the
-frame on main are built (S9-T11, #162 `6df5fa6`). The rest of Sprint 09's Story D, S9-T12 to
-S9-T19, builds the panels and the commands.
+frame on main are built (S9-T11, #162 `6df5fa6`), and so is the command admission (S9-T12, #163
+`3165f73`). The rest of Sprint 09's Story D, S9-T13 to S9-T19, builds the idle simulation, the
+panels and the commands.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -48,6 +49,7 @@ message. This note says how those messages are shaped.
 | Every entity has a name | A `Name` component, created with every entity. Names need not be unique. | [[Editor - Brief]], 2026-10-26 |
 | Persistent entity ids stay opt-in | An entity's disk id is its row in its scene file, reassigned at each save. A UUID is an opt-in component for cross-document entities. | ADR-007 §1 |
 | Save is a command | The simulation writes the scene and publishes the saved revision. Save is T1's; T2 keeps only Export. | 2026-10-26, § *Save* |
+| A command never waits for a tick | An accepted command wakes the simulation thread, which applies the batch at the top of each loop pass, never inside a tick. The queue is open only while that thread runs. | 2026-10-26 (S9-T12), § *Commands and the idle simulation* |
 | No game input while Stopped | The editor detaches the `InputBuffer` while Stopped. ImGui reads input through its own callbacks. | 2026-10-26, § *Commands and the idle simulation* |
 
 ## Threads and channels
@@ -148,10 +150,14 @@ commands accepted but not applied at shutdown are reported as cancelled.
   a field, and save. `app` knows none of them.
 - Each `apply` records what it needs to undo into the editor's edit session, the one place
   that holds undo records and the selection on the simulation thread (ADR-027 §5).
-- A ticking app applies the batch before each fixed tick. An app whose simulation does not
-  tick waits on the simulation thread's wake until a command arrives or stop is requested,
-  applies the batch, then runs a publication hook. The runtime never submits a command, so its
-  loop does not change.
+- Applying a command never waits for a tick. An accepted command wakes the simulation thread,
+  which applies the whole batch at the top of each pass of its loop, before that pass's ticks
+  and never inside one. An app whose simulation does not tick has no tick deadline, so its
+  thread sleeps until a command arrives or stop is requested, applies the batch, then runs a
+  publication hook. The runtime never submits a command, so its loop does not change.
+- The queue is open only while the simulation thread runs, so a command submitted before the
+  run or after stop is rejected. Commands still queued at shutdown are cancelled with one
+  warning that gives their count.
 - A batch is a loading phase (ADR-026 §4): a command that sets an `AssetRef` adds the id as a
   dependency of the scene entry, and the batch drains the load before it publishes.
 - **The idle loop consumes no input.** `beginTick` is the only consumer of the `InputBuffer`,
@@ -259,7 +265,9 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 
 - Built by Sprint 09's Story D ([[2026-10 Sprint 09 - Close M6]]).
 - Today's editor: `apps/editor/src/EditorApp.cpp`; its client base:
-  `apps/clientapp/src/ClientApp.cpp`; the loop that idles: `engine/app/src/SimulationThread.cpp:188-200`.
+  `apps/clientapp/src/ClientApp.cpp`; the loop that idles: `engine/app/src/SimulationThread.cpp:197-214`.
+- The command admission: `engine/app/src/CommandQueue.cpp`, and `App::submitCommand`,
+  `applyCommands` and `cancelCommands` in `engine/app/src/App.cpp`.
 - The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-155`.
 - The bridge: `apps/editor/src/ui/ImGuiBridge.cpp`; the frame on main and the shutdown order:
   `apps/editor/src/EditorApp.cpp:115-145`.
