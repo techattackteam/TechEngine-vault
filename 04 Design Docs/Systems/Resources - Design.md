@@ -15,8 +15,9 @@ the runtime's startup load (S8-T9, #139, 2026-10-15), the cache core (S8-T10, #1
 2026-10-18), its loads on the `JobSystem` (S8-T11, #142, 2026-10-18), and the scene as a cache
 entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh resource type
 (S9-T4, #155, 2026-10-24), the reference fields and their walk (S9-T2, #157, 2026-10-24),
-the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25), and the loaded scene's
-acquires of its references (S9-T3, #159, 2026-10-25).
+the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25), the loaded scene's
+acquires of its references (S9-T3, #159, 2026-10-25), and the editor's startup load through the
+cache (S9-T6, #160, 2026-10-26).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -188,9 +189,9 @@ the project load. Miguel settled these at `/card-start`:
   was rejected, because a 32-bit seed would give two editor sessions the same id sequence.
 
 The loose source is `LooseSource`, beside the index. It serves `common` and `client` and
-reports a `server` id as `AbsentForRole`, so it takes no role. Nothing in Sprint 08's product
-code calls it; its first caller is the cache (S8-T10, or Sprint 09's editor startup load), and
-Miguel kept it here so the cache starts with both sources.
+reports a `server` id as `AbsentForRole`, so it takes no role. It serves runtime-form files only;
+PNG, glTF and other source files reach it through T4's importers (ADR-025 §5, §6). Its first
+caller is the editor's startup load (S9-T6, § *Reference fields*).
 
 ### Handles, counts and the load lifecycle
 
@@ -305,7 +306,7 @@ these at `/card-start`:
 | When | Thread | What happens |
 |---|---|---|
 | `configureSimulation()` | Main, before the simulation thread starts | Loaders register, then registration closes. |
-| Startup loading phase | Simulation, after readiness, before the first Tick | The boot roots (startup scene, selected systems' settings assets) and everything they hard-reference load, then systems read their settings. The first Tick waits, and the timeline restarts after the phase so the load time is not replayed as catch-up ticks. A failure ends a runtime's run with its `std::error_code`; the editor reports it and stays open. The hook is `App::simulationStartupLoad()` ([[Simulation Thread - Design]] § *Lifecycle*). Until Sprint 09's editor load, the editor's override only creates or adopts its startup scene, then runs the startup export (S8-T13). |
+| Startup loading phase | Simulation, after readiness, before the first Tick | The boot roots (startup scene, selected systems' settings assets) and everything they hard-reference load, then systems read their settings. The first Tick waits, and the timeline restarts after the phase so the load time is not replayed as catch-up ticks. A failure ends a runtime's run with its `std::error_code`; the editor reports it and stays open. The hook is `App::simulationStartupLoad()` ([[Simulation Thread - Design]] § *Lifecycle*). The editor's override loads a named startup scene through the cache, or creates or adopts one when none is named, then runs the startup export (S9-T6, S8-T13). |
 | Scene change (T1 and later) | Simulation, with ticking stopped | Acquire the new scene's references, then release the old scene's, then drain frees. Shared content is never reloaded. |
 | Editor load commands (T1) | Simulation, stopped or paused | Main's UI sends load commands through the main-to-simulation queue. A stopped or paused simulation does not tick, so each command runs as a loading phase; results come back as published copies. |
 | Barrier resource step (A1) | Simulation | After structural commands and NetId assignment: issue the Tick's soft requests, publish finished loads, drain frees. Its order against the event step is A1's to fix. |
@@ -373,7 +374,8 @@ following ADR-024 §10's vocabulary.
 
 Decided on Oct 18 at S8-D1 ([[ADR-026 - Reference fields and scene-held acquires]], Accepted Oct 19).
 Built for the startup load: the scene as a cache entry landed with S9-T1, the fields and the
-walk with S9-T2, the editor's mesh and `MeshRenderer` with S9-T5, and the acquires with S9-T3.
+walk with S9-T2, the editor's mesh and `MeshRenderer` with S9-T5, the acquires with S9-T3, and the editor's load
+with S9-T6.
 The bake's walk is S9-T7's.
 
 | Job | What the reference walk does |
@@ -415,6 +417,14 @@ The bake's walk is S9-T7's.
   their own private files under `src/scene/`. The first error from an add or the phase fails
   the load: `load` clears the `Scene` and releases the scene's handle, and the drain that frees
   the entry releases the references already added, so `acquireReferences` undoes nothing itself.
+- **The editor's load as built** (S9-T6, #160, 2026-10-26): `EditorApp` holds a `LooseSource`
+  over its `FileAccess` and `AssetIndex`. `configureSimulation()` registers the scene and mesh
+  loaders, and `simulationStartupLoad()` calls `m_resources.setSource(m_source)`, which stores a
+  pointer the cache asks for each id's availability and bytes. A named startup scene then loads
+  with `SceneAsset::load` into `m_sceneHandle`, which the base `simulationShutdown()` releases. A
+  scene that does not load is logged, and the editor opens on an empty scene. A newly created
+  startup scene is not loaded through the cache on its first launch; it stays as built, with its
+  `MeshRenderer` handle empty.
 - **The reference walk as built** (S9-T2, #157, 2026-10-24): `AssetRef<T>` in
   `core/resources/AssetRef.hpp`, and `ReferenceVisitor` in `core/serialization/`, an abstract
   class with `visitEntity` and `visitAsset` hooks. Its `field` recurses into a type with its own
@@ -443,7 +453,7 @@ The bake's walk is S9-T7's.
   is `"TechEngine.Mesh"`; a mesh file is `.temesh`. `read` returns `Malformed` for an index past
   the last position, an index count that is not whole triangles, or bytes after the indices, and
   assigns the mesh only on success. `Mesh::loadPayload` names no dependencies (#156 made the
-  loader hooks members of their payload types). Nothing registers it until S9-T6 and S9-T7.
+  loader hooks members of their payload types). The editor registers it (S9-T6); the runtime's registration is S9-T7's.
 - **The mesh component as built** (S9-T5, #158, 2026-10-25): `MeshRenderer` in
   `core/mesh/MeshRenderer.hpp` holds one `AssetRef<Mesh>`. The name follows v1, whose
   `MeshRenderer` paired a mesh with a material; it gains its material when R1 adds one, and

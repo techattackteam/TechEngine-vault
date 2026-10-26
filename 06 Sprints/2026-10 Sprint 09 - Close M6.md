@@ -74,7 +74,7 @@ S9-T3 to merge.
   `AssetRef<Mesh>` field, registered in the editor, sits on an entity of a newly created startup
   scene and is saved with it. It holds only the mesh reference, and its name must not decide how
   R1 splits the mesh from its material. Follows S9-T2 and S9-T4. *From a fired Backlog entry.*
-- [ ] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h ·
+- [x] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h ·
   done: when the project names a startup scene, `EditorApp::simulationStartupLoad()` registers the
   scene and mesh loaders and calls S9-T1's function with `LooseSource` as the cache's source, so a
   later launch opens on the saved scene instead of an empty one. The `TODO` at
@@ -183,8 +183,9 @@ start this sprint are P2, so dropping them never costs the goal.
 - [ ] A `RuntimeAppTests` case over an export proves that the runtime loads the startup scene
   through the cache with its mesh reference acquired, and that releasing the scene leaves nothing
   counted at shutdown (S9-T1, S9-T3, S9-T7).
-- [ ] An `EditorAppTests` case proves that a later launch opens on the saved startup scene through
-  the cache (S9-T6).
+- [x] An `EditorAppTests` case proves that a later launch opens on the saved startup scene through
+  the cache (S9-T6). Oct 26, #160 `bff0b6f`: *a later launch opens on the saved startup scene
+  through the cache*.
 - [ ] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
   scene and its mesh, and its log names both. M6 is marked closed on the [[Roadmap]].
 - [ ] The editor brief is written, the editor ADR is Accepted, and `Editor - Design` indexes it.

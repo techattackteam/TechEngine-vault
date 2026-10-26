@@ -52,11 +52,13 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h: PR #160, branch `S9-T6/editor-startup-load`, opened Oct 26 by the lane. Review it and accept or reverse its three *Decisions I took*.
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T6** · The editor reads its startup scene through the cache · P2 · 🤖 Claude · 2-3h: #160 `bff0b6f`, **Oct 26**. A later launch now loads the named startup scene with `SceneAsset::load` over the editor's `LooseSource`, so it opens on the saved scene with its mesh acquired ([[Resources - Design]] § *Reference fields*, *The editor's load as built*). #160 has no review conversation, so this entry comes from the card, the PR body, the diff and the session. Miguel merged its three *Decisions I took* unchanged, so nothing was reversed. Unblocks nothing; Story B stays open on S9-T7.
+	- **Questions in review, no code change:** Miguel checked that `LooseSource` serves only runtime-form files, with PNG and glTF left to T4's importers (ADR-025 §5 and §6), and asked what `setSource` does. The note now says both.
+	- **Taken out of priority order:** S9-T7 is P1 and S9-T6 is P2, but the lane takes a 🤖 Claude story in the sprint note's order.
 - [x] **S9-D2** · Decide the editor's architecture · P1 · 🟢 Deep · 4-6h: vault `ba93e26`, **Oct 25**. [[ADR-027 - Editor threads, edit commands and play sessions]] is Accepted: main builds the ImGui frame and render draws it, panels read a published view, every edit is a command, and Play ticks a copy that Stop discards. Unblocks S9-D3; Story C stays open.
 	- **The clause's premise was wrong:** it framed "how panels read the `Scene`" as published copies or main's fence under ADR-024 §6, but §6 governs cache entries. ADR-018 §2 already rules out main reading the live `Scene`, so only the copy was open.
 	- **Wider than the clause:** Miguel had Play and Stop decided now rather than at E11, to avoid a rewrite. He chose to play a parked original's copy (Unreal's shape) over Claude's save-and-restore pick, and named the layout folder `editorSettings/`.
