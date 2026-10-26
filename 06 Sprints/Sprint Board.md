@@ -56,7 +56,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h: `Editor - Design` indexes the ADR; T1 cards cut into Story D. Follows S9-D2.
 
 
 ## 👀 Review / Demo
@@ -65,6 +64,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h: vault `9c1caf9`, **Oct 26**. [[Editor - Design]] indexes ADR-027 and holds its mechanism, and Story D is cut as S9-T11 to S9-T19, all P2. Completes Story C and unblocks Story D.
+	- **The clause's premise was wrong:** the first cards are plumbing, not panels. ImGui's channel, the command admission and the idle simulation come before any panel can exist.
+	- **No artifact decided four things:** who issues ImGui's GL (Miguel chose a callback overlay with `imgui_impl_opengl3` over a draw list owned by `client`), field names for the inspector (`visit` had none), entity names (none existed, so `/triage` made them an E1 Must), and whether save is T1's or T2's (the Roadmap listed it in both; it is T1's).
+	- **Wider than the clause:** the whole of T1 was cut, not its first cards. Miguel kept all nine in this sprint, about 3 🟢 slots over the remaining capacity, because M6's code closed on day 3.
+	- **Retro:** while grounding, Claude claimed that no artifact decides persistent entity identity. ADR-007 §1 does: a scene row on disk and an opt-in UUID. Miguel's challenge caught it. The 🟡 1-2h card also ran as a long session with a triage fork.
 - [x] **S9-T7** · The bake packs what the startup scene reaches · P1 · 🤖 Claude · 2-3h: #161 `c509ac3`, **Oct 26**. `exportTo` reads the startup scene's file with the editor's registry, collects its ids with `SceneAsset::collectReferences`, and packs each reached asset into its side's pack. The runtime registers `MeshRenderer` and the mesh loader ([[Resources - Design]] § *Export and the runtime layout*, *The bake as built*). #161 has no review conversation, so this entry comes from the card, the PR body, the diff and the session. Miguel merged its seven *Decisions I took* unchanged, so nothing was reversed. Completes Story B; the windowed run is left to close M6.
 	- **Wider than the card:** the new runtime test found that `App::simulationShutdown()` released the scene without draining frees, so the shutdown log reported every reference of a loaded scene as a leak. The fix shipped as its own commit.
 	- **A test fixture had to change:** the export's tests wrote placeholder scene bytes, and an export that parses the scene rejects those, so the `ExportScratch` fixture now writes real scenes. No assertion changed.

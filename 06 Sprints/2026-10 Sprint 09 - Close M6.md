@@ -108,7 +108,7 @@ Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window
   *Consequences*), how panels read the `Scene` (published copies or main's fence, ADR-024 §6), how
   an edit reaches the simulation thread, and what the stopped state is ([[Resources - Design]] §
   *Open questions*). Miguel accepts it. Follows S9-D1 and S9-P1.
-- [ ] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h ·
+- [x] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h ·
   done: a new `Editor - Design` note holds the ADR's mechanism and indexes it in its *Decided*
   rows, and the first T1 panel cards are cut against it into Story D, each with a `done:` clause
   and a size. Follows S9-D2.
@@ -269,7 +269,9 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   through the cache*.
 - [ ] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
   scene and its mesh, and its log names both. M6 is marked closed on the [[Roadmap]].
-- [ ] The editor brief is written, the editor ADR is Accepted, and `Editor - Design` indexes it.
+- [x] The editor brief is written, the editor ADR is Accepted, and `Editor - Design` indexes it.
+  Oct 26, vault `9c1caf9`: [[Editor - Brief]] (S9-D1), ADR-027 (S9-D2) and [[Editor - Design]]
+  (S9-D3).
 - [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Touched design notes describe what shipped.
 
