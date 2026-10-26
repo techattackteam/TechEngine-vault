@@ -120,7 +120,7 @@ Oct 26 against [[Editor - Design]]. Every card is P2, so dropping one never cost
 console, cvars and the Profiler panel are Shoulds in [[Editor - Brief]] and stay uncut. Export
 as a command is T2's, not this story's.
 
-- [ ] **S9-T11** · ImGui draws in the editor's window · P2 · 🟢 Deep · 4-6h ·
+- [x] **S9-T11** · ImGui draws in the editor's window · P2 · 🟢 Deep · 4-6h ·
   done: ImGui's docking branch, pinned in `cmake/deps.cmake`, links only into the editor, with
   its GLFW and OpenGL3 backends. `Client::start` takes an optional overlay that the render
   thread starts after GL loads, draws after the scene and before swap, and stops before it

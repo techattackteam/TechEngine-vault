@@ -23,7 +23,6 @@ kanban-plugin: board
 
 ## Story D: E1's first panels · stretch
 
-- [ ] **S9-T11** · ImGui draws in the editor's window · P2 · 🟢 Deep · 4-6h: the docking branch in the editor only, `client`'s render-thread overlay seam, draw data newest-wins and texture requests in order. Depends on nothing.
 - [ ] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h: a bounded FIFO in `app`, rejects when full, cancels on shutdown; headless `AppTests`. Depends on nothing.
 - [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h: no tick and no spin; wakes on a command or stop; the runtime unchanged; the `InputBuffer` detached. Follows S9-T12.
 - [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: `archive.field("mesh", value.mesh)` everywhere; no byte changes. Must merge before S9-T15 and S9-T17.
@@ -32,7 +31,6 @@ kanban-plugin: board
 - [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename, add and remove components. Follows S9-T14 and S9-T16.
 - [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h: save as a command, the title marker, Save, Discard or Cancel on close. Follows S9-T16.
 - [ ] **S9-T19** · The dock, a placeholder scene view and the remembered layout · P2 · 🟠 Moderate · 2-3h: `editorSettings/layout.ini` through `FileAccess`, git-ignored. Follows S9-T11.
-
 
 
 ## Story E: Alongside: the renderer brief
@@ -64,6 +62,12 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T11** · ImGui draws in the editor's window · P2 · 🟢 Deep · 4-6h: #162 `6df5fa6`, **Oct 26**. `client` calls an `ImGuiHook` on the render thread, and the editor's `ImGuiBridge` carries main's frame across in three snapshots beside ImGui's texture queue ([[Editor - Design]] § *The ImGui hook*). Miguel reports that the demo window draws and the tests pass. #162 has no review conversation, so the findings below come from the session. Unblocks S9-T19, and S9-T16 with S9-T13 and S9-T15; Story D stays open.
+	- **A clause without a referent:** "ImGui's docking branch, pinned" named one dependency, but `ImDrawDataSnapshot` and `ImTextureQueue` live in `imgui_club`, so it is a second pin.
+	- **Against the note as written:** the note created the ImGui context after `startClient()`, but the hook's start initializes `imgui_impl_opengl3` inside that call, so the context now comes first (vault `7fc21ef`). Miguel renamed the "overlay seam" to `ImGuiHook`, and `draw()` lost a framebuffer size the backend never read.
+	- **Decided in the card:** the shutdown order and `ClientApp::stopClient()`, because `~EditorApp` runs while the client still draws the bridge. It is now a *Decided* row.
+	- **Review caught before merge:** a null hook crashed the runtime, `stopImGui()` asserted on every normal exit, `publish` rotated the slot render was drawing, and `beginFrame` and the extra wake were missing. Left open, not a defect: a focused text field keeps main busy, which the note gives to S9-T17's `/card-start`.
+	- **Retro:** Claude committed a vault change without being asked (`7fc21ef`). The scaffold also left out the texture queue's `UpdateTexFunc`, which asserted on the first run, and its test hook waited on a non-`mutable` condition variable in a `const` function, which a `const_cast` now patches.
 - [x] **S9-D3** · Write the editor's design note and cut the first T1 cards · P1 · 🟡 Light · 1-2h: vault `9c1caf9`, **Oct 26**. [[Editor - Design]] indexes ADR-027 and holds its mechanism, and Story D is cut as S9-T11 to S9-T19, all P2. Completes Story C and unblocks Story D.
 	- **The clause's premise was wrong:** the first cards are plumbing, not panels. ImGui's channel, the command admission and the idle simulation come before any panel can exist.
 	- **No artifact decided four things:** who issues ImGui's GL (Miguel chose a callback overlay with `imgui_impl_opengl3` over a draw list owned by `client`), field names for the inspector (`visit` had none), entity names (none existed, so `/triage` made them an E1 Must), and whether save is T1's or T2's (the Roadmap listed it in both; it is T1's).

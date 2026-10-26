@@ -7,8 +7,9 @@
 **Module:** `apps/editor` (ImGui, panels, commands) · `app` (command admission, the idle
 simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name` component)
 **Kind:** system
-**Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. Nothing is built yet:
-Sprint 09's Story D, S9-T11 to S9-T19, builds it.
+**Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. The ImGui hook and the
+frame on main are built (S9-T11, #162 `6df5fa6`). The rest of Sprint 09's Story D, S9-T12 to
+S9-T19, builds the panels and the commands.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -40,6 +41,7 @@ message. This note says how those messages are shaped.
 | Play ticks a copy | E11 builds it. E1 keeps undo records and the selection in one place that Play can freeze. | ADR-027 §5 |
 | The layout file | `<project>/editorSettings/layout.ini`, git-ignored, written through file access. | ADR-027 §6 |
 | The ImGui hook is an interface | `client` calls an `ImGuiHook` on the render thread; the editor fills it with `imgui_impl_opengl3`. The name says it exists for ImGui only. | 2026-10-26, § *The ImGui hook* |
+| The editor ends ImGui around the client | GLFW's backend shuts down while the window exists, then the client stops, then the context is destroyed. Both `shutdown()` and the destructor run it, and each step checks its own state. | 2026-10-26 (S9-T11), § *The ImGui frame on main* |
 | ImGui's GL is the one GL outside `client` | Third-party code in the editor issues GL, on the render thread only. | 2026-10-26; [[Window - Design]] |
 | Every `visit` field has a name | `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it. | 2026-10-26; [[Serialization - Design]] |
 | The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. | 2026-10-26, § *Fields* |
@@ -86,7 +88,7 @@ runtime never link ImGui. The render thread makes three calls on it:
 | Call | When |
 |---|---|
 | start | Once, after `gladLoadGL` succeeds and before `signalReady`, so main is still blocked in `Client::start`. |
-| draw | Every frame, after the scene draw and before `swapBuffers`, with the framebuffer size. |
+| draw | Every frame, after the scene draw and before `swapBuffers`. It takes no size: the backend reads it from the draw data, which main's frame filled. |
 | stop | Once, before the render thread releases the context, also after a failed frame. |
 
 The editor's hook, `ImGuiBridge`, owns `imgui_impl_opengl3` and the consuming side of both
@@ -94,6 +96,13 @@ channels. On each draw it applies every queued texture request in order, then dr
 draw data, or the last one again when none is new. It uses ImGui's threaded helpers,
 `ImDrawDataSnapshot` and `ImTextureQueue` ([[Editor - Research Brief]] § *Dear ImGui over a
 render thread*). They live in `imgui_club`, not in ImGui, so they are a second pinned dependency.
+
+The draw data crosses in three snapshots: main writes one, one waits, and render draws one.
+`publish` swaps main's slot with the waiting one, and `draw` swaps the waiting one into its own
+slot when a frame is new. Both swaps take the bridge's lock, so main never writes the slot render
+is drawing. Two slots are not enough, because render keeps drawing its slot while main may
+publish twice. The texture queue's `UpdateTexFunc` is set to `ImGui_ImplOpenGL3_UpdateTexture`
+when the bridge is built; without it, the first processed request asserts.
 
 - `imgui_impl_opengl3` embeds its own GL loader. Leave it: glad is private to `client`, and both
   loaders read the same current context.
@@ -117,8 +126,14 @@ start runs inside that call and initializes `imgui_impl_opengl3` against the con
   `setInputBuffer`, or `Window`'s callbacks replace ImGui's and ImGui gets no input.
 - On each wake, main takes the newest editor view, runs `NewFrame`, draws every panel from that
   view, renders, and publishes the snapshot and the texture requests.
-- ImGui settles some interactions over a few frames. After a frame that had input, or while
-  ImGui reports an active item, main posts one more wake. With no input, main sleeps.
+- ImGui settles some interactions over a few frames. Main posts one more wake after a frame
+  that had input, while input is still queued after `NewFrame` (ImGui trickles a press and a
+  release that arrive together over two frames), or while ImGui reports an active item. With no
+  input, main sleeps. Input is read from ImGui's internal `InputEventsQueue`.
+- **Shutdown order.** `imgui_impl_glfw` shuts down first, while the window still exists. Then
+  `ClientApp::stopClient()` stops the render thread, which runs the hook's stop. Last, the context
+  is destroyed. `stopClient()` never throws, unlike `ClientApp::shutdown()`, so `~EditorApp` can
+  run the same order: the destructor's body runs while the client is still rendering the bridge.
 - `ClientApp::mainThreadUpdate()` already waits on events and sets the title. The editor's
   override builds the ImGui frame after the wait, and adds the unsaved marker to the title.
 
@@ -227,6 +242,11 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 
 - **A field edit that must update derived state.** The setter writes `Transform`'s local values
   directly, which leaves its world values stale. Owner: S9-T17's `/card-start`.
+- **A focused text field keeps main busy.** `ImGui::IsAnyItemActive()` stays true for as long as
+  a text field has focus, not only while you type, so main builds frames back to back until focus
+  leaves it. The demo window barely shows it; the inspector is made of text fields. One option is
+  to wake for an active item only while a mouse button is down. Found in S9-T11's review.
+  Owner: S9-T17's `/card-start`.
 - **The first kept save fires a trigger.** [[Serialization - Design]] says per-type versions
   wait for non-regenerable content, "which for scenes is T1's first kept save". S9-T18 is that
   save. Its `/card-start` decides whether versions are built then or the trigger is re-armed.
@@ -240,6 +260,8 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 - Built by Sprint 09's Story D ([[2026-10 Sprint 09 - Close M6]]).
 - Today's editor: `apps/editor/src/EditorApp.cpp`; its client base:
   `apps/clientapp/src/ClientApp.cpp`; the loop that idles: `engine/app/src/SimulationThread.cpp:188-200`.
-- The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-134`.
+- The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-155`.
+- The bridge: `apps/editor/src/ui/ImGuiBridge.cpp`; the frame on main and the shutdown order:
+  `apps/editor/src/EditorApp.cpp:115-145`.
 - The visitors that gain names: `engine/core/include/TechEngine/core/serialization/Writer.hpp:85`,
   `Reader.hpp:97`, `ReferenceVisitor.hpp:24`.
