@@ -156,7 +156,7 @@ as a command is T2's, not this story's.
   visitors ignore the name, so no byte changes: the existing round-trip and scene asset tests
   pass with only their `visit` bodies edited ([[Serialization - Design]] § *Decided*). Depends on
   nothing; S9-T15 and S9-T17 follow it.
-- [ ] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h ·
   done: a `Name` component in `core/scene/components/` holds one `std::string`. `App` registers
   it with `Transform`, and every new entity carries it, named `Entity` ([[Editor - Design]] §
   *Entity names*). It is saved and read with the scene, and a scene saved before it loads with

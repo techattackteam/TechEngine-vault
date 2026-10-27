@@ -9,8 +9,9 @@ simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name
 **Kind:** system
 **Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. The ImGui hook and the
 frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admission (S9-T12, #163
-`3165f73`) and the idle simulation (S9-T13, #166 `db2adac`). The rest of Sprint 09's Story D,
-S9-T15 to S9-T19, builds the panels and the commands.
+`3165f73`), the idle simulation (S9-T13, #166 `db2adac`) and entity names (S9-T15, #167
+`9a33c49`). The rest of Sprint 09's Story D, S9-T16 to S9-T19, builds the panels and the
+commands.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -46,7 +47,7 @@ message. This note says how those messages are shaped.
 | ImGui's GL is the one GL outside `client` | Third-party code in the editor issues GL, on the render thread only. | 2026-10-26; [[Window - Design]] |
 | Every `visit` field has a name | `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it. | 2026-10-26; [[Serialization - Design]] |
 | The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. | 2026-10-26, § *Fields* |
-| Every entity has a name | A `Name` component, created with every entity. Names need not be unique. | [[Editor - Brief]], 2026-10-26 |
+| Every entity has a name | A `Name` component, created with every entity. Names need not be unique. `Scene` refuses to add or remove it, as it does `Transform`. | [[Editor - Brief]], 2026-10-26; 2026-10-27 (S9-T15), § *Entity names* |
 | Persistent entity ids stay opt-in | An entity's disk id is its row in its scene file, reassigned at each save. A UUID is an opt-in component for cross-document entities. | ADR-007 §1 |
 | Save is a command | The simulation writes the scene and publishes the saved revision. Save is T1's; T2 keeps only Export. | 2026-10-26, § *Save* |
 | A command never waits for a tick | An accepted command wakes the simulation thread, which applies the batch at the top of each loop pass, never inside a tick. The queue is open only while that thread runs. | 2026-10-26 (S9-T12), § *Commands and the idle simulation* |
@@ -226,6 +227,9 @@ with `Hierarchy` and `Transform`, and every new entity carries it, named `Entity
 `Name` rather than v1's `Tag`, because `tag` already means a component's type tag
 (`MeshRenderer::tag`), and v1's `Tag` also carried a uuid, which stays opt-in under ADR-007 §1.
 
+- **As built (S9-T15):** `Name` is in the built-in set that `ArchetypeStorage::createEntity`
+  gives every entity, beside `Hierarchy` and `Transform`, so every registry that creates an
+  entity must register it. `Scene`'s add and remove refuse it, so the inspector cannot remove it.
 - It is saved like any component. A scene saved before it has no `Name` block, so its
   entities load with the default name.
 - The hierarchy shows the name, the inspector renames through a set-field command, and the
