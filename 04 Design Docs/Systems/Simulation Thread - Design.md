@@ -229,7 +229,9 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 | `simulationInit()` | Simulation; initialize owned state and initial output before readiness. |
 | `simulationStartupLoad(scene)` | Simulation, after readiness and before the first tick; the startup loading phase. `scene` is the App's live scene, the one the ticks run on, and it is the only way a subclass reaches it: `App::m_scene` is private, and `SimulationThread`, a friend, passes it (S8-T18, #146). Tests reach the scene and call this hook through `TechEngineTests::AppTestAccess`, the other friend, in `te_test_support`. Its end state loads the boot roots and everything they hard-reference on the `JobSystem`, then systems read their settings ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4). No override loads through the `ResourceCache` yet ([[Backlog]] → `core`). The timeline restarts after it, so the load is not replayed as catch-up. A returned error is fatal for that App: no tick runs, `simulationShutdown()` still runs, `App::stopSimulation()` logs the code and `run()` returns 1, while `completion()` stays `Completed` (S8-T8, #134). An App that survives a failed load, like the editor, reports it in its own override and returns `{}`. The default does nothing. The runtime's override (S8-T9, #139) loads the startup scene from the packs and returns the load's error ([[Resources - Design]] § *The runtime's startup load*). The editor's override (S8-T13, #138) runs here, not in `init()`, because components register in `finalizeSimulation()` after `init()`: with no client startup scene it builds one into the live scene, writes and indexes it, saves its id, then runs the startup export, and it returns `{}`. A creation failure is a `TE_CHECK`. |
 | Each fixed tick | Simulation; not a hook. Ingress is consumed, then the executor runs the scheduled systems and the barrier. `fixedUpdate` was removed in S6-T9 (#92). |
+| `simulationTicks()` | Simulation, read once after the startup load. The default is `true`; an App that returns `false` never ticks and sleeps until a command or stop. `EditorApp` returns `false` (S9-T13, #166). |
 | `publishSnapshot(simulation)` | Simulation; fixed context only, once after catch-up for extraction/publication; initial publication before readiness. |
+| `publishEdits()` | Simulation; after each loop pass whose command batch held a command, before that pass's ticks. The default does nothing (S9-T13, #166). |
 | `simulationShutdown()` | Simulation; release simulation-owned state, including the app's resource handles. The base releases the scene's handle and drains frees (S9-T7, #161). Right after it returns, the simulation thread calls `ResourceCache::shutdown()`, which waits for the in-flight load batches and logs every entry still counted (S8-T11, #142; [[Resources - Design]] § *Loads on the job system, as built*). |
 | `shutdown()` | Main; stop/join rendering and destroy resources after simulation joins. `ClientApp`'s override stops the client and throws if the render thread failed; a subclass that adds its own shutdown calls it. |
 
@@ -240,8 +242,9 @@ real scene, paused edits the play session, and Stop discards that session's copy
 session is an ADR-022 simulation session. E1 builds stopped only, and Play comes with E11. The simulation thread stays alive and idle
 between commands and runs each editor load command as a loading phase ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4). Since S9-T12 (#163),
 an accepted command wakes the loop, which applies the batch at the top of each pass, never
-inside a tick. Every App still ticks from the end of the startup phase until stop
-(`engine/app/src/SimulationThread.cpp:197-214`), so the idle state is S9-T13's to build.
+inside a tick. Since S9-T13 (#166), an App whose `simulationTicks()` is false has no tick
+deadline and waits in `waitForCommands()` (`engine/app/src/SimulationThread.cpp:201-230`);
+the mechanism is in [[Editor - Design]] § *Commands and the idle simulation*.
 
 Optional work hooks have empty defaults. A headless default main waits on stop/completion;
 an interactive main blocks on `glfwWaitEvents` under Accepted ADR-019.

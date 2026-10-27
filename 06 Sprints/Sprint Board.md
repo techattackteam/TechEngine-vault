@@ -23,7 +23,6 @@ kanban-plugin: board
 
 ## Story D: E1's first panels · stretch
 
-- [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h: no tick deadline, no spin; sleeps until S9-T12's command wake or stop; the runtime unchanged; the `InputBuffer` detached. Follows S9-T12.
 - [ ] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h: a `Name` component on every entity, saved with the scene and printed by the runtime's scene log. Follows S9-T14.
 - [ ] **S9-T16** · The published view and the hierarchy panel · P2 · 🟢 Deep · 4-6h: create, delete, reparent and select as commands, drawn from the published view. Follows S9-T11, S9-T13 and S9-T15.
 - [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename, add and remove components. Follows S9-T14 and S9-T16.
@@ -58,6 +57,10 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 09
+
+- [x] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h: #166 `db2adac`, **Oct 27**. An App whose `simulationTicks()` is false waits for a command or stop with no deadline. In both loops, an applied batch runs a loading phase and then the new `publishEdits()` hook ([[Editor - Design]] § *Commands and the idle simulation*). #166 has no body and no review conversation, so this entry comes from the card, the diff and the session. Unblocks S9-T16 together with S9-T15; Story D stays open.
+	- **Four calls no artifact made, settled at `/card-start`:** `simulationTicks()` is a virtual hook read once after the startup load. Edits publish through their own hook, because render drops a snapshot whose tick did not advance. A failed load inside a batch logs a warning and the app keeps running. The windowed stall proof was split: the editor case now proves that render keeps drawing while the simulation stays idle, and the tick-and-input half moved to `RuntimeAppTests`.
+	- **Caught before merge** *(retro line)*: a first draft returned from `threadMain` for an idle app, which skips the shutdown hooks and stops the editor at once. `/card-review` then found that the batch skipped the loading phase and that every applied batch logged a warning. All three were fixed before the PR.
 
 - [x] **S9-T8** · Prove the cache shuts down after the app's own shutdown · P3 · 🤖 Auto · 1-2h: #165 `b10f67b`, **Oct 27**. One `AppTests` case over the real simulation thread pins that `ResourceCache::shutdown()` runs after `simulationShutdown()` and sees its releases ([[Resources - Design]] § *Loads on the job system, as built*). #165 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. Story F stays open on S9-T9 and S9-T10.
 	- **Wider than the clause:** the case has a second section, an app that keeps its resource, as the control: the cache logs it once during `run()` and never before `simulationShutdown()` began, so the released section's empty log cannot pass by accident. It uses a test-only resource rather than the scene, because `AppTests` has no scene loader.

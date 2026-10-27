@@ -8,9 +8,9 @@
 simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name` component)
 **Kind:** system
 **Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. The ImGui hook and the
-frame on main are built (S9-T11, #162 `6df5fa6`), and so is the command admission (S9-T12, #163
-`3165f73`). The rest of Sprint 09's Story D, S9-T13 to S9-T19, builds the idle simulation, the
-panels and the commands.
+frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admission (S9-T12, #163
+`3165f73`) and the idle simulation (S9-T13, #166 `db2adac`). The rest of Sprint 09's Story D,
+S9-T15 to S9-T19, builds the panels and the commands.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -51,6 +51,8 @@ message. This note says how those messages are shaped.
 | Save is a command | The simulation writes the scene and publishes the saved revision. Save is T1's; T2 keeps only Export. | 2026-10-26, § *Save* |
 | A command never waits for a tick | An accepted command wakes the simulation thread, which applies the batch at the top of each loop pass, never inside a tick. The queue is open only while that thread runs. | 2026-10-26 (S9-T12), § *Commands and the idle simulation* |
 | No game input while Stopped | The editor detaches the `InputBuffer` while Stopped. ImGui reads input through its own callbacks. | 2026-10-26, § *Commands and the idle simulation* |
+| An App says whether it ticks | A virtual `simulationTicks()`, read once after the startup load. The editor says no; every other App keeps the default yes. | 2026-10-27 (S9-T13), § *Commands and the idle simulation* |
+| Edits publish through their own hook | `publishEdits()` runs after each applied batch, in both loops. `publishSnapshot` stays render's, because render drops a snapshot whose tick did not advance (`engine/client/src/render/SnapshotHistory.cpp:20`). | 2026-10-27 (S9-T13), § *Commands and the idle simulation* |
 
 ## Threads and channels
 
@@ -152,17 +154,23 @@ commands accepted but not applied at shutdown are reported as cancelled.
   that holds undo records and the selection on the simulation thread (ADR-027 §5).
 - Applying a command never waits for a tick. An accepted command wakes the simulation thread,
   which applies the whole batch at the top of each pass of its loop, before that pass's ticks
-  and never inside one. An app whose simulation does not tick has no tick deadline, so its
-  thread sleeps until a command arrives or stop is requested, applies the batch, then runs a
-  publication hook. The runtime never submits a command, so its loop does not change.
+  and never inside one. After a batch that held a command, the loop calls `publishEdits()`, in
+  both loops (`engine/app/src/SimulationThread.cpp:201-230`).
+- An App whose `simulationTicks()` returns false has no tick deadline. Its thread skips the
+  advance and `publishSnapshot`, and sleeps in `waitForCommands()` until a command arrives or
+  stop is requested. `EditorApp` returns false. The runtime keeps the default and never submits
+  a command, so its loop does not change.
 - The queue is open only while the simulation thread runs, so a command submitted before the
   run or after stop is rejected. Commands still queued at shutdown are cancelled with one
   warning that gives their count.
 - A batch is a loading phase (ADR-026 §4): a command that sets an `AssetRef` adds the id as a
   dependency of the scene entry, and the batch drains the load before it publishes.
+  `App::applyCommands` runs `runLoadingPhase()` after a non-empty batch; an error logs one
+  warning and the app keeps running (`engine/app/src/App.cpp:206`).
 - **The idle loop consumes no input.** `beginTick` is the only consumer of the `InputBuffer`,
-  so a Stopped editor would fill it into overflow recovery. The editor detaches it while
-  Stopped; Play, at E11, attaches it again.
+  so a Stopped editor would fill it into overflow recovery. The editor detaches it once, at the
+  end of `init()`, through `ClientApp::detachInput()` and `Client::detachInput()`, which sets
+  the window's buffer to null. Play, at E11, attaches it again.
 
 ## The published view
 
@@ -258,6 +266,9 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 - **The first kept save fires a trigger.** [[Serialization - Design]] says per-type versions
   wait for non-regenerable content, "which for scenes is T1's first kept save". S9-T18 is that
   save. Its `/card-start` decides whether versions are built then or the trigger is re-armed.
+- **A failed load inside an edit batch only warns.** The command has already changed the scene,
+  so the scene keeps a reference whose handle is empty. No command can set an `AssetRef` before
+  the inspector. Owner: S9-T17's `/card-start`.
 - **Presentation input while Stopped.** E2's scene view camera needs presentation input while
   the `InputBuffer` is detached. Owner: T3.
 - **A second scene load in one process.** The [[Backlog]]'s "a scene load does not notice a
@@ -267,7 +278,7 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 
 - Built by Sprint 09's Story D ([[2026-10 Sprint 09 - Close M6]]).
 - Today's editor: `apps/editor/src/EditorApp.cpp`; its client base:
-  `apps/clientapp/src/ClientApp.cpp`; the loop that idles: `engine/app/src/SimulationThread.cpp:197-214`.
+  `apps/clientapp/src/ClientApp.cpp`; the loop that idles: `engine/app/src/SimulationThread.cpp:201-230`.
 - The command admission: `engine/app/src/CommandQueue.cpp`, and `App::submitCommand`,
   `applyCommands` and `cancelCommands` in `engine/app/src/App.cpp`.
 - The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-155`.

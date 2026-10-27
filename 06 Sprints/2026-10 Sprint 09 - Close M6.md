@@ -142,7 +142,7 @@ as a command is T2's, not this story's.
   capacity 1, a rejection before the run and after stop, and the cancelled report; S9-T13's idle
   case proves the wake, because every App ticks until then. Nothing submits a command yet.
   Depends on nothing.
-- [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h ·
   done: an `App` can say that its simulation does not tick (ADR-027 §4). The editor says so, and
   the runtime keeps ticking unchanged. An idle simulation thread has no tick deadline: it sleeps
   until S9-T12's wake for an accepted command, or until stop, applies the batch as a loading
