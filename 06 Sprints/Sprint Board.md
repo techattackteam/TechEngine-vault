@@ -39,7 +39,6 @@ kanban-plugin: board
 
 ## Story F: Auto lane and fired backlog
 
-- [ ] **S9-T8** · Prove the cache shuts down after the app's own shutdown · P3 · 🤖 Auto · 1-2h: one `AppTests` case over the real simulation thread; only `AppTests.cpp` changes. Follows S9-T1.
 - [ ] **S9-T9** · Log the OS error where `FileAccess` returns `IoError` · P3 · 🤖 Auto · 1-2h: every `IoError` return in `FileAccess.cpp` logs the path and the OS message at warn; other codes stay silent; `[skip-coverage]` allowed if the paths are unreachable in tests.
 - [ ] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h: `matchesOnDiskCase` checks spelling per component with `directory_iterator`; a symlink case in `MountTableTests`, `SKIP` where it cannot be created.
 
@@ -56,6 +55,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S9-T8** · Prove the cache shuts down after the app's own shutdown · P3 · 🤖 Auto · 1-2h: PR #165, branch `S9-T8/cache-shutdown-order`, opened by the lane Oct 27. One `AppTests` case over the real simulation thread; only `AppTests.cpp` changes. Merge it before S9-T13 adds cases to `AppTests.cpp`.
 
 
 ## ✅ Done: Sprint 09
