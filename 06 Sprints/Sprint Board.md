@@ -24,7 +24,6 @@ kanban-plugin: board
 ## Story D: E1's first panels · stretch
 
 - [ ] **S9-T13** · The editor's simulation idles while Stopped · P2 · 🟠 Moderate · 2-3h: no tick deadline, no spin; sleeps until S9-T12's command wake or stop; the runtime unchanged; the `InputBuffer` detached. Follows S9-T12.
-- [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: `archive.field("mesh", value.mesh)` everywhere; no byte changes. Must merge before S9-T15 and S9-T17.
 - [ ] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h: a `Name` component on every entity, saved with the scene and printed by the runtime's scene log. Follows S9-T14.
 - [ ] **S9-T16** · The published view and the hierarchy panel · P2 · 🟢 Deep · 4-6h: create, delete, reparent and select as commands, drawn from the published view. Follows S9-T11, S9-T13 and S9-T15.
 - [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename, add and remove components. Follows S9-T14 and S9-T16.
@@ -57,6 +56,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: PR #164, branch `S9-T14/named-visit-fields`, opened by the lane Oct 27. `archive.field("mesh", value.mesh)` everywhere; no byte changes. Must merge before S9-T15 and S9-T17.
 
 
 ## ✅ Done: Sprint 09
