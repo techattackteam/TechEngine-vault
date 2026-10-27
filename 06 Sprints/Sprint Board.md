@@ -55,11 +55,12 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T8** · Prove the cache shuts down after the app's own shutdown · P3 · 🤖 Auto · 1-2h: PR #165, branch `S9-T8/cache-shutdown-order`, opened by the lane Oct 27. One `AppTests` case over the real simulation thread; only `AppTests.cpp` changes. Merge it before S9-T13 adds cases to `AppTests.cpp`.
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T8** · Prove the cache shuts down after the app's own shutdown · P3 · 🤖 Auto · 1-2h: #165 `b10f67b`, **Oct 27**. One `AppTests` case over the real simulation thread pins that `ResourceCache::shutdown()` runs after `simulationShutdown()` and sees its releases ([[Resources - Design]] § *Loads on the job system, as built*). #165 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. Story F stays open on S9-T9 and S9-T10.
+	- **Wider than the clause:** the case has a second section, an app that keeps its resource, as the control: the cache logs it once during `run()` and never before `simulationShutdown()` began, so the released section's empty log cannot pass by accident. It uses a test-only resource rather than the scene, because `AppTests` has no scene loader.
 - [x] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: #164 `a97890c`, **Oct 27**. `Writer`, `Reader` and `ReferenceVisitor` take `field(name, value)` and ignore the name, and every `visit` names its fields ([[Serialization - Design]] § *How `visit` binds*). #164 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. Unblocks S9-T15 and, with S9-T16, S9-T17; Story D stays open.
 	- **The clause kept the nameless `field(value)`:** `ComponentRegistry` and the tests call it at the root, outside any `visit`, and the card allowed editing only `visit` bodies. So a `visit` that forgets a name still compiles; S9-T17's field visitor can refuse it by having no nameless overload ([[Editor - Design]] § *Fields*).
 - [x] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h: #163 `3165f73`, **Oct 26**. `App::submitCommand` admits a `Command` into a bounded `CommandQueue`, wakes the simulation thread, and the loop applies the batch at the top of each pass ([[Editor - Design]] § *Commands and the idle simulation*). #163 has no body and no review conversation, so this entry comes from the card, the diff and the session. Unblocks S9-T13; Story D stays open.

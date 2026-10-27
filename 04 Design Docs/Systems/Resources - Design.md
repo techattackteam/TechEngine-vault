@@ -303,7 +303,9 @@ these at `/card-start`:
   not zero. Since S9-T7 the base `simulationShutdown()` drains frees after releasing the scene,
   because a released scene holds its references until its entry is freed, and every one of them
   was logged as a leak. The destructor calls it again as a safety net for an App whose simulation never
-  ran, and that second call logs the same entries again.
+  ran, and that second call logs the same entries again. An `AppTests` case pins the order over
+  the real simulation thread: a release in `simulationShutdown()` leaves the log empty, and a
+  kept entry is logged once, after it (S9-T8).
 
 ### Loading phases and other threads
 

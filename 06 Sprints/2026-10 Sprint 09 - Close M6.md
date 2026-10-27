@@ -213,7 +213,7 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
 
 ### Story F: Auto lane and fired backlog
 
-- [ ] **S9-T8** · Prove the cache shuts down after the app's own shutdown · P3 · 🤖 Auto · 1-2h ·
+- [x] **S9-T8** · Prove the cache shuts down after the app's own shutdown · P3 · 🤖 Auto · 1-2h ·
   done: an `AppTests` case drives the real simulation thread and proves that the app's releases
   in `simulationShutdown()` land before `ResourceCache::shutdown()` logs what is still counted.
   Only `engine/app/tests/AppTests.cpp` changes. Follows S9-T1. *From a fired Backlog entry.*
