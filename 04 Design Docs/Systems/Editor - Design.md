@@ -188,7 +188,9 @@ the reasons apart, so the [[Backlog]]'s `bool` mutator entry stays armed.
 [[ADR-016 - Serialization (binary primitives & describe-once seam)]] §2 makes the inspector a
 third visitor over `visit`. That needs a name per field, so `field` takes one first:
 `archive.field("position.x", local.position.x)`. The name is a string literal. `Writer`,
-`Reader` and `ReferenceVisitor` ignore it, so no byte on disk changes.
+`Reader` and `ReferenceVisitor` ignore it, so no byte on disk changes. Built by S9-T14 (#164),
+which kept each archive's nameless `field(value)` as the root entry, so a `visit` that forgets a
+name still compiles. The field visitor can refuse it by offering no nameless overload.
 
 `core/serialization` gains a field visitor shaped like `ReferenceVisitor`: a templated
 `field(name, value)` that dispatches to one virtual function per kind. Each registered

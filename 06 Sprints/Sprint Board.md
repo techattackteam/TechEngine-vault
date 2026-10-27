@@ -56,11 +56,12 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: PR #164, branch `S9-T14/named-visit-fields`, opened by the lane Oct 27. `archive.field("mesh", value.mesh)` everywhere; no byte changes. Must merge before S9-T15 and S9-T17.
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h: #164 `a97890c`, **Oct 27**. `Writer`, `Reader` and `ReferenceVisitor` take `field(name, value)` and ignore the name, and every `visit` names its fields ([[Serialization - Design]] § *How `visit` binds*). #164 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. Unblocks S9-T15 and, with S9-T16, S9-T17; Story D stays open.
+	- **The clause kept the nameless `field(value)`:** `ComponentRegistry` and the tests call it at the root, outside any `visit`, and the card allowed editing only `visit` bodies. So a `visit` that forgets a name still compiles; S9-T17's field visitor can refuse it by having no nameless overload ([[Editor - Design]] § *Fields*).
 - [x] **S9-T12** · Edit command admission · P2 · 🟠 Moderate · 2-3h: #163 `3165f73`, **Oct 26**. `App::submitCommand` admits a `Command` into a bounded `CommandQueue`, wakes the simulation thread, and the loop applies the batch at the top of each pass ([[Editor - Design]] § *Commands and the idle simulation*). #163 has no body and no review conversation, so this entry comes from the card, the diff and the session. Unblocks S9-T13; Story D stays open.
 	- **The clause's premise was wrong:** "a ticking app applies the batch before each fixed tick" would never apply an edit in the Stopped editor, which does not tick. Miguel chose to apply commands whenever the thread wakes, never inside a tick, and S9-T12, S9-T13 and the note were rewritten before any logic. No artifact said what "reported as cancelled" means either; it is one warning with the count.
 	- **Decided in the card:** the queue is open only while the simulation thread runs, so a submit before the run or after stop is rejected. Asked during the card whether the queue belongs in the editor, Miguel kept it in `app`, because ADR-018 §2 sends the server's console commands the same way.

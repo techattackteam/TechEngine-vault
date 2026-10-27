@@ -149,7 +149,7 @@ as a command is T2's, not this story's.
   phase, then runs a publication hook, so nothing ticks and nothing spins while Stopped. The editor detaches the `InputBuffer` while
   Stopped. `AppTests` cases prove that an idle app runs no tick across a wait, that a submitted
   command is applied and published within one wake, and that stop wakes it. Follows S9-T12.
-- [ ] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h ·
+- [x] **S9-T14** · Every `visit` field carries a name · P2 · 🤖 Auto · 1-2h ·
   done: `field` takes a name first, `archive.field("mesh", value.mesh)`, in `Writer`, `Reader`,
   `ReferenceVisitor`, every `visit` (`Transform`, `MeshRenderer`) and the test types. A name is
   a string literal, and `Transform`'s are `position.x`, `rotation.w` and so on. The three

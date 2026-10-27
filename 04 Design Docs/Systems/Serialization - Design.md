@@ -19,7 +19,7 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 | Two paths, one seam: trivially-copyable spans copy as raw bytes; everything else is visited. | ADR-016 §1 |
 | One `visit` function per non-POD type; `Writer` and `Reader` are visitors over it. | ADR-016 §2 |
 | The visit function is the reflection seam: P2996 would generate it, nothing downstream moves. | ADR-016 §2, ADR-005 |
-| Every field has a name, passed first: `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it, so no byte changes; the editor's field visitor uses it. Decided 2026-10-26 for the inspector, built by S9-T14. | ADR-016 §2; [[Editor - Design]] § *Fields* |
+| Every field has a name, passed first: `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it, so no byte changes; the editor's field visitor uses it. Decided 2026-10-26 for the inspector, built by S9-T14 (#164). The nameless `field(value)` stays as the root entry. | ADR-016 §2; [[Editor - Design]] § *Fields* |
 | Little-endian on disk and wire, no swap code, compile-time check documents it. | ADR-016 §3 |
 | Blob header is `{magic, u16 formatVersion, flags}`; strings length-prefixed; `StringId` as raw `u64`. | ADR-016 §3 |
 | Encoding adds no nondeterminism: same input bytes, identical output bytes. | ADR-016 §3 |
@@ -91,12 +91,17 @@ field-by-field write of the same value.
 ```cpp
 template<typename Archive>
 void visit(Archive& archive, Mesh& value) {
-    archive.field(value.id);
-    archive.field(value.name);
-    archive.field(value.bounds);        // nested, visited too
-    archive.field(value.indices);       // std::vector, so the bulk path
+    archive.field("id", value.id);
+    archive.field("name", value.name);
+    archive.field("bounds", value.bounds);      // nested, visited too
+    archive.field("indices", value.indices);    // std::vector, so the bulk path
 }
 ```
+
+**Names as built (S9-T14, #164).** Each archive's `field(std::string_view, T&)` forwards to its
+nameless `field(T&)`, which stays as the root entry: `ComponentRegistry`'s payload hooks call
+`writer.field(component)` with no enclosing `visit`. So nothing makes a `visit` body name its
+fields; a nameless call there still compiles (`engine/core/include/TechEngine/core/serialization/Writer.hpp`).
 
 The alternative was a `Serializer<T>` trait specialization. It was rejected because a
 specialization has to be written inside the primary template's namespace, so every describing
