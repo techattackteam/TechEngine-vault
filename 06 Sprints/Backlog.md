@@ -104,6 +104,13 @@ groups are kept, because they show where future work will land.
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
   that section.
 
+- #prio/low · **`MountEntry::canonicalRoot` has no reader once S9-T10 merges**: the case
+  check now walks the logical path, so the field (`engine/platform/include/TechEngine/platform/files/MountTable.hpp:17`)
+  and the `canonical()` call that fills it in `MountTable::mount` serve nothing. Left in place
+  because S9-T10's card allowed only `matchesOnDiskCase` to change. Removing it deletes a public
+  field and about 6 lines. Found by the lane on Oct 28 ([[2026-10-28 14-15 Auto Run]]).
+  **Trigger:** S9-T10 (#169) merging.
+
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.

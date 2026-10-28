@@ -279,6 +279,11 @@ function itself checks that, so the invariant lives in `mount()` and the orderin
 a `bool` and logged through `TE_LOGGER_ERROR` on failure. Looking for an *optional* file
 therefore printed an error every time it was absent, which is the normal path.
 
+**Only `IoError` logs.** Where `FileAccess` maps an OS or stream failure to `IoError`, it logs
+the physical path and the OS message (or, for a stream, the operation) at warn first, as
+`CONVENTIONS.md` § *Error handling* asks of a mapping site. `NotFound`, `NoMount` and the other
+codes stay silent, because a mount probe misses on purpose. Added by S9-T9 (#168, Oct 28).
+
 ### What counts as a valid path
 
 `splitVirtualPath` is the gate. A path that fails it never reaches a mount, and

@@ -217,7 +217,7 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   done: an `AppTests` case drives the real simulation thread and proves that the app's releases
   in `simulationShutdown()` land before `ResourceCache::shutdown()` logs what is still counted.
   Only `engine/app/tests/AppTests.cpp` changes. Follows S9-T1. *From a fired Backlog entry.*
-- [ ] **S9-T9** · Log the OS error where `FileAccess` returns `IoError` · P3 · 🤖 Auto · 1-2h ·
+- [x] **S9-T9** · Log the OS error where `FileAccess` returns `IoError` · P3 · 🤖 Auto · 1-2h ·
   done: every `return FileError::IoError` in `engine/platform/src/files/FileAccess.cpp` first logs
   the physical path and, where a `std::error_code` failed, its message, at warn level, as
   `CONVENTIONS.md` § *Error handling* requires of a mapping site. A stream failure with no
