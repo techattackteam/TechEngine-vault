@@ -37,7 +37,6 @@ kanban-plugin: board
 
 ## Story F: Auto lane and fired backlog
 
-- [ ] **S9-T9** · Log the OS error where `FileAccess` returns `IoError` · P3 · 🤖 Auto · 1-2h: every `IoError` return in `FileAccess.cpp` logs the path and the OS message at warn; other codes stay silent; `[skip-coverage]` allowed if the paths are unreachable in tests.
 - [ ] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h: `matchesOnDiskCase` checks spelling per component with `directory_iterator`; a symlink case in `MountTableTests`, `SKIP` where it cannot be created.
 
 
@@ -53,6 +52,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S9-T9** · Log the OS error where `FileAccess` returns `IoError` · P3 · 🤖 Auto · 1-2h: PR #168, branch `S9-T9/fileaccess-ioerror-log`, opened by the lane on Oct 28. Every `IoError` return logs the path and the OS message (or the stream operation) at warn; other codes stay silent; the PR uses `[skip-coverage]`. Miguel's to review and merge.
 
 
 ## ✅ Done: Sprint 09
