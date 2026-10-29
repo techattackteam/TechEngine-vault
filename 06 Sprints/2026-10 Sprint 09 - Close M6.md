@@ -113,7 +113,7 @@ Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window
   rows, and the first T1 panel cards are cut against it into Story D, each with a `done:` clause
   and a size. Follows S9-D2.
 
-### Story D: E1's first panels · 9 tasks · stretch
+### Story D: E1's first panels · 10 tasks · stretch
 
 T1's dock, hierarchy, inspector and save ([[Roadmap]] § *Rung catalogue*), cut by S9-D3 on
 Oct 26 against [[Editor - Design]]. Every card is P2, so dropping one never costs the goal. The
@@ -203,6 +203,20 @@ as a command is T2's, not this story's.
   panels, relaunch, and they are where they were. Follows S9-T16; the inspector joins the dock
   as S9-T17 lands. *Resized from 🟠 2-3h on Oct 29, after the dockspace and the default layout
   moved to S9-T16.*
+- [ ] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h ·
+  done: right after `ImGui::CreateContext()` in `EditorApp::createImGuiContext()`
+  (`apps/editor/src/EditorApp.cpp:124`), the editor applies what v1's
+  `PanelsManager::setColorTheme()` sets (`runtime/editor/src/panels/PanelsManager.cpp:127` at the
+  `v1-reference` tag): its 39 colors, the 2px rounding, the 1px frame border and the centred
+  window titles, without v1's per-line comments. The pinned ImGui 1.93 renamed three tab colors in
+  1.90.9, so v1's `TabActive`, `TabUnfocused` and `TabUnfocusedActive` are set as `TabSelected`,
+  `TabDimmed` and `TabDimmedSelected`. Colors that ImGui added after v1 keep their dark defaults.
+  v1 gives `DragDropTarget` the same blue as a hovered row, so the hierarchy's drop line
+  (`apps/editor/src/ui/panels/HierarchyPanel.cpp:255`) may vanish over a hovered row; if it does,
+  the line takes another color. No new test: the lifecycle case at
+  `apps/editor/tests/EditorAppTests.cpp:562` already runs the new lines. Windowed: the editor
+  looks like v1, and the drop line shows while dragging over a row. Follows S9-T16. *Added on
+  Oct 29 at Miguel's request, outside S9-D3's cut.*
 
 S9-T11, S9-T12 and S9-T14 depend on nothing, so any of them can open the story. S9-T14 is the
 lane's, and it must merge before S9-T15 and S9-T17 start.
@@ -308,6 +322,8 @@ and 1 🟡: about six 🟢 slots once two 🟠 cards take 🟢 slots. Story D is
   S9-D5, the weekly review and the windowed run. Miguel kept the whole cut in this sprint because
   M6's code closed on day 3; every card is P2, so the tail drops into Sprint 10 at no cost to the
   goal.
+- **S9-T20 was added on Oct 29, on top of that stretch.** It is P3, and both 🟡 Tuesdays already
+  go to the lane review, so it rides a spare evening or is the first card to move to Sprint 10.
 
 ## Sprint review (end)
 

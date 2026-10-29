@@ -26,6 +26,7 @@ kanban-plugin: board
 - [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename through S9-T16's `RenameEntityCommand`, add and remove components. Follows S9-T14 and S9-T16.
 - [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h: save as a command, the title marker, Save, Discard or Cancel on close. Follows S9-T16.
 - [ ] **S9-T19** · A placeholder scene view and the remembered layout · P2 · 🟡 Light · 1-2h: the scene view in the dock's centre; `editorSettings/layout.ini` through `FileAccess`, git-ignored. Follows S9-T16.
+- [ ] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h: v1's `setColorTheme()` colors, rounding, frame border and centred titles, applied after `CreateContext()`; the three tab colors under their 1.93 names. Follows S9-T16.
 
 
 ## Story E: Alongside: the renderer brief
