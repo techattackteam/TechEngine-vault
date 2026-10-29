@@ -6,8 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://objf.ai/papers/Obrien-2002-SSF/Obrien-2002-SSF.pdf - **Synthesizing Sounds from Rigid-Body Simulations** | ACM SIGGRAPH / SCA 2002 (Audio)
-- [ ] http://graphics.cs.cmu.edu/projects/shells/ - **Harmonic Shells: A Practical and High-Performance Method for Elastic Sound Synthesis** | ACM SIGGRAPH Asia 2012 (Audio)
 
 
 ## TO VALIDATE - MIGUEL REVIEW🔍
@@ -62,6 +60,11 @@ kanban-plugin: board
 	Schissler and Manocha find reflection and diffraction paths with cheap CPU ray tracing, with no precomputation, so dynamic scenes work; the most practical of these audio cards for C2, as background for occlusion that could reuse Jolt's ray casts.
 - [ ] https://kunzhou.net/2016/sound-transport.pdf - **Interactive Sound Propagation with Bidirectional Path Tracing** | ACM SIGGRAPH Asia 2016 (Audio)
 	Recommend reject: Cao, Ren, Schissler, Manocha and Zhou bring bidirectional path tracing with multiple importance sampling to acoustics, which is research-grade propagation well beyond C2's miniaudio playback; the card's title was the algorithm's name (Bidirectional Sound Transport), not the paper's.
+- [ ] https://objf.ai/papers/Obrien-2002-SSF/Obrien-2002-SSF.pdf - **Synthesizing Sounds from Rigid-Body Simulations** | ACM SIGGRAPH / SCA 2002 (Audio)
+	Could not resolve: objf.ai is blocked from the lane's cloud session (proxy 403), and so is the escholarship.org copy (uc/item/41k3f19n). A web search confirms O'Brien, Shen and Gatchalian, SCA 2002, pp. 175-182: real-time modal sounds driven by an off-the-shelf rigid-body simulator. That fits the Audio row's "3D sound effects" alongside E9, but the paper itself was not read.
+- [ ] http://graphics.cs.cmu.edu/projects/shells/ - **Harmonic Shells: A Practical and High-Performance Method for Elastic Sound Synthesis** | ACM SIGGRAPH Asia 2012 (Audio)
+	Could not resolve: graphics.cs.cmu.edu and the Cornell copy (research.cs.cornell.edu/HarmonicShells/HarmonicShells09.pdf) are blocked from the lane's cloud session. A web search says the card is wrong: the paper is **Harmonic Shells: A Practical Nonlinear Sound Model for Near-Rigid Thin Shells**, Chadwick, An and James, ACM TOG 28(5), SIGGRAPH Asia 2009, with its page at cs.cornell.edu/projects/HarmonicShells. The press coverage calls it offline (about an hour per demo), which would mean recommend reject for the Audio row's real-time effects. The paper itself was not read.
+
 
 ## Rendering 👽
 

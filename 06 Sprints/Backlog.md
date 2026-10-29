@@ -257,6 +257,14 @@ groups are kept, because they show where future work will land.
     `engine/core/tests/assets/PackSourceTests.cpp:58`), `viewOf` and `bytesOf`, and `patch<T>`
     (`PackTests.cpp:123`, `BootRecordTests.cpp:105`). One test header, about 30 lines.
 
+- #prio/low · **[[Scene - Design]] still names two built-in components**: § *Built-in
+  hierarchy* says every entity carries `Hierarchy` and `Transform`, and that Scene tests register
+  "both built-ins" (`Scene - Design.md:148`, `:176-178`). S9-T15 (#167, `9a33c49`) made `Name` a
+  third member of the set `ArchetypeStorage::createEntity` gives every entity, and `Scene`
+  refuses to add or remove it. Only [[Editor - Design]] § *Entity names* records that. Found by
+  the vault freshness check, Oct 29 ([[2026-10-29 09-08 Auto Run]]). **Trigger:** the Oct 31
+  weekly review's drift check, or the next card that edits [[Scene - Design]].
+
 ## client
 
 - #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
@@ -290,6 +298,16 @@ groups are kept, because they show where future work will land.
   while nothing draws entities, but a real scene would flood the log. Drop the lines to
   `TE_LOGGER_DEBUG` or keep only the summary line. **Trigger:** the first scene with more than a
   handful of entities, or the first card that draws them.
+
+- #prio/low · **[[Game Loop - Frame Flow]]'s diagram predates the editor's loop**: its
+  simulation lane always ticks and has no command step, and its two other lanes have no ImGui
+  work. Since S9-T12 and S9-T13 (#163, #166), each simulation pass applies the command batch
+  first and an app that does not tick waits in `waitForCommands()`
+  (`engine/app/src/SimulationThread.cpp:201-230`). Since #162, main builds the editor's ImGui frame
+  and render draws it after the scene. [[Simulation Thread - Design]] and [[Editor - Design]]
+  are current; only the overview diagram and its prose drifted. Found by the vault freshness
+  check, Oct 29 ([[2026-10-29 09-08 Auto Run]]). **Trigger:** the Oct 31 weekly review's drift
+  check, or the next card that changes a loop phase.
 
 ## net
 
