@@ -23,10 +23,9 @@ kanban-plugin: board
 
 ## Story D: E1's first panels · stretch
 
-- [ ] **S9-T16** · The published view and the hierarchy panel · P2 · 🟢 Deep · 4-6h: create, delete, reparent and select as commands, drawn from the published view. Follows S9-T11, S9-T13 and S9-T15.
-- [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename, add and remove components. Follows S9-T14 and S9-T16.
+- [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename through S9-T16's `RenameEntityCommand`, add and remove components. Follows S9-T14 and S9-T16.
 - [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h: save as a command, the title marker, Save, Discard or Cancel on close. Follows S9-T16.
-- [ ] **S9-T19** · The dock, a placeholder scene view and the remembered layout · P2 · 🟠 Moderate · 2-3h: `editorSettings/layout.ini` through `FileAccess`, git-ignored. Follows S9-T11.
+- [ ] **S9-T19** · A placeholder scene view and the remembered layout · P2 · 🟡 Light · 1-2h: the scene view in the dock's centre; `editorSettings/layout.ini` through `FileAccess`, git-ignored. Follows S9-T16.
 
 
 ## Story E: Alongside: the renderer brief
@@ -54,6 +53,13 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 09
+
+- [x] **S9-T16** · The editor snapshot and the hierarchy panel · P2 · 🟢 Deep · 4-6h: #171 `acc897a`, **Oct 29**. After each applied batch, and once after the startup load, the simulation publishes an `EditorSnapshot`, and main draws a docked hierarchy panel from it that creates, deletes, renames, reparents, reorders and selects through `EditorCommands` ([[Editor - Design]] § *The editor snapshot*, § *The hierarchy panel*). #171 has no review conversation, so this entry comes from the card, the diff and the session. Unblocks S9-T17 and S9-T18, and S9-T19 now follows it; Story D stays open.
+	- **Wider than the card, by Miguel's choice:** the dockspace and its default layout moved in from S9-T19 at `/card-start`, ported from v1's panels. Rename moved in from S9-T17 as `RenameEntityCommand`, which the inspector reuses. The drop zones reorder siblings like Unity, through the same reparent command. Multi-select was parked in the [[Backlog]].
+	- **Three gaps under the clause, settled at `/card-start`:** `publishEdits()` could not reach the private `Scene`, so it now takes it. Nothing was published until the first edit, so the startup load publishes once. "A batch that changed the scene" had no signal, so every batch publishes and only a scene change raises the edit revision. `EditorView` became `EditorSnapshot`, because "view" belongs to the scene and game viewports.
+	- **Decided in the card:** reparenting keeps the world transform, a created or dropped child goes first (unlike Unity), and a right-click selects the row. Roots cannot be reordered, because `Scene` gives them no order ([[Backlog]] → core).
+	- **Review caught before merge:** moving an entity to the root kept its local transform, so it jumped in the world, and a failed move still raised the revision. Refused commands logged errors instead of warnings. The drop resolution moved from the panel to `EditorSnapshot`, so tests reach its position rule.
+	- **Retro:** diff coverage came back at 31%, because about 360 changed lines are ImGui drawing that no unit test reaches, so #171 used `[skip-coverage]`. Every panel card will hit this until a CI policy decides ([[Backlog]] → cross-cutting). The 🟢 4-6h card ran the whole day as its scope grew, and Claude wrote the panel, rename, reorder and the review fixes at Miguel's request.
 
 - [x] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h: #169 `7e27f4f`, **Oct 29**. `matchesOnDiskCase` walks the requested path one component at a time against each directory's listing, so a link below the mount root no longer turns into its target's name, and a new `MountTableTests` case resolves a file through one ([[File Access - Design]] § *Case sensitivity*). #169 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. D3 is deleted from [[Known Issues]]. Completes Story F.
 	- **The fix left a field with no reader:** `MountEntry::canonicalRoot` and the `canonical()` call that fills it serve nothing now, but the card allowed only `matchesOnDiskCase` to change. Its [[Backlog]] entry's trigger has fired.

@@ -164,20 +164,25 @@ as a command is T2's, not this story's.
   ([[Editor - Brief]], 2026-10-26). Tests: a round trip keeps names, including an empty name and
   two equal names; a scene without `Name` blocks loads with defaults. Existing tests that count
   an entity's components are adapted. Follows S9-T14.
-- [ ] **S9-T16** · The published view and the hierarchy panel · P2 · 🟢 Deep · 4-6h ·
-  done: after each applied batch that changed the scene, the simulation publishes the editor
-  view (the hierarchy in tree order with names, the selection, the edit and saved revisions)
-  newest-wins and wakes main ([[Editor - Design]] § *The published view*). A hierarchy panel
-  draws from it and sends create, delete, reparent and select commands. It refuses a drop onto
-  the dragged entity's own subtree, and a command the `Scene` rejects only logs a warning, so the
-  [[Backlog]]'s `bool` mutator entry stays armed. Headless tests apply each command and check
-  the published view. Windowed: the panel shows `projects/dev`'s startup scene. Follows S9-T11,
-  S9-T13 and S9-T15.
+- [x] **S9-T16** · The editor snapshot and the hierarchy panel · P2 · 🟢 Deep · 4-6h ·
+  done: after each applied batch, and once after the startup load, the simulation publishes the
+  editor snapshot (the hierarchy in tree order with names, the selection, the edit and saved
+  revisions) newest-wins and wakes main ([[Editor - Design]] § *The editor snapshot*). Only a
+  batch that changed the scene raises the edit revision. A dockspace over the main window holds
+  the panels, with a default layout that docks the hierarchy on the left. A hierarchy panel
+  draws from the snapshot and sends create, delete, reparent and select commands. It refuses a drop
+  onto the dragged entity's own subtree, and a command the `Scene` rejects only logs a warning,
+  so the [[Backlog]]'s `bool` mutator entry stays armed. Headless tests apply each command and
+  check the published snapshot. Windowed: the panel shows `projects/dev`'s startup scene, docked on
+  the left. Follows S9-T11, S9-T13 and S9-T15. *The dockspace and the default layout moved here
+  from S9-T19 at `/card-start` on Oct 29.*
 - [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h ·
   done: `core/serialization` gains the field visitor, and each registered component a field walk
-  in its registry record ([[Editor - Design]] § *Fields*). The published view adds the selected
-  entity's components as field rows. The inspector edits each editable kind, renames the entity,
-  and adds and removes components; every edit is a command that records the old value. How a
+  in its registry record ([[Editor - Design]] § *Fields*). The editor snapshot adds the selected
+  entity's components as field rows. The inspector edits each editable kind, renames the entity
+  through S9-T16's `RenameEntityCommand` and `EditorCommands::rename` rather than a set-field
+  command, and adds and removes components; every edit is a command that records the old value,
+  so `RenameEntityCommand` gains that record here. How a
   `Transform` edit updates its world values is settled at `/card-start` (the note's *Open
   questions*). Tests: a set-field command changes exactly one field, publishes the new row, and
   records the old value. Follows S9-T14 and S9-T16.
@@ -190,12 +195,14 @@ as a command is T2's, not this story's.
   to [[Serialization - Design]]'s trigger for per-type versions. Tests: a save and a reload give
   the same scene; the saved revision follows a save; a failed write leaves the marker. Follows
   S9-T16.
-- [ ] **S9-T19** · The dock, a placeholder scene view and the remembered layout · P2 · 🟠 Moderate · 2-3h ·
-  done: a dockspace over the main window holds the panels and a placeholder scene view, with a
-  default layout when none is saved. ImGui writes no file itself: the layout loads from and saves
-  to `project://editorSettings/layout.ini` through `FileAccess` (ADR-027 §6), and
-  `editorSettings/` is git-ignored. Windowed: rearrange the panels, relaunch, and they are where
-  they were. Follows S9-T11; the hierarchy and inspector join the dock as S9-T16 and S9-T17 land.
+- [ ] **S9-T19** · A placeholder scene view and the remembered layout · P2 · 🟡 Light · 1-2h ·
+  done: a placeholder scene view joins S9-T16's dockspace in its centre. ImGui writes no file
+  itself: the layout loads from and saves to `project://editorSettings/layout.ini` through
+  `FileAccess` (ADR-027 §6), and `editorSettings/` is git-ignored. S9-T16's default layout is
+  built only when no layout is saved, so a loaded one is never replaced. Windowed: rearrange the
+  panels, relaunch, and they are where they were. Follows S9-T16; the inspector joins the dock
+  as S9-T17 lands. *Resized from 🟠 2-3h on Oct 29, after the dockspace and the default layout
+  moved to S9-T16.*
 
 S9-T11, S9-T12 and S9-T14 depend on nothing, so any of them can open the story. S9-T14 is the
 lane's, and it must merge before S9-T15 and S9-T17 start.

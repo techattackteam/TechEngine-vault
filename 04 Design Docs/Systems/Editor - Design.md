@@ -9,9 +9,10 @@ simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name
 **Kind:** system
 **Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. The ImGui hook and the
 frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admission (S9-T12, #163
-`3165f73`), the idle simulation (S9-T13, #166 `db2adac`) and entity names (S9-T15, #167
-`9a33c49`). The rest of Sprint 09's Story D, S9-T16 to S9-T19, builds the panels and the
-commands.
+`3165f73`), the idle simulation (S9-T13, #166 `db2adac`), entity names (S9-T15, #167
+`9a33c49`), and the editor snapshot, the dockspace and the hierarchy panel (S9-T16, #171
+`acc897a`). The rest of Sprint 09's Story D, S9-T17 to S9-T19, builds the inspector, save and
+the remembered layout.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -37,7 +38,7 @@ message. This note says how those messages are shaped.
 | One window | ImGui's docking branch draws into the client's window. Main builds the frame; render draws it after the scene. Multi-viewport is off in E1. | ADR-027 §1 |
 | Draw data and textures | Draw data crosses newest-wins in its own channel. Texture requests cross in order and are never dropped. | ADR-027 §1 |
 | Main stays event-driven | Main builds a frame on each wake. Extra frames come from posted wakes, never from a timer. | ADR-027 §1; ADR-019 §5 |
-| Panels read a published view | The simulation publishes the hierarchy, the selected entity's components and the revisions after a change. Main never reads the live `Scene`. | ADR-027 §2 |
+| Panels read a published snapshot | The simulation publishes the hierarchy, the selected entity's components and the revisions after a change. Main never reads the live `Scene`. | ADR-027 §2 |
 | Every edit is a command | Panels send commands through bounded admission; the simulation applies each batch as a loading phase and records old values. | ADR-027 §3 |
 | Stopped, Playing, Paused | Only Playing ticks. E1 builds Stopped only, with the simulation thread alive and idle. | ADR-027 §4 |
 | Play ticks a copy | E11 builds it. E1 keeps undo records and the selection in one place that Play can freeze. | ADR-027 §5 |
@@ -53,7 +54,11 @@ message. This note says how those messages are shaped.
 | A command never waits for a tick | An accepted command wakes the simulation thread, which applies the batch at the top of each loop pass, never inside a tick. The queue is open only while that thread runs. | 2026-10-26 (S9-T12), § *Commands and the idle simulation* |
 | No game input while Stopped | The editor detaches the `InputBuffer` while Stopped. ImGui reads input through its own callbacks. | 2026-10-26, § *Commands and the idle simulation* |
 | An App says whether it ticks | A virtual `simulationTicks()`, read once after the startup load. The editor says no; every other App keeps the default yes. | 2026-10-27 (S9-T13), § *Commands and the idle simulation* |
-| Edits publish through their own hook | `publishEdits()` runs after each applied batch, in both loops. `publishSnapshot` stays render's, because render drops a snapshot whose tick did not advance (`engine/client/src/render/SnapshotHistory.cpp:20`). | 2026-10-27 (S9-T13), § *Commands and the idle simulation* |
+| Edits publish through their own hook | `publishEdits(const Scene&)` runs after each applied batch, in both loops. `publishSnapshot` stays render's, because render drops a snapshot whose tick did not advance (`engine/client/src/render/SnapshotHistory.cpp:20`). | 2026-10-27 (S9-T13); the `Scene` argument 2026-10-29 (S9-T16), § *Commands and the idle simulation* |
+| Every batch publishes | The editor publishes after every applied batch and once at the end of the startup load. Only a command that changes the scene raises the edit revision, so a select publishes without one. | 2026-10-29 (S9-T16), § *The editor snapshot* |
+| Panels send through one sender | `EditorCommands` builds each command with the edit session and submits it. Panels never touch the session, which belongs to the simulation thread. | 2026-10-29 (S9-T16), § *The hierarchy panel* |
+| Hierarchy edits | A reparent keeps the world transform. A created or dropped child goes first. A reorder is a reparent to the same parent. A right-click selects the row. | 2026-10-29 (S9-T16), § *The hierarchy panel* |
+| The default layout yields to a saved one | It is built only when the dockspace's node does not exist, and a loaded layout creates that node. | 2026-10-29 (S9-T16), § *The layout* |
 
 ## Threads and channels
 
@@ -61,13 +66,13 @@ message. This note says how those messages are shaped.
 flowchart LR
     subgraph Main["Main thread"]
         E["GLFW events<br/>imgui_impl_glfw"]
-        P["Panels draw from<br/>the newest view"]
+        P["Panels draw from<br/>the newest snapshot"]
         F["ImGui frame"]
         E --> P --> F
     end
     subgraph Sim["Simulation thread"]
         A["Apply a command batch<br/>as a loading phase"]
-        V["Publish the editor view"]
+        V["Publish the editor snapshot"]
         A --> V
     end
     subgraph Render["Render thread"]
@@ -76,7 +81,7 @@ flowchart LR
         S --> O
     end
     P -->|"Commands, bounded, never dropped"| A
-    V -->|"Editor view, newest wins"| P
+    V -->|"Editor snapshot, newest wins"| P
     V -.->|"Wake main"| E
     F -->|"Draw data, newest wins"| O
     F -->|"Texture requests, in order"| O
@@ -129,8 +134,8 @@ start runs inside that call and initializes `imgui_impl_opengl3` against the con
 - **Callback order bites.** `ImGui_ImplGlfw_InitForOpenGL` with installed callbacks chains the
   callbacks that `Window` set before it. It must run after `Window::open` and
   `setInputBuffer`, or `Window`'s callbacks replace ImGui's and ImGui gets no input.
-- On each wake, main takes the newest editor view, runs `NewFrame`, draws every panel from that
-  view, renders, and publishes the snapshot and the texture requests.
+- On each wake, main takes the newest editor snapshot, runs `NewFrame`, draws every panel from
+  that snapshot, renders, and publishes the draw data and the texture requests.
 - ImGui settles some interactions over a few frames. Main posts one more wake after a frame
   that had input, while input is still queued after `NewFrame` (ImGui trickles a press and a
   release that arrive together over two frames), or while ImGui reports an active item. With no
@@ -173,24 +178,54 @@ commands accepted but not applied at shutdown are reported as cancelled.
   end of `init()`, through `ClientApp::detachInput()` and `Client::detachInput()`, which sets
   the window's buffer to null. Play, at E11, attaches it again.
 
-## The published view
+## The editor snapshot
 
-After a batch that changed anything, the simulation builds one view and publishes it into a
-newest-wins slot under a short mutex, then calls `wakeMainThread()`. It holds:
+ADR-027 §2 calls this the published editor view. The type is `EditorSnapshot`, because "view"
+is kept for the scene view and the game view, the two viewports.
 
-- the hierarchy in tree order: each entity's handle, depth, name and child count;
-- the selected entity, and its components as field rows (§ *Fields*);
-- the edit revision, raised by every applied batch that changed the scene, and the saved
-  revision.
+After every applied batch, and once at the end of the startup load, `EditorApp::publishEdits`
+builds one snapshot from the edit session and the `Scene` it is passed, publishes it into a
+newest-wins slot (`EditorSnapshotSlot`) under a short mutex, then calls `wakeMainThread()`.
+Main takes the newest snapshot at the start of each frame and keeps drawing its own copy until
+a newer one arrives. The startup publish exists because the Stopped editor gets no batch before
+the first edit, so without it the panels would start empty. The snapshot holds:
 
-Collapsed branches and scroll positions are main's own UI state, not part of the view. The
-whole view is rebuilt on each change. At 1,000 entities that is a few kilobytes per edit;
-ADR-027 § *What would move this* names the measurement that would change it.
+- the hierarchy, depth-first: each entity's handle, depth, name and child count;
+- the selected entity, and from S9-T17 its components as field rows (§ *Fields*);
+- the edit revision, raised by each command that changes the scene, and the saved revision.
 
-**Drops the hierarchy refuses.** The panel refuses a drop onto the dragged entity or its own
-subtree, using the published tree. A command the `Scene` still rejects, such as one for an
-entity that died in the meantime, logs a warning and changes nothing. No caller needs to tell
-the reasons apart, so the [[Backlog]]'s `bool` mutator entry stays armed.
+Roots come in storage order, not a kept order, because `Scene` has no sibling list for them
+([[Backlog]] → core). Collapsed branches and scroll positions are main's own UI state, not part
+of the snapshot. The whole snapshot is rebuilt on each change. At 1,000 entities that is a few
+kilobytes per edit; ADR-027 § *What would move this* names the measurement that would change it.
+
+## The hierarchy panel
+
+`PanelsManager` draws the dockspace first, because a dockspace hosts only the windows submitted
+after it, then each `Panel`. A panel's window name is fixed, because ImGui keys the saved layout
+by it. Panels send edits through `EditorCommands`, which builds each command with the edit
+session and submits it; a refused submit logs a warning.
+
+- **Drawing.** The rows are flat and depth-first, so the panel builds the list of visible rows
+  (a collapsed row skips the deeper rows after it) and draws them through `ImGuiListClipper`.
+  The rows touch, so a drag never hovers a gap that belongs to no drop target.
+- **Drop zones, as in Unity.** The top quarter of a row inserts before it, the bottom quarter
+  after it (or as the first child when it is open), and the middle makes the dragged entity the
+  first child. The empty space below makes it a root. `EditorSnapshot::resolveDrop` turns the
+  hovered gap into a position: `Scene` counts a position among the other children, so a move
+  down inside the same parent lands one gap earlier.
+- **Drops the panel refuses.** A drop into the dragged entity's own subtree, a drop that changes
+  nothing, and any reorder between roots draw no highlight. A command the `Scene` still rejects,
+  such as one for an entity that died in the meantime, logs a warning and changes nothing. No
+  caller needs to tell the reasons apart, so the [[Backlog]]'s `bool` mutator entry stays armed.
+- **Commands.** Create, delete, reparent, rename and select. A reparent and a move to the root
+  keep the world transform (`ReparentMode::PreserveWorld`). A reorder is a reparent to the same
+  parent. Create Child and a drop expand the parent.
+- **Selection and keys.** A click or a right-click selects the row. Delete removes the selection
+  and F2 renames it, both ignored while a name is being typed. Rename edits the row in place;
+  Escape restores the old text, so a cancelled rename sends nothing.
+- **What lives where.** `ui/` holds only drawing and interaction. Everything a test can reach is
+  in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot.
 
 ## Fields: names, rows and edits
 
@@ -232,8 +267,8 @@ with `Hierarchy` and `Transform`, and every new entity carries it, named `Entity
   entity must register it. `Scene`'s add and remove refuse it, so the inspector cannot remove it.
 - It is saved like any component. A scene saved before it has no `Name` block, so its
   entities load with the default name.
-- The hierarchy shows the name, the inspector renames through a set-field command, and the
-  runtime's scene log prints it ([[Editor - Brief]], 2026-10-26).
+- The hierarchy shows the name and renames through `RenameEntityCommand`, which S9-T17's
+  inspector reuses, and the runtime's scene log prints it ([[Editor - Brief]], 2026-10-26).
 - An entity's disk id is its row, reassigned in tree order at each save, so a reparent
   renumbers the rows after it. Nothing in E1 refers to an entity from outside its scene.
 
@@ -258,15 +293,21 @@ the default layout, built with ImGui's dock builder: hierarchy left, inspector r
 placeholder scene view in the centre. When ImGui sets `WantSaveIniSettings`, the editor saves
 the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ignored.
 
+- **As built (S9-T16):** the dockspace is `DockSpaceOverViewport` with a passthrough centre, and
+  the default layout docks the hierarchy on the left. It is built only when the dockspace's node
+  does not exist, because loading a layout with `LoadIniSettingsFromMemory` creates that node.
+  So S9-T19 must load the file before the first `NewFrame`, or the default is built first.
+  S9-T17 adds the inspector to the default, and S9-T19 the scene view.
+
 ## Open questions
 
 - **A field edit that must update derived state.** The setter writes `Transform`'s local values
   directly, which leaves its world values stale. Owner: S9-T17's `/card-start`.
 - **A focused text field keeps main busy.** `ImGui::IsAnyItemActive()` stays true for as long as
   a text field has focus, not only while you type, so main builds frames back to back until focus
-  leaves it. The demo window barely shows it; the inspector is made of text fields. One option is
-  to wake for an active item only while a mouse button is down. Found in S9-T11's review.
-  Owner: S9-T17's `/card-start`.
+  leaves it. The demo window barely shows it; the inspector is made of text fields, and the
+  hierarchy's rename field already hits it (S9-T16). One option is to wake for an active item
+  only while a mouse button is down. Found in S9-T11's review. Owner: S9-T17's `/card-start`.
 - **The first kept save fires a trigger.** [[Serialization - Design]] says per-type versions
   wait for non-regenerable content, "which for scenes is T1's first kept save". S9-T18 is that
   save. Its `/card-start` decides whether versions are built then or the trigger is re-armed.
@@ -288,5 +329,7 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 - The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-155`.
 - The bridge: `apps/editor/src/ui/ImGuiBridge.cpp`; the frame on main and the shutdown order:
   `apps/editor/src/EditorApp.cpp:115-145`.
+- The snapshot, the session, the commands and the sender: `apps/editor/src/edit/`; the
+  dockspace and the panels: `apps/editor/src/ui/PanelsManager.cpp` and `apps/editor/src/ui/panels/`.
 - The visitors that gain names: `engine/core/include/TechEngine/core/serialization/Writer.hpp:85`,
   `Reader.hpp:97`, `ReferenceVisitor.hpp:24`.

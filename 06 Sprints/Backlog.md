@@ -129,6 +129,15 @@ groups are kept, because they show where future work will land.
   `std::error_code`) before a `SceneError` can exist. **Trigger:** the first caller that has to
   tell two of those reasons apart, likely the editor's hierarchy panel.
 
+- #prio/medium · **Root entities have no order**: `Scene::getRoots()` returns roots in archetype
+  storage order (`engine/core/src/scene/Scene.cpp:238` at `5c57bf8`), and removal swap-erases.
+  So destroying a root moves another root into its place, and a root that changes archetype
+  (adding a component, from S9-T17) moves to another position. Roots have no sibling list, so
+  the hierarchy panel cannot keep a drop between two roots, and S9-T16 offers no root reorder. A
+  saved scene writes its roots in the same order. Found at S9-T16's `/card-start` on Oct 29,
+  2026. **Trigger:** roots visibly jumping in the hierarchy, or the first feature that needs a
+  root order, such as reordering roots by drag.
+
 - #prio/medium · **Resources: hot-reload**: decided in shape by [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9: a reload swaps
   data behind a live handle in a loading phase, with no generation bump, and fenced readers
   treat it as a free. Eviction stays explicit release only. **Trigger:** file watching
@@ -337,6 +346,15 @@ groups are kept, because they show where future work will land.
   a default asset per resource type, which does not exist yet. Today a deleted file goes
   unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
   **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
+- #prio/high · **Select several entities in the hierarchy**: Ctrl+click adds an entity to the
+  selection, Shift+click selects the range between two clicks, and dragging a box selects
+  every row it crosses. Miguel's ask on Oct 29, 2026, during S9-T16. It is not on the
+  [[Capability Map]] or in [[Editor - Brief]], so `/triage` is owed before any design. It turns
+  the selection into a set (`EditSession`, `EditorSnapshot::selected`, `SelectEntityCommand`),
+  and it needs rules for the inspector with several entities, for delete, for dragging several
+  rows, and for a box drag that conflicts with dragging a row. ImGui 1.93's `BeginMultiSelect`
+  already handles Ctrl, Shift and box selection with the clipper. **Trigger:** the next card
+  on the editor panels after S9-T16.
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
@@ -358,7 +376,17 @@ groups are kept, because they show where future work will land.
   beside `index:generation`, not the index alone. S9-T15 covers only the runtime's scene log,
   which [[Editor - Brief]] makes a Must. Today one other line mentions an entity, without naming
   it: `engine/core/src/scene/SceneAssetRowWriter.cpp:14`. **Trigger:** S9-T15 merges, then the
-  next card that adds or edits a log line about an entity.
+  next card that adds or edits a log line about an entity. **Fired by S9-T16 (#171)**: its
+  hierarchy commands warn about entities through the new `std::formatter<Entity>`, which prints
+  `index:generation` only (`apps/editor/src/edit/HierarchyCommands.cpp`).
+
+- #prio/medium · **Diff coverage for ImGui drawing code**: #171 (S9-T16) scored 31% against the
+  85% gate, because about 360 of its changed lines are ImGui drawing in `apps/editor/src/ui/`
+  that no unit test reaches, so it used `[skip-coverage]`. Each panel card will do the same, and
+  the gate's own comment says a weekly bypass teaches nothing. Two ways out: exclude
+  `apps/editor/src/ui/` from diff coverage, which is fair only while `ui/` holds drawing alone
+  (S9-T16 moved its logic to `edit/`), or run ImGui headless in the tests. Found Oct 29, 2026.
+  **Trigger:** the next panel card's PR, S9-T17 or S9-T19.
 
 - #prio/low · **Two comments still name the old SDK smoke target**: `sdk/CMakeLists.txt:9` and
   `.github/workflows/ci.yml:79` say `te_sdk_smoke`, while the target is `TechEngineSDKSmoke`
