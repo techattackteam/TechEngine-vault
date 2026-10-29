@@ -42,20 +42,20 @@ groups are kept, because they show where future work will land.
   declined it ([[ADR-014 - Events (buffered streams) & StringId]] §7, contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
   ADR).
-- #prio/medium · **Code sweep leftovers: base**: Found by the code sweep on Oct 8, 2026
-  ([[2026-10-08 14-08 Auto Run]]). It folds in the two Sep 28 entries that #119 did not fix.
+- #prio/medium · **Code sweep leftovers: base**: Found by the code sweep on Oct 29, 2026
+  ([[2026-10-29 14-40 Auto Run]]), and carried from the Oct 8 sweep, which folded in two Sep 28 entries.
   - The version anchors: `baseVersion()` (`engine/base/include/TechEngine/base/Base.hpp:4`),
     `platformVersion()` (`engine/platform/src/Platform.cpp:7`) and `coreVersion()`
     (`engine/core/src/Core.cpp:8`) are the S1 link-order stubs, and nothing calls
     `coreVersion()`. Delete them, `Base.hpp`, `Base.cpp` and `BaseTests.cpp`, whose glm case
     repeats `MathTests.cpp`. About 35 lines. A test covers `baseVersion()`, so it is not dead.
-  - The log-capture guards: `SinkGuard` (`engine/base/tests/diagnostics/LogTests.cpp:50-70`),
-    `LogCaptureGuard` (`engine/base/tests/diagnostics/AssertTests.cpp:68-83`) and
-    `GraphLogCaptureGuard` (`engine/core/tests/systems/TaskGraphTests.cpp:140-160`), and since
-    S8-T10 `CacheLogCaptureGuard` (`engine/core/tests/resources/ResourceCacheTests.cpp:170-194`,
+  - The log-capture guards: `SinkGuard` (`engine/base/tests/diagnostics/LogTests.cpp:50`),
+    `LogCaptureGuard` (`engine/base/tests/diagnostics/AssertTests.cpp:66`) and
+    `GraphLogCaptureGuard` (`engine/core/tests/systems/TaskGraphTests.cpp:140`), and since
+    S8-T10 `CacheLogCaptureGuard` (`engine/core/tests/resources/ResourceCacheTests.cpp:175`,
     added by the core sweep on Oct 20). S9-T1 added two more: `RuntimeLogCaptureGuard`
-    (`apps/runtime/tests/RuntimeAppTests.cpp:440`) and `SceneLoadLogCaptureGuard`
-    (`engine/core/tests/scene/SceneAssetTests.cpp:538`), each with its own id-matching helper. Use one
+    (`apps/runtime/tests/RuntimeAppTests.cpp:454`) and `SceneLoadLogCaptureGuard`
+    (`engine/core/tests/scene/SceneAssetTests.cpp:548`), each with its own id-matching helper. Use one
     guard in `te_test_support`. About 30 lines. It needs a new header, and which record fields
     the shared guard copies is a choice.
 
@@ -109,7 +109,7 @@ groups are kept, because they show where future work will land.
   and the `canonical()` call that fills it in `MountTable::mount` serve nothing. Left in place
   because S9-T10's card allowed only `matchesOnDiskCase` to change. Removing it deletes a public
   field and about 6 lines. Found by the lane on Oct 28 ([[2026-10-28 14-15 Auto Run]]).
-  **Trigger:** S9-T10 (#169) merging.
+  **Trigger:** S9-T10 (#169) merging. **Fired Oct 29** when #169 merged.
 
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*

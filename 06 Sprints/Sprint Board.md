@@ -51,11 +51,13 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h: PR #169, branch `S9-T10/case-check-symlinks`, opened by the lane on Oct 28. `matchesOnDiskCase` walks the path one component at a time against each directory's listing, and a new `MountTableTests` case resolves a file through a directory symlink. Miguel's to review and merge. D3 is deleted at the close.
 
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h: #169 `7e27f4f`, **Oct 29**. `matchesOnDiskCase` walks the requested path one component at a time against each directory's listing, so a link below the mount root no longer turns into its target's name, and a new `MountTableTests` case resolves a file through one ([[File Access - Design]] § *Case sensitivity*). #169 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. D3 is deleted from [[Known Issues]]. Completes Story F.
+	- **The fix left a field with no reader:** `MountEntry::canonicalRoot` and the `canonical()` call that fills it serve nothing now, but the card allowed only `matchesOnDiskCase` to change. Its [[Backlog]] entry's trigger has fired.
+	- **Unmeasured cost:** the check now lists one directory per path component on every hit, where it made two `canonical()` calls. Nothing has measured it on the asset-load path, which D3's own trigger named as the deciding question.
 - [x] **S9-T9** · Log the OS error where `FileAccess` returns `IoError` · P3 · 🤖 Auto · 1-2h: #168 `85ca195`, **Oct 28**. All 19 `IoError` returns in `FileAccess.cpp` log at warn first: the physical path and the `std::error_code` message for filesystem calls, and the path and the operation for stream failures; every other code stays silent ([[File Access - Design]] § *Resolution*). #168 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. Story F stays open on S9-T10.
 	- **A clause with no test behind it:** the failure paths cannot be reached in the suite, so nothing proves a line is written, and the PR used `[skip-coverage]` as the card allowed.
 - [x] **S9-T15** · Every entity has a name · P2 · 🟠 Moderate · 2-3h: #167 `9a33c49`, **Oct 27**. Every new entity carries a `Name` called `Entity`, saved with the scene, and the runtime's scene log prints it beside the index ([[Editor - Design]] § *Entity names*). #167 has no body and no review conversation, so this entry comes from the card, the diff and the session. Unblocks S9-T16, whose last predecessor it was, and the rename in S9-T17; Story D stays open.

@@ -35,34 +35,6 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
-### D3: the case check rejects any path through a symlink
-
-`matchesOnDiskCase` compares `canonical(candidate)` against `canonicalRoot / relative`.
-`canonical()` resolves symlinks, so a symlinked directory **below** the mount root makes the
-left side the link target and the right side the logical path. They never compare equal, and
-a correctly-cased file resolves to `NotFound`.
-
-A symlinked *root* is fine: both sides get canonicalised. Only links inside the mount break.
-
-**Silent because `NotFound` is a legitimate answer.** The caller cannot tell "no such file"
-from "the resolver disqualified it", and the case rule that caused it is invisible from the
-call site.
-
-`engine/platform/src/files/MountTable.cpp:11`
-
-**Proposed fix**: per-component `directory_iterator` spelling check instead of `canonical`:
-it never leaves the logical path, so links are transparent. Costs a directory scan per
-component, which is why `canonical` was chosen first. Only `matchesOnDiskCase` changes.
-
-**Trigger:** the first symlinked or junctioned asset directory: a Linux/macOS dev layout, or
-`mklink /D` on Windows. Also revisit if M6's resource loading makes the per-component cost
-measurable, since that decides which way the trade goes.
-
-**Carded Oct 24** as S9-T10 under the three-sprint rule, with the proposed fix chosen by Miguel.
-The entry goes when that PR merges.
-
----
-
 ### D5: `removeLogSink(nullptr)` reports success
 
 `removeLogSink` looks for a slot holding the given sink and swaps it to `nullptr`. Passed

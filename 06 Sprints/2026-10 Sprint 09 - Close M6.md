@@ -225,7 +225,7 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   stay silent, because mount probes miss on purpose. Existing tests pass unedited. If diff
   coverage falls under 85% because those paths cannot be reached in a test, the PR body says so
   and uses `[skip-coverage]`. *From a fired Backlog entry.*
-- [ ] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h ·
+- [x] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h ·
   done: `matchesOnDiskCase` (`engine/platform/src/files/MountTable.cpp:12`) checks the spelling
   one path component at a time with `directory_iterator`, instead of comparing `canonical()`
   results, so it never leaves the logical path ([[Known Issues]] D3's proposed fix, chosen by

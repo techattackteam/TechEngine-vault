@@ -335,17 +335,19 @@ prove its spelling. A plain lexical compare is not enough on its own, even thoug
 `std::filesystem::path::operator==` *is* case-sensitive on MSVC. That operator never touches
 the disk, so it only compares what the caller wrote against what the caller wrote.
 
-The mechanism is to ask the OS for the file's real name through `canonical()`, then compare
-that name lexically against the requested path.
+The mechanism walks the requested path one component at a time from the mount's physical
+root, and looks each component's spelling up in its directory's listing
+(`engine/platform/src/files/MountTable.cpp:13`). It never leaves the logical path, so a symlink
+below the root is transparent. Empty and `.` components are skipped.
 
-**That has a live defect, [[Known Issues]] D3.** `canonical()` also resolves symlinks. A
-symlink inside a mount canonicalises to its target's name, which does not match what was
-asked for. A correctly-cased file then reports `NotFound`.
+**Changed by S9-T10 (#169, Oct 29).** The first mechanism compared `canonical()` of the
+candidate against the canonical root plus the requested path. `canonical()` also resolves
+symlinks, so a link inside a mount turned into its target's name and a correctly-cased file
+reported `NotFound` (former Known Issue D3). The walk costs one directory listing per
+component on every hit; nothing has measured that on the asset-load path yet.
 
-`canonical(physicalRoot)` is computed once at mount time and cached on `MountEntry`, because
-resolution sits on the asset-load path and `canonical()` hits the disk. The cache is empty
-when the root did not exist at mount time. That is legal, since a mount may precede its
-directory. Resolution then canonicalises on the spot instead.
+`MountEntry::canonicalRoot` is still computed at mount time, but nothing reads it since #169.
+Its removal is in the [[Backlog]].
 
 ### Threading
 
@@ -400,9 +402,8 @@ two failure surfaces a caller has to check, is in [[Serialization - Design]] §
   before designing a v2 one.
 - **Archive mounts.** Closed 2026-10-10: packs are not mounted. ADR-025 §5 puts a pack reader
   in `core` on top of `FileAccess`, because `platform` cannot parse a format `core` encodes.
-- **One live defect.** [[Known Issues]] **D3**: `canonical()` and symlinks, described under
-  *Case sensitivity*. It came out of S3-T11's review alongside the `mount()` validation gap,
-  which S5-T2 closed on 2026-09-01.
+- **No live defect.** D3 (`canonical()` and symlinks) came out of S3-T11's review and was
+  fixed by S9-T10 on 2026-10-29; see *Case sensitivity*.
 
 ## References
 

@@ -513,7 +513,6 @@ pins to root, name, shader dir and asset dirs.
   this note builds the *how* for, plus the alternatives and the reversal triggers.
 - [[ADR-006 - v2 core architecture & module layout]] §1 (module and executable graph, and the
   undefined `tooling` tier) · §4 (composition root and `EngineContext`)
-- [[Known Issues]] **D3** (symlinks)
 - v1 prior art at the `v1-reference` tag: `runtime/editor/src/project/Project.cpp` ·
   `runtime/editor/src/project/ProjectManager.cpp` ·
   `runtime/editor/src/scripting/ScriptsCompiler.cpp`
