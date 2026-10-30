@@ -104,12 +104,16 @@ groups are kept, because they show where future work will land.
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
   that section.
 
-- #prio/low · **`MountEntry::canonicalRoot` has no reader once S9-T10 merges**: the case
-  check now walks the logical path, so the field (`engine/platform/include/TechEngine/platform/files/MountTable.hpp:17`)
-  and the `canonical()` call that fills it in `MountTable::mount` serve nothing. Left in place
-  because S9-T10's card allowed only `matchesOnDiskCase` to change. Removing it deletes a public
-  field and about 6 lines. Found by the lane on Oct 28 ([[2026-10-28 14-15 Auto Run]]).
-  **Trigger:** S9-T10 (#169) merging. **Fired Oct 29** when #169 merged.
+- #prio/low · **Code sweep leftovers: platform**: Found by the code sweep on Oct 30, 2026
+  ([[2026-10-30 14-53 Auto Run]]), and carried from the Oct 9 sweep.
+  - The four input event builders are copied in `engine/platform/tests/input/InputStateTests.cpp:17`
+    and `engine/platform/tests/input/InputBufferTests.cpp:16`. Sharing them needs a new test
+    header. About 16 lines.
+  - `InputState::apply` repeats its press and release logic for keys and buttons
+    (`engine/platform/src/input/InputState.cpp:8`). A helper would be a template over the bitset
+    size in a public header. About 8 lines.
+  - `FileAccess::list` splits the virtual path before `resolveExisting` splits it again
+    (`engine/platform/src/files/FileAccess.cpp:189`). About 2 lines.
 
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
