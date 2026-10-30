@@ -235,7 +235,7 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
 
 ### Story E: Alongside: the renderer brief
 
-- [ ] **S9-D4** · Write the renderer's capability brief · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S9-D4** · Write the renderer's capability brief · P2 · 🟠 Moderate · 2-3h ·
   done: `/brief renderer` writes `01 Product/Capabilities/Renderer - Brief.md`, linked from the
   map's § *Renderer*. It also answers whether R1 is one renderer ADR or several (meshes,
   materials, the physically based pipeline), the question the Backlog's Roadmap revision left.

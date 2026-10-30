@@ -46,7 +46,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S9-D4** · Write the renderer's capability brief · P2 · 🟠 Moderate · 2-3h: `/brief renderer`; one renderer ADR or several.
 
 
 ## 👀 Review / Demo
@@ -55,6 +54,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-D4** · Write the renderer's capability brief · P2 · 🟠 Moderate · 2-3h: vault `febe409`, **Oct 30**. [[Renderer - Brief]] is agreed and linked from [[Capability Map]] § *Renderer*: E2 shows Sponza and Bistro lit by a sun, a sky image and hundreds of local lights, with hundreds of thousands of objects at 60 fps, and surface shaders in code come alongside E11. R1 gets two ADRs, the frame and device seam and the materials, now on the [[Roadmap]] and in [[2026-Q4]]. Unblocks S9-P2, the last card of Story E.
+	- **A clause without a referent:** "the question the Backlog's Roadmap revision left" pointed at an entry deleted at Sprint 09 planning (vault `dd54792`), while the Roadmap still named one ADR. `/brief` takes product questions only, so the ADR count was decided apart from the interview.
+	- **Wider than the card, by Miguel's choice:** a `/triage` of user shaders and a replaceable renderer, written to the map as levels; eleven rendering papers and talks added to [[Research]]; and two [[Backlog]] lines, paper reports before each ADR and the million moving cubes as an end-to-end benchmark. S9-P2 now also compares Flax.
+	- **Against the product as written:** Miguel wants a first-release renderer that stands out among indie engines, past what TechAttack needs (P1); E2 shows reference models, not a TechAttack-shaped scene; and lights, the finished image and T4's import moved into E2, which is likely over a month. All three are owed to the Nov 7-8 `/product-review`.
+	- **Retro:** Claude's first comparison with Unity, Unreal and Godot came from memory and was wrong twice (Unity's current pipelines have no surface shaders in code, and Unreal 5.7 replaced its fixed shading models with Substrate), caught when Miguel asked for current docs. The 🟠 2-3h card ran the whole evening.
 - [x] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: #173 `9203c26`, **Oct 30**. The inspector draws the selected entity from field rows that a `FieldVisitor` collects, edits every editable kind through set-field, add and remove commands that record the old value in the edit session, and renames through `RenameEntityCommand` ([[Editor - Design]] § *Fields*, § *The inspector*). #173 has no review conversation, so this entry comes from the card, the diff and the session. The inspector already docks right in the default layout, so S9-T19 adds only the scene view; Story D stays open on S9-T18 to S9-T20.
 	- **Four calls no artifact made, settled at `/card-start`:** an edit assigns a copy back through the component's own `operator=`, so `Transform` re-propagates; `Scene` gains public type-erased calls that refuse the three built-ins; old values are plain records in the session, because a command dies with its batch; and `AssetRef` stays read-only, its editing moved to the [[Backlog]].
 	- **Wider than the card, by Miguel's choice:** v1's transform control, with Euler degrees held by the panel so a drag cannot flip them; reusable `TextEditField`, drag and property-table widgets, which the hierarchy's rename now uses too; and `ComponentRegistry::denseId` renamed `getDenseId`.
