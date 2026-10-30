@@ -127,7 +127,8 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
   `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
-  `fromWorldToLocal`, `setLocal` and `setWorld` are the known exception to
+  `fromWorldToLocal`, `setLocal`, `setWorld`, and since S9-T17 `addComponentRaw` and
+  `removeComponentRaw`, are the known exception to
   [[ADR-023 - Public error handling]]. One `false` covers a dead entity, a cycle, a position out
   of range, a singular transform and corrupt sibling links. Each reason needs its lane (assert or
   `std::error_code`) before a `SceneError` can exist. **Trigger:** the first caller that has to
@@ -359,15 +360,29 @@ groups are kept, because they show where future work will land.
   a default asset per resource type, which does not exist yet. Today a deleted file goes
   unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
   **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
-- #prio/high · **Select several entities in the hierarchy**: Ctrl+click adds an entity to the
-  selection, Shift+click selects the range between two clicks, and dragging a box selects
-  every row it crosses. Miguel's ask on Oct 29, 2026, during S9-T16. It is not on the
-  [[Capability Map]] or in [[Editor - Brief]], so `/triage` is owed before any design. It turns
-  the selection into a set (`EditSession`, `EditorSnapshot::selected`, `SelectEntityCommand`),
-  and it needs rules for the inspector with several entities, for delete, for dragging several
-  rows, and for a box drag that conflicts with dragging a row. ImGui 1.93's `BeginMultiSelect`
-  already handles Ctrl, Shift and box selection with the clipper. **Trigger:** the next card
-  on the editor panels after S9-T16.
+- #prio/medium · **Local and World modes in the transform inspector**: [[Scene - Design]] §
+  *Editor Local / World editing* (agreed Sep 12) asks for both, with a World edit converted to
+  local values on the simulation thread through `setWorld`. S9-T17 shows local values only,
+  because [[Editor - Design]] never carried that agreement over. Found Oct 30, 2026.
+  **Trigger:** E2's transform gizmo (T3, [[Editor - Brief]]), or the next card on the inspector.
+- #prio/low · **One rotation edit is four records, and the Euler cache is untested**: the
+  inspector sends a rotation as four set-field commands, so an undo would need four steps, and
+  `InspectorPanel::syncEuler` holds a small state machine that no test reaches while it is
+  private to the panel. A set-rotation command and a class in `edit/` would fix both. Found at
+  S9-T17. **Trigger:** the rung after R1 that brings undo ([[Editor - Brief]]).
+- #prio/low · **Inspector field hints and a drawer registry**: a generic field has no range,
+  speed or display name, and `drawComponent` picks a drawer with an `if` chain on the type. Hints
+  would be an optional argument to `visit`'s `field`, which the other archives ignore, so they
+  are a [[Serialization - Design]] decision first. Found at S9-T17. **Trigger:** the first
+  component with a field that needs a range, or the third custom drawer, likely in R1.
+- #prio/high · **Edit an `AssetRef` in the inspector**: split from S9-T17 at its `/card-start`
+  on Oct 30, 2026, where the field stayed read-only and shows only the id. It needs a picker
+  that offers the `AssetIndex`'s ids of the field's type, and `FieldVisitor::visitAsset` passes
+  only the id today, so the visitor must also learn the type. It needs a set-field command
+  that adds the id as a dependency of the scene entry (`App::m_sceneHandle`) and fills the
+  handle, and a policy for a load that fails inside the batch, which today only warns
+  ([[Editor - Design]] § *Open questions*). Until then a `MeshRenderer` added in the editor
+  keeps an empty mesh. **Trigger:** S9-T17 merges.
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the

@@ -23,15 +23,14 @@ kanban-plugin: board
 
 ## Story D: E1's first panels · stretch
 
-- [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: the field visitor and field rows; edit fields, rename through S9-T16's `RenameEntityCommand`, add and remove components. Follows S9-T14 and S9-T16.
 - [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h: save as a command, the title marker, Save, Discard or Cancel on close. Follows S9-T16.
 - [ ] **S9-T19** · A placeholder scene view and the remembered layout · P2 · 🟡 Light · 1-2h: the scene view in the dock's centre; `editorSettings/layout.ini` through `FileAccess`, git-ignored. Follows S9-T16.
 - [ ] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h: v1's `setColorTheme()` colors, rounding, frame border and centred titles, applied after `CreateContext()`; the three tab colors under their 1.93 names. Follows S9-T16.
+- [ ] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h: `/triage` the Oct 29 ask, then the four open rules as [[Editor - Design]] rows, then the build card. Follows S9-T17.
 
 
 ## Story E: Alongside: the renderer brief
 
-- [ ] **S9-D4** · Write the renderer's capability brief · P2 · 🟠 Moderate · 2-3h: `/brief renderer`; one renderer ADR or several.
 - [ ] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h: Filament, Godot 4, URP and Unreal against the brief, mapped onto ADR-005's device seam without choosing. Report-only. Follows S9-D4.
 
 
@@ -47,6 +46,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S9-D4** · Write the renderer's capability brief · P2 · 🟠 Moderate · 2-3h: `/brief renderer`; one renderer ADR or several.
 
 
 ## 👀 Review / Demo
@@ -55,13 +55,17 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h: #173 `9203c26`, **Oct 30**. The inspector draws the selected entity from field rows that a `FieldVisitor` collects, edits every editable kind through set-field, add and remove commands that record the old value in the edit session, and renames through `RenameEntityCommand` ([[Editor - Design]] § *Fields*, § *The inspector*). #173 has no review conversation, so this entry comes from the card, the diff and the session. The inspector already docks right in the default layout, so S9-T19 adds only the scene view; Story D stays open on S9-T18 to S9-T20.
+	- **Four calls no artifact made, settled at `/card-start`:** an edit assigns a copy back through the component's own `operator=`, so `Transform` re-propagates; `Scene` gains public type-erased calls that refuse the three built-ins; old values are plain records in the session, because a command dies with its batch; and `AssetRef` stays read-only, its editing moved to the [[Backlog]].
+	- **Wider than the card, by Miguel's choice:** v1's transform control, with Euler degrees held by the panel so a drag cannot flip them; reusable `TextEditField`, drag and property-table widgets, which the hierarchy's rename now uses too; and `ComponentRegistry::denseId` renamed `getDenseId`.
+	- **Review caught before merge:** edits were lost because the edit walk never assigned the copy back; the rename recorded the new name; a mismatched value type threw on the simulation thread; the commands raised the revision on a refusal; and the mouse-button wake was still a `TODO`. A test sweep then made set-field refuse `Name`, and a dead selection list nothing.
+	- **Retro:** two use-after-free bugs in tests Claude wrote (a registry record held across a registration, and a reference into a temporary snapshot) passed every plain leg and were caught only by ASan and TSan, because the reviews had read the tests for coverage, not lifetimes. The row helpers now reject a temporary at compile time, and `find` documents the lifetime. Diff coverage used `[skip-coverage]`, as #171 did, for the ImGui drawing.
 - [x] **S9-T16** · The editor snapshot and the hierarchy panel · P2 · 🟢 Deep · 4-6h: #171 `acc897a`, **Oct 29**. After each applied batch, and once after the startup load, the simulation publishes an `EditorSnapshot`, and main draws a docked hierarchy panel from it that creates, deletes, renames, reparents, reorders and selects through `EditorCommands` ([[Editor - Design]] § *The editor snapshot*, § *The hierarchy panel*). #171 has no review conversation, so this entry comes from the card, the diff and the session. Unblocks S9-T17 and S9-T18, and S9-T19 now follows it; Story D stays open.
 	- **Wider than the card, by Miguel's choice:** the dockspace and its default layout moved in from S9-T19 at `/card-start`, ported from v1's panels. Rename moved in from S9-T17 as `RenameEntityCommand`, which the inspector reuses. The drop zones reorder siblings like Unity, through the same reparent command. Multi-select was parked in the [[Backlog]].
 	- **Three gaps under the clause, settled at `/card-start`:** `publishEdits()` could not reach the private `Scene`, so it now takes it. Nothing was published until the first edit, so the startup load publishes once. "A batch that changed the scene" had no signal, so every batch publishes and only a scene change raises the edit revision. `EditorView` became `EditorSnapshot`, because "view" belongs to the scene and game viewports.
 	- **Decided in the card:** reparenting keeps the world transform, a created or dropped child goes first (unlike Unity), and a right-click selects the row. Roots cannot be reordered, because `Scene` gives them no order ([[Backlog]] → core).
 	- **Review caught before merge:** moving an entity to the root kept its local transform, so it jumped in the world, and a failed move still raised the revision. Refused commands logged errors instead of warnings. The drop resolution moved from the panel to `EditorSnapshot`, so tests reach its position rule.
 	- **Retro:** diff coverage came back at 31%, because about 360 changed lines are ImGui drawing that no unit test reaches, so #171 used `[skip-coverage]`. Every panel card will hit this until a CI policy decides ([[Backlog]] → cross-cutting). The 🟢 4-6h card ran the whole day as its scope grew, and Claude wrote the panel, rename, reorder and the review fixes at Miguel's request.
-
 - [x] **S9-T10** · Let the case check see through symlinks below a mount root (D3) · P3 · 🤖 Auto · 2-3h: #169 `7e27f4f`, **Oct 29**. `matchesOnDiskCase` walks the requested path one component at a time against each directory's listing, so a link below the mount root no longer turns into its target's name, and a new `MountTableTests` case resolves a file through one ([[File Access - Design]] § *Case sensitivity*). #169 has no review conversation and merged as the lane pushed it, so this entry comes from the card, the PR body and the diff. D3 is deleted from [[Known Issues]]. Completes Story F.
 	- **The fix left a field with no reader:** `MountEntry::canonicalRoot` and the `canonical()` call that fills it serve nothing now, but the card allowed only `matchesOnDiskCase` to change. Its [[Backlog]] entry's trigger has fired.
 	- **Unmeasured cost:** the check now lists one directory per path component on every hit, where it made two `canonical()` calls. Nothing has measured it on the asset-load path, which D3's own trigger named as the deciding question.

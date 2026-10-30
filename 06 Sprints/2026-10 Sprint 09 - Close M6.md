@@ -113,7 +113,7 @@ Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window
   rows, and the first T1 panel cards are cut against it into Story D, each with a `done:` clause
   and a size. Follows S9-D2.
 
-### Story D: E1's first panels · 10 tasks · stretch
+### Story D: E1's first panels · 11 tasks · stretch
 
 T1's dock, hierarchy, inspector and save ([[Roadmap]] § *Rung catalogue*), cut by S9-D3 on
 Oct 26 against [[Editor - Design]]. Every card is P2, so dropping one never costs the goal. The
@@ -176,7 +176,7 @@ as a command is T2's, not this story's.
   check the published snapshot. Windowed: the panel shows `projects/dev`'s startup scene, docked on
   the left. Follows S9-T11, S9-T13 and S9-T15. *The dockspace and the default layout moved here
   from S9-T19 at `/card-start` on Oct 29.*
-- [ ] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h ·
+- [x] **S9-T17** · The inspector · P2 · 🟢 Deep · 4-6h ·
   done: `core/serialization` gains the field visitor, and each registered component a field walk
   in its registry record ([[Editor - Design]] § *Fields*). The editor snapshot adds the selected
   entity's components as field rows. The inspector edits each editable kind, renames the entity
@@ -185,7 +185,8 @@ as a command is T2's, not this story's.
   so `RenameEntityCommand` gains that record here. How a
   `Transform` edit updates its world values is settled at `/card-start` (the note's *Open
   questions*). Tests: a set-field command changes exactly one field, publishes the new row, and
-  records the old value. Follows S9-T14 and S9-T16.
+  records the old value. Follows S9-T14 and S9-T16. *Editing an `AssetRef` moved to the
+  [[Backlog]] at `/card-start` on Oct 30; this card shows the id read-only.*
 - [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h ·
   done: a save command writes the live scene over the startup scene's indexed file on the
   simulation thread and publishes the saved revision ([[Editor - Design]] § *Save, the unsaved
@@ -217,6 +218,17 @@ as a command is T2's, not this story's.
   `apps/editor/tests/EditorAppTests.cpp:562` already runs the new lines. Windowed: the editor
   looks like v1, and the drop line shows while dragging over a row. Follows S9-T16. *Added on
   Oct 29 at Miguel's request, outside S9-D3's cut.*
+- [ ] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h ·
+  done: `/triage` weighs Miguel's Oct 29 ask (Ctrl+click adds an entity to the selection,
+  Shift+click selects the range between two clicks, and a box drag selects every row it crosses)
+  against [[Capability Map]] § *Editor* and [[Editor - Brief]], and either places it or parks it.
+  If it is kept, [[Editor - Design]] gains rows for the four rules no artifact makes: what the
+  inspector shows with several entities selected, what Delete removes, how dragging several rows
+  reparents them, and how a box drag starts without colliding with a row drag. The build card is
+  then cut with a `done:` clause and a size: the selection becomes a set in `EditSession`,
+  `EditorSnapshot::selected` and `SelectEntityCommand`, and ImGui 1.93's `BeginMultiSelect`
+  already handles Ctrl, Shift and box selection with the clipper. Follows S9-T17. *Added on Oct 30
+  at Miguel's request, from the Backlog entry that S9-T17 fired.*
 
 S9-T11, S9-T12 and S9-T14 depend on nothing, so any of them can open the story. S9-T14 is the
 lane's, and it must merge before S9-T15 and S9-T17 start.
@@ -324,6 +336,9 @@ and 1 🟡: about six 🟢 slots once two 🟠 cards take 🟢 slots. Story D is
   goal.
 - **S9-T20 was added on Oct 29, on top of that stretch.** It is P3, and both 🟡 Tuesdays already
   go to the lane review, so it rides a spare evening or is the first card to move to Sprint 10.
+- **S9-D6 was added on Oct 30, on the same terms.** It is P3 and 🟡, so it rides a spare evening
+  beside S9-T20, and it moves to Sprint 10 before any P2 card does. The build card it cuts is
+  not sized into this sprint.
 
 ## Sprint review (end)
 

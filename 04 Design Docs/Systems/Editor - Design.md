@@ -10,9 +10,9 @@ simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name
 **Status:** designed on 2026-10-26 (S9-D3) against engine `c509ac3a`. The ImGui hook and the
 frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admission (S9-T12, #163
 `3165f73`), the idle simulation (S9-T13, #166 `db2adac`), entity names (S9-T15, #167
-`9a33c49`), and the editor snapshot, the dockspace and the hierarchy panel (S9-T16, #171
-`acc897a`). The rest of Sprint 09's Story D, S9-T17 to S9-T19, builds the inspector, save and
-the remembered layout.
+`9a33c49`), the editor snapshot, the dockspace and the hierarchy panel (S9-T16, #171
+`acc897a`), and the inspector (S9-T17, #173 `9203c26`). The rest of Sprint 09's Story D, S9-T18
+and S9-T19, builds save and the remembered layout.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -47,7 +47,14 @@ message. This note says how those messages are shaped.
 | The editor ends ImGui around the client | GLFW's backend shuts down while the window exists, then the client stops, then the context is destroyed. Both `shutdown()` and the destructor run it, and each step checks its own state. | 2026-10-26 (S9-T11), § *The ImGui frame on main* |
 | ImGui's GL is the one GL outside `client` | Third-party code in the editor issues GL, on the render thread only. | 2026-10-26; [[Window - Design]] |
 | Every `visit` field has a name | `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it. | 2026-10-26; [[Serialization - Design]] |
-| The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. | 2026-10-26, § *Fields* |
+| The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. A row's value has the field's exact C++ type, and the read-only kinds reach the visitor by value. | 2026-10-26; exact types 2026-10-30 (S9-T17), § *Fields* |
+| A field edit assigns through the type | The edit walk writes a copy and assigns it back with the component's own `operator=`, so `Transform` re-propagates its subtree. It is a second record entry, `editFields`, beside `visitFields`. | 2026-10-30 (S9-T17), § *Fields* |
+| The editor reaches a component by its type id | `Scene` makes `componentRaw` public and gains `addComponentRaw` (a default value) and `removeComponentRaw`. Both refuse `Hierarchy`, `Transform` and `Name`, and return `bool` like the `Scene` mutators beside them. | 2026-10-30 (S9-T17), § *The inspector* |
+| Old values are plain records in the session | `EditSession` keeps one list of records: a field edit, a rename, an added component, and a removed component with its payload bytes. | 2026-10-30 (S9-T17); ADR-027 §3 §5, § *The inspector* |
+| `AssetRef` is read-only in the first inspector | The inspector shows the id. Editing it waits for its own card: a picker, the dependency on the scene entry and the failed-load policy. | 2026-10-30 (S9-T17); [[Backlog]] → editor |
+| The name is the inspector's header | It is drawn above the components and sent through `EditorCommands::rename`. `Name` is never listed as a component, and a set-field command refuses it, so a rename always leaves a `RenameRecord`. | 2026-10-30 (S9-T17), § *The inspector* |
+| Transform is drawn as v1 drew it | Translation, Rotation and Scale, each as X, Y and Z drags behind red, green and blue letters that reset the axis when clicked. Rotation is shown in Euler degrees. | 2026-10-30 (S9-T17), § *The inspector panel* |
+| Main wakes for an active item only while a mouse button is down | A focused text field keeps an item active with no input, so without the button test main builds frames back to back. Each key is input, so typing still wakes main. | 2026-10-30 (S9-T17), § *The ImGui frame on main* |
 | Every entity has a name | A `Name` component, created with every entity. Names need not be unique. `Scene` refuses to add or remove it, as it does `Transform`. | [[Editor - Brief]], 2026-10-26; 2026-10-27 (S9-T15), § *Entity names* |
 | Persistent entity ids stay opt-in | An entity's disk id is its row in its scene file, reassigned at each save. A UUID is an opt-in component for cross-document entities. | ADR-007 §1 |
 | Save is a command | The simulation writes the scene and publishes the saved revision. Save is T1's; T2 keeps only Export. | 2026-10-26, § *Save* |
@@ -138,8 +145,10 @@ start runs inside that call and initializes `imgui_impl_opengl3` against the con
   that snapshot, renders, and publishes the draw data and the texture requests.
 - ImGui settles some interactions over a few frames. Main posts one more wake after a frame
   that had input, while input is still queued after `NewFrame` (ImGui trickles a press and a
-  release that arrive together over two frames), or while ImGui reports an active item. With no
-  input, main sleeps. Input is read from ImGui's internal `InputEventsQueue`.
+  release that arrive together over two frames), or while ImGui reports an active item and a
+  mouse button is down. A focused text field stays active with no input at all, so the button
+  test is what lets main sleep beside it (S9-T17). With no input, main sleeps. Input is read
+  from ImGui's internal `InputEventsQueue`.
 - **Shutdown order.** `imgui_impl_glfw` shuts down first, while the window still exists. Then
   `ClientApp::stopClient()` stops the render thread, which runs the hook's stop. Last, the context
   is destroyed. `stopClient()` never throws, unlike `ClientApp::shutdown()`, so `~EditorApp` can
@@ -156,8 +165,9 @@ commands accepted but not applied at shutdown are reported as cancelled.
 - A command is a type with one virtual `apply` that receives the live `Scene`. The editor
   defines the concrete ones: create, delete, reparent, select, add and remove a component, set
   a field, and save. `app` knows none of them.
-- Each `apply` records what it needs to undo into the editor's edit session, the one place
-  that holds undo records and the selection on the simulation thread (ADR-027 §5).
+- Each `apply` records the old value it replaces into the editor's edit session, the one place
+  that holds undo records and the selection on the simulation thread (ADR-027 §5). The record
+  cannot stay in the command, which is destroyed at the end of its batch (§ *The inspector*).
 - Applying a command never waits for a tick. An accepted command wakes the simulation thread,
   which applies the whole batch at the top of each pass of its loop, before that pass's ticks
   and never inside one. After a batch that held a command, the loop calls `publishEdits()`, in
@@ -191,7 +201,8 @@ a newer one arrives. The startup publish exists because the Stopped editor gets 
 the first edit, so without it the panels would start empty. The snapshot holds:
 
 - the hierarchy, depth-first: each entity's handle, depth, name and child count;
-- the selected entity, and from S9-T17 its components as field rows (§ *Fields*);
+- the selected entity, and from S9-T17 its components as field rows and the types it can
+  add (§ *The inspector*);
 - the edit revision, raised by each command that changes the scene, and the saved revision.
 
 Roots come in storage order, not a kept order, because `Scene` has no sibling list for them
@@ -237,23 +248,71 @@ which kept each archive's nameless `field(value)` as the root entry, so a `visit
 name still compiles. The field visitor can refuse it by offering no nameless overload.
 
 `core/serialization` gains a field visitor shaped like `ReferenceVisitor`: a templated
-`field(name, value)` that dispatches to one virtual function per kind. Each registered
-component gains a field walk in its registry record, beside `visitReferences`.
+`field(name, value)` that dispatches to one virtual function per C++ type. It has no nameless
+`field(value)`, so a `visit` that forgets a name does not compile against it. The read-only
+kinds reach it by value, so no visitor can write them. Each registered component gains two
+walks in its registry record, beside `visitReferences`: `visitFields` walks the component in
+place, and `editFields` walks a copy and assigns it back with the component's own `operator=`.
+The copy is what keeps derived state right, because `Transform`'s assignment re-propagates its
+subtree (`engine/core/src/scene/Transform.cpp:8`). Neither walk refuses a zero scale, which
+`setLocal` does.
 
 | Kind | Inspector widget |
 |---|---|
 | `bool`, signed and unsigned integers, `float`, `double` | Checkbox or drag field. |
-| `std::string`, which includes the entity's name | Text field. |
+| `std::string` | Text field. The entity's name is the inspector's header instead (§ *The inspector*). |
 | `StringId` | Read-only, shown as its hash. |
-| `AssetRef<T>` | The asset id, editable. |
+| `AssetRef<T>` | Read-only, shown as the asset id, until its own card ([[Backlog]] → editor). |
 | `Entity` | Read-only in E1, shown as the target's name. |
 | A bulk vector | Read-only, shown as its element count. |
 
-The editor implements the visitor twice, both on the simulation thread: a collector that
-turns a component into rows `{component type, field index, name, kind, value}`, and a setter
-that writes one value at one field index. A set-field command carries the entity, the
-component type, the field index and the value. The field index is the field's position in
-`visit`, so it is stable within one build.
+## The inspector
+
+The inspector draws the selected entity from the snapshot: its name as a header, then each
+listed component with its fields, then an Add Component menu. Every edit goes through
+`EditorCommands`. Decided at S9-T17's `/card-start` on 2026-10-30.
+
+- **Rows.** The editor implements the field visitor twice, both on the simulation thread: a
+  collector that turns a component into rows `{field index, name, kind, value}` under their
+  component, and a setter that writes one value at one field index. A row's `FieldValue` is a
+  variant of the exact C++ types. A read-only kind holds what is shown: a hash, an id or a count
+  as `std::uint64_t`, or a target's name as a string. The field index is the field's position in
+  `visit`, counting every field, so it is stable within one build.
+- **Set field.** The command carries the entity, the component type, the field index and the
+  value, and edits through `editFields`. It refuses a value whose type differs from the field's,
+  and any read-only field. An equal value changes nothing, so it keeps the edit revision.
+- **What is listed.** A component is listed when its record has `visitFields`, so `Hierarchy`
+  never is. `Name` is left out, because the header renames through `RenameEntityCommand`.
+  `Transform` is listed but cannot be removed. Add offers every registered type with a field
+  walk that the entity lacks, except the three built-ins.
+- **Add and remove.** `Scene::addComponentRaw` adds a default value built through the record's
+  storage, as the scene read does, and `removeComponentRaw` removes one. Both refuse
+  `Hierarchy`, `Transform` and `Name` themselves, because `ArchetypeStorage::removeComponent`
+  checks nothing (`engine/core/src/scene/ArchetypeStorage.cpp:66`). `componentRaw` becomes public.
+- **Old values.** A command is destroyed at the end of its batch (`engine/app/src/App.cpp:210`),
+  so each `apply` writes its record into `EditSession`, as a variant: a field edit, a rename, an
+  added component, or a removed component with its payload bytes. Those bytes keep an `Entity`
+  field's index without its generation, and an `AssetRef`'s id without its handle, so an undo
+  of the removal must restore both.
+
+## The inspector panel
+
+As built (S9-T17). The panel draws only from the snapshot and sends every edit through
+`EditorCommands`. Each component body is a two-column property table that shares one label width
+across the panel, so labels line up between components. Shared widgets live in `ui/widgets/`.
+
+- **Per-component drawing.** `Transform` and `MeshRenderer` have their own drawers; every other
+  component falls back to one row per field, by kind.
+- **Rotation.** The panel keeps its own Euler angles and ignores older snapshots until the
+  rotation it sent comes back, because decomposing the quaternion each frame can flip the angles
+  in the middle of a drag. An edit sends all four quaternion fields, so it leaves four records.
+- **Drags.** While a drag is active, `dragScalar` hands ImGui the value the drag produced last.
+  The snapshot still holds the value from before the edit until the simulation publishes, and
+  ImGui would otherwise add the motion to that stale value.
+- **Text.** `TextEditField` holds the edit and reports it once, when it ends; Escape restores
+  the old text. The hierarchy's rename uses the same widget.
+- **Not built:** the Local and World modes that [[Scene - Design]] § *Editor Local / World
+  editing* agreed on Sep 12. The panel shows local values only ([[Backlog]] → editor).
 
 ## Entity names
 
@@ -301,19 +360,12 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 
 ## Open questions
 
-- **A field edit that must update derived state.** The setter writes `Transform`'s local values
-  directly, which leaves its world values stale. Owner: S9-T17's `/card-start`.
-- **A focused text field keeps main busy.** `ImGui::IsAnyItemActive()` stays true for as long as
-  a text field has focus, not only while you type, so main builds frames back to back until focus
-  leaves it. The demo window barely shows it; the inspector is made of text fields, and the
-  hierarchy's rename field already hits it (S9-T16). One option is to wake for an active item
-  only while a mouse button is down. Found in S9-T11's review. Owner: S9-T17's `/card-start`.
 - **The first kept save fires a trigger.** [[Serialization - Design]] says per-type versions
   wait for non-regenerable content, "which for scenes is T1's first kept save". S9-T18 is that
   save. Its `/card-start` decides whether versions are built then or the trigger is re-armed.
 - **A failed load inside an edit batch only warns.** The command has already changed the scene,
-  so the scene keeps a reference whose handle is empty. No command can set an `AssetRef` before
-  the inspector. Owner: S9-T17's `/card-start`.
+  so the scene keeps a reference whose handle is empty. No command sets an `AssetRef` until the
+  inspector can edit one. Owner: that card ([[Backlog]] → editor).
 - **Presentation input while Stopped.** E2's scene view camera needs presentation input while
   the `InputBuffer` is detached. Owner: T3.
 - **A second scene load in one process.** The [[Backlog]]'s "a scene load does not notice a
@@ -330,6 +382,8 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 - The bridge: `apps/editor/src/ui/ImGuiBridge.cpp`; the frame on main and the shutdown order:
   `apps/editor/src/EditorApp.cpp:115-145`.
 - The snapshot, the session, the commands and the sender: `apps/editor/src/edit/`; the
-  dockspace and the panels: `apps/editor/src/ui/PanelsManager.cpp` and `apps/editor/src/ui/panels/`.
-- The visitors that gain names: `engine/core/include/TechEngine/core/serialization/Writer.hpp:85`,
-  `Reader.hpp:97`, `ReferenceVisitor.hpp:24`.
+  dockspace and the panels: `apps/editor/src/ui/PanelsManager.cpp` and `apps/editor/src/ui/panels/`;
+  the shared widgets: `apps/editor/src/ui/widgets/`.
+- The named `field` of each archive: `engine/core/include/TechEngine/core/serialization/Writer.hpp:101`,
+  `Reader.hpp:114`, `ReferenceVisitor.hpp:32`; the field visitor: `FieldVisitor.hpp`, and its two
+  walks in `ComponentRegistry.hpp`.
