@@ -31,7 +31,7 @@ kanban-plugin: board
 
 ## Story E: Alongside: the renderer brief
 
-- [ ] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h: Filament, Godot 4, URP and Unreal against the brief, mapped onto ADR-005's device seam without choosing. Report-only. Follows S9-D4.
+- [ ] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h: Filament, Godot 4, Flax, URP and Unreal against the brief, mapped onto ADR-005's device seam without choosing. Report-only. Follows S9-D4.
 
 
 ## Story F: Auto lane and fired backlog

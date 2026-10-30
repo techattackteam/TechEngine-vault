@@ -30,17 +30,20 @@ product owner, unless a row says otherwise.
 
 ## Renderer
 
-**For:** players see the world; developers author materials and lights. **Goals:** E2, E3, E4, E7, E8.
+**For:** players see the world; developers author materials and lights. **Goals:** E2, E3, E4, E7, E8; surface shaders alongside E11. **Brief:** [[Renderer - Brief]].
 
 | | |
 |---|---|
-| **Showcase (E2)** | Imported models with physically based materials, seen through a camera, in the runtime and the editor's scene view. |
+| **Showcase (E2)** | Imported glTF reference models (Sponza, Bistro) with physically based materials, seen through a camera, identical in the runtime and the editor's scene view. Each mesh slot has a material on the engine's standard material, with no shader code (2026-10-30, `/triage`), edited live in the inspector. Lit by a sun, a sky image and hundreds of local lights, with no shadows; correct brightness, smooth edges and cut-out surfaces; a stress scene of hundreds of thousands of copies of the reference models (2026-10-30, `/brief`). |
 | **Showcase (E3)** | A physically based sky, a moving sun, day and night, and dynamic sun shadows. |
 | **Showcase (E4)** | Volumetric fog and god rays. |
 | **Showcase (E7)** | Static water with reflections, and trees and rocks drawn out to the view distance. |
 | **Showcase (E8)** | Global illumination: bounced light that follows terrain edits and the day and night cycle. |
-| **Demo** | A view of about 1 km over voxel terrain · dozens of local lights at night · volumetric fog and god rays · global illumination (bounced light) · static water with reflections. |
-| **Numbers** | 60 fps at 1080p on the target hardware, with all of the above on screen. |
+| **Demo** | A view of about 1 km over voxel terrain · hundreds of local lights at night · volumetric fog and god rays · global illumination (bounced light) · static water with reflections · each material picks a shading model from a set the engine provides: lit, unlit, and glTF's clear coat, sheen and transmission from E2, more later, such as subsurface and foliage (2026-10-30, `/triage` and `/brief`) · developers write surface shaders in code alongside E11, and a Script can set a material's values; the engine still lights them, and a shader keeps working when the engine adds lighting features or the frame is replaced (2026-10-30, `/brief`). |
+| **Numbers** | 60 fps at 1080p on the target hardware, with all of the above on screen. In E2, Sponza and Bistro each hold it with hundreds of local lights, and so do hundreds of thousands of objects (2026-10-30, `/brief`). |
+| **Later** | After the demo: a node-graph material editor (2026-10-30, `/brief`) · developers add their own passes to the engine's frame · developers replace the whole frame and still draw through the engine's device seam (2026-10-30, `/triage`). |
+| **Not in the demo** | Lighting written by developers: a stylized look uses an unlit material and custom passes instead · replacing the device layer, because the engine's render thread owns the graphics context ([[ADR-018 - Main and simulation threads, render-owned GL]]) (2026-10-30, `/triage`) · ray tracing · VR · HDR displays · low-end PCs and mobile (2026-10-30, `/brief`). |
+| **Open, for `/product-review`** | Whether the engine's first release gets a renderer beyond what TechAttack needs: powerful enough to stand out among indie engines (for example Godot 4, Flax, Bevy and Stride), without competing with Unreal or Unity (Miguel, 2026-10-30). That changes P1, so it is owed to the review of Nov 7-8, which also says what the engine's first release is. It may move the *Later* row up, and bring particles and mesh LOD back from the [[Roadmap]]'s *Deliberately absent*. [[Renderer - Brief]] § *Open questions* lists what else waits on it. |
 
 ## World and terrain
 

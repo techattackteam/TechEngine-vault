@@ -6,7 +6,8 @@ External resources. Keep it curated, not a link dump.
 - Sébastien Hillaire, "A Scalable and Production Ready Sky and Atmosphere" (2020)
 - Bruneton & Neyret, Precomputed Atmospheric Scattering
 - Frostbite / DICE volumetric fog talks (froxel scattering)
-- _add SIGGRAPH course links as you collect them_
+- Physically Based Shading in Theory and Practice, the yearly SIGGRAPH course: https://blog.selfshadow.com/publications/
+- Advances in Real-Time Rendering in Games, the yearly SIGGRAPH course: https://advances.realtimerendering.com/
 
 ## Engine architecture
 - "Game Engine Architecture", Jason Gregory

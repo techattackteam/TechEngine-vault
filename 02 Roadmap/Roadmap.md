@@ -20,7 +20,7 @@ must exist before the goal's first ADR.
 |---|---|---|---|---|
 | **M6 · Content** 🔨 now | (no video) The runtime loads scenes and meshes from packs, with references | Sprint 09's Story A and the mesh path (🤖 Claude) | The editor brief and ADR | |
 | **E1 · Editor and export** | Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
-| **E2 · First renderer** | Imported models with physically based materials, in the runtime and the editor's scene view | R1, after the **renderer ADR** | T4 import · T3 viewport tools | Renderer, content pipeline |
+| **E2 · First renderer** | Imported models with physically based materials, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** | T4 import · T3 viewport tools | Renderer, content pipeline |
 | **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | | Renderer |
 | **E4 · Fog and god rays** | Volumetric fog and light shafts | R4 | The terrain brief and ADR | Renderer |
 | **E5 · Voxel terrain** | Editable voxel terrain, dig and place, smooth or blocky, voxel size per world | W1, after the **terrain ADR** | P1 parallel executor | World and terrain |
@@ -29,7 +29,7 @@ must exist before the goal's first ADR.
 | **E8 · Global illumination** | Bounced light that follows terrain edits and the day and night cycle | R5 | | Renderer |
 | **E9 · Walk it** | A first-person character on the terrain, among rigid bodies | S1 · S2 | C2 audio | Physics, audio |
 | **E10 · Together** | 2 to 8 clients on a Windows dedicated server, moving with prediction | N1, after the **transport ADR** · N2 · N3 · N4 | | Networking |
-| **E11 · Scripted** | A game rule written as a user script and hot-reloaded | A1, after **accepting ADR-010** and the **scripting ADR** | T6 play in the editor | Authoring |
+| **E11 · Scripted** | A game rule written as a user script and hot-reloaded | A1, after **accepting ADR-010** and the **scripting ADR** | T6 play in the editor · surface shaders in code ([[Renderer - Brief]], 2026-10-30) | Authoring |
 | **E12 · Game UI** | A HUD, menus and an inventory, built in code and in the visual designer | A2, after **its own ADR** | | Game UI |
 | **E13 · Saving** | The server autosaves and reloads the world, its edits, machines and inventories | W4 | | Persistence |
 
@@ -56,7 +56,7 @@ cite them. Order **within** a lane is real.
 | 🔧 **T5** · Packaging | Distributable build · launcher arguments · no dev dependencies | T2 · T4 | Demo |
 | 🔧 **T6** · Play in the editor | Run the game inside the editor and return to the edited state | T1 · A1 | E11, alongside |
 | 🔧 **T7** · Terrain tools | Sculpt and paint voxel terrain, and set up generation, in the editor | W1 · T3 | E6, alongside |
-| 🎨 **R1** · Renderer v0 | Device seam (F22) · meshes, shaders and physically based materials · camera · frustum culling | M6 · **renderer ADR**, which also decides whether a per-frame allocator is owed | E2 |
+| 🎨 **R1** · Renderer v0 | Device seam (F22) · meshes, shaders and physically based materials · camera · frustum culling | M6 · **two renderer ADRs** (2026-10-30, S9-D4): the frame and device seam, with lights and culling, which also decides whether a per-frame allocator is owed; and materials and shading models | E2 |
 | 🎨 **R2** · Render graph and lighting | Passes · lights and shadows · depth prepass · post (auto-exposure, bloom) · GPU zones per pass | R1 | E3 |
 | 🎨 **R3** · Sky and sun | Physically based atmosphere · a moving sun · day and night | R2 | E3 |
 | 🎨 **R4** · Volumetric fog | Volumetric fog · god rays | R3 | E4 |

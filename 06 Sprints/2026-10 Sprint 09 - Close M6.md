@@ -240,9 +240,11 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   map's § *Renderer*. It also answers whether R1 is one renderer ADR or several (meshes,
   materials, the physically based pipeline), the question the Backlog's Roadmap revision left.
 - [ ] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h ·
-  done: a report compares how Filament, Godot 4, Unity's URP and Unreal split the device seam,
-  the mesh format and the physically based material model, against the brief's targets, and maps
-  each onto ADR-005's device seam (F22) without choosing. Report-only. Follows S9-D4.
+  done: a report compares how Filament, Godot 4, Flax, Unity's URP and Unreal split the device
+  seam, the mesh format and the physically based material model, against the brief's targets, and
+  maps each onto ADR-005's device seam (F22) without choosing. Report-only. Follows S9-D4.
+  *Flax added on Oct 30 by the renderer `/triage`, so the Nov 7-8 `/product-review` has a second
+  indie engine to compare against.*
 
 ### Story F: Auto lane and fired backlog
 

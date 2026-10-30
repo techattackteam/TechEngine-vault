@@ -64,6 +64,10 @@ kanban-plugin: board
 	Could not resolve: objf.ai is blocked from the lane's cloud session (proxy 403), and so is the escholarship.org copy (uc/item/41k3f19n). A web search confirms O'Brien, Shen and Gatchalian, SCA 2002, pp. 175-182: real-time modal sounds driven by an off-the-shelf rigid-body simulator. That fits the Audio row's "3D sound effects" alongside E9, but the paper itself was not read.
 - [ ] http://graphics.cs.cmu.edu/projects/shells/ - **Harmonic Shells: A Practical and High-Performance Method for Elastic Sound Synthesis** | ACM SIGGRAPH Asia 2012 (Audio)
 	Could not resolve: graphics.cs.cmu.edu and the Cornell copy (research.cs.cornell.edu/HarmonicShells/HarmonicShells09.pdf) are blocked from the lane's cloud session. A web search says the card is wrong: the paper is **Harmonic Shells: A Practical Nonlinear Sound Model for Near-Rigid Thin Shells**, Chadwick, An and James, ACM TOG 28(5), SIGGRAPH Asia 2009, with its page at cs.cornell.edu/projects/HarmonicShells. The press coverage calls it offline (about an hour per demo), which would mean recommend reject for the Audio row's real-time effects. The paper itself was not read.
+- [ ] https://gdcvault.com/play/1020791/Approaching-Zero-Driver-Overhead-in - **Approaching Zero Driver Overhead in OpenGL** | GDC 2014 (Rendering)
+	Sellers (AMD), Foley (Intel), Everitt and McDonald (NVIDIA) show how OpenGL cuts per-draw cost: multi-draw indirect with the draw count read from a buffer, persistent-mapped buffers, texture arrays and bindless textures; the GL reference for R1's draw submission, which v1 built on `glMultiDrawElementsIndirect`. A talk, not a paper; the GDC Vault page is partly paywalled, and the slides are public on SlideShare.
+- [ ] https://advances.realtimerendering.com/s2020/RenderingDoomEternal.pdf - **Rendering the Hellscape of Doom Eternal** | SIGGRAPH 2020 Advances in Real-Time Rendering in Games (Rendering)
+	id Software's forward renderer at a high frame rate; background for R1's hundreds of lights and its draw submission. Search found only the PDF link, so the speakers and what the talk covers are not confirmed.
 
 
 ## Rendering 👽
@@ -76,6 +80,24 @@ kanban-plugin: board
 	The paper that introduced the GGX distribution and extended microfacet models to transmission; a direct reference for R1's material model, where GGX is the usual specular term.
 - [ ] [[Paper#High Quality Temporal Supersampling|High Quality Temporal Supersampling]] | ACM SIGGRAPH 2014 Advances in Real-Time Rendering course (Rendering)
 	Karis's talk slides on Unreal Engine 4's temporal anti-aliasing (jitter, reprojection, neighbourhood clamping); a direct reference if R2's post stack gets TAA. It is a talk, not a paper.
+- [ ] [[Paper#Physically Based Shading at Disney|Physically Based Shading at Disney]] | SIGGRAPH 2012 course, Practical Physically Based Shading in Film and Game Production (Rendering)
+	Burley's principled BRDF, fitted against measured materials, with artist-friendly parameters that most later game material models start from; background for R1's material model.
+- [ ] [[Paper#Real Shading in Unreal Engine 4|Real Shading in Unreal Engine 4]] | SIGGRAPH 2013 course, Physically Based Shading in Theory and Practice (Rendering)
+	Karis's real-time cut of the Disney model: GGX specular, the split-sum approximation for image-based lighting, and a metallic-roughness parameter set; a direct reference for R1's material model and for what T4's glTF import must carry.
+- [ ] [[Paper#Moving Frostbite to Physically Based Rendering 3.0|Moving Frostbite to Physically Based Rendering 3.0]] | SIGGRAPH 2014 course, Physically Based Shading in Theory and Practice (Rendering)
+	Lagarde and de Rousiers list every change a production engine needed to move to physically based rendering, including physical light units and the details papers leave out; a direct reference for R1's material model and for R2's lights. EA's own page for it now returns 404, so the link is the notes on Lagarde's blog.
+- [ ] [[Paper#Revisiting Physically Based Shading at Imageworks|Revisiting Physically Based Shading at Imageworks]] | SIGGRAPH 2017 course, Physically Based Shading in Theory and Practice (Rendering)
+	Kulla and Conty add the energy that single-scattering microfacet models lose on rough surfaces, and cover coatings and layering; a reference for whether R1's model compensates for that loss, since a rough metal otherwise looks too dark. The talk has slides and a sheen supplement, but no separate notes.
+- [ ] [[Paper#Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs|Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs]] | JCGT 2014 (Rendering)
+	Heitz derives the masking and shadowing term that every GGX BRDF needs and shows why the height-correlated Smith form is the right one; read together with Walter et al. 2007 in this column.
+- [ ] [[Paper#Authoring Materials That Matters: Substrate in Unreal Engine 5|Authoring Materials That Matters: Substrate in Unreal Engine 5]] | SIGGRAPH 2023 Advances in Real-Time Rendering in Games (Rendering)
+	Hillaire and de Rousiers replace Unreal's fixed shading models with layered slabs that artists combine; a view of where material systems are heading, useful for how far R1's material asset must be able to grow. The slides PDF is 33 MB.
+- [ ] [[Paper#GPU-Driven Rendering Pipelines|GPU-Driven Rendering Pipelines]] | SIGGRAPH 2015 Advances in Real-Time Rendering in Games (Rendering)
+	Haar and Aaltonen cull mesh clusters on the GPU against a depth hierarchy, with two-phase occlusion culling and multidraw (Assassin's Creed Unity, then a RedLynx design); a direct reference for whether the R1 device seam must leave room for GPU culling. Multidraw indirect and compute are in core GL 4.5.
+- [ ] [[Paper#Optimizing the Graphics Pipeline with Compute|Optimizing the Graphics Pipeline with Compute]] | GDC 2016 (Rendering)
+	Wihlidal (Frostbite) filters triangles in compute before the rasterizer: cluster, backface, small-primitive and depth culling. The optimizations are AMD GCN and DirectX 12 centred, so each one needs checking against GL 4.5. A talk, not a paper; the GDC Vault page links no slides PDF.
+- [ ] [[Paper#A Deep Dive into Nanite Virtualized Geometry|A Deep Dive into Nanite Virtualized Geometry]] | SIGGRAPH 2021 Advances in Real-Time Rendering in Games (Rendering)
+	Karis, Stubbe and Wihlidal build a cluster hierarchy with GPU culling and a software rasterizer for small triangles; background for R7's foliage and W2's distant terrain more than for R1. The software rasterizer relies on 64-bit atomics, which GL 4.5 has only through extensions.
 
 
 ## Physics 🍎

@@ -287,6 +287,12 @@ groups are kept, because they show where future work will land.
   `shutdown()` (`apps/clientapp/src/ClientApp.cpp:16-18`, `:52-54`, `:67-69`, S8-T19, #151).
   They were untested before the move too. **Trigger:** the next change to how `Client` reports
   a render failure, or to `ClientApp`'s handling of it.
+- #prio/high · **Paper reports before R1's two ADRs**: the rendering papers validated on
+  2026-10-30 ([[Paper]], [[Research]]'s Rendering column) are read by no card, and S9-P2 compares
+  engines, not papers. Two report-only research briefs, each mapping its papers onto
+  [[Renderer - Brief]] without choosing: culling, draw submission (multi-draw indirect and
+  instancing, as v1 did) and hundreds of lights before the frame and device seam ADR, and materials before the materials ADR. **Trigger:** Sprint 10's
+  `/sprint-prep` (S9-D5), which places the two ADRs.
 
 ## app
 
@@ -399,6 +405,14 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/medium · **The million cubes as an end-to-end benchmark**: Miguel's ask, Oct 30, 2026.
+  [[Renderer - Brief]]'s Should of a million cubes moving on a grid at 60 fps (v1 reached 20)
+  exercises one whole frame: a System over the ECS, the task graph's executor, transform
+  propagation, the snapshot to the render thread, and instanced drawing. Kept as a repeatable
+  scene with its frame time recorded, it is a candidate first case for the perf tier in *Test
+  tiers and parallel ctest* below. One System that moves every cube is one node on one level,
+  so P1's parallel executor alone does not speed it up. **Trigger:** R1's first card that
+  draws instanced meshes.
 - #prio/low · **Log lines that mention an entity print its name**: Miguel's ask, Oct 26, 2026.
   Once entities have names (S9-T15), a warning or error about an entity should print its name
   beside `index:generation`, not the index alone. S9-T15 covers only the runtime's scene log,
