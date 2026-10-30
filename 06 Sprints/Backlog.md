@@ -318,6 +318,15 @@ groups are kept, because they show where future work will land.
   check, Oct 29 ([[2026-10-29 09-08 Auto Run]]). **Trigger:** the Oct 31 weekly review's drift
   check, or the next card that changes a loop phase.
 
+- #prio/low · **[[Simulation Thread - Design]]'s hook table still lists `publishEdits()`**: since
+  S9-T16 (#171) the hook is `publishEdits(const Scene&)`, and `SimulationThread` passes the live
+  scene (`engine/app/include/TechEngine/app/App.hpp:115`, `engine/app/src/SimulationThread.cpp:213`).
+  The row also misses that `EditorApp` calls it once at the end of its startup load
+  (`apps/editor/src/EditorApp.cpp:95`). [[Editor - Design]] has the new signature in its *Decided*
+  row; only its § *Commands and the idle simulation* bullet still writes `publishEdits()`. Found by
+  the vault freshness check, Oct 30 ([[2026-10-30 09-09 Auto Run]]). **Trigger:** the Oct 31 weekly
+  review's drift check, or the next edit to either note.
+
 ## net
 
 - #prio/medium · **Assign NetIds at the Tick barrier**: connect server-authoritative NetId
