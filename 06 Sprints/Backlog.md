@@ -402,6 +402,16 @@ groups are kept, because they show where future work will land.
 - #prio/low · **ImGui multi-viewport**: panels dragged out into their own OS windows. Not a
   Must, but wanted later. ADR-027 §1 keeps it off in E1 and leaves the threaded window glue to
   build. Found at S9-D2 on Oct 25, 2026.
+- #prio/medium · **The editor scales with the display, in a scalable font**: the editor draws
+  ImGui's 13px ProggyClean bitmap font at a scale of 1, so on a Windows display at 150% every
+  panel is two thirds of its intended size, and the bitmap font is what makes it look like a
+  debug tool. ImGui 1.93 embeds a scalable version of that font (`AddFontDefaultVector()`, no
+  file to load), and its GLFW backend reports the window's content scale, which
+  `style.ScaleAllSizes()` and `style.FontScaleDpi` take. The scale needs the open window, so it
+  runs after `startClient()`, not where S9-T20 applies the theme. A real typeface (Roboto ships
+  in imgui's `misc/fonts`) would change the look more, but where its file lives, compiled in or
+  read through `FileAccess`, is a decision first. Split from S9-T20 at its `/card-start` on
+  Oct 31, 2026. **Trigger:** the first recording of the editor for a showcase.
 - #prio/low · **Two review nits that #174 shipped**: restore the deleted comment
   "contains(), not valid(): a selection whose entity died would otherwise offer every type to
   add." in `EditSession::collectComponents`; and put `<ui/PanelsManager.hpp>` first in

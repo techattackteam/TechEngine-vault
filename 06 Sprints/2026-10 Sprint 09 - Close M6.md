@@ -204,20 +204,36 @@ as a command is T2's, not this story's.
   panels, relaunch, and they are where they were. Follows S9-T16; the inspector joins the dock
   as S9-T17 lands. *Resized from 🟠 2-3h on Oct 29, after the dockspace and the default layout
   moved to S9-T16.*
-- [ ] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h ·
+- [x] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h ·
   done: right after `ImGui::CreateContext()` in `EditorApp::createImGuiContext()`
-  (`apps/editor/src/EditorApp.cpp:124`), the editor applies what v1's
-  `PanelsManager::setColorTheme()` sets (`runtime/editor/src/panels/PanelsManager.cpp:127` at the
-  `v1-reference` tag): its 39 colors, the 2px rounding, the 1px frame border and the centred
-  window titles, without v1's per-line comments. The pinned ImGui 1.93 renamed three tab colors in
-  1.90.9, so v1's `TabActive`, `TabUnfocused` and `TabUnfocusedActive` are set as `TabSelected`,
-  `TabDimmed` and `TabDimmedSelected`. Colors that ImGui added after v1 keep their dark defaults.
-  v1 gives `DragDropTarget` the same blue as a hovered row, so the hierarchy's drop line
-  (`apps/editor/src/ui/panels/HierarchyPanel.cpp:255`) may vanish over a hovered row; if it does,
-  the line takes another color. No new test: the lifecycle case at
-  `apps/editor/tests/EditorAppTests.cpp:562` already runs the new lines. Windowed: the editor
-  looks like v1, and the drop line shows while dragging over a row. Follows S9-T16. *Added on
-  Oct 29 at Miguel's request, outside S9-D3's cut.*
+  (`apps/editor/src/EditorApp.cpp:176`), the editor calls `applyEditorTheme()`
+  (`apps/editor/src/ui/EditorTheme.cpp`). It sets what v1's `PanelsManager::setColorTheme()` sets
+  (`runtime/editor/src/panels/PanelsManager.cpp:127` at the `v1-reference` tag): its 39 colors, the
+  2px rounding, the 1px frame border and the centred window titles, without v1's per-line
+  comments. The pinned ImGui 1.93 renamed three tab colors in 1.90.9, so v1's `TabActive`,
+  `TabUnfocused` and `TabUnfocusedActive` are set as `TabSelected`, `TabDimmed` and
+  `TabDimmedSelected`. Four of v1's choices change:
+  - **Readable disabled text.** `TextDisabled` is about 0.50 gray, not v1's 0.24, which is
+    almost invisible on the panel background. The inspector's read-only values and the
+    placeholder views' hints use it.
+  - **Selection is stronger than hover.** `Header` is an opaque muted blue and `HeaderHovered` a
+    neutral gray. The hierarchy's selected row hovers in `Header`, so hovering it keeps its blue.
+    `Header` also colors the inspector's component headers, so they stay muted.
+  - **Gray grabs.** Scrollbar grabs, slider grabs and resize grips are gray, and take the accent
+    blue only when hovered or active.
+  - **Neutral tabs with an overline.** Tabs are neutral gray and lighter than their tab bar, so a
+    tab reads as something to drag: about 0.18 unselected and 0.24 selected, on a bar of 0.13
+    whether or not its panel has focus (v1's `TitleBgActive` was 0.15). The focused panel's
+    selected tab carries a 2px accent `TabSelectedOverline`.
+
+  Other colors that ImGui added after v1 keep their dark defaults. No new test: the ImGui
+  lifecycle case at `apps/editor/tests/EditorAppTests.cpp:593` already runs the new lines.
+  Windowed: the inspector's read-only values are readable, a hovered row is weaker than the
+  selected one, the drop line shows while dragging between rows and below them
+  (`apps/editor/src/ui/panels/HierarchyPanel.cpp:238` and `:262`), and only the focused panel's tab
+  has the overline. Follows S9-T16. *Added on Oct 29 at Miguel's request, outside S9-D3's cut.
+  Amended at `/card-start` on Oct 31: the four changes above were added to v1's look, and the font
+  and DPI scaling went to the [[Backlog]].*
 - [ ] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h ·
   done: `/triage` weighs Miguel's Oct 29 ask (Ctrl+click adds an entity to the selection,
   Shift+click selects the range between two clicks, and a box drag selects every row it crosses)

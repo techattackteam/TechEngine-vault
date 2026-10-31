@@ -23,8 +23,6 @@ kanban-plugin: board
 
 ## Story D: E1's first panels · stretch
 
-- [ ] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h: v1's `setColorTheme()` colors, rounding, frame border and centred titles, applied after `CreateContext()`; the three tab colors under their 1.93 names. Follows S9-T16.
-- [ ] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h: `/triage` the Oct 29 ask, then the four open rules as [[Editor - Design]] rows, then the build card. Follows S9-T17.
 - [ ] **S9-T21** · Main asks for its next ImGui frame without a fake event · P3 · 🟡 Light · 1-2h: `EditorApp::buildImGuiFrame` calls `wakeMainThread()` on main itself, which posts a GLFW empty event only so that the next `glfwWaitEvents()` returns. Instead, a main-only flag on `ClientApp` makes the next `mainThreadUpdate()` poll events rather than wait, and `wakeMainThread()` stays for the other threads (`publishEdits`, `requestStop`). The same frames are built as today. Amends the *Main stays event-driven* row and § *The ImGui frame on main* in [[Editor - Design]]. Found Oct 31.
 
 
@@ -45,6 +43,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h: `/triage` the Oct 29 ask, then the four open rules as [[Editor - Design]] rows, then the build card. Follows S9-T17.
 
 
 ## 👀 Review / Demo
@@ -53,6 +52,10 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h: #176 `fc0ed80`, **Oct 31**. `applyEditorTheme()` sets v1's colors, rounding, frame border and centred titles right after `CreateContext()`, with four changes on top of v1 ([[Editor - Design]] § *Decided*, *The theme*). #176 has no review conversation, so this entry comes from the card, the diff and the session. Story D stays open on S9-T21 and S9-D6.
+	- **Wider than the card, by Miguel's choice:** he asked at `/card-start` for improvements over v1, so the clause was amended before any code: readable disabled text (v1's 0.24 gray was about 1.4:1 on the panel, and the inspector's read-only values use it), a selection stronger than hover, gray grabs, and neutral tabs with an accent overline. A scalable font and DPI scaling went to the [[Backlog]]. The clause's line references were also stale, the furthest by 52 lines.
+	- **Changed after a look in the window:** a selected tab first matched the window background, which made it almost invisible against its tab bar, so tabs are now lighter than the bar, and `TitleBgActive` stays at 0.13 rather than v1's 0.15. The clause's fallback for a vanishing drop line was never needed, because hover is now gray.
+	- **Retro:** Claude wrote both functions at Miguel's request. `projects/dev`'s `Startup.tescene` rode along for the third card in a row, and diff coverage used `[skip-coverage]` again. Only the tabs were checked in the window; the gray hover over the inspector's blue component headers was not.
 - [x] **S9-T19** · A placeholder scene view and the remembered layout · P2 · 🟡 Light · 1-2h: #175 `555a9e4`, **Oct 31**. The layout loads from and saves to `editorSettings/layout.ini` through `FileAccess` before the first frame, and two placeholder views sit tabbed in the dock's centre ([[Editor - Design]] § *The layout*). #175 has no review conversation, so this entry comes from the card, the diff and the session. Story D stays open on S9-T20, S9-T21 and S9-D6.
 	- **Wider than the card, by Miguel's choice:** a placeholder game view beside the scene view, added at `/card-start` without `/triage` because its purpose was clear ([[Editor - Brief]] § *Decided*, 2026-10-31). Drawing the triangle inside the views was weighed and dropped: it needs render targets, which are R1's to decide.
 	- **A call no artifact made:** the layout is also saved at shutdown, because ImGui raises `WantSaveIniSettings` only seconds after a change and the card's relaunch check would lose a late move (now a *Decided* row).
