@@ -146,7 +146,9 @@ Retain v1's parent, first-child and sibling-link model as the starting point, us
 validated local Entity handles. Scene provides root/child traversal, parenting, unparenting
 and subtree operations. Projects use this engine API rather than maintaining links themselves.
 Every entity carries a Hierarchy component. Every entity also carries a Transform component;
-transformless entities are not supported.
+transformless entities are not supported. Since S9-T15 (#167), every entity also carries a `Name`,
+and `Scene` refuses to add or remove it, as it does `Transform` ([[Editor - Design]] § *Entity
+names*).
 
 Child order is a contract, not an implementation detail. The editor reorders children
 by drag-and-drop; scripts may reorder them at runtime. The sibling-link model must
@@ -175,7 +177,7 @@ The same requirement informs future serialization remapping, without fixing a fi
 
 S6-T4 created entities in the `{Hierarchy}` archetype. S6-T5 added Transform to the
 starting archetype. S6-T9 moved built-in registration from storage to `App` startup;
-direct Scene tests register both built-ins in their fixtures.
+direct Scene tests register the built-ins in their fixtures, `Name` included since S9-T15.
 
 **A last-child link, added at S8-T3 (#127, 2026-10-11).** `Hierarchy` also keeps
 `m_lastChild`, so appending a child at the end no longer walks its siblings; the scene asset

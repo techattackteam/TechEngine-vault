@@ -53,7 +53,7 @@ message. This note says how those messages are shaped.
 | A field edit assigns through the type | The edit walk writes a copy and assigns it back with the component's own `operator=`, so `Transform` re-propagates its subtree. It is a second record entry, `editFields`, beside `visitFields`. | 2026-10-30 (S9-T17), § *Fields* |
 | The editor reaches a component by its type id | `Scene` makes `componentRaw` public and gains `addComponentRaw` (a default value) and `removeComponentRaw`. Both refuse `Hierarchy`, `Transform` and `Name`, and return `bool` like the `Scene` mutators beside them. | 2026-10-30 (S9-T17), § *The inspector* |
 | Old values are plain records in the session | `EditSession` keeps one list of records: a field edit, a rename, an added component, and a removed component with its payload bytes. | 2026-10-30 (S9-T17); ADR-027 §3 §5, § *The inspector* |
-| `AssetRef` is read-only in the first inspector | The inspector shows the id. Editing it waits for its own card: a picker, the dependency on the scene entry and the failed-load policy. | 2026-10-30 (S9-T17); [[Backlog]] → editor |
+| `AssetRef` is read-only in the first inspector | The inspector shows the id. Editing it waits for its own card: a picker, the dependency on the scene entry and the failed-load policy. | 2026-10-30 (S9-T17); the card is S10-T8 |
 | The name is the inspector's header | It is drawn above the components and sent through `EditorCommands::rename`. `Name` is never listed as a component, and a set-field command refuses it, so a rename always leaves a `RenameRecord`. | 2026-10-30 (S9-T17), § *The inspector* |
 | Transform is drawn as v1 drew it | Translation, Rotation and Scale, each as X, Y and Z drags behind red, green and blue letters that reset the axis when clicked. Rotation is shown in Euler degrees. | 2026-10-30 (S9-T17), § *The inspector panel* |
 | The theme | v1's colors, set right after the context is created, with four changes: readable disabled text, gray grabs, tabs lighter than their bar with an accent overline on the focused panel, and a selection stronger than hover. Hover is a neutral gray, so a panel that marks a selected item with `Header` pushes `HeaderHovered` as `Header` around it, as the hierarchy does. `Header` also colors the inspector's component headers. | 2026-10-31 (S9-T20) |
@@ -189,7 +189,7 @@ commands accepted but not applied at shutdown are reported as cancelled.
   cannot stay in the command, which is destroyed at the end of its batch (§ *The inspector*).
 - Applying a command never waits for a tick. An accepted command wakes the simulation thread,
   which applies the whole batch at the top of each pass of its loop, before that pass's ticks
-  and never inside one. After a batch that held a command, the loop calls `publishEdits()`, in
+  and never inside one. After a batch that held a command, the loop calls `publishEdits(scene)`, in
   both loops (`engine/app/src/SimulationThread.cpp:201-230`).
 - An App whose `simulationTicks()` returns false has no tick deadline. Its thread skips the
   advance and `publishSnapshot`, and sleeps in `waitForCommands()` until a command arrives or
@@ -281,7 +281,7 @@ subtree (`engine/core/src/scene/Transform.cpp:8`). Neither walk refuses a zero s
 | `bool`, signed and unsigned integers, `float`, `double` | Checkbox or drag field. |
 | `std::string` | Text field. The entity's name is the inspector's header instead (§ *The inspector*). |
 | `StringId` | Read-only, shown as its hash. |
-| `AssetRef<T>` | Read-only, shown as the asset id, until its own card ([[Backlog]] → editor). |
+| `AssetRef<T>` | Read-only, shown as the asset id, until its own card (S10-T8, [[2026-10 Sprint 10 - Close E1]]). |
 | `Entity` | Read-only in E1, shown as the target's name. |
 | A bulk vector | Read-only, shown as its element count. |
 
@@ -442,7 +442,7 @@ sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore`
 
 - **A failed load inside an edit batch only warns.** The command has already changed the scene,
   so the scene keeps a reference whose handle is empty. No command sets an `AssetRef` until the
-  inspector can edit one. Owner: that card ([[Backlog]] → editor).
+  inspector can edit one. Owner: S10-T8 ([[2026-10 Sprint 10 - Close E1]]).
 - **Presentation input while Stopped.** E2's scene view camera needs presentation input while
   the `InputBuffer` is detached. Owner: T3.
 - **Which camera is the main active camera.** The game view draws through it, but no camera

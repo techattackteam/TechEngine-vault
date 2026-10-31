@@ -231,7 +231,7 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 | Each fixed tick | Simulation; not a hook. Ingress is consumed, then the executor runs the scheduled systems and the barrier. `fixedUpdate` was removed in S6-T9 (#92). |
 | `simulationTicks()` | Simulation, read once after the startup load. The default is `true`; an App that returns `false` never ticks and sleeps until a command or stop. `EditorApp` returns `false` (S9-T13, #166). |
 | `publishSnapshot(simulation)` | Simulation; fixed context only, once after catch-up for extraction/publication; initial publication before readiness. |
-| `publishEdits()` | Simulation; after each loop pass whose command batch held a command, before that pass's ticks. The default does nothing (S9-T13, #166). |
+| `publishEdits(const Scene&)` | Simulation, with the live scene; after each loop pass whose command batch held a command, before that pass's ticks. The default does nothing (S9-T13, #166; the argument since S9-T16, #171). `EditorApp` also calls it once at the end of its startup load. |
 | `simulationShutdown()` | Simulation; release simulation-owned state, including the app's resource handles. The base releases the scene's handle and drains frees (S9-T7, #161). Right after it returns, the simulation thread calls `ResourceCache::shutdown()`, which waits for the in-flight load batches and logs every entry still counted (S8-T11, #142; [[Resources - Design]] § *Loads on the job system, as built*). |
 | `shutdown()` | Main; stop/join rendering and destroy resources after simulation joins. `ClientApp`'s override stops the client and throws if the render thread failed; a subclass that adds its own shutdown calls it. |
 

@@ -39,7 +39,7 @@ server authority.
 
 ## Three-year horizon
 
-1. **Foundation**: a core you can trust. Done through M5; M6's code is complete, and it closes with its windowed run.
+1. **Foundation**: a core you can trust. Done through M6, which closed on 2026-10-31.
 2. **The reference game's stages**, with the signature rendering in an outdoor world with a
    day and night cycle.
 3. **The engine's first release**, a finished product developers can make games with, and the

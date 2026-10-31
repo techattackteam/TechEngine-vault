@@ -8,13 +8,13 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
-| **Sprint** | [[2026-10 Sprint 09 - Close M6]] *(Oct 24 - Nov 6)*, planned Oct 24. Sprint 08 closed all 36 cards ([[2026-10-24 Sprint 08 Retrospective]]). |
-| **Sprint goal** | The startup scene and the mesh it references load through the resource cache, in the runtime from packs and in the editor from loose files, which closes M6. E1 makes its first decisions beside it: the editor brief and the editor ADR. |
-| **Current focus** | Sprint 09 closes a week early, on Miguel's call of Oct 31, and its prep is done: Sprint 10's draft cut closes E1 with T2's export and multi-select, with R1's frame and device seam ADR alongside (§ *Sprint 10's cut* in [[2026-10 Sprint 09 - Close M6]]). Next come `/product-review`, because M6 closing opens Phase 1, and then `/sprint-plan`. M6 itself still waits for Miguel's windowed run, where the runtime's log names the exported scene and its mesh. Hubs: [[Resources - Design]], [[Editor - Design]], [[Renderer - Brief]]. |
+| **Sprint** | [[2026-10 Sprint 10 - Close E1]] *(Oct 31 - Nov 13)*, planned Oct 31. Sprint 09 closed all 30 cards a week early, to line up with Miguel's day-job sprints ([[2026-10-31 Sprint 09 Retrospective]]). |
+| **Sprint goal** | Close E1: the editor exports from its File menu into a folder that holds the runtime beside its packs, the runtime started from there logs the edited scene, and the hierarchy and inspector edit several entities at once. Alongside, R1's two ADRs and the design of TEMesh, TEModel and the glTF loader, so that E2 can build from Sprint 11. |
+| **Current focus** | M6 closed on Oct 31, and Phase 1 is open. Sprint 10 starts with S10-T1 (multi-select in the hierarchy) on Mon Nov 2, while the lane designs the export command (S10-D1) and then builds it. Hubs: [[Editor - Design]], [[Resources - Design]], [[Renderer - Brief]]. |
 | **Top blocker** | None. The routine runs the Oct 23 prompt at 09:07 and 14:07 Lisbon on weekdays ([[Autonomous Lane - Routine Prompt]]). |
-| **Next milestone** | M6 content closes in Sprint 09 with Miguel's windowed run; then **E1 · Editor and export**, the first showcase ([[Roadmap]]). Phase 1 opens when M6 closes, so `/product-review` runs first at the Sprint 09 boundary (Nov 7-8). |
-| **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one monthly showcase at a time (E1 to E13, [[Capability Map]]); Phase 2 builds the reference game, TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23. |
-| **Reconciled against** | engine `19f57f6` (2026-10-24) |
+| **Next milestone** | **E1 · Editor and export** closes in Sprint 10 with an internal demo (S10-T7), not a video ([[Principles]] P4). Then **E2 · First renderer**, after R1's two ADRs ([[Roadmap]]). |
+| **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one goal a month (E1 to E13, with E2 split in two, [[Capability Map]]), most goals ending in a showcase; the engine's first release ships when its contents are done, without waiting for TechAttack. Phase 2 builds TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23, revised at `/product-review` on 2026-10-31. |
+| **Reconciled against** | engine `4ba9f60` (2026-10-31) |
 
 **Reading that stamp** ([[ADR-012 - Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -22,22 +22,23 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline 19f57f6..origin/master
+git log --oneline 4ba9f60..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (`CLAUDE.md` § *How to work here*, rule 2). Distance is a signal, not
 proof: it cannot tell you *which* note drifted, only that nobody has looked.
 
-**Latest check: Oct 24, 2026**, against fetched `origin/master` at `19f57f6`, covering the 10
-engine commits since `39943f19`. It checked the systems those commits touched, not every note:
-[[Resources - Design]] § *The runtime's startup load* and [[Simulation Thread - Design]]'s
-S8-T18 and S8-T19 rows match the code, and no note cites the five symbols the sweeps deleted.
-Fixed: ADR-024 §8 was amended to say a scene is a cache entry whose parsed copy is never cached,
-with its hub row reworded; ADR-006 and ADR-008 gained `clientapp`; and
-[[Task Graph - Execution Flow]] (the removed demo), [[Window - Design]] (who owns `Client`) and
-one line citation in [[Project - Design]] were corrected. Details in
-[[2026-10-24 Sprint 08 Retrospective]].
+**Latest check: Oct 31, 2026**, against fetched `origin/master` at `4ba9f60`, covering the 24
+engine commits since `19f57f6`. It checked the systems those commits touched, not every note.
+`tools/check-vault-citations.py` ran against `4ba9f60` with the journal, research, references,
+sprint notes and [[v1 Code Audit]] excluded: 57 of 200 citations broke, and every one is a v1
+path, an ADR's historical context or ImGui's own header. The card closes had kept the touched
+notes current, and the lane's daily freshness checks (Oct 26-30) and S9-P3 had filed the rest.
+Fixed: [[Game Loop - Frame Flow]]'s diagram now has the command step, the idle wait and the
+editor's channels; [[Simulation Thread - Design]]'s hook row has `publishEdits(const Scene&)`;
+[[Scene - Design]] names `Name` as a built-in; and [[Project - Design]]'s layout row is marked
+built. Details in [[2026-10-31 Sprint 09 Retrospective]].
 
 **Latest full reconciliation: Oct 10, 2026**, against fetched `origin/master` at `82d7a11c`,
 covering the 63 engine commits since `01ed7a30`. Every Systems design note was read against
@@ -80,10 +81,11 @@ first, then plan*). `/sprint-prep` runs as a standing Design card in **week 2, T
 Friday**, and drafts the next sprint; a 🤖 Auto prep brief feeds it from the Monday. The
 boundary's `/sprint-plan` then only runs the retro and fits the draft.
 
-→ **Next ceremony:** `/weekly-review` for Sprint 09's mid-sprint on **Oct 31 - Nov 1**; if that
-weekend is lost, it falls back to Mon Nov 2 or Thu Nov 5. Then S9-D5 runs `/sprint-prep` between
-Tue Nov 3 and Fri Nov 6, and `/sprint-plan` for the Sprint 09 boundary runs on **Nov 7-8**, after
-`/product-review` if M6 has closed, because closing it opens Phase 1.
+→ **Next ceremony:** `/weekly-review` for Sprint 10's mid-sprint on **Nov 7-8**; if that weekend
+is lost, it falls back to Mon Nov 9 or Thu Nov 12. Then S10-D6 runs `/sprint-prep` between Tue
+Nov 10 and Fri Nov 13, and `/sprint-plan` for the Sprint 10 boundary runs on **Nov 14-15**.
+*(Sprint 09's boundary ran Sat Oct 31, a week ahead of its published Nov 7-8, to line up with
+Miguel's day-job sprints. See [[2026-10-31 Sprint 09 Retrospective]].)*
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
 met its goal on day 9 with an empty board. See [[2026-08-30 Sprint 04 Retrospective]].)*
 
@@ -150,7 +152,7 @@ Build order from here: the [[Roadmap]] ladder: **chain M0-M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005-008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop, [[2026-08 Sprint 02 - Base Foundation]] | ✅ goal met (Jul 30); sprint closed Aug 2 |
-| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the lanes, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9); 🔨 **M6**: the vertical slice shipped in Sprint 08, and Sprint 09 closes it |
+| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the Phase 1 goals, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9) · ✅ **M6 done** (Oct 31); 🔨 **E1**: panels built in Sprint 09, Sprint 10 closes it |
 
 _Tasks → [[Sprint Board]]._
 
@@ -214,17 +216,15 @@ Recently locked. Full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (2026-10-24)
+## Health check (2026-10-31)
 
-- **Delivery:** Sprint 08 closed all 36 cards; its goal was met on day 6. Sprint 09 commits
-  about six 🟢 slots of about ten, with E1's first panels as the stretch. [[Sprint Board]] holds
-  the live plan.
-- **Evidence:** Miguel's windowed run on Oct 15 loaded the exported startup scene in
-  `runtime.exe`. The cache is still proven by tests only; S9-T1 is the first product code that
-  loads through it.
-- **Sustainability:** week 2 of Sprint 08 was hard after a car crash, and Oct 24-25 is the third
-  weekend in a row with no rest day, by Miguel's choice. The Oct 31 - Nov 1 weekend keeps one rest
-  day. Since Oct 23, Miguel writes his own 🟢 and 🟠 cards, so Sprint 09's cards may close slower
-  than Sprint 08's.
-- **Artifact health:** reconciled against `19f57f6` on Oct 24, a check of the systems the final
-  week touched ([[2026-10-24 Sprint 08 Retrospective]]). The last full reconciliation was Oct 10.
+- **Delivery:** Sprint 09 closed all 30 cards, its whole stretch included, and closed a week early.
+  Sprint 10 is sized to 8-10 slots on Miguel's faster pace. [[Sprint Board]] holds the live plan.
+- **Evidence:** Miguel's windowed run on Oct 31 loaded the exported scene and its mesh in
+  `runtime.exe`, which closed M6. The editor's panels have unit tests for their logic, but no
+  windowed check is recorded for most Story D cards.
+- **Sustainability:** Oct 24-25 had no rest day, and Sat Oct 31, the default off day, was the
+  sprint's longest. Sun Nov 1 is a rest day. The new pace is Miguel's report, not yet a measured
+  one; the Nov 7-8 weekly review checks it.
+- **Artifact health:** reconciled against `4ba9f60` on Oct 31, a check of the systems Sprint 09
+  touched. The last full reconciliation was Oct 10.

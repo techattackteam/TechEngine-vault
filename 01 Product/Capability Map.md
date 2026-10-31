@@ -119,7 +119,7 @@ product owner, unless a row says otherwise.
 
 ## Content pipeline
 
-**For:** developers bring art in and ship it out. **Goals:** E1 for export, alongside E2 for import.
+**For:** developers bring art in and ship it out. **Goals:** E1 for export; E2 for import, on its critical path (2026-10-31). **Brief:** owed, S10-D8.
 
 | | |
 |---|---|

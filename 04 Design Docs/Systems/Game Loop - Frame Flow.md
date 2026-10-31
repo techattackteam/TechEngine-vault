@@ -41,11 +41,11 @@ cross-thread; solid arrows are the internal sequence within each thread:
 flowchart LR
     subgraph Main["Main thread · event-driven"]
         direction TB
-        M1["glfwWaitEvents<br/>(block until wake)"]
+        M1["glfwWaitEvents<br/>(block until wake, or poll once<br/>when a frame asked for one)"]
         M2["GLFW dispatches callbacks<br/>key · button · motion · focus · resize"]
         M3["publishInput → InputBuffer"]
         M4["Read TimingMetrics"]
-        M5["Editor / title work"]
+        M5["Editor: build the ImGui frame<br/>from EditorSnapshot · title work"]
         M6{"stop?"}
         M1 --> M2 --> M3 --> M4 --> M5 --> M6
         M6 -->|no| M1
@@ -53,6 +53,10 @@ flowchart LR
 
     subgraph Sim["Simulation thread · fixed tick"]
         direction TB
+        S0["applyCommands<br/>the admitted batch"]
+        S0a["publishEdits(scene)<br/>if a batch applied"]
+        S0b{"app ticks?"}
+        S0c["waitForCommands<br/>(Stopped editor)"]
         S1["Sample Clock<br/>accumulate elapsed"]
         S2{"due ticks?"}
         S3["Drain InputBuffer batch"]
@@ -61,9 +65,11 @@ flowchart LR
         S6["publishSnapshot<br/>→ SnapshotMailbox"]
         S7["Publish TPS to TimingMetrics"]
         S8["Wait for next tick deadline"]
-        S1 --> S2
+        S0 --> S0a --> S0b
+        S0b -->|no| S0c --> S0
+        S0b -->|yes| S1 --> S2
         S2 -->|"per tick"| S3 --> S4 --> S5 --> S2
-        S2 -->|"done"| S6 --> S7 --> S8 --> S1
+        S2 -->|"done"| S6 --> S7 --> S8 --> S0
     end
 
     subgraph Render["Render thread · variable frame"]
@@ -73,7 +79,7 @@ flowchart LR
         R3["Read presentationState"]
         R4["Compute alpha · interpolate"]
         R5["Camera · animation · cull"]
-        R6["GL draw"]
+        R6["GL draw<br/>then the editor's ImGui draw data"]
         R7["swapBuffers"]
         R8["Publish FPS to TimingMetrics<br/>mark Tracy frame"]
         R1 --> R2 --> R3 --> R4 --> R5 --> R6 --> R7 --> R8 --> R1
@@ -83,9 +89,17 @@ flowchart LR
     M3 -.->|"InputBuffer<br/>latest state"| R3
     S6 -.->|"SnapshotMailbox<br/>newest wins"| R1
     S7 -.-> M4
+    M5 -.->|"CommandQueue<br/>bounded · wakes sim"| S0
+    S0a -.->|"EditorSnapshot<br/>newest wins"| M5
+    M5 -.->|"ImGui draw data<br/>newest wins · textures in order"| R6
     R8 -.-> M4
 ```
 
+Each simulation pass first applies the admitted command batch, and an app that does not tick
+(the Stopped editor) then waits for the next command instead of a deadline
+([[Simulation Thread - Design]] § *Lifecycle*, [[Editor - Design]] § *Commands and the idle
+simulation*). The editor's three channels are drawn here only as arrows; their shapes are in
+[[Editor - Design]] § *Threads and channels*.
 Simulation waits interruptibly for its next deadline. It samples actual elapsed time after
 waking, applies the clamp, then executes all due ticks. Ingress precedes every fixed tick;
 ADR-020's terminal slot follows regular Tick systems before the barrier; ADR-010's

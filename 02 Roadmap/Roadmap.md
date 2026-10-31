@@ -4,9 +4,9 @@
 sprint notes own the dates. `/sprint-prep` reads this page to pick the next goal. What each
 system must support is in the [[Capability Map]], derived from the [[Reference Game]].
 
-**Where we are:** the foundation chain (M0 to M5) is done. M6's code is complete
-([[2026-10 Sprint 09 - Close M6]]), and M6 closes with Miguel's windowed run. Phase 1 has opened
-with E1, whose panels Sprint 09 built (2026-10-31). Its goals run from E1 to E13, with E2 split
+**Where we are:** the foundation chain (M0 to M6) is done; M6 closed on Oct 31 with Miguel's
+windowed run ([[2026-10 Sprint 09 - Close M6]]). Phase 1 has opened with E1: Sprint 09 built its
+panels, and [[2026-10 Sprint 10 - Close E1]] closes it. Its goals run from E1 to E13, with E2 split
 in two, about a month each, each ending in a demo and most in a showcase video ([[Channel]],
 [[Principles]] P4). Phase 2 is the game itself, TechAttack.
 
@@ -20,7 +20,6 @@ must exist before the goal's first ADR.
 
 | Goal | The showcase shows | Needs | Alongside | Map |
 |---|---|---|---|---|
-| **M6 · Content** 🔨 now | (no video) The runtime loads scenes and meshes from packs, with references | Sprint 09's Story A and the mesh path (🤖 Claude) | The editor brief and ADR | |
 | **E1 · Editor and export** 🔨 now | (internal demo, no video, 2026-10-25) Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
 | **E2 · First renderer** | Imported glTF reference models with physically based materials, lit by a sun and a sky image, with a finished image, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** · T4 import | T3 viewport tools | Renderer, content pipeline |
 | **E2b · Many lights, many objects** | Hundreds of local lights at night, and a stress scene of hundreds of thousands of copies of the reference models. Split from E2 on 2026-10-31 | R1's local lights and instanced drawing | The million cubes, a Should ([[Renderer - Brief]]) | Renderer |
@@ -127,6 +126,7 @@ cite them. Order **within** a lane is real.
 | **M3** · Project | `project.toml` with toml++, holding only the name · mount resolution · `FileAccess`'s mutating half · the `projects/dev/` testbed ([[Project - Design]] § *The manifest*) | Sep 12, [[2026-08 Sprint 05 - M3 Project & M4 Window]] |
 | **M4** · Window | GLFW window · GL 4.5 context on its owning thread · raw input · clear and triangle | Sep 12, [[2026-08 Sprint 05 - M3 Project & M4 Window]] |
 | **M5** · Scene and scheduling | Slot maps · `Scene` and ECS · `Schedule` and executor · command buffer · transform hierarchy · event and input delivery ([[ADR-020 - System scheduling and task-graph execution]]) | Oct 9, [[2026-09 Sprint 06 - Scene & Scheduling]] and [[2026-09 Sprint 07 - Scene Events and Input Boundary]] |
+| **M6** · Content | Resource cache with 64-bit ids and value handles · content packs and the bake · reference fields · the startup scene and its mesh through the cache, in the runtime from packs and in the editor from loose files ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]], [[ADR-025 - Content packs (.tepack and the runtime load path)]], [[ADR-026 - Reference fields and scene-held acquires]]) | Oct 31, [[2026-10 Sprint 08 - Content Path]] and [[2026-10 Sprint 09 - Close M6]] |
 
 ## Deliberately absent
 

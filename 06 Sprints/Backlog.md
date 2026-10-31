@@ -42,22 +42,6 @@ groups are kept, because they show where future work will land.
   declined it ([[ADR-014 - Events (buffered streams) & StringId]] §7, contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
   ADR).
-- #prio/medium · **Code sweep leftovers: base**: Found by the code sweep on Oct 29, 2026
-  ([[2026-10-29 14-40 Auto Run]]), and carried from the Oct 8 sweep, which folded in two Sep 28 entries.
-  - The version anchors: `baseVersion()` (`engine/base/include/TechEngine/base/Base.hpp:4`),
-    `platformVersion()` (`engine/platform/src/Platform.cpp:7`) and `coreVersion()`
-    (`engine/core/src/Core.cpp:8`) are the S1 link-order stubs, and nothing calls
-    `coreVersion()`. Delete them, `Base.hpp`, `Base.cpp` and `BaseTests.cpp`, whose glm case
-    repeats `MathTests.cpp`. About 35 lines. A test covers `baseVersion()`, so it is not dead.
-  - The log-capture guards: `SinkGuard` (`engine/base/tests/diagnostics/LogTests.cpp:50`),
-    `LogCaptureGuard` (`engine/base/tests/diagnostics/AssertTests.cpp:66`) and
-    `GraphLogCaptureGuard` (`engine/core/tests/systems/TaskGraphTests.cpp:140`), and since
-    S8-T10 `CacheLogCaptureGuard` (`engine/core/tests/resources/ResourceCacheTests.cpp:175`,
-    added by the core sweep on Oct 20). S9-T1 added two more: `RuntimeLogCaptureGuard`
-    (`apps/runtime/tests/RuntimeAppTests.cpp:454`) and `SceneLoadLogCaptureGuard`
-    (`engine/core/tests/scene/SceneAssetTests.cpp:548`), each with its own id-matching helper. Use one
-    guard in `te_test_support`. About 30 lines. It needs a new header, and which record fields
-    the shared guard copies is a choice.
 
 ## platform
 
@@ -133,15 +117,6 @@ groups are kept, because they show where future work will land.
   of range, a singular transform and corrupt sibling links. Each reason needs its lane (assert or
   `std::error_code`) before a `SceneError` can exist. **Trigger:** the first caller that has to
   tell two of those reasons apart, likely the editor's hierarchy panel.
-
-- #prio/medium · **Root entities have no order**: `Scene::getRoots()` returns roots in archetype
-  storage order (`engine/core/src/scene/Scene.cpp:238` at `5c57bf8`), and removal swap-erases.
-  So destroying a root moves another root into its place, and a root that changes archetype
-  (adding a component, from S9-T17) moves to another position. Roots have no sibling list, so
-  the hierarchy panel cannot keep a drop between two roots, and S9-T16 offers no root reorder. A
-  saved scene writes its roots in the same order. Found at S9-T16's `/card-start` on Oct 29,
-  2026. **Trigger:** roots visibly jumping in the hierarchy, or the first feature that needs a
-  root order, such as reordering roots by drag.
 
 - #prio/medium · **Resources: hot-reload**: decided in shape by [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9: a reload swaps
   data behind a live handle in a loading phase, with no generation bump, and fenced readers
@@ -271,14 +246,6 @@ groups are kept, because they show where future work will land.
     `engine/core/tests/assets/PackSourceTests.cpp:58`), `viewOf` and `bytesOf`, and `patch<T>`
     (`PackTests.cpp:123`, `BootRecordTests.cpp:105`). One test header, about 30 lines.
 
-- #prio/low · **[[Scene - Design]] still names two built-in components**: § *Built-in
-  hierarchy* says every entity carries `Hierarchy` and `Transform`, and that Scene tests register
-  "both built-ins" (`Scene - Design.md:148`, `:176-178`). S9-T15 (#167, `9a33c49`) made `Name` a
-  third member of the set `ArchetypeStorage::createEntity` gives every entity, and `Scene`
-  refuses to add or remove it. Only [[Editor - Design]] § *Entity names* records that. Found by
-  the vault freshness check, Oct 29 ([[2026-10-29 09-08 Auto Run]]). **Trigger:** the Oct 31
-  weekly review's drift check, or the next card that edits [[Scene - Design]].
-
 ## client
 
 - #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
@@ -287,12 +254,6 @@ groups are kept, because they show where future work will land.
   `shutdown()` (`apps/clientapp/src/ClientApp.cpp:16-18`, `:52-54`, `:67-69`, S8-T19, #151).
   They were untested before the move too. **Trigger:** the next change to how `Client` reports
   a render failure, or to `ClientApp`'s handling of it.
-- #prio/high · **Paper reports before R1's two ADRs**: the rendering papers validated on
-  2026-10-30 ([[Paper]], [[Research]]'s Rendering column) are read by no card, and S9-P2 compares
-  engines, not papers. Two report-only research briefs, each mapping its papers onto
-  [[Renderer - Brief]] without choosing: culling, draw submission (multi-draw indirect and
-  instancing, as v1 did) and hundreds of lights before the frame and device seam ADR, and materials before the materials ADR. **Trigger:** Sprint 10's
-  `/sprint-prep` (S9-D5), which places the two ADRs.
 
 ## app
 
@@ -318,25 +279,6 @@ groups are kept, because they show where future work will land.
   while nothing draws entities, but a real scene would flood the log. Drop the lines to
   `TE_LOGGER_DEBUG` or keep only the summary line. **Trigger:** the first scene with more than a
   handful of entities, or the first card that draws them.
-
-- #prio/low · **[[Game Loop - Frame Flow]]'s diagram predates the editor's loop**: its
-  simulation lane always ticks and has no command step, and its two other lanes have no ImGui
-  work. Since S9-T12 and S9-T13 (#163, #166), each simulation pass applies the command batch
-  first and an app that does not tick waits in `waitForCommands()`
-  (`engine/app/src/SimulationThread.cpp:201-230`). Since #162, main builds the editor's ImGui frame
-  and render draws it after the scene. [[Simulation Thread - Design]] and [[Editor - Design]]
-  are current; only the overview diagram and its prose drifted. Found by the vault freshness
-  check, Oct 29 ([[2026-10-29 09-08 Auto Run]]). **Trigger:** the Oct 31 weekly review's drift
-  check, or the next card that changes a loop phase.
-
-- #prio/low · **[[Simulation Thread - Design]]'s hook table still lists `publishEdits()`**: since
-  S9-T16 (#171) the hook is `publishEdits(const Scene&)`, and `SimulationThread` passes the live
-  scene (`engine/app/include/TechEngine/app/App.hpp:115`, `engine/app/src/SimulationThread.cpp:213`).
-  The row also misses that `EditorApp` calls it once at the end of its startup load
-  (`apps/editor/src/EditorApp.cpp:95`). [[Editor - Design]] has the new signature in its *Decided*
-  row; only its § *Commands and the idle simulation* bullet still writes `publishEdits()`. Found by
-  the vault freshness check, Oct 30 ([[2026-10-30 09-09 Auto Run]]). **Trigger:** the Oct 31 weekly
-  review's drift check, or the next edit to either note.
 
 ## net
 
@@ -366,11 +308,6 @@ groups are kept, because they show where future work will land.
   a default asset per resource type, which does not exist yet. Today a deleted file goes
   unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
   **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
-- #prio/medium · **Local and World modes in the transform inspector**: [[Scene - Design]] §
-  *Editor Local / World editing* (agreed Sep 12) asks for both, with a World edit converted to
-  local values on the simulation thread through `setWorld`. S9-T17 shows local values only,
-  because [[Editor - Design]] never carried that agreement over. Found Oct 30, 2026.
-  **Trigger:** E2's transform gizmo (T3, [[Editor - Brief]]), or the next card on the inspector.
 - #prio/low · **One rotation edit is four records, and the Euler cache is untested**: the
   inspector sends a rotation as four set-field commands, so an undo would need four steps, and
   `InspectorPanel::syncEuler` holds a small state machine that no test reaches while it is
@@ -381,14 +318,6 @@ groups are kept, because they show where future work will land.
   would be an optional argument to `visit`'s `field`, which the other archives ignore, so they
   are a [[Serialization - Design]] decision first. Found at S9-T17. **Trigger:** the first
   component with a field that needs a range, or the third custom drawer, likely in R1.
-- #prio/high · **Edit an `AssetRef` in the inspector**: split from S9-T17 at its `/card-start`
-  on Oct 30, 2026, where the field stayed read-only and shows only the id. It needs a picker
-  that offers the `AssetIndex`'s ids of the field's type, and `FieldVisitor::visitAsset` passes
-  only the id today, so the visitor must also learn the type. It needs a set-field command
-  that adds the id as a dependency of the scene entry (`App::m_sceneHandle`) and fills the
-  handle, and a policy for a load that fails inside the batch, which today only warns
-  ([[Editor - Design]] § *Open questions*). Until then a `MeshRenderer` added in the editor
-  keeps an empty mesh. **Trigger:** S9-T17 merges.
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
@@ -412,16 +341,6 @@ groups are kept, because they show where future work will land.
   in imgui's `misc/fonts`) would change the look more, but where its file lives, compiled in or
   read through `FileAccess`, is a decision first. Split from S9-T20 at its `/card-start` on
   Oct 31, 2026. **Trigger:** the first recording of the editor for a showcase.
-- #prio/low · **Two review nits that #174 shipped**: restore the deleted comment
-  "contains(), not valid(): a selection whose entity died would otherwise offer every type to
-  add." in `EditSession::collectComponents`; and put `<ui/PanelsManager.hpp>` first in
-  `PanelsManager.cpp`, which clang-format does not catch because the paired header sits under
-  `ui/`. Found by S9-T18's `/card-review` on Oct 31, 2026. **Trigger:** the next card that
-  touches either file, or the editor's code sweep. **Fired by S9-T19 (#175)**, which touched
-  `PanelsManager.cpp` and fixed only the third nit, the comment in
-  `EditorApp::handleCloseRequest`.
-
-- #prio/low · **[[Project - Design]]'s layout row says "not built yet"**: its *Decided* row **Layout** (`Project - Design.md:59`) still says the `common`, `client` and `server` split was not built, but the editor mounts `assets/common` and `assets/<side>` (`apps/editor/src/EditorApp.cpp:54`) and `projects/dev/assets/` holds all three folders. Found by S9-P3, Oct 31 ([[2026-10-31 16-13 Auto Run]]). **Trigger:** the next drift check, or the next edit to that note.
 
 ## etc: cross-cutting
 
@@ -442,19 +361,6 @@ groups are kept, because they show where future work will land.
   hierarchy commands warn about entities through the new `std::formatter<Entity>`, which prints
   `index:generation` only (`apps/editor/src/edit/HierarchyCommands.cpp`).
 
-- #prio/medium · **Diff coverage for ImGui drawing code**: #171 (S9-T16) scored 31% against the
-  85% gate, because about 360 of its changed lines are ImGui drawing in `apps/editor/src/ui/`
-  that no unit test reaches, so it used `[skip-coverage]`. Each panel card will do the same, and
-  the gate's own comment says a weekly bypass teaches nothing. Two ways out: exclude
-  `apps/editor/src/ui/` from diff coverage, which is fair only while `ui/` holds drawing alone
-  (S9-T16 moved its logic to `edit/`), or run ImGui headless in the tests. Found Oct 29, 2026.
-  **Trigger:** the next panel card's PR, S9-T17 or S9-T19. **Fired by S9-T17 (#173)**, and
-  S9-T18 (#174) and S9-T19 (#175) used `[skip-coverage]` a third and a fourth time.
-
-- #prio/low · **Two comments still name the old SDK smoke target**: `sdk/CMakeLists.txt:9` and
-  `.github/workflows/ci.yml:79` say `te_sdk_smoke`, while the target is `TechEngineSDKSmoke`
-  (ctest `sdk-smoke`). The Markdown copies were fixed in #153. Found at S8-P11's close, Oct 23.
-  **Trigger:** the next card that edits either file.
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the
   file's path, which is not a required context, and #95 also touched code, so `ci.yml`

@@ -1,7 +1,8 @@
 # 2026-10 · Sprint 09: Close M6
 
 - **Quarter:** [[2026-Q4]]
-- **Dates:** Saturday Oct 24 - Friday Nov 6, 2026.
+- **Dates:** Saturday Oct 24 - Friday Oct 30, 2026. Planned to Nov 6; closed a week early on
+  Oct 31, to line up with Miguel's day-job sprints.
 - **Epic:** M6 · content, closed; E1 · Editor and export, opened with its decisions
   ([[Roadmap]]). Hubs: [[Resources - Design]] and [[Editor - Design]].
 
@@ -444,13 +445,15 @@ Added by `/product-review` on Oct 31 ([[Channel]] § *How a video fits the plan*
 - [x] An `EditorAppTests` case proves that a later launch opens on the saved startup scene through
   the cache (S9-T6). Oct 26, #160 `bff0b6f`: *a later launch opens on the saved startup scene
   through the cache*.
-- [ ] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
-  scene and its mesh, and its log names both. M6 is marked closed on the [[Roadmap]].
+- [x] Windowed: the editor opens `projects/dev` and exports it, and `runtime.exe` then loads the
+  scene and its mesh, and its log names both. M6 is marked closed on the [[Roadmap]]. Oct 31,
+  on `4ba9f60`: Miguel reports that the run works; no log was captured in the vault.
 - [x] The editor brief is written, the editor ADR is Accepted, and `Editor - Design` indexes it.
   Oct 26, vault `9c1caf9`: [[Editor - Brief]] (S9-D1), ADR-027 (S9-D2) and [[Editor - Design]]
   (S9-D3).
-- [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
-  counted for the retro. Touched design notes describe what shipped.
+- [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
+  counted for the retro. Touched design notes describe what shipped. Oct 31: 1 of 24 reversed
+  ([[2026-10-31 Sprint 09 Retrospective]]); four drifted notes were reconciled at planning.
 
 ## Capacity note
 
@@ -521,6 +524,24 @@ S9-D5's `/sprint-prep` gives them IDs and priorities beside the rest of Sprint 1
 
 <!-- Keep this section while the sprint is active. Fill it at the end. -->
 
-- Link what shipped and the demo or artifact that proves it.
+Closed Oct 31, a week early, with all 30 cards done. M6 is closed, and every T1 Must of E1 is
+built. Each card's entry, with what it taught, was on [[Sprint Board]] until this boundary and
+lives in git history (vault `e418a5b`).
 
-Retrospective: [[07 Journal]]
+- **Story A, M6's scene and its references:** S9-T1 (#154), S9-T2 (#157), S9-T3 (#159).
+- **Story B, the mesh path · 🤖 Claude:** S9-T4 (#155), S9-T5 (#158), S9-T6 (#160), S9-T7 (#161).
+  The runtime test of #161 is the DoD's proof that the startup load acquires the mesh.
+- **Story C, E1's opening decisions:** S9-D1 [[Editor - Brief]], S9-D2 ADR-027, S9-D3
+  [[Editor - Design]].
+- **Story D, E1's first panels:** S9-T11 ImGui (#162), S9-T12 commands (#163), S9-T13 idle
+  simulation (#166), S9-T15 names (#167), S9-T16 snapshot and hierarchy (#171), S9-T17 inspector
+  (#173), S9-T18 save (#174), S9-T19 views and layout (#175), S9-T20 theme (#176), S9-T21 frames
+  on request (#177), S9-D6 multi-select's rules.
+- **Story E, the renderer brief:** S9-D4 [[Renderer - Brief]], S9-P2 [[Renderer - Research Brief]].
+- **Story F, the lane and fired backlog:** S9-T8 (#165), S9-T9 (#168), S9-T10 (#169, D3
+  deleted), S9-T14 (#164).
+- **Story G, prepare Sprint 10:** S9-P3 [[2026-10-31 16-13 Auto Run]], S9-D5 § *Sprint 10's cut*.
+- **Demo:** Miguel's windowed run on Oct 31, where the runtime loaded the exported scene and its
+  mesh.
+
+Retrospective: [[2026-10-31 Sprint 09 Retrospective]]

@@ -56,7 +56,7 @@ All `path:line` refs above are at the `v1-reference` tag.
 | **Mount authority** | Only the composition root mounts into the shared table. The one exception is `Project::exportTo`, which mounts its output folder in a private table that it drops on return (S8-T7). | See *Why `Project` does not mount* |
 | **New `FileResult` values** (now `FileError`) | `AlreadyExists` and `NotEmpty`. | See *The five mutating calls* |
 | **Missing parents** | `write` does not create them and returns `NotFound`. `createDirectory` does create them. | Answers [[File Access - Design]] § *Open questions* |
-| **Layout** | The root holds `project.toml` and an `assets/` split into `common`, `client` and `server`. Shaders are client assets under `assets/client/`. Changed 2026-10-10; not built yet. | See *The project layout* |
+| **Layout** | The root holds `project.toml` and an `assets/` split into `common`, `client` and `server`. Shaders are client assets under `assets/client/`. Changed 2026-10-10; now built: the editor mounts the split, and `projects/dev/assets/` holds all three. | See *The project layout* |
 | **Which roots a role mounts** | In the editor, derived from the root, not configured: `assets/common` at priority 0 and `assets/<side>` at 100. A runtime mounts one `assets/` beside its executable and opens the packs its boot record lists (ADR-025 §7). | See *The project layout* |
 | **Creation** | The directories plus the manifest, and nothing else. No template tree is copied. | See *Why no template tree* |
 | **Project launcher** | Lives inside the editor executable, not in a separate program. It will list, open and create projects; storage for its known-project list remains open. | Decided 2026-09-03; see *Open questions* |
