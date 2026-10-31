@@ -255,7 +255,7 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   done: `/brief renderer` writes `01 Product/Capabilities/Renderer - Brief.md`, linked from the
   map's § *Renderer*. It also answers whether R1 is one renderer ADR or several (meshes,
   materials, the physically based pipeline), the question the Backlog's Roadmap revision left.
-- [ ] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h ·
+- [x] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h ·
   done: a report compares how Filament, Godot 4, Flax, Unity's URP and Unreal split the device
   seam, the mesh format and the physically based material model, against the brief's targets, and
   maps each onto ADR-005's device seam (F22) without choosing. Report-only. Follows S9-D4.

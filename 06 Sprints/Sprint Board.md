@@ -28,7 +28,6 @@ kanban-plugin: board
 
 ## Story E: Alongside: the renderer brief
 
-- [ ] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h: Filament, Godot 4, Flax, URP and Unreal against the brief, mapped onto ADR-005's device seam without choosing. Report-only. Follows S9-D4.
 
 
 ## Story F: Auto lane and fired backlog
@@ -52,6 +51,8 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h: vault `714bed6`, **Oct 31**. [[Renderer - Research Brief]] compares how Filament, Godot 4, Flax, URP and Unreal split the device seam, the mesh format and the physically based material model, reads each against [[Renderer - Brief]]'s targets and maps it onto ADR-005's device seam (F22) without choosing. Run by the lane on a Saturday. Closes Story E.
+	- **Retro:** Epic's and Unity's docs could not be fetched from the sandbox, so the URP and Unreal rows rest on search extracts and on memory, each marked; Filament, Godot and Flax were read in source.
 - [x] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h: #176 `fc0ed80`, **Oct 31**. `applyEditorTheme()` sets v1's colors, rounding, frame border and centred titles right after `CreateContext()`, with four changes on top of v1 ([[Editor - Design]] § *Decided*, *The theme*). #176 has no review conversation, so this entry comes from the card, the diff and the session. Story D stays open on S9-T21 and S9-D6.
 	- **Wider than the card, by Miguel's choice:** he asked at `/card-start` for improvements over v1, so the clause was amended before any code: readable disabled text (v1's 0.24 gray was about 1.4:1 on the panel, and the inspector's read-only values use it), a selection stronger than hover, gray grabs, and neutral tabs with an accent overline. A scalable font and DPI scaling went to the [[Backlog]]. The clause's line references were also stale, the furthest by 52 lines.
 	- **Changed after a look in the window:** a selected tab first matched the window background, which made it almost invisible against its tab bar, so tabs are now lighter than the bar, and `TitleBgActive` stays at 0.13 rather than v1's 0.15. The clause's fallback for a vanishing drop line was never needed, because hover is now gray.
