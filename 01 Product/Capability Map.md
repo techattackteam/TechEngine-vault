@@ -119,12 +119,14 @@ product owner, unless a row says otherwise.
 
 ## Content pipeline
 
-**For:** developers bring art in and ship it out. **Goals:** E1 for export; E2 for import, on its critical path (2026-10-31). **Brief:** owed, S10-D8.
+**For:** developers bring art in and ship it out. **Goals:** E1 for export; E2 for import, on its critical path (2026-10-31). **Brief:** [[Content Pipeline - Brief]].
 
 | | |
 |---|---|
-| **Demo** | Import **glTF**, loaded through assimp · textures · export to content packs (M6) · a packaged demo build. |
-| **Not in the demo** | FBX and other formats as supported inputs, even where assimp can read them. |
+| **E2** | Import **glTF, FBX and OBJ** through assimp, as one merged mesh or as a model that keeps the file's hierarchy · textures · re-import that keeps references and material edits · a list-only asset browser (2026-10-31, `/brief`). |
+| **Demo** | Import · textures · export to content packs (M6) · a packaged demo build. |
+| **Not in the demo** | Other formats as supported inputs, even where assimp can read them (FBX and OBJ joined on 2026-10-31, `/brief`). |
+| **Later** | Skeletons and animation, with C1 for G3 · morph targets · cameras and lights stored in the source file (2026-10-31, `/brief`). |
 
 ## First release
 
