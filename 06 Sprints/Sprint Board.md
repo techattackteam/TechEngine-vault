@@ -58,7 +58,6 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-D8** · Write the content pipeline's capability brief · P1 · 🟠 Moderate · 2-3h: `/brief content pipeline` with Miguel, linked from the [[Capability Map]].
 - [ ] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h: a new `Content Pipeline - Design` decides the mesh and model files, assimp's import and source ids, then cuts the build cards (or drafts an ADR). Follows S10-D8 and S10-D4.
 
 
@@ -77,6 +76,11 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 10
+
+- [x] **S10-D8** · Write the content pipeline's capability brief · P1 · 🟠 Moderate · 2-3h: vault `a5ed725`, **Oct 31**. [[Content Pipeline - Brief]] is agreed and linked from [[Capability Map]] § *Content pipeline*: E2 imports glTF, FBX and OBJ, as one merged mesh or as a model that keeps the file's hierarchy, chosen at import; a re-import keeps references and material edits; and the asset browser is list-only. Unblocks S10-D9 with S10-D4. Story H stays open on S10-D9.
+	- **A map row reversed, by Miguel's call:** FBX was *Not in the demo*, but Bistro's original release is FBX, so FBX and OBJ became supported inputs through assimp. Other formats stay unpromised.
+	- **Found beside the card:** [[Resources - Design]] § *Reference fields* says R1's renderer ADR owns the mesh format, while S10-D9 gives it to `Content Pipeline - Design`. S10-D9 settles which; it was reported, not fixed. The brief's re-import Must is the requirement behind that note's sidecar-or-registry question.
+	- **Left for Miguel:** OBJ has no TechAttack need yet (P1), and re-import, import settings and the browser cannot be shown in a cinematic (P4).
 
 
 

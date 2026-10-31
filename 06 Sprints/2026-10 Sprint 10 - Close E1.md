@@ -183,10 +183,11 @@ E2 needs imported glTF models ([[Roadmap]], E2), and the engine has only the tri
 (S9-T4). Miguel's call at planning, Oct 31: build the loader and the mesh and model formats
 before the renderer.
 
-- [ ] **S10-D8** · Write the content pipeline's capability brief · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S10-D8** · Write the content pipeline's capability brief · P1 · 🟠 Moderate · 2-3h ·
   done: `/brief content pipeline` is agreed with Miguel and linked from [[Capability Map]] §
   *Content pipeline*: what import must bring in for E2 (meshes, submeshes, materials, textures,
-  the node tree), from which formats, and what the asset browser waits for.
+  the node tree), from which formats, and what the asset browser waits for. Closed Oct 31
+  (vault `a5ed725`).
 - [ ] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h ·
   done: a new `Content Pipeline - Design` decides the runtime-form mesh and model files, how
   assimp's import writes them (ADR-025 §6), and sidecar or registry for a source's id
