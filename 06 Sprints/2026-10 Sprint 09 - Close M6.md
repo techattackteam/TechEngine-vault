@@ -187,7 +187,7 @@ as a command is T2's, not this story's.
   questions*). Tests: a set-field command changes exactly one field, publishes the new row, and
   records the old value. Follows S9-T14 and S9-T16. *Editing an `AssetRef` moved to the
   [[Backlog]] at `/card-start` on Oct 30; this card shows the id read-only.*
-- [ ] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S9-T18** · Save, the unsaved marker and the prompt on close · P2 · 🟠 Moderate · 2-3h ·
   done: a save command writes the live scene over the startup scene's indexed file on the
   simulation thread and publishes the saved revision ([[Editor - Design]] § *Save, the unsaved
   marker and close*). Ctrl+S and a menu item send it. The title shows an unsaved marker while the
@@ -196,7 +196,7 @@ as a command is T2's, not this story's.
   to [[Serialization - Design]]'s trigger for per-type versions. Tests: a save and a reload give
   the same scene; the saved revision follows a save; a failed write leaves the marker. Follows
   S9-T16.
-- [ ] **S9-T19** · A placeholder scene view and the remembered layout · P2 · 🟡 Light · 1-2h ·
+- [x] **S9-T19** · A placeholder scene view and the remembered layout · P2 · 🟡 Light · 1-2h ·
   done: a placeholder scene view joins S9-T16's dockspace in its centre. ImGui writes no file
   itself: the layout loads from and saves to `project://editorSettings/layout.ini` through
   `FileAccess` (ADR-027 §6), and `editorSettings/` is git-ignored. S9-T16's default layout is

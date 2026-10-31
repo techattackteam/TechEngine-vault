@@ -11,8 +11,9 @@ simulation) · `client` (the ImGui hook) · `core` (the field visitor, the `Name
 frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admission (S9-T12, #163
 `3165f73`), the idle simulation (S9-T13, #166 `db2adac`), entity names (S9-T15, #167
 `9a33c49`), the editor snapshot, the dockspace and the hierarchy panel (S9-T16, #171
-`acc897a`), and the inspector (S9-T17, #173 `9203c26`). The rest of Sprint 09's Story D, S9-T18
-and S9-T19, builds save and the remembered layout.
+`acc897a`), the inspector (S9-T17, #173 `9203c26`), save with the unsaved marker and the
+close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
+(S9-T19, #175 `555a9e4`).
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -58,6 +59,8 @@ message. This note says how those messages are shaped.
 | Every entity has a name | A `Name` component, created with every entity. Names need not be unique. `Scene` refuses to add or remove it, as it does `Transform`. | [[Editor - Brief]], 2026-10-26; 2026-10-27 (S9-T15), § *Entity names* |
 | Persistent entity ids stay opt-in | An entity's disk id is its row in its scene file, reassigned at each save. A UUID is an opt-in component for cross-document entities. | ADR-007 §1 |
 | Save is a command | The simulation writes the scene and publishes the saved revision. Save is T1's; T2 keeps only Export. | 2026-10-26, § *Save* |
+| A save writes only the file the live scene came from | The edit session holds a scene file only after the startup load read that file or created it. A failed load, or a `Startup.tescene` adopted without being loaded, leaves it unset, and a save is refused with a warning. | 2026-10-31 (S9-T18), § *Save* |
+| Save on close is one command | Save in the close prompt sends a save command that requests the stop itself, on the simulation thread, after a successful write. A stop cancels the commands still queued, so main cannot submit a save and then stop. A failed save leaves the editor open. | 2026-10-31 (S9-T18), § *Save* |
 | A command never waits for a tick | An accepted command wakes the simulation thread, which applies the batch at the top of each loop pass, never inside a tick. The queue is open only while that thread runs. | 2026-10-26 (S9-T12), § *Commands and the idle simulation* |
 | No game input while Stopped | The editor detaches the `InputBuffer` while Stopped. ImGui reads input through its own callbacks. | 2026-10-26, § *Commands and the idle simulation* |
 | An App says whether it ticks | A virtual `simulationTicks()`, read once after the startup load. The editor says no; every other App keeps the default yes. | 2026-10-27 (S9-T13), § *Commands and the idle simulation* |
@@ -66,6 +69,8 @@ message. This note says how those messages are shaped.
 | Panels send through one sender | `EditorCommands` builds each command with the edit session and submits it. Panels never touch the session, which belongs to the simulation thread. | 2026-10-29 (S9-T16), § *The hierarchy panel* |
 | Hierarchy edits | A reparent keeps the world transform. A created or dropped child goes first. A reorder is a reparent to the same parent. A right-click selects the row. | 2026-10-29 (S9-T16), § *The hierarchy panel* |
 | The default layout yields to a saved one | It is built only when the dockspace's node does not exist, and a loaded layout creates that node. | 2026-10-29 (S9-T16), § *The layout* |
+| The layout is also saved at shutdown | Besides each `WantSaveIniSettings`, the editor saves once before the ImGui context is destroyed, because ImGui raises the flag only seconds after a change. | 2026-10-31 (S9-T19), § *The layout* |
+| Two placeholder views | A scene view and a game view, tabbed in the dock's centre. Neither draws until the renderer. | [[Editor - Brief]], 2026-10-31; § *The layout* |
 
 ## Threads and channels
 
@@ -337,37 +342,62 @@ Save is a command: the simulation writes the live scene with `SceneAsset::write`
 startup scene's indexed file, then publishes the saved revision. `EditorApp::createAsset`
 refuses an existing path, so save writes through `FileAccess` directly, not through it.
 
-- Ctrl+S and a menu item send the save command. A failed write logs, and the marker stays.
-- The title carries the unsaved marker while the published revision differs from the saved
-  revision.
-- A close request with unsaved edits opens a modal with Save, Discard and Cancel. Cancel has
-  to clear GLFW's close flag, and `Window` has no way to do that today.
-- E1 has one scene, the startup scene. Export stays at startup until T2 makes it a command.
+- Ctrl+S and File → Save send the save command. A failed write logs, and the marker stays.
+  The write cannot destroy the old file, because `FileAccess::write` replaces a file only once
+  the new bytes are complete ([[File Access - Design]] § *The write surface*).
+- The title carries `*` after the editor's name while the snapshot's edit revision differs
+  from its saved revision. `ClientApp::setTitle` applies the title at once, because the editor
+  sets it after taking the snapshot, which is after the base class's own title update.
+- **As built (S9-T18):** the session's scene file is set in the two startup branches that
+  leave the live scene equal to the file, so a save never overwrites a file the editor could
+  not read (§ *Decided*). `SaveSceneCommand` carries `AfterSave::Close` for the prompt's Save.
+- **The close request.** `App`'s loop stops as soon as `shouldClose()` is true, so the editor
+  checks it inside its own `mainThreadUpdate()`, after the wait and before the loop checks
+  again. With unsaved edits it clears GLFW's flag (`Window::cancelClose`, passed through
+  `Client` and `ClientApp`) and opens the prompt. A close caused by a dead render thread cannot
+  be cancelled, so it closes without asking.
+- **The prompt** (`ui/ClosePrompt`) opens only from inside an ImGui frame, so the close check
+  calls `open()` and the frame's `draw()` opens it. Discard requests the stop; Cancel and
+  Escape close the prompt and keep the window open.
+- E1 has one scene, the startup scene. Export stays at startup until T2 makes it a command, so
+  a save does not refresh the exported packs.
 
 ## The layout
 
-ImGui writes no file of its own: `io.IniFilename` is null. The editor reads
-`project://editorSettings/layout.ini` through `FileAccess` when ImGui starts; `NotFound` means
-the default layout, built with ImGui's dock builder: hierarchy left, inspector right, the
-placeholder scene view in the centre. When ImGui sets `WantSaveIniSettings`, the editor saves
-the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ignored.
+ImGui writes no file of its own: `io.IniFilename` is null. In `init()`, right after it creates
+the ImGui context, the editor reads `project://editorSettings/layout.ini` through `FileAccess`.
+`NotFound` means the default layout, built with ImGui's dock builder: hierarchy left, inspector
+right, and the placeholder scene view and game view as two tabs in the centre. Any other read
+error logs a warning and also falls back to the default. The editor saves the layout when ImGui
+sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore` ignores
+`editorSettings/`.
 
-- **As built (S9-T16):** the dockspace is `DockSpaceOverViewport` with a passthrough centre, and
-  the default layout docks the hierarchy on the left. It is built only when the dockspace's node
-  does not exist, because loading a layout with `LoadIniSettingsFromMemory` creates that node.
-  So S9-T19 must load the file before the first `NewFrame`, or the default is built first.
-  S9-T17 adds the inspector to the default, and S9-T19 the scene view.
+- **The default yields to a saved layout.** The dockspace is `DockSpaceOverViewport` with a
+  passthrough centre. The default is built only when the dockspace's node does not exist, and
+  `LoadIniSettingsFromMemory` creates that node, so the load must come before the first
+  `NewFrame`.
+- **Why it also saves at shutdown.** ImGui raises `WantSaveIniSettings` only `io.IniSavingRate`
+  seconds (5 by default) after a change, and with no file of its own it saves nothing when the
+  context is destroyed. So `stopImGui()` saves once before `DestroyContext`, or a panel moved just
+  before closing would be lost. Each save clears the flag first, even if the write then fails.
+- **The folder.** `FileAccess::write` returns `NotFound` while `editorSettings/` is missing, so
+  a save creates the folder first and treats `AlreadyExists` as the normal answer.
+- **The two views.** Both are placeholders in E1 that show one line of greyed text
+  ([[Editor - Brief]] § *Decided*, 2026-10-31). Once the renderer draws, the scene view looks
+  through the editor's own camera and the game view through the scene's main active camera.
+  Their solid backgrounds now cover the triangle that the renderer draws into the window behind
+  ImGui. Drawing inside a view needs render targets, which wait for R1 ([[Capability Map]] § *Renderer*, the E2 showcase row).
 
 ## Open questions
 
-- **The first kept save fires a trigger.** [[Serialization - Design]] says per-type versions
-  wait for non-regenerable content, "which for scenes is T1's first kept save". S9-T18 is that
-  save. Its `/card-start` decides whether versions are built then or the trigger is re-armed.
 - **A failed load inside an edit batch only warns.** The command has already changed the scene,
   so the scene keeps a reference whose handle is empty. No command sets an `AssetRef` until the
   inspector can edit one. Owner: that card ([[Backlog]] → editor).
 - **Presentation input while Stopped.** E2's scene view camera needs presentation input while
   the `InputBuffer` is detached. Owner: T3.
+- **Which camera is the main active camera.** The game view draws through it, but no camera
+  component exists yet, and no artifact says how a scene marks one camera as active. Owner: E2's
+  camera work (R1).
 - **A second scene load in one process.** The [[Backlog]]'s "a scene load does not notice a
   reference that was already Failed" fires on the first reload. E1 never reloads.
 
@@ -381,6 +411,8 @@ the layout through `FileAccess` and clears the flag. `editorSettings/` is git-ig
 - The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-155`.
 - The bridge: `apps/editor/src/ui/ImGuiBridge.cpp`; the frame on main and the shutdown order:
   `apps/editor/src/EditorApp.cpp:115-145`.
+- Save and close: `apps/editor/src/edit/SaveSceneCommand.cpp`, `apps/editor/src/ui/ClosePrompt.cpp`,
+  and `EditorApp::handleCloseRequest` and `drawClosePrompt`.
 - The snapshot, the session, the commands and the sender: `apps/editor/src/edit/`; the
   dockspace and the panels: `apps/editor/src/ui/PanelsManager.cpp` and `apps/editor/src/ui/panels/`;
   the shared widgets: `apps/editor/src/ui/widgets/`.

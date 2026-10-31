@@ -402,6 +402,14 @@ groups are kept, because they show where future work will land.
 - #prio/low · **ImGui multi-viewport**: panels dragged out into their own OS windows. Not a
   Must, but wanted later. ADR-027 §1 keeps it off in E1 and leaves the threaded window glue to
   build. Found at S9-D2 on Oct 25, 2026.
+- #prio/low · **Two review nits that #174 shipped**: restore the deleted comment
+  "contains(), not valid(): a selection whose entity died would otherwise offer every type to
+  add." in `EditSession::collectComponents`; and put `<ui/PanelsManager.hpp>` first in
+  `PanelsManager.cpp`, which clang-format does not catch because the paired header sits under
+  `ui/`. Found by S9-T18's `/card-review` on Oct 31, 2026. **Trigger:** the next card that
+  touches either file, or the editor's code sweep. **Fired by S9-T19 (#175)**, which touched
+  `PanelsManager.cpp` and fixed only the third nit, the comment in
+  `EditorApp::handleCloseRequest`.
 
 ## etc: cross-cutting
 
@@ -428,7 +436,8 @@ groups are kept, because they show where future work will land.
   the gate's own comment says a weekly bypass teaches nothing. Two ways out: exclude
   `apps/editor/src/ui/` from diff coverage, which is fair only while `ui/` holds drawing alone
   (S9-T16 moved its logic to `edit/`), or run ImGui headless in the tests. Found Oct 29, 2026.
-  **Trigger:** the next panel card's PR, S9-T17 or S9-T19.
+  **Trigger:** the next panel card's PR, S9-T17 or S9-T19. **Fired by S9-T17 (#173)**, and
+  S9-T18 (#174) and S9-T19 (#175) used `[skip-coverage]` a third and a fourth time.
 
 - #prio/low · **Two comments still name the old SDK smoke target**: `sdk/CMakeLists.txt:9` and
   `.github/workflows/ci.yml:79` say `te_sdk_smoke`, while the target is `TechEngineSDKSmoke`

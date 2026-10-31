@@ -23,7 +23,7 @@ bring the document schemas · consumers registered, none built for (ADR-016 §6)
 | Little-endian on disk and wire, no swap code, compile-time check documents it. | ADR-016 §3 |
 | Blob header is `{magic, u16 formatVersion, flags}`; strings length-prefixed; `StringId` as raw `u64`. | ADR-016 §3 |
 | Encoding adds no nondeterminism: same input bytes, identical output bytes. | ADR-016 §3 |
-| Each blob kind (scene, pack) carries its own magic and version, so a pack change never strands a scene; a bump means re-bake or re-save. Per-type versions wait for non-regenerable content, which for scenes is T1's first kept save. The split shipped at S8-T1 (#126, 2026-10-11) as a `BlobKind` passed to each header call (*Blob kinds* below). | ADR-016 §4, partially superseded by [[ADR-025 - Content packs (.tepack and the runtime load path)]] §2; ADR-024 §8 |
+| Each blob kind (scene, pack) carries its own magic and version, so a pack change never strands a scene; a bump means re-bake or re-save. Per-type versions waited for non-regenerable content, which for scenes was T1's first kept save; S9-T18 (#174, 2026-10-31) shipped that save and re-armed the trigger instead of building versions (*Open questions*). The split shipped at S8-T1 (#126, 2026-10-11) as a `BlobKind` passed to each header call (*Blob kinds* below). | ADR-016 §4 as amended 2026-10-31, partially superseded by [[ADR-025 - Content packs (.tepack and the runtime load path)]] §2; ADR-024 §8 |
 | Type tags are macro-free `constexpr` strings hashed with `StringId` (FNV-1a/64). | ADR-016 §5, ADR-007 §1 as amended |
 | Primitives and seam live in `core`; document schemas belong to their consumers. | ADR-016 §6, ADR-006 §1 |
 | Disk identity (authoring-id + remap, opt-in UUID) is ADR-007's, not re-opened here. | ADR-007 §1 |
@@ -217,8 +217,12 @@ moves them.
 
 - **Compression layer** behind the header flags. Trigger: a measured bake-size or load-time
   problem (ADR-016 § *What would move*).
-- **Per-type versions + migration.** Trigger: the first non-regenerable content
-  (ADR-016 §4).
+- **Per-type versions + migration.** The first non-regenerable content arrived with the
+  editor's save (S9-T18, 2026-10-31), and Miguel re-armed the trigger at its `/card-start`.
+  Trigger now: the first change to a saved component's `visit` fields, or to the scene asset's
+  layout, which must bring its migration with it. Until then a scene version bump makes every
+  saved scene fail with `BadVersion`, and the editor refuses to save over a scene it could not
+  load (ADR-016 §4 as amended 2026-10-31; [[Editor - Design]] § *Save, the unsaved marker and close*).
 
 ## References
 

@@ -29,7 +29,7 @@ the editor alongside E11 (T6); the project launcher with packaging (T5).
 | **Must, E1** | The hierarchy creates, deletes and reparents entities. | Scenario 2 |
 | **Must, E1** | The inspector adds and removes components and edits their fields. | Scenario 2 |
 | **Must, E1** | Every entity has a name. The hierarchy shows it, the inspector renames it, it is saved with the scene, and the runtime's log prints it. Names need not be unique. | Scenarios 1, 2 and 4; `/triage`, 2026-10-26 |
-| **Must, E1** | A placeholder scene view. It does not draw the scene. | No renderer until E2 |
+| **Must, E1** | A placeholder scene view and a placeholder game view. Neither draws the scene. | No renderer until E2; the game view added by Miguel, 2026-10-31 |
 | **Must, E1** | Save, with an unsaved marker in the title and a prompt on close. | Scenario 3 |
 | **Must, E1** | Export, then the runtime is started by hand. Its log naming the edited entities and values is the proof. | Scenario 4 |
 | **Must, E1** | The panel layout is remembered between launches, in a file inside the project that git ignores, so each user keeps their own and can reuse it in other projects. | Scenario 5; a must for Miguel's development |
@@ -41,7 +41,7 @@ the editor alongside E11 (T6); the project launcher with packaging (T5).
 | **Won't, for now** | Play in the editor. | Alongside E11 (T6); E1 runs stopped only |
 | **Won't, for now** | Undo. Edits must become undoable later, so E1's edit path must allow it. | Returns after R1 |
 | **Won't, for now** | Syncing the layout to an account over the cloud. | Ideal, but overkill for now |
-| **Won't, for now** | A scene view that draws the scene, picking and gizmos. | E2 (R1, T3) |
+| **Won't, for now** | A scene view and a game view that draw the scene, picking and gizmos. | E2 (R1, T3) |
 
 ## Numbers
 
@@ -107,4 +107,5 @@ Definition of Done in the [[Roadmap]] still names a showcase.
 | When more than one scene, reopening the last one and undo come back | After the first phase of the renderer (R1) is done, possibly as a rung between T2 and T3. | 2026-10-25 |
 | Why E1 has no video | Showcases are meant to be professional, higher-quality cinematic videos, not generic ones or live footage of editing, and E1 has nothing good enough to show that way. | 2026-10-25 |
 | Entity names | A Must for E1, through `/triage`: names are shown, edited, saved and logged by the runtime. Looking an entity up by name from gameplay is not part of it. | 2026-10-26 |
+| The game view | A Must for E1 as a placeholder, added by Miguel without `/triage` because its purpose is already clear. Once the renderer draws, the scene view looks through the editor's own camera and the game view through the scene's main active camera, as in Unity. | 2026-10-31 |
 | A persistent id per entity, as v1's `Tag` had | Not a product capability. [[ADR-007 - v2 networking & ECS replication foundation]] §1 already decides it: an opt-in component for entities referenced across documents, revisited when prefabs arrive. | 2026-10-26 |

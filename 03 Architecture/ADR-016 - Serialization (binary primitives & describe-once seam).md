@@ -19,6 +19,18 @@
   slice's scope, not the module boundary §6 draws: serialization still owns no file I/O, it
   produces and consumes bytes and `platform` moves them. The rest of §6 stands, compression
   included. S4-T7.
+- **Amended 2026-10-31, decision:** §4's trigger, "**the first content that can no longer be
+  regenerated** (shipped builds, external user projects)", and *What would move*'s "before that
+  content exists, not after" → **scenes saved in the editor are that first content, and the
+  trigger is re-armed instead of fired.** Per-type versions and their migration now wait for
+  the first change to a saved component's `visit` fields or to the scene asset's layout, and
+  that change brings its migration with it. A shipped build or an external user project still
+  triggers them before it exists. Why: E1's saved scenes live in the in-tree dev project, no
+  format change is planned before R1, and migration with nothing to migrate is the speculative
+  machinery §4 rejects. Until then a scene version bump fails every saved scene with
+  `BadVersion`, which is loud, and the editor refuses to save over a scene it could not load,
+  so the bump cannot also overwrite it ([[Editor - Design]] § *Save, the unsaved marker and
+  close*). S9-T18.
 
 ## Context
 
@@ -68,6 +80,10 @@ bytes, which is what makes bake reproducible (T4) and snapshot diffs meaningful 
 promise is made about cross-compiler float *computation*, only that encoding copies bits.
 
 ### 4. Versioning: one header version, re-bake over migration
+
+> **Amended 2026-10-31:** the editor's saved scenes are the first content that cannot be
+> regenerated, and the trigger is re-armed: per-type versions wait for the first change to a
+> saved type's `visit` fields or to the scene layout. See the header entry.
 
 One format version lives in the header. A bump means **re-bake assets and re-save scenes**;
 no migration machinery exists. That is honest while every file is regenerable from source by
@@ -141,6 +157,7 @@ for M3's writer, compression waits for a measured bake-size or load-time problem
   restated).
 - **Non-regenerable content** (a shipped build, external user projects) triggers §4's
   per-type versions and a migration story before that content exists, not after.
+  *(Amended 2026-10-31: the editor's saved scenes re-armed this for scenes; see the header.)*
 - **A measured bake-size or load-time problem** adds a compression layer behind the header
   flags.
 - **A big-endian ship target** forces §3's swap code and a format version bump; until one is

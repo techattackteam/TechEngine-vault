@@ -242,7 +242,7 @@ Three calls it makes, each pinned by a Catch2 case:
 | Question | Call |
 |---|---|
 | The mount root, `assets://` | `InvalidPath`. The read side accepts it, because listing a root is meaningful. Nothing can create a file over a directory. |
-| A file that already exists | Truncated, never appended. Note the asymmetry with `Writer`, which appends to its buffer. |
+| A file that already exists | Replaced whole, never appended. Note the asymmetry with `Writer`, which appends to its buffer. Since S9-T18 (#174, 2026-10-31) the bytes go to a sibling `<name>.tewrite` file that a rename moves over the target, so a failed write leaves the old file untouched and removes its partial file. A crash between the write and the rename can leave a `.tewrite` behind, and nothing flushes to disk before the rename, so power loss is not covered. |
 | A missing parent directory | **Not created**, and the caller gets `NotFound` as of S5-T3 (2026-09-03). `createDirectory` is the call whose job that is ([[Project - Design]] § *The five mutating calls*). |
 
 `close()` runs before the stream is checked, because a full disk fails on the flush rather
