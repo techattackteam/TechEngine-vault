@@ -234,7 +234,7 @@ as a command is T2's, not this story's.
   has the overline. Follows S9-T16. *Added on Oct 29 at Miguel's request, outside S9-D3's cut.
   Amended at `/card-start` on Oct 31: the four changes above were added to v1's look, and the font
   and DPI scaling went to the [[Backlog]].*
-- [ ] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h ·
+- [x] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h ·
   done: `/triage` weighs Miguel's Oct 29 ask (Ctrl+click adds an entity to the selection,
   Shift+click selects the range between two clicks, and a box drag selects every row it crosses)
   against [[Capability Map]] § *Editor* and [[Editor - Brief]], and either places it or parks it.

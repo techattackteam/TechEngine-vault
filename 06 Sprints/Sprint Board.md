@@ -23,7 +23,6 @@ kanban-plugin: board
 
 ## Story D: E1's first panels · stretch
 
-- [ ] **S9-T21** · Main asks for its next ImGui frame without a fake event · P3 · 🟡 Light · 1-2h: `EditorApp::buildImGuiFrame` calls `wakeMainThread()` on main itself, which posts a GLFW empty event only so that the next `glfwWaitEvents()` returns. Instead, a main-only flag on `ClientApp` makes the next `mainThreadUpdate()` poll events rather than wait, and `wakeMainThread()` stays for the other threads (`publishEdits`, `requestStop`). The same frames are built as today. Amends the *Main stays event-driven* row and § *The ImGui frame on main* in [[Editor - Design]]. Found Oct 31.
 
 
 ## Story E: Alongside: the renderer brief
@@ -42,7 +41,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h: `/triage` the Oct 29 ask, then the four open rules as [[Editor - Design]] rows, then the build card. Follows S9-T17.
+- [ ] **S9-T21** · Main asks for its next ImGui frame without a fake event · P3 · 🟡 Light · 1-2h: `EditorApp::buildImGuiFrame` calls `wakeMainThread()` on main itself, which posts a GLFW empty event only so that the next `glfwWaitEvents()` returns. Instead, a main-only flag on `ClientApp` makes the next `mainThreadUpdate()` poll events rather than wait, and `wakeMainThread()` stays for the other threads (`publishEdits`, `requestStop`). The same frames are built as today. Amends the *Main stays event-driven* row and § *The ImGui frame on main* in [[Editor - Design]]. Found Oct 31.
 
 
 ## 👀 Review / Demo
@@ -51,6 +50,10 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h: vault `89af9f0`, **Oct 31**. Multi-select is an E1 Should through `/triage` ([[Editor - Brief]], [[Capability Map]] § *Editor*): Ctrl+click and Shift+click in the hierarchy, and an inspector that edits the shared components of every selected entity. [[Editor - Design]] § *Multi-select* holds the rules, and two build cards wait in the sprint note's § *Cut for Sprint 10*. Story D stays open on S9-T21.
+	- **Wider than the card, by Miguel's choice:** the inspector edits every selected entity, as Unity's does, where the clause and the first proposal showed only a count. Box selection became a *Won't, for now*. So the cut is two cards, the second 🟢 4-6h, not one.
+	- **The clause's premise was half true:** ImGui 1.93's `BeginMultiSelect` calls tree nodes only "technically supported", and its box select needs empty space that the hierarchy's touching rows and `InvisibleButton` leave none of. Dropping the box removed the fourth rule. A fifth that the clause did not name was added: main keeps its own selection while a select is in flight.
+	- **Retro:** Claude's Unity baseline came from memory. When Miguel asked for it to be confirmed, the docs backed three of the four claims, but no official page covers Add and Remove with several objects, so that rule is recorded as ours. Claude first sized both build cards 🟠.
 - [x] **S9-P2** · Research brief for the renderer ADR · P3 · 🤖 Auto · 2-3h: vault `714bed6`, **Oct 31**. [[Renderer - Research Brief]] compares how Filament, Godot 4, Flax, URP and Unreal split the device seam, the mesh format and the physically based material model, reads each against [[Renderer - Brief]]'s targets and maps it onto ADR-005's device seam (F22) without choosing. Run by the lane on a Saturday. Closes Story E.
 	- **Retro:** Epic's and Unity's docs could not be fetched from the sandbox, so the URP and Unreal rows rest on search extracts and on memory, each marked; Filament, Godot and Flax were read in source.
 - [x] **S9-T20** · The editor uses v1's ImGui theme · P3 · 🟡 Light · 1-2h: #176 `fc0ed80`, **Oct 31**. `applyEditorTheme()` sets v1's colors, rounding, frame border and centred titles right after `CreateContext()`, with four changes on top of v1 ([[Editor - Design]] § *Decided*, *The theme*). #176 has no review conversation, so this entry comes from the card, the diff and the session. Story D stays open on S9-T21 and S9-D6.
