@@ -66,8 +66,9 @@ From memory, not checked against current docs:
 - **Leans on:** M6's scene load through the cache, and S9-T6 for reopening the saved startup
   scene. ImGui is the editor's only UI ([[Roadmap]] § *Guardrails*). The launcher's place is
   already decided: inside the editor executable ([[Project - Design]], 2026-09-03).
-- **Leans on, open:** where the runtime finds the export folder ([[Resources - Design]] §
-  *Open questions*, owner T2). Starting the runtime by hand depends on it.
+- **Leans on:** the export copies the runtime executable into its folder, so the runtime is
+  started by hand from there (decided 2026-10-31, [[Resources - Design]] § *Decided: packs and
+  the runtime layout*).
 - **Constrains S9-D2:** the edit path must allow undo later; the editor runs stopped only; the
   panels must hold 1,000 entities at 60 fps; the layout lives in a git-ignored file inside the
   project. That answers [[Project - Design]] § *Open questions*' per-user settings for the

@@ -304,6 +304,112 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Runs on
   Sat Oct 31, after S9-P3's brief, because the sprint closes a week early.
 
+#### Sprint 10's cut
+
+Drafts for `/sprint-plan`, which gives them `S10-` IDs and fits them to capacity. S9-D5 cut them
+on Oct 31 from [[2026-10-31 16-13 Auto Run]], with Miguel's picks.
+
+- **Proposed goal:** close E1. The editor exports the project from its File menu into a folder
+  that holds the runtime beside its packs, the runtime started by hand from there logs the edited
+  scene, and the hierarchy and inspector edit several entities at once. This is E1's second
+  half. Alongside, R1's first ADR, the frame and device seam, so E2 can build from Sprint 11.
+- **First Design card:** card 3, the lane's T2 design, on day 1. The seam ADR (card 14) is heavy
+  but unblocks nothing in this sprint, so it follows its paper report (card 13).
+- **Showcase:** this sprint ends E1, but [[Editor - Brief]] decided E1 has no video, and the
+  [[Roadmap]] still names one. `/product-review` settles it at this boundary, before
+  `/sprint-plan`, because M6 closing opens Phase 1. If it brings a video back, `/showcase` owes a
+  card. Card 12 is E1's internal demo either way.
+- **Coverage gap:** the renderer has no design note. No R1 code runs this sprint, so card 14
+  starts `Renderer - Design` with its *Decided* rows.
+- **Fired [[Backlog]] entries:** cards 10 (diff coverage for ImGui), 11 (Local and World modes),
+  13 (paper reports) and 15 (D5's three-sprint rule, [[Known Issues]]). Ride-alongs: the #174
+  nits go with card 4 (`PanelsManager.cpp`) and card 2 (`EditSession::collectComponents`); the
+  two `te_sdk_smoke` comments go with card 10; *README at repo root* fires with card 4.
+- **Carry-over:** M6's windowed run (Sprint 09's Definition of Done) is not a card here.
+- **Rough count:** Miguel 2 🟢, 2 🟠 and 2 🟡; 🤖 Claude 10 cards over three stories, 6 of them
+  PRs; 🤖 Auto 2 cards, one a PR. Seven PRs in two weeks is three or four a week, under the
+  limit of about five.
+- **Sizing:** Miguel reports that a 🟢 4-6h card now takes him 1-2h. Sprint 09 agrees in part:
+  it closed about 30 cards in 8 days, but S9-T16, S9-T17 and S9-D4 each ran a whole day or
+  evening once their scope grew at `/card-start`. Keep the weights as labels of depth, and let
+  `/sprint-plan` raise the number of slots from Sprint 09's close rate. Miguel's set is light,
+  so *Edit an `AssetRef`* ([[Backlog]], `#prio/high`) is the natural stretch after card 2.
+
+##### Story: Multi-select (Miguel)
+
+Cut against [[Editor - Design]] § *Multi-select*.
+
+1. **T · Multi-select in the hierarchy** · P1 · 🟠 Moderate · 2-3h · as drafted in § *Cut for
+   Sprint 10* below.
+2. **T · The inspector edits every selected entity** · P1 · 🟢 Deep · 4-6h · as drafted in
+   § *Cut for Sprint 10* below. Follows card 1.
+
+##### Story: Export, and run the export · 🤖 Claude
+
+Cut against [[Resources - Design]] § *Decided: packs and the runtime layout* (the runtime copy,
+Oct 31) and § *Export targets*. Every card touches `EditorApp.cpp` or `PanelsManager.cpp`, so the
+three 🤖 Claude stories run one after another, in this order.
+
+3. **D · Design the export command** · P1 · 🤖 Claude · 1-2h · done: [[Resources - Design]]
+   decides what the runtime copy carries on Windows and Linux, whether a repeat export reuses
+   its folder or numbers a new one (today it never writes into an existing folder), which folder
+   File → Export writes to, and how the Run button finds the last export; then it cuts cards
+   4 and 5 to match. Vault only.
+4. **T · File → Export** · P1 · 🤖 Claude · 2-3h · done: File → Export sends the client target
+   through `Project::exportTo` and copies the runtime executable into the target's folder; the
+   startup load no longer exports, and `apps/runtime/src/main.cpp` reads `assets` beside itself.
+   A test exports `projects/dev` and opens the result as the runtime does. Its PR ends with
+   "needs Miguel's windowed check": the runtime started from the folder logs the scene.
+5. **T · The Run button** · P2 · 🤖 Claude · 2-3h · done: a Run item starts the last export's
+   runtime as a child process and logs its exit code; with no export yet it is disabled. Follows
+   card 4.
+
+##### Story: The log console · 🤖 Claude
+
+Cut against [[Logger - Design]] and [[Editor - Brief]] § *Requirements* (a Should). Cvars stay out:
+where a cvar lives and which thread owns it probably needs an ADR.
+
+6. **D · Design the console panel** · P2 · 🤖 Claude · 1-2h · done: [[Editor - Design]] decides
+   how records reach main (the sink runs on any thread, so a bounded copy), what the panel keeps
+   and drops, and its filters; then it cuts the two build cards. Vault only. Follows card 5.
+7. **T · The console panel** · P2 · 🤖 Claude · about 2 cards, sized by card 6.
+
+##### Story: The Profiler panel · 🤖 Claude
+
+Cut against [[Profiler - Design]] and ADR-019's copied timing metrics. The first to drop.
+
+8. **D · Design the Profiler panel** · P3 · 🤖 Claude · 1-2h · done: [[Editor - Design]] decides
+    what the panel shows beside Tracy and where it reads the timings, then cuts the build cards.
+    Follows the console story.
+9. **T · The Profiler panel** · P3 · 🤖 Claude · about 2 cards, sized by card 8.
+
+##### Story: E1's loose ends (Miguel)
+
+10. **T · Diff coverage leaves out ImGui drawing** · P2 · 🟡 Light · 1-2h · done: `ci.yml`'s diff
+   coverage excludes `apps/editor/src/ui/`, and [[Editor - Design]] says `ui/` holds drawing only,
+   so logic stays in `edit/`. The two `te_sdk_smoke` comments are fixed. CI config, so attended.
+11. **T · Local and World modes in the transform inspector** · P3 · 🟠 Moderate · 2-3h · done: a
+   toggle shows world values, and a World edit is converted to local on the simulation thread
+   through `setWorld` ([[Scene - Design]] § *Editor Local / World editing*). Follows card 2.
+12. **T · E1's internal demo** · P1 · 🟡 Light · 1-2h · done: Miguel runs [[Editor - Brief]]'s five
+    scenarios windowed, the runtime's log from the export folder names the edited entities, and
+    the result is recorded. Closes E1 on the [[Roadmap]]. Follows cards 2 and 4.
+
+##### Story: Alongside: R1's first ADR
+
+13. **P · Paper report for the frame and device seam** · P2 · 🤖 Auto · report-only · done: the
+    validated culling, draw submission and many-lights papers ([[Research]], Rendering) are mapped
+    onto [[Renderer - Brief]] and [[Renderer - Research Brief]]'s questions, without choosing.
+14. **D · The frame and device seam ADR** · P1 · 🟢 Deep · 4-6h · done: `/adr` drafts it from
+    [[Renderer - Brief]] and card 13's report; Miguel accepts it, and `Renderer - Design` indexes
+    it. Meets Q4's ADR line. Follows card 13.
+
+##### Story: Fired defects
+
+15. **B · `removeLogSink(nullptr)` reports success (D5)** · P3 · 🤖 Auto · 1-2h · done: as
+    [[Known Issues]] D5's proposed fix, with one `LogErrorTests.cpp` case; D5 is deleted. Merges
+    before card 6 if the console touches `Log.cpp`.
+
 ## 🤖 Lanes
 
 - 🤖 Claude features: Story B (S9-T4 to S9-T7), the lane's first, headless under the trial terms

@@ -103,6 +103,7 @@ built or run.
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
 | The bake walks the startup scene's file and packs each asset it references. A reference the index does not know fails the export with `UnknownReference`; a reference on a side the target does not ship is listed in the boot record's sides, not packed. | Miguel, Oct 26 (S9-T7); § *Export and the runtime layout* |
 | The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`, numbered `<name>(1)`, `<name>(2)` when that folder exists. Before T2, the editor exports the client target in its startup load, into its own executable folder. | Miguel, Oct 11, 12 and 15; § *Export targets* |
+| The export copies the runtime executable into the target's folder, beside its `assets/`, so the runtime reads `assets` beside itself as ADR-025 §7 says, and `main`'s `<exe dir>/Dev` stopgap goes. Nothing takes a path argument. What else the copy needs, and whether a repeat export reuses its folder, are the T2 export card's to decide. | Miguel, Oct 31 (S9-D5); § *Export targets* |
 | The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
 | A source answers `Present`, `AbsentForRole` or `Unknown` through a query; only its `read` returns a `std::error_code`. | Miguel, Oct 11; § *Two sources, one cache* |
 | An id missing from the role's packs but listed in the boot record's sides is absent for the role; in neither, it is unknown. | Miguel, Oct 11; § *The pack source* |
@@ -663,11 +664,6 @@ build profiles each carry their own scene list (both from memory).
 
 ## Open questions
 
-- **How the runtime reaches the exported folder.** The development export lands in
-  `bin/<config>/<project name>(n)/assets/`, not in `<exe dir>/assets/`, where ADR-025 §7 has the
-  runtime look. S8-T9 hard-coded `<exe dir>/Dev` as a stopgap (§ *The runtime's startup load*).
-  Copying the runtime into the export folder, or a development-only path argument, are the
-  candidates, and the answer may amend ADR-025 §7. Owner: T2, with T5's distributable.
 - **Whether `PackReader::open` rejects non-zero `flags`.** Today it ignores them, so a future
   compressed pack would be read as raw bytes. Owner: whoever adds compression behind `flags`.
 - **The editor's stopped, playing and paused states.** Decided Oct 10: only Play ticks; stopped

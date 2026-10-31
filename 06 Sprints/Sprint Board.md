@@ -35,11 +35,11 @@ kanban-plugin: board
 
 ## Story G: Prepare Sprint 10
 
-- [ ] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 10's goal and draft cut into the Sprint 09 note. Sat Oct 31, after S9-P3.
 
 
 ## 🔨 In Progress
 
+- [ ] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 10's goal and draft cut into the Sprint 09 note. Sat Oct 31, after S9-P3.
 
 
 ## 👀 Review / Demo
