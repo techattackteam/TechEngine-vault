@@ -358,6 +358,43 @@ and 1 🟡: about six 🟢 slots once two 🟠 cards take 🟢 slots. Story D is
   beside S9-T20, and it moves to Sprint 10 before any P2 card does. The build card it cuts is
   not sized into this sprint.
 
+## Cut for Sprint 10
+
+Not in this sprint. S9-D6 cut these on Oct 31 against [[Editor - Design]] § *Multi-select*;
+S9-D5's `/sprint-prep` gives them IDs and priorities beside the rest of Sprint 10's cut.
+
+- [ ] **Multi-select in the hierarchy** · 🟠 Moderate · 2-3h ·
+  done: the hierarchy selects through `BeginMultiSelect` over its visible rows, with box
+  selection off: Ctrl+click adds or removes one entity, Shift+click selects the visible range,
+  and Ctrl+A selects every visible row. `EditSession` holds the selected entities and the active
+  one, and `EditorSnapshot` carries both with the sequence number of the last select applied.
+  `SelectEntityCommand` carries the whole set, the active entity and main's sequence number, and
+  main draws its own set until the snapshot carries that number. Delete, the menu's Delete on a
+  selected row, and a drag from a selected row act on the topmost selected entities in hierarchy
+  order, each as one command; a move into any moved subtree is refused. A destroyed entity
+  leaves the set. With several selected, the inspector shows only their count. Tests: a select
+  replaces the set, and an older sequence number never overwrites a newer one; deleting a
+  selected parent and its selected child is one command with no warning; a move of several keeps
+  their order; a move into a moved subtree is refused. Windowed: Ctrl and Shift select, a
+  right-click on a selected row keeps the selection, and dragging three rows moves all three.
+  Depends on nothing.
+- [ ] **The inspector edits every selected entity** · 🟢 Deep · 4-6h ·
+  done: with several entities selected, the snapshot lists the components they all have, with
+  the active entity's values, a mixed flag on each field row, and a mixed flag per Euler axis of
+  `Transform`'s rotation. The inspector draws a mixed value as a dash with
+  `ImGuiItemFlags_MixedValue`. Set field, add and remove each become one command over the
+  selected entities, with one record per entity: an edit writes the same value to each, Add
+  offers every type that one of them lacks and adds it only where it is missing, and Remove
+  removes from all. A set-rotation-axis command decomposes each entity's own rotation on the
+  simulation thread and replaces only the edited axis. The name field shows a dash when the names
+  differ, and an edit renames every selected entity. Tests: a set field over three entities
+  changes that field on each and leaves three records; an add over a mixed selection adds only
+  where the type is missing; a rotation axis edit keeps each entity's other two axes; a field
+  row is mixed only when a value differs. Windowed: two entities with different positions show a
+  dash, and typing a value moves both. Follows the card above. It touches
+  `EditSession::collectComponents`, which fires the [[Backlog]]'s "two review nits that #174
+  shipped".
+
 ## Sprint review (end)
 
 <!-- Keep this section while the sprint is active. Fill it at the end. -->

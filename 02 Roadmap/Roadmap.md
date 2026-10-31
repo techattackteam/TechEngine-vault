@@ -49,7 +49,7 @@ cite them. Order **within** a lane is real.
 
 | Rung | Contents | Needs | Goal |
 |---|---|---|---|
-| 🔧 **T1** · Editor panels | Dock · hierarchy · inspector · console and cvars · Profiler panel · scene save | M6. ImGui only. | E1 |
+| 🔧 **T1** · Editor panels | Dock · hierarchy · inspector · console and cvars · Profiler panel · scene save · multi-select and editing several entities (a Should, 2026-10-31) | M6. ImGui only. | E1 |
 | 🔧 **T2** · Export | The editor's export command over M6's bake. Save is T1's (2026-10-26). | T1 · M6 | E1 |
 | 🔧 **T3** · Viewport tools | Picking (F21) and gizmos in the scene view | R1 | E2, alongside |
 | 🔧 **T4** · Import and asset browser | glTF loaded through assimp, writing runtime-form files that M6's bake packs (ADR-025 §6) · an asset browser | T1 · M6 | E2, alongside |

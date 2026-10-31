@@ -13,7 +13,7 @@ frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admissi
 `9a33c49`), the editor snapshot, the dockspace and the hierarchy panel (S9-T16, #171
 `acc897a`), the inspector (S9-T17, #173 `9203c26`), save with the unsaved marker and the
 close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
-(S9-T19, #175 `555a9e4`).
+(S9-T19, #175 `555a9e4`). Multi-select is designed (S9-D6, 2026-10-31) but not built.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -68,10 +68,17 @@ message. This note says how those messages are shaped.
 | Edits publish through their own hook | `publishEdits(const Scene&)` runs after each applied batch, in both loops. `publishSnapshot` stays render's, because render drops a snapshot whose tick did not advance (`engine/client/src/render/SnapshotHistory.cpp:20`). | 2026-10-27 (S9-T13); the `Scene` argument 2026-10-29 (S9-T16), § *Commands and the idle simulation* |
 | Every batch publishes | The editor publishes after every applied batch and once at the end of the startup load. Only a command that changes the scene raises the edit revision, so a select publishes without one. | 2026-10-29 (S9-T16), § *The editor snapshot* |
 | Panels send through one sender | `EditorCommands` builds each command with the edit session and submits it. Panels never touch the session, which belongs to the simulation thread. | 2026-10-29 (S9-T16), § *The hierarchy panel* |
-| Hierarchy edits | A reparent keeps the world transform. A created or dropped child goes first. A reorder is a reparent to the same parent. A right-click selects the row. | 2026-10-29 (S9-T16), § *The hierarchy panel* |
+| Hierarchy edits | A reparent keeps the world transform. A created or dropped child goes first. A reorder is a reparent to the same parent. A right-click selects the row, unless the row is already selected, which keeps the selection. | 2026-10-29 (S9-T16); the selected row 2026-10-31 (S9-D6), § *The hierarchy panel* |
 | The default layout yields to a saved one | It is built only when the dockspace's node does not exist, and a loaded layout creates that node. | 2026-10-29 (S9-T16), § *The layout* |
 | The layout is also saved at shutdown | Besides each `WantSaveIniSettings`, the editor saves once before the ImGui context is destroyed, because ImGui raises the flag only seconds after a change. | 2026-10-31 (S9-T19), § *The layout* |
 | Two placeholder views | A scene view and a game view, tabbed in the dock's centre. Neither draws until the renderer. | [[Editor - Brief]], 2026-10-31; § *The layout* |
+| The selection is a set with an active entity | `EditSession` holds the selected entities and the active one, the last one clicked. F2, Create Child and the values the inspector shows follow the active entity. | 2026-10-31 (S9-D6), § *Multi-select* |
+| Ctrl and Shift, no box | ImGui's `BeginMultiSelect` over the visible rows, with box selection off. A Shift range and Ctrl+A take visible rows only, so they never select inside a collapsed subtree. | [[Editor - Brief]], 2026-10-31; § *Multi-select* |
+| Main keeps its own selection while a select is in flight | A select command carries the whole set and a sequence number from main. Main draws its own set, and ignores the snapshot's until the snapshot carries that number. | 2026-10-31 (S9-D6), § *Multi-select* |
+| Delete and a move act on the topmost selected entities | A selected entity with a selected ancestor is left out, because it dies or moves with that ancestor. Each is one command over a list in hierarchy order. A move into any moved subtree is refused. | 2026-10-31 (S9-D6), § *Multi-select* |
+| The inspector edits every selected entity | It lists the components they all have and shows a dash where their values differ. A field edit writes the same value to each, with one record per entity. Add offers every type that one of them lacks and adds it only where it is missing; Remove removes from all. | [[Editor - Brief]], 2026-10-31; § *Multi-select* |
+| A rotation axis edit keeps each entity's other axes | With several entities selected, the inspector sends the edited Euler axis. The simulation thread decomposes each entity's own rotation, replaces that axis and recomposes it. | 2026-10-31 (S9-D6), § *Multi-select* |
+| A rename of several gives them one name | The name field shows a dash when the names differ, and an edit renames every selected entity. | 2026-10-31 (S9-D6), § *Multi-select* |
 
 ## Threads and channels
 
@@ -319,6 +326,42 @@ across the panel, so labels line up between components. Shared widgets live in `
   the old text. The hierarchy's rename uses the same widget.
 - **Not built:** the Local and World modes that [[Scene - Design]] § *Editor Local / World
   editing* agreed on Sep 12. The panel shows local values only ([[Backlog]] → editor).
+
+## Multi-select
+
+Designed by S9-D6 on 2026-10-31; not built. [[Editor - Brief]] makes it an E1 Should: Ctrl+click
+adds or removes one entity, Shift+click selects a range, and there is no box selection.
+
+- **Baseline.** Unity's inspector lists the components every selected object has, shows a dash
+  where values differ, and applies an edit to all of them ([Inspect items, Unity 6.2](https://docs.unity3d.com/6000.2/Documentation/Manual/InspectorItems.html);
+  [Multi-Object Editing, Unity 3.5](https://docs.unity3d.com/352/Documentation/Manual/Multi-ObjectEditing.html)).
+  Unreal's Details panel does the same, with "Multiple Values" in place of the dash (from memory).
+  No official page says what Unity's Add Component does with several objects, so ours is our own
+  rule, not a copy.
+- **ImGui's part.** `BeginMultiSelect` turns Ctrl and Shift clicks into requests; each row's
+  selection data is its index in the visible rows. Requests are applied to main's own set in the
+  same frame, as ImGui expects. The clipper must include `RangeSrcItem`, beside the dragged and the
+  renamed rows. `ImGuiItemFlags_MixedValue` (`imgui.h:1330`) draws the dash.
+- **The round trip.** Main's set is what the rows draw. Each change sends one select command with
+  the whole set, the active entity and main's next sequence number, so a late command can never
+  undo a newer one. The session stores the number, and the snapshot carries it back.
+- **Delete and move.** Both take the topmost selected entities in hierarchy order. A drag from a
+  selected row carries that list; a drag from an unselected row carries only that row. The move
+  is one command, because `Scene` counts a position among the other children, so separate
+  commands would shift each other's targets. Today's payload is one `Entity`
+  (`apps/editor/src/ui/panels/HierarchyPanel.cpp:22`).
+- **The snapshot.** Field rows hold the active entity's values, and each row gains a mixed flag
+  set when any selected entity's value differs. A component is listed only if every selected
+  entity has it. With 1,000 entities selected the walk is over every one of them, on each edit.
+- **Edits.** Set field, add and remove each become one command over the selected entities, so a
+  Ctrl+A edit is still one queue slot. Each entity leaves its own record. Grouping those records
+  into one undo step is left to undo's rung.
+- **Rotation.** The panel's Euler cache holds one entity's angles, so with several selected it
+  shows the active entity's angles and sends only the edited axis. A quaternion field's mixed
+  flag says nothing about one Euler axis, so the simulation thread decomposes each selected
+  rotation and the snapshot carries one mixed flag per Euler axis. If the single-entity edit
+  moves to the same set-rotation-axis command, that also answers the [[Backlog]]'s "one rotation
+  edit is four records".
 
 ## Entity names
 

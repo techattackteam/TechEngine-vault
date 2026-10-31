@@ -35,12 +35,14 @@ the editor alongside E11 (T6); the project launcher with packaging (T5).
 | **Must, E1** | The panel layout is remembered between launches, in a file inside the project that git ignores, so each user keeps their own and can reuse it in other projects. | Scenario 5; a must for Miguel's development |
 | **Must, demo** | The map's § *Editor* demo row, unchanged: edit scenes, play and return, terrain tools, an asset browser with import, a visual game UI designer. | [[Capability Map]], 2026-10-23 |
 | **Should** | A Run button that starts the runtime from the editor. A console and cvars. A Profiler panel. | Cut first if E1 runs long |
+| **Should** | Multi-select in the hierarchy: Ctrl+click adds or removes one entity, and Shift+click selects the range between two clicks. The inspector then shows the components every selected entity has, shows a dash where their values differ, and applies an edit to all of them. | Scenes grow past what one-at-a-time editing handles; `/triage`, 2026-10-31 |
 | **Won't, for now** | A public video of E1. A build for viewers. | E1 is an internal demo; showcases are cinematic |
 | **Won't, for now** | A project launcher. | Returns with T5 packaging |
 | **Won't, for now** | More than one scene, and reopening the last one. | Returns after R1 |
 | **Won't, for now** | Play in the editor. | Alongside E11 (T6); E1 runs stopped only |
 | **Won't, for now** | Undo. Edits must become undoable later, so E1's edit path must allow it. | Returns after R1 |
 | **Won't, for now** | Syncing the layout to an account over the cloud. | Ideal, but overkill for now |
+| **Won't, for now** | Box selection in the hierarchy. | Miguel's call at `/triage`, 2026-10-31 |
 | **Won't, for now** | A scene view and a game view that draw the scene, picking and gizmos. | E2 (R1, T3) |
 
 ## Numbers
@@ -108,4 +110,5 @@ Definition of Done in the [[Roadmap]] still names a showcase.
 | Why E1 has no video | Showcases are meant to be professional, higher-quality cinematic videos, not generic ones or live footage of editing, and E1 has nothing good enough to show that way. | 2026-10-25 |
 | Entity names | A Must for E1, through `/triage`: names are shown, edited, saved and logged by the runtime. Looking an entity up by name from gameplay is not part of it. | 2026-10-26 |
 | The game view | A Must for E1 as a placeholder, added by Miguel without `/triage` because its purpose is already clear. Once the renderer draws, the scene view looks through the editor's own camera and the game view through the scene's main active camera, as in Unity. | 2026-10-31 |
+| Multi-select | A Should for E1, through `/triage`: Ctrl+click and Shift+click in the hierarchy, and an inspector that edits the shared components of every selected entity, as Unity's does. Box selection is left out. | 2026-10-31 |
 | A persistent id per entity, as v1's `Tag` had | Not a product capability. [[ADR-007 - v2 networking & ECS replication foundation]] §1 already decides it: an opt-in component for entities referenced across documents, revisited when prefabs arrive. | 2026-10-26 |

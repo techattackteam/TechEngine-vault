@@ -24,7 +24,7 @@ product owner, unless a row says otherwise.
 
 | | |
 |---|---|
-| **E1, internal demo** | No public video (2026-10-25; P4 is owed to `/product-review`). A hierarchy that shows each entity's name, an inspector that edits fields and renames entities, and a placeholder scene view; build a scene, save it, export it, and start the runtime by hand. Entity names were added on 2026-10-26 by `/triage`. |
+| **E1, internal demo** | No public video (2026-10-25; P4 is owed to `/product-review`). A hierarchy that shows each entity's name, an inspector that edits fields and renames entities, and a placeholder scene view; build a scene, save it, export it, and start the runtime by hand. Entity names were added on 2026-10-26 by `/triage`. A Should, added on 2026-10-31 by `/triage`: multi-select in the hierarchy (Ctrl+click and Shift+click, no box selection), with an inspector that shows the components the selected entities share and edits all of them. |
 | **Demo** | Edit scenes · play in the editor and return to the edited state · terrain tools (sculpt, paint, generation settings) · an asset browser with import · a visual game UI designer (§ *Game UI*). |
 | **Later** | After R1: undo, more than one scene, and reopening the last one · a project launcher, with T5 packaging. |
 
