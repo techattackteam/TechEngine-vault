@@ -4,6 +4,12 @@
 - **Date:** 2026-10 (Accepted 2026-10-25)
 - **Deciders:** Miguel (Lead Engineer), with AI as technical lead
 - **Task:** S9-D2, the editor ADR that E1's panels (T1) are built on.
+- **Amended 2026-10-31, decision:** §1's "the extra frames ImGui needs come from posted wakes" →
+  **main asks for its own extra frames with a flag, and only other threads post a wake.** A
+  posted wake from main to itself was a GLFW empty event whose only effect was to make the next
+  wait return, so main now polls once instead of waiting. "Never from a periodic timer" stands:
+  with no input, main still sleeps until another thread wakes it. #177 (`4ba9f60`, S9-T21);
+  [[Editor - Design]] § *The ImGui frame on main*.
 - **Related:** [[Editor - Brief]] · [[Editor - Research Brief]] ·
   [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
   [[ADR-018 - Main and simulation threads, render-owned GL]] §1-2 ·
@@ -59,6 +65,9 @@ still never calls GLFW.
 
 Main stays event-driven (ADR-019 §5): it builds a frame on each wake, and the extra frames
 ImGui needs come from posted wakes, never from a periodic timer.
+
+> **Amended 2026-10-31:** main asks for its own extra frames with a flag that makes the next
+> update poll, and only other threads post a wake. See the header entry.
 
 Multi-viewport is off in E1. The channel carries one draw snapshot per viewport and render
 owns every context, so enabling it later adds window glue and a flag, not a redesign.

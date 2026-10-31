@@ -113,7 +113,7 @@ Cut against [[Capability Map]] § *Editor*, [[2026-Q4]] objective 2 and [[Window
   rows, and the first T1 panel cards are cut against it into Story D, each with a `done:` clause
   and a size. Follows S9-D2.
 
-### Story D: E1's first panels · 11 tasks · stretch
+### Story D: E1's first panels · 12 tasks · stretch
 
 T1's dock, hierarchy, inspector and save ([[Roadmap]] § *Rung catalogue*), cut by S9-D3 on
 Oct 26 against [[Editor - Design]]. Every card is P2, so dropping one never costs the goal. The
@@ -245,6 +245,13 @@ as a command is T2's, not this story's.
   `EditorSnapshot::selected` and `SelectEntityCommand`, and ImGui 1.93's `BeginMultiSelect`
   already handles Ctrl, Shift and box selection with the clipper. Follows S9-T17. *Added on Oct 30
   at Miguel's request, from the Backlog entry that S9-T17 fired.*
+- [x] **S9-T21** · Main asks for its next ImGui frame without a fake event · P3 · 🟡 Light · 1-2h ·
+  done: `EditorApp::buildImGuiFrame` calls `wakeMainThread()` on main itself, which posts a GLFW
+  empty event only so that the next `glfwWaitEvents()` returns. Instead, a main-only flag on
+  `ClientApp` makes the next `mainThreadUpdate()` poll events rather than wait, and
+  `wakeMainThread()` stays for the other threads (`publishEdits`, `requestStop`). The same frames
+  are built as today. Amends the *Main stays event-driven* row and § *The ImGui frame on main* in
+  [[Editor - Design]]. *Found on Oct 31 and cut onto the board only; written here at its close.*
 
 S9-T11, S9-T12 and S9-T14 depend on nothing, so any of them can open the story. S9-T14 is the
 lane's, and it must merge before S9-T15 and S9-T17 start.

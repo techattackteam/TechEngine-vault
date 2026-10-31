@@ -13,7 +13,8 @@ frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admissi
 `9a33c49`), the editor snapshot, the dockspace and the hierarchy panel (S9-T16, #171
 `acc897a`), the inspector (S9-T17, #173 `9203c26`), save with the unsaved marker and the
 close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
-(S9-T19, #175 `555a9e4`). Multi-select is designed (S9-D6, 2026-10-31) but not built.
+(S9-T19, #175 `555a9e4`), and main asks for its own next frame without a posted event (S9-T21,
+#177 `4ba9f60`). Multi-select is designed (S9-D6, 2026-10-31) but not built.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -38,7 +39,7 @@ message. This note says how those messages are shaped.
 |---|---|---|
 | One window | ImGui's docking branch draws into the client's window. Main builds the frame; render draws it after the scene. Multi-viewport is off in E1. | ADR-027 §1 |
 | Draw data and textures | Draw data crosses newest-wins in its own channel. Texture requests cross in order and are never dropped. | ADR-027 §1 |
-| Main stays event-driven | Main builds a frame on each wake. Extra frames come from posted wakes, never from a timer. | ADR-027 §1; ADR-019 §5 |
+| Main stays event-driven | Main builds a frame on each wake, never on a timer. Another thread wakes main with a posted event. Main asks for its own next frame with a flag that makes the next update poll instead of wait, so it posts no event to itself. | ADR-027 §1, the flag amended 2026-10-31 (S9-T21); ADR-019 §5; § *The ImGui frame on main* |
 | Panels read a published snapshot | The simulation publishes the hierarchy, the selected entity's components and the revisions after a change. Main never reads the live `Scene`. | ADR-027 §2 |
 | Every edit is a command | Panels send commands through bounded admission; the simulation applies each batch as a loading phase and records old values. | ADR-027 §3 |
 | Stopped, Playing, Paused | Only Playing ticks. E1 builds Stopped only, with the simulation thread alive and idle. | ADR-027 §4 |
@@ -56,7 +57,7 @@ message. This note says how those messages are shaped.
 | The name is the inspector's header | It is drawn above the components and sent through `EditorCommands::rename`. `Name` is never listed as a component, and a set-field command refuses it, so a rename always leaves a `RenameRecord`. | 2026-10-30 (S9-T17), § *The inspector* |
 | Transform is drawn as v1 drew it | Translation, Rotation and Scale, each as X, Y and Z drags behind red, green and blue letters that reset the axis when clicked. Rotation is shown in Euler degrees. | 2026-10-30 (S9-T17), § *The inspector panel* |
 | The theme | v1's colors, set right after the context is created, with four changes: readable disabled text, gray grabs, tabs lighter than their bar with an accent overline on the focused panel, and a selection stronger than hover. Hover is a neutral gray, so a panel that marks a selected item with `Header` pushes `HeaderHovered` as `Header` around it, as the hierarchy does. `Header` also colors the inspector's component headers. | 2026-10-31 (S9-T20) |
-| Main wakes for an active item only while a mouse button is down | A focused text field keeps an item active with no input, so without the button test main builds frames back to back. Each key is input, so typing still wakes main. | 2026-10-30 (S9-T17), § *The ImGui frame on main* |
+| Main asks for a frame for an active item only while a mouse button is down | A focused text field keeps an item active with no input, so without the button test main builds frames back to back. Each key is input, so typing still gets its frames. | 2026-10-30 (S9-T17), § *The ImGui frame on main* |
 | Every entity has a name | A `Name` component, created with every entity. Names need not be unique. `Scene` refuses to add or remove it, as it does `Transform`. | [[Editor - Brief]], 2026-10-26; 2026-10-27 (S9-T15), § *Entity names* |
 | Persistent entity ids stay opt-in | An entity's disk id is its row in its scene file, reassigned at each save. A UUID is an opt-in component for cross-document entities. | ADR-007 §1 |
 | Save is a command | The simulation writes the scene and publishes the saved revision. Save is T1's; T2 keeps only Export. | 2026-10-26, § *Save* |
@@ -156,18 +157,23 @@ start runs inside that call and initializes `imgui_impl_opengl3` against the con
   `setInputBuffer`, or `Window`'s callbacks replace ImGui's and ImGui gets no input.
 - On each wake, main takes the newest editor snapshot, runs `NewFrame`, draws every panel from
   that snapshot, renders, and publishes the draw data and the texture requests.
-- ImGui settles some interactions over a few frames. Main posts one more wake after a frame
+- ImGui settles some interactions over a few frames. Main asks for one more frame after a frame
   that had input, while input is still queued after `NewFrame` (ImGui trickles a press and a
   release that arrive together over two frames), or while ImGui reports an active item and a
   mouse button is down. A focused text field stays active with no input at all, so the button
   test is what lets main sleep beside it (S9-T17). With no input, main sleeps. Input is read
   from ImGui's internal `InputEventsQueue`.
+- **Asking for a frame posts nothing.** `ClientApp::requestMainFrame()` sets a main-only flag,
+  and the next `mainThreadUpdate()` clears it and polls events instead of waiting (S9-T21). The
+  poll also drains the empty events that other threads posted through `wakeMainThread()`. No
+  wake is lost, because the frame after the poll takes the newest snapshot.
 - **Shutdown order.** `imgui_impl_glfw` shuts down first, while the window still exists. Then
   `ClientApp::stopClient()` stops the render thread, which runs the hook's stop. Last, the context
   is destroyed. `stopClient()` never throws, unlike `ClientApp::shutdown()`, so `~EditorApp` can
   run the same order: the destructor's body runs while the client is still rendering the bridge.
-- `ClientApp::mainThreadUpdate()` already waits on events and sets the title. The editor's
-  override builds the ImGui frame after the wait, and adds the unsaved marker to the title.
+- `ClientApp::mainThreadUpdate()` already waits on events, or polls them after a
+  `requestMainFrame()`, and sets the title. The editor's override builds the ImGui frame after
+  that, and adds the unsaved marker to the title.
 
 ## Commands and the idle simulation
 

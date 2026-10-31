@@ -41,7 +41,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S9-T21** · Main asks for its next ImGui frame without a fake event · P3 · 🟡 Light · 1-2h: `EditorApp::buildImGuiFrame` calls `wakeMainThread()` on main itself, which posts a GLFW empty event only so that the next `glfwWaitEvents()` returns. Instead, a main-only flag on `ClientApp` makes the next `mainThreadUpdate()` poll events rather than wait, and `wakeMainThread()` stays for the other threads (`publishEdits`, `requestStop`). The same frames are built as today. Amends the *Main stays event-driven* row and § *The ImGui frame on main* in [[Editor - Design]]. Found Oct 31.
 
 
 ## 👀 Review / Demo
@@ -50,6 +49,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-T21** · Main asks for its next ImGui frame without a fake event · P3 · 🟡 Light · 1-2h: #177 `4ba9f60`, **Oct 31**. After a frame that needs a follow-up, `buildImGuiFrame` calls `ClientApp::requestMainFrame()`, so the next `mainThreadUpdate()` polls once instead of main posting itself an empty event; other threads still wake main through `wakeMainThread()` ([[Editor - Design]] § *The ImGui frame on main*). Miguel wrote the logic against Claude's scaffold. #177 has no review conversation, so this entry comes from the card, the diff and the session. Closes Story D.
+	- **Half a referent:** `Client` could wait but not poll, so `Client::pollEvents()` was added beside `waitEvents()`. `waitEvents(0.0)` would also have polled, but only through a fallback branch in `Window`.
+	- **Against the ADR as written:** ADR-027 §1 said ImGui's extra frames "come from posted wakes", and they no longer do. Found at the close and recorded as a decision amendment to §1 on Oct 31; "never from a periodic timer" stands.
+	- **Caught before merge:** the session's `/card-review` found that the IDE had re-wrapped `ClientApp::publishSnapshot`, which CI's pinned clang-format rejects. The merged diff no longer has it.
+	- **Retro:** the card was cut onto the board only, so it reached the sprint note at its close. It has no unit test, because a test of the poll would race GLFW's own events. Diff coverage used `[skip-coverage]` again, and no windowed run is recorded.
 - [x] **S9-D6** · Triage multi-select and decide its rules · P3 · 🟡 Light · 1-2h: vault `89af9f0`, **Oct 31**. Multi-select is an E1 Should through `/triage` ([[Editor - Brief]], [[Capability Map]] § *Editor*): Ctrl+click and Shift+click in the hierarchy, and an inspector that edits the shared components of every selected entity. [[Editor - Design]] § *Multi-select* holds the rules, and two build cards wait in the sprint note's § *Cut for Sprint 10*. Story D stays open on S9-T21.
 	- **Wider than the card, by Miguel's choice:** the inspector edits every selected entity, as Unity's does, where the clause and the first proposal showed only a count. Box selection became a *Won't, for now*. So the cut is two cards, the second 🟢 4-6h, not one.
 	- **The clause's premise was half true:** ImGui 1.93's `BeginMultiSelect` calls tree nodes only "technically supported", and its box select needs empty space that the hierarchy's touching rows and `InvisibleButton` leave none of. Dropping the box removed the fourth rule. A fifth that the clause did not name was added: main keeps its own selection while a select is in flight.
