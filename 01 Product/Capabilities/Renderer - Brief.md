@@ -1,7 +1,7 @@
 # Renderer: Brief
 
 **Map:** [[Capability Map]] § *Renderer*
-**Goals:** E2 (R1), with T4 import and T3 viewport tools alongside; then E3, E4, E7 and E8.
+**Goals:** E2 and E2b (R1), with T4 import on E2's critical path and T3 viewport tools alongside; then E3, E4, E7 and E8.
 Surface shaders in code come alongside E11, with scripting.
 **Status:** agreed (2026-10-30)
 **Feeds:** R1's two renderer ADRs, the frame and device seam (with lights and culling) and
@@ -37,13 +37,14 @@ materials and shading models, and the renderer's design note.
 | **Must, E2** | Imported glTF reference models (Sponza, Bistro), seen through a camera in the runtime and in the editor's scene view, and the two look identical. | Scenarios 1 and 4 |
 | **Must, E2** | Each mesh slot has a material on the engine's standard material: textures and values, no shader code. Edits in the inspector show in the scene view at once, with no recompile or reload. | Scenario 2; `/triage` |
 | **Must, E2** | Shading models: lit, unlit, and glTF's common extras: clear coat, sheen and transmission. | Reference models look wrong without them |
-| **Must, E2** | Lighting: a sun, a sky image that lights and reflects, and hundreds of local lights. No shadows. Shiny surfaces reflect only the sky. | Scenario 3 |
+| **Must, E2** | Lighting: a sun and a sky image that lights and reflects. No shadows. Shiny surfaces reflect only the sky. | Scenario 3 |
+| **Must, E2b** | Hundreds of local lights. | Scenario 3; E2 split on 2026-10-31 |
 | **Must, E2** | A finished image: correct brightness for a bright sky and dark corners, and smooth edges. | Scenario 4; a comparison video |
 | **Must, E2** | Cut-out surfaces (leaves, fences, curtains) draw correctly. | Sponza |
-| **Must, E2** | Hundreds of thousands of objects on screen, many of them copies of one model. The video shows a stress scene of copies of the reference models. | Scenario 3 |
+| **Must, E2b** | Hundreds of thousands of objects on screen, many of them copies of one model. The video shows a stress scene of copies of the reference models. | Scenario 3 |
 | **Must, alongside E11** | Developers write surface shaders in code, and the engine still lights them. A Script can set a material's values. A shader keeps working when the engine adds lighting features or the frame is replaced. | Scenario 6; `/triage` |
 | **Should, E2** | Glass draws correctly. Debug view modes in the scene view (Unlit, Wireframe). | Cut first if E2 runs long |
-| **Should, E2** | v1's test of a million cubes moving up and down on a grid runs at 60 fps; v1 reached 20 fps. It is also an end-to-end test of the ECS, the task graph and the renderer. | Miguel |
+| **Should, E2b** | v1's test of a million cubes moving up and down on a grid runs at 60 fps; v1 reached 20 fps. It is also an end-to-end test of the ECS, the task graph and the renderer. | Miguel |
 | **Later** | A node-graph material editor, after the demo. Developers add their own passes, or replace the whole frame through the engine's device seam. | `/triage` |
 | **Won't, for now** | Shadows in E2 (they are E3's). Reflections of nearby objects in E2. | Keeps E2 to its goal |
 | **Won't, for now** | Ray tracing · VR · HDR displays · low-end PCs and mobile, all until after the demo. Lighting written by developers. Replacing the device layer. | This brief; `/triage` |
@@ -70,8 +71,9 @@ otherwise:
 - **A node-graph material editor** is the main path in Unreal and Unity, and Godot has one too.
   TechEngine leaves it until after the demo and starts with shaders in code. Unity's current
   pipelines no longer offer a code version of surface shaders, so code first is a difference.
-- **Mesh LOD and particles**: all three have them, and the [[Roadmap]] lists both under
-  *Deliberately absent*. Owed to `/product-review` (*Open questions*). From memory.
+- **Mesh LOD and particles**: all three have them, and the [[Roadmap]] listed both under
+  *Deliberately absent*; mesh LOD left it for R7 on 2026-10-31, and particles stay out until
+  Phase 2 is mapped. From memory.
 - **Ray tracing** in Unreal and Unity's HDRP: out on purpose until after the demo. From memory.
 
 ## Depends on and constrains
@@ -79,8 +81,7 @@ otherwise:
 - **Leans on:** OpenGL 4.5 behind a thin device seam ([[ADR-005 - v2 tech stack & toolchain]]);
   only the render thread issues GL ([[ADR-018 - Main and simulation threads, render-owned GL]]);
   glTF import through assimp ([[Capability Map]] § *Content pipeline*).
-- **Leans on, open:** E2's showcase now needs imported reference models, so T4's import is on
-  E2's critical path, not alongside it.
+- **Leans on:** T4's import, which is on E2's critical path ([[Roadmap]], 2026-10-31).
 - **Constrains the ADR:** for hundreds of lights, Miguel's starting point is the technique v1
   used, clustered forward rendering ([[Paper#Clustered Deferred and Forward Shading]]). For
   hundreds of thousands of objects, it is v1's multi-draw indirect instanced rendering, which
@@ -92,16 +93,7 @@ otherwise:
 
 ## Open questions
 
-Owed to `/product-review` (Nov 7-8), because they change notes a brief does not own:
-
-- **The renderer's bar.** Hundreds of lights, hundreds of thousands of objects, glTF's extras and
-  Bistro go beyond what TechAttack needs (P1). They follow Miguel's goal of a first release that stands out among indie engines,
-  which the map already owes to this review. Mesh LOD and particles wait on the same answer.
-- **E2's scene.** Reference models only, while the [[Reference Game]] says every showcase runs
-  in a scene shaped like TechAttack.
-- **E2's size.** Lights, the finished image and see-through surfaces move from R2 into R1, and
-  T4 moves onto the critical path. E2 is probably over a month, and the [[Roadmap]]'s guardrail
-  is to split a goal, never stretch it.
+None. The three owed to `/product-review` were settled on 2026-10-31 (§ *Decided*).
 
 ## Decided
 
@@ -127,3 +119,6 @@ Owed to `/product-review` (Nov 7-8), because they change notes a brief does not 
 | Objects on screen | Hundreds of thousands. Instanced rendering with multi-draw indirect, as v1 did, is a must from the beginning; the technique goes to the ADR as Miguel's starting point. | 2026-10-30 |
 | The million cubes | "In the v1 I did a million cubes going up and down on a grid that did 20 fps. It would be nice to try and have this test at 60 fps." Recorded as a Should. Miguel added: "this would be a good end to end test of the new task graph with the ECS implementation and renderer" ([[Backlog]] → cross-cutting). | 2026-10-30 |
 | How E2's video shows the count | Copies of the reference models in a stress scene. | 2026-10-30 |
+| The renderer's bar | P1's one exception: stand out among indie engines (Godot 4, Flax, Bevy, Stride), without competing with Unreal or Unity. Mesh LOD joins R7; particles stay out until Phase 2 is mapped. | 2026-10-31, `/product-review` |
+| E2's scene | Reference scenes are allowed until E5; from E5 on, every showcase is shaped like TechAttack ([[Reference Game]]). | 2026-10-31, `/product-review` |
+| E2's size | Split in two. E2 shows the models, materials, sun, sky and finished image; E2b shows hundreds of local lights and the stress scene. T4 is on E2's critical path. | 2026-10-31, `/product-review` |

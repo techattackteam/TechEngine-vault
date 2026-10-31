@@ -33,9 +33,10 @@ The engine will offer two, and they are engine features, not game code:
 ## Two phases
 
 **Phase 1: the engine, one showcase a month.** The core systems TechAttack needs are built as
-general engine features, each goal sized to about a month and ending in a showcase video
-([[Channel]]). Each showcase runs in a tech-demo scene shaped like TechAttack: first person,
-outdoors, a voxel world. The goals are on the [[Roadmap]].
+general engine features, each goal sized to about a month and ending in a demo, most of them in a showcase video
+([[Channel]]). From E5 on, once the voxel world exists, each showcase runs in a tech-demo scene
+shaped like TechAttack: first person, outdoors, a voxel world. E2 to E4 may use reference scenes
+such as Sponza and Bistro (2026-10-31). The goals are on the [[Roadmap]].
 
 **Phase 2: TechAttack, one devlog per stage.** The game starts after Phase 1's last goal, on a
 complete core (decided 2026-10-23). It is multiplayer from its first day, because networking
@@ -50,7 +51,7 @@ ships in Phase 1.
 
 **The risk this order carries:** engine systems built before their game can come out general
 but miss what the game needs. Three things guard against it: the target above writes the
-capability briefs, every showcase scene is shaped like TechAttack, and the briefs are checked
+capability briefs, every showcase scene from E5 on is shaped like TechAttack, and the briefs are checked
 again when Phase 2 starts.
 
 ## Built the way users will build
@@ -68,4 +69,5 @@ engine for everyone.
 | Camera | First person only | 2026-10-23 |
 | Dedicated server platform | Windows, for now | 2026-10-23 |
 | When the game is built | Phase 2, after Phase 1's engine goals | 2026-10-23 |
+| Showcase scenes before the voxel world | E2 to E4 may use reference scenes; from E5 on, every showcase is shaped like TechAttack | 2026-10-31 |
 | World-space precision | 32-bit floats for now. A float's step grows with distance: about 1 mm at 8 km and 2 mm at 16 km. Decide (origin rebasing or double precision, an ADR because it touches `Transform` and physics) at the first goal that lets players travel that far, likely the endless-world goal, or at the first visible jitter. | 2026-10-23 |

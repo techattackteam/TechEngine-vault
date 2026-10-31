@@ -24,9 +24,9 @@ product owner, unless a row says otherwise.
 
 | | |
 |---|---|
-| **E1, internal demo** | No public video (2026-10-25; P4 is owed to `/product-review`). A hierarchy that shows each entity's name, an inspector that edits fields and renames entities, and a placeholder scene view; build a scene, save it, export it, and start the runtime by hand. Entity names were added on 2026-10-26 by `/triage`. A Should, added on 2026-10-31 by `/triage`: multi-select in the hierarchy (Ctrl+click and Shift+click, no box selection), with an inspector that shows the components the selected entities share and edits all of them. |
+| **E1, internal demo** | No public video (2026-10-25; P4 amended 2026-10-31). A hierarchy that shows each entity's name, an inspector that edits fields and renames entities, and a placeholder scene view; build a scene, save it, export it, and start the runtime by hand. Entity names were added on 2026-10-26 by `/triage`. A Should, added on 2026-10-31 by `/triage`: multi-select in the hierarchy (Ctrl+click and Shift+click, no box selection), with an inspector that shows the components the selected entities share and edits all of them. |
 | **Demo** | Edit scenes · play in the editor and return to the edited state · terrain tools (sculpt, paint, generation settings) · an asset browser with import · a visual game UI designer (§ *Game UI*). |
-| **Later** | After R1: undo, more than one scene, and reopening the last one · a project launcher, with T5 packaging. |
+| **Later** | After R1, as T8 alongside E3: undo, more than one scene, and reopening the last one · a project launcher, with T5 packaging. |
 
 ## Renderer
 
@@ -34,16 +34,17 @@ product owner, unless a row says otherwise.
 
 | | |
 |---|---|
-| **Showcase (E2)** | Imported glTF reference models (Sponza, Bistro) with physically based materials, seen through a camera, identical in the runtime and the editor's scene view. Each mesh slot has a material on the engine's standard material, with no shader code (2026-10-30, `/triage`), edited live in the inspector. Lit by a sun, a sky image and hundreds of local lights, with no shadows; correct brightness, smooth edges and cut-out surfaces; a stress scene of hundreds of thousands of copies of the reference models (2026-10-30, `/brief`). |
+| **Showcase (E2)** | Imported glTF reference models (Sponza, Bistro) with physically based materials, seen through a camera, identical in the runtime and the editor's scene view. Each mesh slot has a material on the engine's standard material, with no shader code (2026-10-30, `/triage`), edited live in the inspector. Lit by a sun and a sky image, with no shadows; correct brightness, smooth edges and cut-out surfaces (2026-10-30, `/brief`). |
+| **Showcase (E2b)** | Hundreds of local lights, and a stress scene of hundreds of thousands of copies of the reference models. Split from E2 on 2026-10-31. |
 | **Showcase (E3)** | A physically based sky, a moving sun, day and night, and dynamic sun shadows. |
 | **Showcase (E4)** | Volumetric fog and god rays. |
 | **Showcase (E7)** | Static water with reflections, and trees and rocks drawn out to the view distance. |
 | **Showcase (E8)** | Global illumination: bounced light that follows terrain edits and the day and night cycle. |
-| **Demo** | A view of about 1 km over voxel terrain · hundreds of local lights at night · volumetric fog and god rays · global illumination (bounced light) · static water with reflections · each material picks a shading model from a set the engine provides: lit, unlit, and glTF's clear coat, sheen and transmission from E2, more later, such as subsurface and foliage (2026-10-30, `/triage` and `/brief`) · developers write surface shaders in code alongside E11, and a Script can set a material's values; the engine still lights them, and a shader keeps working when the engine adds lighting features or the frame is replaced (2026-10-30, `/brief`). |
-| **Numbers** | 60 fps at 1080p on the target hardware, with all of the above on screen. In E2, Sponza and Bistro each hold it with hundreds of local lights, and so do hundreds of thousands of objects (2026-10-30, `/brief`). |
+| **Demo** | A view of about 1 km over voxel terrain, with mesh LOD for objects out to that distance (2026-10-31) · hundreds of local lights at night · volumetric fog and god rays · global illumination (bounced light) · static water with reflections · each material picks a shading model from a set the engine provides: lit, unlit, and glTF's clear coat, sheen and transmission from E2, more later, such as subsurface and foliage (2026-10-30, `/triage` and `/brief`) · developers write surface shaders in code alongside E11, and a Script can set a material's values; the engine still lights them, and a shader keeps working when the engine adds lighting features or the frame is replaced (2026-10-30, `/brief`). |
+| **Numbers** | 60 fps at 1080p on the target hardware, with all of the above on screen. In E2b, Sponza and Bistro each hold it with hundreds of local lights, and so do hundreds of thousands of objects (2026-10-30, `/brief`). |
 | **Later** | After the demo: a node-graph material editor (2026-10-30, `/brief`) · developers add their own passes to the engine's frame · developers replace the whole frame and still draw through the engine's device seam (2026-10-30, `/triage`). |
 | **Not in the demo** | Lighting written by developers: a stylized look uses an unlit material and custom passes instead · replacing the device layer, because the engine's render thread owns the graphics context ([[ADR-018 - Main and simulation threads, render-owned GL]]) (2026-10-30, `/triage`) · ray tracing · VR · HDR displays · low-end PCs and mobile (2026-10-30, `/brief`). |
-| **Open, for `/product-review`** | Whether the engine's first release gets a renderer beyond what TechAttack needs: powerful enough to stand out among indie engines (for example Godot 4, Flax, Bevy and Stride), without competing with Unreal or Unity (Miguel, 2026-10-30). That changes P1, so it is owed to the review of Nov 7-8, which also says what the engine's first release is. It may move the *Later* row up, and bring particles and mesh LOD back from the [[Roadmap]]'s *Deliberately absent*. [[Renderer - Brief]] § *Open questions* lists what else waits on it. |
+| **Decided at `/product-review`** | The renderer is P1's one exception: its bar is to stand out among indie engines (Godot 4, Flax, Bevy, Stride), without competing with Unreal or Unity. Mesh LOD joins R7; particles stay out until Phase 2 is mapped (2026-10-31). |
 
 ## World and terrain
 
@@ -124,6 +125,17 @@ product owner, unless a row says otherwise.
 |---|---|
 | **Demo** | Import **glTF**, loaded through assimp · textures · export to content packs (M6) · a packaged demo build. |
 | **Not in the demo** | FBX and other formats as supported inputs, even where assimp can read them. |
+
+## First release
+
+**For:** developers making their own games. Decided 2026-10-31 at `/product-review`.
+
+| | |
+|---|---|
+| **What it is** | A finished engine product that developers can make games with: the editor, the SDK, packaging and docs. It does not wait for TechAttack. |
+| **When** | When its list of contents is met, not at a fixed place on the [[Roadmap]]. |
+| **Scope** | P1 decides it: what TechAttack needs, plus the renderer's exception ([[Principles]]). |
+| **Open** | The list itself. A `/product-review` or `/brief` writes it when T5 packaging is about to be planned, once each system's brief exists. |
 
 ## Phase 2 systems, mapped later
 

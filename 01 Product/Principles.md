@@ -9,13 +9,18 @@ and [[Technical Lead Charter]].
 
 - **P1 · The reference game decides.** A capability [[Reference Game|TechAttack]] does not need
   is not built yet, however interesting. The [[Capability Map]] is where that is written down.
+  **One exception, the renderer** (2026-10-31): its bar is to stand out among indie engines
+  such as Godot 4, Flax, Bevy and Stride, without competing with Unreal or Unity
+  ([[Renderer - Brief]]).
 - **P2 · Built the way users build.** TechAttack is made only through the public SDK and the
   editor. Game rules never live in the engine, and a gap the game hits is fixed in the engine for
   everyone.
 - **P3 · What before how.** A system's capability brief comes before its first ADR. An ADR with
   no requirements is decided by taste.
-- **P4 · Show it, or it is not done.** Every Phase 1 goal ends in a showcase a developer can
-  watch ([[Channel]]). Something that cannot be shown is not a goal yet.
+- **P4 · Show it, or it is not done.** Every Phase 1 goal ends in a demo. It gets a public
+  showcase when it has something worth a cinematic ([[Channel]]), and never two goals in a row
+  go without one. Something that cannot be shown is not a goal yet. Amended 2026-10-31, because
+  E1 ends in an internal demo.
 - **P5 · General in shape, narrow in scope.** Build an engine feature in its general form when
   that costs the same, but only to the scope the reference game needs. The engine widens to
   general-purpose 3D later, from a base that already works.

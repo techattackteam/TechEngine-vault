@@ -39,11 +39,11 @@ server authority.
 
 ## Three-year horizon
 
-1. **Foundation**: a core you can trust. Done through M5; M6 closes in Sprint 09.
+1. **Foundation**: a core you can trust. Done through M5; M6's code is complete, and it closes with its windowed run.
 2. **The reference game's stages**, with the signature rendering in an outdoor world with a
    day and night cycle.
-3. **The free public demo**, plus the documentation and videos that let another developer
-   start a game with TechEngine.
+3. **The engine's first release**, a finished product developers can make games with, and the
+   TechAttack demo. The release does not wait for the game (2026-10-31).
 
 ## Non-goals (for now)
 
@@ -52,6 +52,6 @@ server authority.
 - A marketplace or plugin ecosystem.
 - Platforms beyond Windows (primary) and Linux before the demo
   ([[ADR-005 - v2 tech stack & toolchain]]).
-- Licensing, support or compatibility promises to outside developers before the demo.
+- Licensing, support or compatibility promises to outside developers before the first release.
 
 See also: [[Reference Game]] · [[Principles]] · [[Roadmap]]

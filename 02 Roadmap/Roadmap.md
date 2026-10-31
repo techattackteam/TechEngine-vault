@@ -4,14 +4,16 @@
 sprint notes own the dates. `/sprint-prep` reads this page to pick the next goal. What each
 system must support is in the [[Capability Map]], derived from the [[Reference Game]].
 
-**Where we are:** the foundation chain (M0 to M5) is done, and M6, content, closes in
-[[2026-10 Sprint 09 - Close M6]] (Oct 24 to Nov 6), which also makes E1's first decisions.
-Then Phase 1 starts: engine goals E1 to E13, about a month each, each ending in a showcase video
-([[Channel]]). Phase 2 is the game itself, TechAttack.
+**Where we are:** the foundation chain (M0 to M5) is done. M6's code is complete
+([[2026-10 Sprint 09 - Close M6]]), and M6 closes with Miguel's windowed run. Phase 1 has opened
+with E1, whose panels Sprint 09 built (2026-10-31). Its goals run from E1 to E13, with E2 split
+in two, about a month each, each ending in a demo and most in a showcase video ([[Channel]],
+[[Principles]] P4). Phase 2 is the game itself, TechAttack.
 
 ## Phase 1: the engine, one showcase a month
 
-Each goal is sized to about two sprints and is done when its showcase is out. **Needs** is the
+Each goal is sized to about two sprints and is done when its demo runs and, if it has one, its
+showcase is out. **Needs** is the
 critical path; **Alongside** can run at the same time without blocking it, and is the natural
 source of 🤖 Claude features. **Map** names the [[Capability Map]] section whose deeper brief
 must exist before the goal's first ADR.
@@ -19,9 +21,10 @@ must exist before the goal's first ADR.
 | Goal | The showcase shows | Needs | Alongside | Map |
 |---|---|---|---|---|
 | **M6 · Content** 🔨 now | (no video) The runtime loads scenes and meshes from packs, with references | Sprint 09's Story A and the mesh path (🤖 Claude) | The editor brief and ADR | |
-| **E1 · Editor and export** | Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
-| **E2 · First renderer** | Imported models with physically based materials, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** | T4 import · T3 viewport tools | Renderer, content pipeline |
-| **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | | Renderer |
+| **E1 · Editor and export** 🔨 now | (internal demo, no video, 2026-10-25) Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
+| **E2 · First renderer** | Imported glTF reference models with physically based materials, lit by a sun and a sky image, with a finished image, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** · T4 import | T3 viewport tools | Renderer, content pipeline |
+| **E2b · Many lights, many objects** | Hundreds of local lights at night, and a stress scene of hundreds of thousands of copies of the reference models. Split from E2 on 2026-10-31 | R1's local lights and instanced drawing | The million cubes, a Should ([[Renderer - Brief]]) | Renderer |
+| **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | T8 editor workflow | Renderer |
 | **E4 · Fog and god rays** | Volumetric fog and light shafts | R4 | The terrain brief and ADR | Renderer |
 | **E5 · Voxel terrain** | Editable voxel terrain, dig and place, smooth or blocky, voxel size per world | W1, after the **terrain ADR** | P1 parallel executor | World and terrain |
 | **E6 · Endless world** | A generated world with biomes and ores, streaming about 1 km around the viewer | W2 · the precision check ([[Reference Game]] § *Decided*) | T7 terrain tools | World and terrain |
@@ -34,7 +37,7 @@ must exist before the goal's first ADR.
 | **E13 · Saving** | The server autosaves and reloads the world, its edits, machines and inventories | W4 | | Persistence |
 
 E10 is the goal most likely to need splitting: four networking rungs in one month is a lot. At
-one goal a month, Phase 1 runs about thirteen months after M6.
+one goal a month, Phase 1 runs about fourteen months after M6, now that E2 is split (2026-10-31).
 
 ## Phase 2: TechAttack
 
@@ -52,17 +55,18 @@ cite them. Order **within** a lane is real.
 | 🔧 **T1** · Editor panels | Dock · hierarchy · inspector · console and cvars · Profiler panel · scene save · multi-select and editing several entities (a Should, 2026-10-31) | M6. ImGui only. | E1 |
 | 🔧 **T2** · Export | The editor's export command over M6's bake. Save is T1's (2026-10-26). | T1 · M6 | E1 |
 | 🔧 **T3** · Viewport tools | Picking (F21) and gizmos in the scene view | R1 | E2, alongside |
-| 🔧 **T4** · Import and asset browser | glTF loaded through assimp, writing runtime-form files that M6's bake packs (ADR-025 §6) · an asset browser | T1 · M6 | E2, alongside |
+| 🔧 **T4** · Import and asset browser | glTF loaded through assimp, writing runtime-form files that M6's bake packs (ADR-025 §6) · an asset browser | T1 · M6 | E2 |
 | 🔧 **T5** · Packaging | Distributable build · launcher arguments · no dev dependencies | T2 · T4 | Demo |
 | 🔧 **T6** · Play in the editor | Run the game inside the editor and return to the edited state | T1 · A1 | E11, alongside |
 | 🔧 **T7** · Terrain tools | Sculpt and paint voxel terrain, and set up generation, in the editor | W1 · T3 | E6, alongside |
-| 🎨 **R1** · Renderer v0 | Device seam (F22) · meshes, shaders and physically based materials · camera · frustum culling | M6 · **two renderer ADRs** (2026-10-30, S9-D4): the frame and device seam, with lights and culling, which also decides whether a per-frame allocator is owed; and materials and shading models | E2 |
+| 🔧 **T8** · Editor workflow | Undo · more than one scene · reopening the last one ([[Editor - Brief]], 2026-10-31) | R1 · T2 | E3, alongside |
+| 🎨 **R1** · Renderer v0 | Device seam (F22) · meshes, shaders and physically based materials · camera · frustum culling | M6 · **two renderer ADRs** (2026-10-30, S9-D4): the frame and device seam, with lights and culling, which also decides whether a per-frame allocator is owed; and materials and shading models | E2 · E2b |
 | 🎨 **R2** · Render graph and lighting | Passes · lights and shadows · depth prepass · post (auto-exposure, bloom) · GPU zones per pass | R1 | E3 |
 | 🎨 **R3** · Sky and sun | Physically based atmosphere · a moving sun · day and night | R2 | E3 |
 | 🎨 **R4** · Volumetric fog | Volumetric fog · god rays | R3 | E4 |
 | 🎨 **R5** · Global illumination | Bounced light on a world that changes | R2 · W1 | E8 |
 | 🎨 **R6** · Water | Static water with reflections and a shoreline | R2 | E7 |
-| 🎨 **R7** · Foliage rendering | Trees and rocks drawn in large numbers out to the view distance | R1 · W2 | E7 |
+| 🎨 **R7** · Foliage rendering | Trees and rocks drawn in large numbers out to the view distance · mesh LOD (2026-10-31) | R1 · W2 | E7 |
 | 🌍 **W1** · Voxel terrain | Voxel data · smooth and blocky meshing · colliders · dig and place · voxel size per world | R1 · **terrain ADR** | E5 |
 | 🌍 **W2** · Endless world | Procedural generation with biomes and ores · chunk streaming and terrain LOD around the viewer | W1 | E6 |
 | 🌍 **W3** · Static terrain | Heightmap terrain that cannot be edited, with grid building | R1 | After the demo |
@@ -126,9 +130,11 @@ cite them. Order **within** a lane is real.
 
 ## Deliberately absent
 
-Recorded so they read as decisions, not oversights: particles · mesh LOD (terrain LOD is W2) ·
+Recorded so they read as decisions, not oversights: particles, until Phase 2 is mapped, because
+G2's machines are their first consumer ·
 localization · platforms beyond Windows and Linux. Terrain, streaming, saving and AI left this
-list on 2026-10-23, when TechAttack became the reference game.
+list on 2026-10-23, when TechAttack became the reference game. Mesh LOD left it on 2026-10-31
+for R7, once the renderer's bar was raised ([[Principles]] P1).
 
 ## Quarters
 

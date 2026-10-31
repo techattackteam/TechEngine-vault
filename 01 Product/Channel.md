@@ -8,7 +8,7 @@ Decided 2026-10-23, Miguel as product owner.
 
 | Kind | What it shows | When |
 |---|---|---|
-| **Showcase** | One engine system, as it lands (the renderer, voxel terrain, networking), in a scene shaped like the [[Reference Game]] | **At least one a month at the start.** Each engine goal on the [[Roadmap]] ends in one. |
+| **Showcase** | One engine system, as it lands (the renderer, voxel terrain, networking), in a scene shaped like the [[Reference Game]] | **About one a month.** Each engine goal on the [[Roadmap]] ends in a demo, and in a showcase when it has something worth a cinematic; never two goals in a row go without one ([[Principles]] P4, 2026-10-31). |
 | **Devlog** | A TechAttack stage, showing the game grow and the engine carrying it | One per stage, in Phase 2 |
 | **Short** | Something fun or surprising a system just did | Any time; informal and outside the plan |
 
@@ -17,6 +17,9 @@ enough to teach.
 
 ## How a video fits the plan
 
+- **A showcase is a cinematic**: an edited, professional video, not live footage of someone
+  editing (2026-10-31). What the engine must provide to record one, such as camera paths and
+  capture at a fixed frame rate, is not mapped yet; a `/triage` of it comes before E2's showcase.
 - **A showcase is part of its goal's Definition of Done.** The goal is not done until its video
   is out.
 - **Recording and editing are real work**, so each showcase gets its own card in the goal's

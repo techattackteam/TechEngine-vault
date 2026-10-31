@@ -76,16 +76,9 @@ From memory, not checked against current docs:
 
 ## Open questions
 
-Owed to `/product-review`, because they change notes a brief does not own. Until then, E1's
-Definition of Done in the [[Roadmap]] still names a showcase.
-
-- **E1 has no public video**, which contradicts [[Principles]] P4, [[Channel]] § *How a video
-  fits the plan* and the [[Roadmap]]'s E1 row.
-- **Showcases are cinematic**, not live footage of editing. [[Channel]] does not say so yet, and
-  nothing on the [[Capability Map]] covers what a cinematic needs from the engine. That is a
-  `/triage` before any design.
-- **The rung after R1** that brings back more than one scene, reopening the last one, and undo
-  is not in the [[Roadmap]]'s rung catalogue yet.
+None. The three owed to `/product-review` were settled on 2026-10-31: [[Principles]] P4 lets a
+goal end in an internal demo, [[Channel]] says a showcase is a cinematic (what one needs from
+the engine is a `/triage` card), and the rung after R1 is T8 on the [[Roadmap]].
 
 ## Decided
 
@@ -111,5 +104,6 @@ Definition of Done in the [[Roadmap]] still names a showcase.
 | Why E1 has no video | Showcases are meant to be professional, higher-quality cinematic videos, not generic ones or live footage of editing, and E1 has nothing good enough to show that way. | 2026-10-25 |
 | Entity names | A Must for E1, through `/triage`: names are shown, edited, saved and logged by the runtime. Looking an entity up by name from gameplay is not part of it. | 2026-10-26 |
 | The game view | A Must for E1 as a placeholder, added by Miguel without `/triage` because its purpose is already clear. Once the renderer draws, the scene view looks through the editor's own camera and the game view through the scene's main active camera, as in Unity. | 2026-10-31 |
+| The rung after R1 | T8 · Editor workflow: undo, more than one scene and reopening the last one, alongside E3. | 2026-10-31, `/product-review` |
 | Multi-select | A Should for E1, through `/triage`: Ctrl+click and Shift+click in the hierarchy, and an inspector that edits the shared components of every selected entity, as Unity's does. Box selection is left out. | 2026-10-31 |
 | A persistent id per entity, as v1's `Tag` had | Not a product capability. [[ADR-007 - v2 networking & ECS replication foundation]] §1 already decides it: an opt-in component for entities referenced across documents, revisited when prefabs arrive. | 2026-10-26 |

@@ -316,10 +316,9 @@ on Oct 31 from [[2026-10-31 16-13 Auto Run]], with Miguel's picks.
   half. Alongside, R1's first ADR, the frame and device seam, so E2 can build from Sprint 11.
 - **First Design card:** card 3, the lane's T2 design, on day 1. The seam ADR (card 14) is heavy
   but unblocks nothing in this sprint, so it follows its paper report (card 13).
-- **Showcase:** this sprint ends E1, but [[Editor - Brief]] decided E1 has no video, and the
-  [[Roadmap]] still names one. `/product-review` settles it at this boundary, before
-  `/sprint-plan`, because M6 closing opens Phase 1. If it brings a video back, `/showcase` owes a
-  card. Card 12 is E1's internal demo either way.
+- **Showcase:** this sprint ends E1, which has no video: `/product-review` amended [[Principles]]
+  P4 on Oct 31, so a goal may end in an internal demo. Card 12 is that demo. The same review added
+  card 16, because [[Channel]] now says a showcase is a cinematic.
 - **Coverage gap:** the renderer has no design note. No R1 code runs this sprint, so card 14
   starts `Renderer - Design` with its *Decided* rows.
 - **Fired [[Backlog]] entries:** cards 10 (diff coverage for ImGui), 11 (Local and World modes),
@@ -327,7 +326,7 @@ on Oct 31 from [[2026-10-31 16-13 Auto Run]], with Miguel's picks.
   nits go with card 4 (`PanelsManager.cpp`) and card 2 (`EditSession::collectComponents`); the
   two `te_sdk_smoke` comments go with card 10; *README at repo root* fires with card 4.
 - **Carry-over:** M6's windowed run (Sprint 09's Definition of Done) is not a card here.
-- **Rough count:** Miguel 2 🟢, 2 🟠 and 2 🟡; 🤖 Claude 10 cards over three stories, 6 of them
+- **Rough count:** Miguel 2 🟢, 2 🟠 and 3 🟡; 🤖 Claude 10 cards over three stories, 6 of them
   PRs; 🤖 Auto 2 cards, one a PR. Seven PRs in two weeks is three or four a week, under the
   limit of about five.
 - **Sizing:** Miguel reports that a 🟢 4-6h card now takes him 1-2h. Sprint 09 agrees in part:
@@ -410,6 +409,14 @@ Cut against [[Profiler - Design]] and ADR-019's copied timing metrics. The first
 15. **B · `removeLogSink(nullptr)` reports success (D5)** · P3 · 🤖 Auto · 1-2h · done: as
     [[Known Issues]] D5's proposed fix, with one `LogErrorTests.cpp` case; D5 is deleted. Merges
     before card 6 if the console touches `Log.cpp`.
+
+##### Story: Product follow-up
+
+Added by `/product-review` on Oct 31 ([[Channel]] § *How a video fits the plan*).
+
+16. **D · Triage what a cinematic showcase needs** · P2 · 🟡 Light · 1-2h · done: `/triage` weighs
+    what the engine must provide to record a cinematic showcase, such as camera paths and capture
+    at a fixed frame rate, and the [[Capability Map]] records the result. Due before E2's showcase.
 
 ## 🤖 Lanes
 
