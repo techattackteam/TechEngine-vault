@@ -295,7 +295,7 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
 
 ### Story G: Prepare Sprint 10 (standing)
 
-- [ ] **S9-P3** · Prep brief for Sprint 10 · P2 · 🤖 Auto · report-only ·
+- [x] **S9-P3** · Prep brief for Sprint 10 · P2 · 🤖 Auto · report-only ·
   done: a run report lists the *Decided* rows with no code behind them, the open questions
   blocking them, the fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides
   nothing. **Takeable from Sat Oct 31**, by Miguel's call that day: Sprint 09 closes a week

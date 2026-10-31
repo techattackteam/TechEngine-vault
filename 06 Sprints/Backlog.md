@@ -421,6 +421,8 @@ groups are kept, because they show where future work will land.
   `PanelsManager.cpp` and fixed only the third nit, the comment in
   `EditorApp::handleCloseRequest`.
 
+- #prio/low · **[[Project - Design]]'s layout row says "not built yet"**: its *Decided* row **Layout** (`Project - Design.md:59`) still says the `common`, `client` and `server` split was not built, but the editor mounts `assets/common` and `assets/<side>` (`apps/editor/src/EditorApp.cpp:54`) and `projects/dev/assets/` holds all three folders. Found by S9-P3, Oct 31 ([[2026-10-31 16-13 Auto Run]]). **Trigger:** the next drift check, or the next edit to that note.
+
 ## etc: cross-cutting
 
 - #prio/medium · **The million cubes as an end-to-end benchmark**: Miguel's ask, Oct 30, 2026.
