@@ -298,10 +298,11 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
 - [ ] **S9-P3** · Prep brief for Sprint 10 · P2 · 🤖 Auto · report-only ·
   done: a run report lists the *Decided* rows with no code behind them, the open questions
   blocking them, the fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides
-  nothing. **Not before Mon Nov 2**: a fire before that leaves it in To Do.
+  nothing. **Takeable from Sat Oct 31**, by Miguel's call that day: Sprint 09 closes a week
+  early to line up with his day job's sprints, so a fire run by hand today may take it.
 - [ ] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h ·
-  done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Runs in
-  week 2, Tue Nov 3 to Fri Nov 6, after S9-P3's brief.
+  done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Runs on
+  Sat Oct 31, after S9-P3's brief, because the sprint closes a week early.
 
 ## 🤖 Lanes
 
@@ -312,7 +313,7 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   Story C or Story B: S9-T9 and S9-T10 stay in `engine/platform`, and S9-T8 in `AppTests.cpp`.
   S9-T14 touches the three visitors and every `visit`, so it must merge before S9-T15 and S9-T17
   start; S9-T12 and S9-T13 also add cases to `AppTests.cpp`, so S9-T8 should merge first.
-- Standing prep: S9-P3 (not before Mon Nov 2) and S9-D5 (Tue Nov 3 to Fri Nov 6).
+- Standing prep: S9-P3 and S9-D5, both moved up to Sat Oct 31 for the early close.
 - PR load: eight PR-producing lane cards (four 🤖 Claude, four 🤖 Auto) over two weeks, about
   four a week against a limit of about five. S9-P1, S9-P2 and S9-P3 are report-only and
   free. Review costs about 3-3.5h, which fills both Tuesdays.

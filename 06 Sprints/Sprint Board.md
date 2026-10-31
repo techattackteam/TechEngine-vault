@@ -35,8 +35,8 @@ kanban-plugin: board
 
 ## Story G: Prepare Sprint 10
 
-- [ ] **S9-P3** · Prep brief for Sprint 10 · P2 · 🤖 Auto · report-only: unbuilt *Decided* rows, blocking questions, fired triggers, candidate 🤖 Claude features; decides nothing. **Not before Mon Nov 2.**
-- [ ] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 10's goal and draft cut into the Sprint 09 note. Tue Nov 3 to Fri Nov 6, after S9-P3.
+- [ ] **S9-P3** · Prep brief for Sprint 10 · P2 · 🤖 Auto · report-only: unbuilt *Decided* rows, blocking questions, fired triggers, candidate 🤖 Claude features; decides nothing. **Takeable from Sat Oct 31**: Sprint 09 closes a week early.
+- [ ] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 10's goal and draft cut into the Sprint 09 note. Sat Oct 31, after S9-P3.
 
 
 ## 🔨 In Progress
