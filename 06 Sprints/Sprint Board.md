@@ -39,7 +39,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 10's goal and draft cut into the Sprint 09 note. Sat Oct 31, after S9-P3.
 
 
 ## 👀 Review / Demo
@@ -48,6 +47,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 09
 
+- [x] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h: vault `b106e13`, **Oct 31**. Sprint 10's cut is in the Sprint 09 note (§ *Sprint 10's cut*, 15 drafts): close E1 with T2's export and multi-select, and R1's frame and device seam ADR alongside. Built on [[2026-10-31 16-13 Auto Run]]. Completes Story G.
+	- **Run outside its gate, by Miguel's call:** Sprint 09 closes a week early, so the prep ran on the Saturday that opens week 2, not Tuesday or later, and the card was moved to In Progress when the prep began.
+	- **Decided in the card:** the export copies the runtime executable beside the packs, so ADR-025 §7 stays as written and no path argument is added ([[Resources - Design]] § *Decided: packs and the runtime layout*). What the copy carries, and whether a repeat export reuses its folder, go to the lane's T2 Design card.
+	- **Wider than the proposal, by Miguel's choice:** three 🤖 Claude stories (export with the Run button, the console, the Profiler panel), where the brief recommended one. They share `EditorApp.cpp` and `PanelsManager.cpp`, so they run in sequence.
+	- **Owed at the boundary:** `/product-review` before `/sprint-plan`, because M6 closing opens Phase 1, and E1's missing video is its question. Miguel reports that a 🟢 card now takes him 1-2h; the cut leaves the slot count to `/sprint-plan`.
 - [x] **S9-P3** · Prep brief for Sprint 10 · P2 · 🤖 Auto · report-only: vault `a27e405`, **Oct 31**. [[2026-10-31 16-13 Auto Run]] lists E1's unbuilt *Decided* rows (multi-select and T2's export), the open question that blocks T2 (where the runtime finds the export, possibly an ADR-025 §7 amendment), nine fired [[Backlog]] triggers, and three candidate 🤖 Claude features, with T2's export first. It decides nothing. Run by the lane on a Saturday. Unblocks S9-D5.
 	- **Found beside the card:** [[Known Issues]] D5 has gone three sprints untouched, and [[Project - Design]]'s layout row still says "not built yet" (now a [[Backlog]] line).
 - [x] **S9-T21** · Main asks for its next ImGui frame without a fake event · P3 · 🟡 Light · 1-2h: #177 `4ba9f60`, **Oct 31**. After a frame that needs a follow-up, `buildImGuiFrame` calls `ClientApp::requestMainFrame()`, so the next `mainThreadUpdate()` polls once instead of main posting itself an empty event; other threads still wake main through `wakeMainThread()` ([[Editor - Design]] § *The ImGui frame on main*). Miguel wrote the logic against Claude's scaffold. #177 has no review conversation, so this entry comes from the card, the diff and the session. Closes Story D.

@@ -300,9 +300,10 @@ lane's, and it must merge before S9-T15 and S9-T17 start.
   blocking them, the fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides
   nothing. **Takeable from Sat Oct 31**, by Miguel's call that day: Sprint 09 closes a week
   early to line up with his day job's sprints, so a fire run by hand today may take it.
-- [ ] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S9-D5** · Prepare Sprint 10 · P1 · 🟠 Moderate · 2-3h ·
   done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Runs on
-  Sat Oct 31, after S9-P3's brief, because the sprint closes a week early.
+  Sat Oct 31, after S9-P3's brief, because the sprint closes a week early. Closed Oct 31
+  (vault `b106e13`).
 
 #### Sprint 10's cut
 
