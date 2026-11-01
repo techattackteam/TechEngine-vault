@@ -246,6 +246,19 @@ groups are kept, because they show where future work will land.
     `engine/core/tests/assets/PackSourceTests.cpp:58`), `viewOf` and `bytesOf`, and `patch<T>`
     (`PackTests.cpp:123`, `BootRecordTests.cpp:105`). One test header, about 30 lines.
 
+- #prio/medium · **`Scene` has no tree-order walk, so every caller writes its own**: four walks
+  call `getChildren`, which builds a new vector for each node. Two are depth-first and track the
+  depth: `EditSession::buildSnapshot` (`apps/editor/src/edit/EditSession.cpp:74`) and
+  `RuntimeApp::logSceneTree` (`apps/runtime/src/RuntimeApp.cpp:100`). Two are breadth-first:
+  `SceneAsset::write` (`engine/core/src/scene/SceneAsset.cpp:33`) and
+  `SceneAsset::visitReferences` (`:300`). A walk inside `Scene` could follow the `Hierarchy`
+  sibling links and allocate nothing. **Decide with it whether `SceneAsset::write` moves to
+  depth-first**, so that all four share one order and as much of the same logic as possible.
+  Its order is the row order on disk, so the change alters the bytes a save writes. The reader
+  only requires a parent's row to come before its children's (`SceneAsset.cpp:137`), and a
+  depth-first walk keeps that. Found while pairing on S10-T1, Nov 1. **Trigger:** S10-B2,
+  which gives `Scene` a root order for the walk to use, or a fifth hand-written walk.
+
 ## client
 
 - #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
