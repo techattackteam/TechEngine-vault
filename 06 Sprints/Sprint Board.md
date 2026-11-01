@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: Multi-select
 
-- [ ] **S10-T1** · Multi-select in the hierarchy · P1 · 🟠 Moderate · 2-3h: Ctrl, Shift and Ctrl+A over visible rows with no box; the selection is a set with an active entity and main's sequence number; delete and move act on the topmost selected entities ([[Editor - Design]] § *Multi-select*).
 - [ ] **S10-T2** · The inspector edits every selected entity · P1 · 🟢 Deep · 4-6h: shared components with a dash for mixed values, one command and one record per entity, a rotation axis edit per entity. Follows S10-T1.
 - [ ] **S10-T8** · Edit an `AssetRef` in the inspector · P3 · 🟢 Deep · 4-6h · stretch: a picker over the `AssetIndex`, a set that adds the dependency and fills the handle, and the failed-load policy decided at `/card-start`. Follows S10-T2 and S10-T6.
 
@@ -31,10 +30,9 @@ kanban-plugin: board
 
 ## Story D: E1's loose ends
 
-- [ ] **S10-T5** · Diff coverage leaves out ImGui drawing · P2 · 🟡 Light · 1-2h: `ci.yml` excludes `apps/editor/src/ui/`, the note says `ui/` is drawing only, and the `te_sdk_smoke` comments are fixed.
 - [ ] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h: a toggle shows world values; a World edit goes through `setWorld` on the simulation thread; ends with Miguel's visual check. **Not before Fri Nov 6** (after S10-T2; move the date if S10-T2 slips).
 - [ ] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h: the Editor brief's five scenarios run windowed, the exported runtime's log names the edited entities, and E1 is closed on the [[Roadmap]]. Follows S10-T2 and S10-T3.
-- [ ] **S10-T9** · The base sweep's two leftovers · P3 · 🟡 Light · 1-2h: the version-anchor stubs go, and one shared log-capture guard in `te_test_support` replaces six copies. Follows S10-B1 and S10-T3.
+- [ ] **S10-T9** · The base sweep's two leftovers · P3 · 🟡 Light · 1-2h: the version-anchor stubs go, and one shared log-capture guard in `te_test_support` replaces seven copies. Follows S10-B1 and S10-T3.
 
 
 ## Story E: Alongside: R1's two ADRs
@@ -49,6 +47,7 @@ kanban-plugin: board
 
 - [ ] **S10-B1** · `removeLogSink(nullptr)` reports success (D5) · P3 · 🤖 Auto · 1-2h: return `LogError::NullSink` for a null sink, one `LogErrorTests.cpp` case, and D5 deleted.
 - [ ] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h: `Scene` keeps a root order, so adding a component or destroying a root no longer moves another, and a save keeps the order.
+- [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 · 🟠 Moderate · 2-3h: amend ADR-021 so a reparent that would need shear keeps the world position with an approximate rotation and scale, as Unity does; a zero scale stays refused. Not at the same time as S10-B2, which also edits `Scene.cpp`.
 
 
 ## Story G: Product follow-up
@@ -69,6 +68,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S10-T5** · Diff coverage leaves out ImGui drawing · P2 · 🟡 Light · 1-2h: `ci.yml` excludes `apps/editor/src/ui/`, the note says `ui/` is drawing only, and the `te_sdk_smoke` comments are fixed.
 
 
 ## 👀 Review / Demo
@@ -77,6 +77,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T1** · Multi-select in the hierarchy · P1 · 🟠 Moderate · 2-3h: #178 `9afda8d`, **Nov 1**. Ctrl, Shift and Ctrl+A select through ImGui's multi-select, the selection makes the round trip with main's sequence number, and delete and drag act on the topmost selected entities. Unblocks S10-T2; Story A stays open on S10-T2 and S10-T8.
+	- **Calls the design left open**, now in [[Editor - Design]] § *Multi-select as built*: a move of several counts its position among the children not moved; an entity the `Scene` refuses is skipped instead of stopping the command; a select with a dead entity still stores its sequence, or main would never take a snapshot's set again; and the active entity comes from the last range request, because ImGui's `NavIdItem` lags one click.
+	- **The in-session review caught two partial moves:** a move that failed partway changed the scene without the unsaved marker, and several entities could not be dropped at the root. Both were fixed before the merge. The PR has no review conversation, so this entry is the only record.
+	- **Found beside the card:** ADR-021's shear rule refuses a reparent under a parent that is rotated and scaled differently per axis. Carded as S10-B3.
+	- **Retro:** `projects/dev/assets/common/Startup.tescene` shipped in #178 holding the windowed test's scene, although the review flagged it. Only part of the windowed check was seen (three rows selected, a move under a parent); Ctrl, Shift and the right-click were not recorded.
 - [x] **S10-D8** · Write the content pipeline's capability brief · P1 · 🟠 Moderate · 2-3h: vault `a5ed725`, **Oct 31**. [[Content Pipeline - Brief]] is agreed and linked from [[Capability Map]] § *Content pipeline*: E2 imports glTF, FBX and OBJ, as one merged mesh or as a model that keeps the file's hierarchy, chosen at import; a re-import keeps references and material edits; and the asset browser is list-only. Unblocks S10-D9 with S10-D4. Story H stays open on S10-D9.
 	- **A map row reversed, by Miguel's call:** FBX was *Not in the demo*, but Bistro's original release is FBX, so FBX and OBJ became supported inputs through assimp. Other formats stay unpromised.
 	- **Found beside the card:** [[Resources - Design]] § *Reference fields* says R1's renderer ADR owns the mesh format, while S10-D9 gives it to `Content Pipeline - Design`. S10-D9 settles which; it was reported, not fixed. The brief's re-import Must is the requirement behind that note's sidecar-or-registry question.

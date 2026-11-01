@@ -38,7 +38,7 @@ S10-B2 and S10-T9, and moved the console and the Profiler (Story C) from the lan
 
 ### Story A: Multi-select (Miguel)
 
-- [ ] **S10-T1** · Multi-select in the hierarchy · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S10-T1** · Multi-select in the hierarchy · P1 · 🟠 Moderate · 2-3h ·
   done: the hierarchy selects through `BeginMultiSelect` over its visible rows, with box
   selection off: Ctrl+click adds or removes one entity, Shift+click selects the visible range,
   and Ctrl+A selects every visible row. `EditSession` holds the selected entities and the active
@@ -134,8 +134,9 @@ an ADR. The Profiler half drops first.
 - [ ] **S10-T9** · The base sweep's two leftovers · P3 · 🟡 Light · 1-2h ·
   done: the version anchors go (`baseVersion()`, `platformVersion()`, `coreVersion()`, `Base.hpp`,
   `Base.cpp` and `BaseTests.cpp`, whose glm case repeats `MathTests.cpp`). One log-capture guard in
-  `te_test_support` replaces the six copies (`LogTests.cpp`, `AssertTests.cpp`,
-  `TaskGraphTests.cpp`, `ResourceCacheTests.cpp`, `RuntimeAppTests.cpp`, `SceneAssetTests.cpp`),
+  `te_test_support` replaces the seven copies (`LogTests.cpp`, `AssertTests.cpp`,
+  `TaskGraphTests.cpp`, `ResourceCacheTests.cpp`, `RuntimeAppTests.cpp`, `SceneAssetTests.cpp`,
+  and `HierarchyCommandsTests.cpp`, added by S10-T1),
   with the record fields it copies chosen at `/card-start`. About 65 lines, from the base sweep of
   Oct 29. Follows S10-B1 (`engine/base`) and S10-T3, which may add a runtime test.
 
@@ -169,6 +170,19 @@ an ADR. The Profiler half drops first.
   `5c57bf8`), and removal swap-erases; found at S9-T16's `/card-start`. Tests: a root that gains a component keeps its position;
   destroying a root leaves the others in order; a save and a read keep the order. Whether the
   hierarchy may then reorder roots is decided at `/card-start`.
+- [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 ·
+  🟠 Moderate · 2-3h ·
+  done: a `PreserveWorld` reparent whose new local transform would need shear is accepted with an
+  approximate result, as Unity does: the child keeps its world position, and its local rotation
+  and scale are the closest a local TRS can hold, so its world picks up the parent's shear. A zero
+  scale axis stays refused, because no local scale can undo it. ADR-021 is amended first, because
+  today it decides that such an edit fails (`engine/core/src/scene/Scene.cpp:424-430` at
+  `4ba9f60`). Whether `setWorld` takes the same rule is decided at `/card-start`. Found at
+  S10-T1 on Nov 1: dropping any entity under a parent that was rotated and scaled differently
+  per axis moved nothing, and only the log said why. Tests: a child moved under a rotated parent
+  with scale (1, 2, 1) is accepted and keeps its world position; a parent with a zero scale axis
+  is still refused. How close the world rotation and scale must stay is decided with the
+  amendment. It edits `Scene.cpp` like S10-B2, so the two do not run at the same time.
 
 ### Story G: Product follow-up
 

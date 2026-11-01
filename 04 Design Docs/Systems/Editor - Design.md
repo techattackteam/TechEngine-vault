@@ -14,7 +14,8 @@ frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admissi
 `acc897a`), the inspector (S9-T17, #173 `9203c26`), save with the unsaved marker and the
 close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
 (S9-T19, #175 `555a9e4`), and main asks for its own next frame without a posted event (S9-T21,
-#177 `4ba9f60`). Multi-select is designed (S9-D6, 2026-10-31) but not built.
+#177 `4ba9f60`). Multi-select in the hierarchy is built (S10-T1, #178 `9afda8d`); the
+inspector's half waits for S10-T2.
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -80,6 +81,8 @@ message. This note says how those messages are shaped.
 | The inspector edits every selected entity | It lists the components they all have and shows a dash where their values differ. A field edit writes the same value to each, with one record per entity. Add offers every type that one of them lacks and adds it only where it is missing; Remove removes from all. | [[Editor - Brief]], 2026-10-31; § *Multi-select* |
 | A rotation axis edit keeps each entity's other axes | With several entities selected, the inspector sends the edited Euler axis. The simulation thread decomposes each entity's own rotation, replaces that axis and recomposes it. | 2026-10-31 (S9-D6), § *Multi-select* |
 | A rename of several gives them one name | The name field shows a dash when the names differ, and an edit renames every selected entity. | 2026-10-31 (S9-D6), § *Multi-select* |
+| A move of several counts among the children not moved | The position of a move of several counts among the parent's children that are not moved, and the moved ones land together in hierarchy order. A drop of several at the root is allowed while one of them is a child. | 2026-11-01 (S10-T1), § *Multi-select as built* |
+| A refused entity is skipped, not the whole command | A move or a delete of several skips each entity the `Scene` refuses, and raises the edit revision if anything changed. A move into any moved subtree is still refused whole. | 2026-11-01 (S10-T1), § *Multi-select as built* |
 
 ## Threads and channels
 
@@ -220,7 +223,8 @@ a newer one arrives. The startup publish exists because the Stopped editor gets 
 the first edit, so without it the panels would start empty. The snapshot holds:
 
 - the hierarchy, depth-first: each entity's handle, depth, name and child count;
-- the selected entity, and from S9-T17 its components as field rows and the types it can
+- the selected entities, the active one and the sequence number of the last select applied
+  (§ *Multi-select*), and the active entity's components as field rows and the types it can
   add (§ *The inspector*);
 - the edit revision, raised by each command that changes the scene, and the saved revision.
 
@@ -251,8 +255,9 @@ session and submits it; a refused submit logs a warning.
 - **Commands.** Create, delete, reparent, rename and select. A reparent and a move to the root
   keep the world transform (`ReparentMode::PreserveWorld`). A reorder is a reparent to the same
   parent. Create Child and a drop expand the parent.
-- **Selection and keys.** A click or a right-click selects the row. Delete removes the selection
-  and F2 renames it, both ignored while a name is being typed. Rename edits the row in place;
+- **Selection and keys.** Clicks select through ImGui's multi-select (§ *Multi-select*). Delete
+  removes the topmost selected entities and F2 renames the active one, both ignored while a
+  name is being typed. Rename edits the row in place;
   Escape restores the old text, so a cancelled rename sends nothing.
 - **What lives where.** `ui/` holds only drawing and interaction. Everything a test can reach is
   in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot.
@@ -335,7 +340,8 @@ across the panel, so labels line up between components. Shared widgets live in `
 
 ## Multi-select
 
-Designed by S9-D6 on 2026-10-31; not built. [[Editor - Brief]] makes it an E1 Should: Ctrl+click
+Designed by S9-D6 on 2026-10-31. The hierarchy's half is built (§ *Multi-select as built*); the
+inspector's waits for S10-T2. [[Editor - Brief]] makes it an E1 Should: Ctrl+click
 adds or removes one entity, Shift+click selects a range, and there is no box selection.
 
 - **Baseline.** Unity's inspector lists the components every selected object has, shows a dash
@@ -368,6 +374,28 @@ adds or removes one entity, Shift+click selects a range, and there is no box sel
   rotation and the snapshot carries one mixed flag per Euler axis. If the single-entity edit
   moves to the same set-rotation-axis command, that also answers the [[Backlog]]'s "one rotation
   edit is four records".
+
+## Multi-select as built
+
+Built by S10-T1 (#178 `9afda8d`, 2026-11-01). The calls it made where the design was silent:
+
+- **A move of several.** Its position counts among the parent's children that are not moved.
+  `ReparentEntityCommand` puts the first child after the last unmoved child before that
+  position, and each next child after the one before it, because `Scene` counts a position among
+  the current other children (`apps/editor/src/edit/HierarchyCommands.cpp`).
+- **Refused entities.** A child the `Scene` refuses is skipped and the rest still move, and so
+  is a dead entity in a delete. A drop of several at the root skips the dragged roots.
+- **A select with a dead entity** drops it and still stores the sequence number. Otherwise main
+  would wait for that number forever and never take the snapshot's set again.
+- **The active entity** is the clicked end of the last range request, which `RangeDirection`
+  names. ImGui fills `NavIdItem` at `BeginMultiSelect` from the previous frame, so it lags one
+  click. When the active entity is deselected, the last entity in the set takes over.
+- **Right-click needs no code.** ImGui's multi-select selects an unselected row alone on a
+  right-click and keeps the set on a selected one (`imgui_widgets.cpp:8588`, ImGui 1.93.0).
+- **The drag payload** is an array of `Entity`. The panel remembers the row the drag started
+  from, so the clipper never hides it, even when the payload holds only its selected ancestor.
+- **Found beside it:** a reparent under a parent that is rotated and scaled differently per axis
+  is refused, because ADR-021 refuses a local transform that needs shear. S10-B3 owns it.
 
 ## Entity names
 
