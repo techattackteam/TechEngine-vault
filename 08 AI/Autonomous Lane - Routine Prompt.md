@@ -16,7 +16,7 @@ there to answer one.
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | Opus 5.5 (`claude-opus-5-5`), read off the routine on 2026-09-26. The lane's risk is judgment on bug fixes, not throughput. |
 | `cron_expression` | `CRON_TZ=Europe/Lisbon 7 9,14 * * 1-5`: **09:07 and 14:07 Lisbon time, weekdays**, set on 2026-10-25. The routine had stored the Oct 23 expression `7 9,14 * * 1-5` as `CRON_TZ=Europe/Lisbon 7 10,15 * * 1-5`, an hour later than intended, so read the stored value back after every schedule change. Cut from four fires on **2026-08-31**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
-| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27. Read off the routine on 2026-10-25: next fire Mon Oct 26 09:07 Lisbon. The prompt below, with the 🤖 Claude steps from S8-P11, was pasted into the routine on Oct 23 after #153 merged. |
+| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27. Read off the routine on 2026-10-25: next fire Mon Oct 26 09:07 Lisbon. The prompt below, with the 🤖 Claude steps from S8-P11, was pasted into the routine on Oct 23 after #153 merged. **Owes a paste:** the sweep's outward look-for, added on 2026-11-01. |
 | **Why two and not four** | **Claude's weekly usage limit**, not the CI budget. Four fires a weekday spent enough of the weekly allowance to compete with Miguel's own attended sessions, which are the lane's whole point. See [[Autonomous Lane - Design]] § *Cost model*. |
 | **DST** | **No change owed.** The `CRON_TZ=Europe/Lisbon` prefix keeps the fires at 09:07 and 14:07 local through both clock changes. In UTC they move: 09:07 and 14:07 in winter, 08:07 and 13:07 in summer, and both pairs stay on the right side of step 4's 12:00 UTC split. Not yet seen across a change: check the first fire after **2027-03-28**. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |
@@ -198,6 +198,10 @@ separately, next to the previous sweep's count for the same module if there is o
 Look for: the same logic written in two or more places; dead code (a function, type, branch or
 include that nothing uses); speculative generality (an abstraction with one implementation, a
 parameter no caller varies, a wrapper that only forwards); and code much longer than its job.
+Also look outward: logic this module writes by hand over a lower module's API, which that API
+should offer instead (for example, a caller that walks Scene's tree through getChildren).
+Search engine/ and apps/ for the other copies before you file it. This kind is NEVER fixable
+in the sweep, because the helper belongs to the lower module and would be a new public symbol.
 Style and formatting are not findings: .clang-format, .clang-tidy and /te-review own those.
 A symbol is NOT dead if a design note, an open card or a TODO(<card ID>) names it: that is a
 seam built ahead of its consumer. Read docs/06 Sprints/Backlog.md first and never file twice.
@@ -227,6 +231,8 @@ link to your report note; then one sub-bullet per finding with its file:line, th
 shape and roughly how many lines it would remove. The reasoning lives in the report, not the
 entry. If the module already has a leftovers entry, update it in place instead: drop what is
 now fixed, add what is new, and change the date.
+An outward finding goes under the lower module's heading instead, in that module's leftovers
+entry (start one if it has none), with the file:line of every copy you found.
 
 STEP 5: DO THE WORK.
 GROUND THE CARD FIRST. Read .claude/commands/card-start.md and follow it as its section "When
@@ -342,6 +348,11 @@ thing this lane can produce.
   the `engine/core` sweep filed eight entries (78 Backlog lines), two of which met the old bar.
   Cross-file duplicates, dead public API and test-only cleanups are now in, and the ~100-line
   cap is gone. One commit per finding replaces the cap as the way to keep the PR reviewable.
+- **The sweep also looks outward** (2026-11-01). A sweep reads one module, so a helper missing
+  from a lower module's API fitted none of its kinds. `Scene` had no tree-order walk, and four
+  callers in three modules each wrote their own ([[Backlog]] → core). Pairing on S10-T1 found
+  it, not a sweep. The finding is filed under the module that would own the helper, because
+  that is where its design decision lives.
 - **Leftovers are one Backlog entry per module**, updated in place (2026-10-01). One entry per
   finding grew the Backlog by a screen per sweep, and the report already holds the reasoning.
 - **The cap is per fire, not per day** (2026-10-01). Per day, a morning PR blocked the
