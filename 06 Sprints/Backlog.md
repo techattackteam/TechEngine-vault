@@ -361,6 +361,14 @@ groups are kept, because they show where future work will land.
   Folder reuse makes a picked folder riskier than the fixed one, since the export replaces files
   in it. Found at S10-D1 on Nov 2, 2026. **Trigger:** T5's distributable, or the first export a
   user wants somewhere other than `bin/`.
+- #prio/low · **clang-format puts a subfolder's paired header in the private group**: the #174
+  nit asked for `<ui/PanelsManager.hpp>` first in `PanelsManager.cpp`, as `CONVENTIONS.md`
+  § *Includes* says, but clang-format 19.1.5 (the CI pin) moves it back among `<edit/…>` and
+  `<ui/…>`, so the format gate fails. Every `apps/editor` file with a paired header under a
+  subfolder has the same order (`SaveSceneCommand.cpp`, `ExportCommand.cpp`). Either
+  `.clang-format`'s main-include detection learns these paths, or `CONVENTIONS.md` accepts
+  the order. Found by S10-T3 (#179) on Nov 2, 2026; [[2026-11-02 14-37 Auto Run]].
+  **Trigger:** the next change to `.clang-format`, or S10-T3's review.
 
 ## etc: cross-cutting
 

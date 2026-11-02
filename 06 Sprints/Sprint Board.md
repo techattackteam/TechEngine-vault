@@ -17,7 +17,6 @@ kanban-plugin: board
 
 ## Story B: Export · 🤖 Claude
 
-- [ ] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: an export command on the simulation thread writes the client target into the editor's folder, reusing `<project name>/` and copying the runtime in first; the startup load stops exporting; the runtime reads `assets` beside itself. Ends with Miguel's windowed check. Follows S10-D1.
 - [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: File → Run starts `<exe dir>/<project name>/runtime[.exe]` through a new `platform` process function and logs its exit code; disabled with no export or while it runs. Follows S10-T3.
 
 
@@ -72,6 +71,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: #179, branch `S10-T3/file-export`, opened Nov 2 by the lane, green on Linux (920 of 920). **Miguel decides:** the six *Decisions I took* in the PR, mainly that Export is a `std::function` on `PanelsManager` rather than an `EditorCommands` sender; the windowed check (File → Export, then `bin/<config>/Dev/runtime` logs the scene); and #174's include order, which was not done because clang-format 19.1.5 moves `<ui/PanelsManager.hpp>` back, so the fix is a `.clang-format` change.
 
 
 ## ✅ Done: Sprint 10
