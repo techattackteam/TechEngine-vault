@@ -438,7 +438,8 @@ refuses an existing path, so save writes through `FileAccess` directly, not thro
   calls `open()` and the frame's `draw()` opens it. Discard requests the stop; Cancel and
   Escape close the prompt and keep the window open.
 - E1 has one scene, the startup scene. Export stays at startup until T2 makes it a command, so
-  a save does not refresh the exported packs.
+  a save does not refresh the exported packs. S10-T3 makes it File → Export, which exports the
+  saved files ([[Resources - Design]] § *The export command*).
 
 ## The layout
 

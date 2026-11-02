@@ -82,21 +82,35 @@ Cut against [[Resources - Design]] § *Decided: packs and the runtime layout* an
 targets*. Story C also touches `EditorApp.cpp` and `PanelsManager.cpp`, so its build cards
 start after S10-T4 merges.
 
-- [ ] **S10-D1** · Design the export command · P1 · 🤖 Claude · 1-2h ·
+- [x] **S10-D1** · Design the export command · P1 · 🤖 Claude · 1-2h ·
   done: [[Resources - Design]] decides what the runtime copy carries on Windows and Linux, whether
   a repeat export reuses its folder or numbers a new one (today it never writes into an existing
   folder), which folder File → Export writes to, and how the Run button finds the last export;
-  S10-T3 and S10-T4 are rewritten to match. Vault only.
+  S10-T3 and S10-T4 are rewritten to match. Vault only. Closed Nov 2 by the lane:
+  [[Resources - Design]] § *The export command* and § *The Run button*.
 - [ ] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h ·
-  done: File → Export sends the client target through `Project::exportTo` and copies the runtime
-  executable into the target's folder; the startup load no longer exports, and
-  `apps/runtime/src/main.cpp` reads `assets` beside itself. A test exports `projects/dev` and
-  opens the result as the runtime does. #174's include order in `PanelsManager.cpp` is fixed. The
-  PR ends with "needs Miguel's windowed check": the runtime started from the folder logs the
-  scene. Follows S10-D1.
+  done: File → Export queues an export command that runs on the simulation thread and sends the
+  client target through `Project::exportTo` into the editor's executable folder; with unsaved
+  edits it warns that they are not exported. `exportTo` takes the runtime executable's path (the
+  editor passes `<exe dir>/runtime[.exe]`), fails before touching any folder when that file is
+  missing, and reuses `<folder>/<project name>/`: it replaces the runtime first, then writes the
+  packs the target ships and removes the other pack names, and touches nothing else there.
+  `findFreeExportFolder` and the numbering go. `add_dependencies(editor runtime)` is added. The
+  startup load no longer exports, and `apps/runtime/src/main.cpp` passes the executable's own
+  folder. Tests: a repeat export into the same folder succeeds and leaves one folder with an
+  unrelated file kept (replacing the numbering case); a missing runtime fails the export and
+  claims no folder; the copied runtime keeps its execute bit on Linux; a test exports
+  `projects/dev` and opens the result as the runtime does. #174's include order in
+  `PanelsManager.cpp` is fixed. The PR ends with "needs Miguel's windowed check": the runtime
+  started from `bin/<config>/Dev/` logs the scene. Follows S10-D1.
 - [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h ·
-  done: a Run item starts the last export's runtime as a child process and logs its exit code;
-  with no export yet it is disabled. Follows S10-T3.
+  done: a File → Run item below Export starts `<exe dir>/<project name>/runtime[.exe]` as a child
+  process, with that folder as its working directory, and logs its exit code when it exits.
+  Starting the process is a new function in `platform`, which this card names. Run is enabled
+  when that file exists, checked at startup and after each successful export, and disabled while
+  the runtime it started still runs. Closing the editor neither waits for the runtime nor stops
+  it. Tests: the process function starts a stand-in program and reports its exit code. The PR
+  ends with "needs Miguel's windowed check": Run starts the exported runtime. Follows S10-T3.
 
 ### Story C: Editor panels: console and Profiler (Miguel) · ~4 tasks · size after S10-D2 and S10-D3
 

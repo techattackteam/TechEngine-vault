@@ -354,6 +354,13 @@ groups are kept, because they show where future work will land.
   in imgui's `misc/fonts`) would change the look more, but where its file lives, compiled in or
   read through `FileAccess`, is a decision first. Split from S9-T20 at its `/card-start` on
   Oct 31, 2026. **Trigger:** the first recording of the editor for a showcase.
+- #prio/low · **A folder picker for File → Export**: E1's export always writes to the editor's
+  executable folder, because no file-dialog dependency exists ([[Resources - Design]] § *The
+  export command*). A picker needs a new dependency or per-OS dialog code in `platform`, and the
+  chosen folder needs a home in the per-user settings ([[Project - Design]] § *Open questions*).
+  Folder reuse makes a picked folder riskier than the fixed one, since the export replaces files
+  in it. Found at S10-D1 on Nov 2, 2026. **Trigger:** T5's distributable, or the first export a
+  user wants somewhere other than `bin/`.
 
 ## etc: cross-cutting
 

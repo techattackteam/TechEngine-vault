@@ -102,8 +102,9 @@ built or run.
 | The runtime mounts `assets` beside its executable and follows the boot record. | ADR-025 §7 |
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
 | The bake walks the startup scene's file and packs each asset it references. A reference the index does not know fails the export with `UnknownReference`; a reference on a side the target does not ship is listed in the boot record's sides, not packed. | Miguel, Oct 26 (S9-T7); § *Export and the runtime layout* |
-| The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`, numbered `<name>(1)`, `<name>(2)` when that folder exists. Before T2, the editor exports the client target in its startup load, into its own executable folder. | Miguel, Oct 11, 12 and 15; § *Export targets* |
+| The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`. Before T2, the editor exports the client target in its startup load, into its own executable folder, numbering `<name>(1)`, `<name>(2)` when that folder exists; from S10-T3 a repeat export reuses the folder (next row). | Miguel, Oct 11, 12 and 15; § *Export targets* |
 | The export copies the runtime executable into the target's folder, beside its `assets/`, so the runtime reads `assets` beside itself as ADR-025 §7 says, and `main`'s `<exe dir>/Dev` stopgap goes. Nothing takes a path argument. What else the copy needs, and whether a repeat export reuses its folder, are the T2 export card's to decide. | Miguel, Oct 31 (S9-D5); § *Export targets* |
+| The copy is the runtime executable alone, taken from the editor's own folder. A repeat export **reuses** `<folder>/<project name>/` and replaces only the files the export owns. File → Export writes to the editor's executable folder, with no folder picker in E1. The Run button starts `<folder>/<project name>/runtime[.exe]`, so no "last export" is stored. | Lane, Nov 2 (S10-D1, under Miguel's Oct 31 hand-off above); § *The export command* |
 | The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
 | A source answers `Present`, `AbsentForRole` or `Unknown` through a query; only its `read` returns a `std::error_code`. | Miguel, Oct 11; § *Two sources, one cache* |
 | An id missing from the role's packs but listed in the boot record's sides is absent for the role; in neither, it is unknown. | Miguel, Oct 11; § *The pack source* |
@@ -582,8 +583,8 @@ editor's own executable folder. Both executables build into one `${CMAKE_BINARY_
 **Since S8-T13 the packs no longer land beside `runtime`.** `exportTo` writes into
 `<folder>/<project name>/assets/` (§ *Export targets*), so the development export lands in
 `bin/<config>/Dev/assets/`, or `Dev(1)` and later once `Dev` exists, and every editor launch adds
-a folder. Until the export command decides that layout, the runtime reads the first one,
-`<exe dir>/Dev` (§ *The runtime's startup load*).
+a folder. Until S10-T3 builds the export command, the runtime reads the first one,
+`<exe dir>/Dev` (§ *The runtime's startup load*). § *The export command* replaces both.
 
 **The bake as built** (S9-T7, #161, 2026-10-26). `exportTo` takes the editor's
 `ComponentRegistry`, reads the startup scene's file into a scratch `Scene`, and collects its ids
@@ -605,7 +606,8 @@ the mesh loader, and its scene log names each entity's mesh. Miguel settled thes
 - **`RuntimeApp` takes a folder and mounts `<folder>/assets` in `init()`**, through a protected
   `mountAssets()` that the headless tests call, since `init()` also opens the window. `main`
   passes `<exe dir>/Dev`, the dev project's first export, and ignores `Dev(1)` and later. This
-  is a development stopgap against ADR-025 §7, which still says `<exe dir>/assets`.
+  is a development stopgap against ADR-025 §7, which still says `<exe dir>/assets`. S10-T3
+  removes it: `main` passes the executable's own folder (§ *The export command*).
 - **The order:** open `assets://common.tepack`, read its boot record, `PackSource::open` the
   client's packs at `assets://`, then `find` and load the startup scene into the live scene.
 - **A missing or broken file returns its own error unchanged** (`FileError::NotFound`,
@@ -633,14 +635,16 @@ build profiles each carry their own scene list (both from memory).
 | Listen-server | `common`, `client`, `server` | ListenServer |
 
 - **`exportTo` writes one target into `<folder>/<project name>/assets/`**: only that target's
-  packs, with the boot record in its `common.tepack`. When `<project name>` already exists in the
-  folder, it writes `<project name>(1)`, then `(2)`, and so on, and it never writes into an existing
-  folder. The name is chosen only after the startup scene is validated, so a failed export claims
-  no folder. Miguel added the project folder at S8-T13 (#138, 2026-10-15). The project folder is a
+  packs, with the boot record in its `common.tepack`. Until S10-T3, when `<project name>` already exists
+  in the folder, it writes `<project name>(1)`, then `(2)`, and so on, and it never writes into an
+  existing folder; S10-T3 makes a repeat export reuse the folder (§ *The export command*). The
+  folder is touched only after the startup scene is validated, so a failed export claims no
+  folder. Miguel added the project folder at S8-T13 (#138, 2026-10-15). The project folder is a
   complete layout once a runtime executable sits beside its `assets/` (T5).
-- **Several targets are T2's job.** Each export claims its own project folder today, so a second
-  target exported into the same folder would become `<project name>(1)`. T2 decides how a target
-  appears in the folder name.
+- **Several targets are T2's job.** While only the client target exists, its folder is
+  `<project name>` with no target in the name (S10-D1). How a server target is named beside it
+  is decided when the first server target lands, because with folder reuse two targets must
+  not share one folder.
 - **The startup scene must be on a side the target ships.** A client target whose scene is a
   server asset fails the export, because the client could never open it.
 - **Built at S8-T7 for the client target only** (#132, 2026-10-12), as `Project::exportTo` in
@@ -648,6 +652,49 @@ build profiles each carry their own scene list (both from memory).
   server rows sit commented out until a server executable or hosting exists. A missing, unindexed
   or unshipped startup scene returns `NoStartupScene`, `UnknownStartupScene` or
   `StartupSceneNotInTarget`; a target missing from the table is a `TE_CHECK`.
+
+### The export command
+
+Designed Nov 2 by S10-D1, a 🤖 Claude Design card, under Miguel's Oct 31 hand-off (§ *Decided:
+packs and the runtime layout*). S10-T3 builds the export and S10-T4 the Run button.
+
+- **The copy is the runtime executable alone**: `runtime.exe` on Windows, `runtime` on Linux.
+  Every first-party library and dependency links statically (`cmake/deps.cmake`), engine assets
+  travel in the packs, and the runtime reads no other file. No `.pdb` is copied: an MSVC
+  executable records its PDB's absolute path, so a debugger on the same machine still finds it.
+  The dynamic MSVC runtime the build uses (`/MDd`, `/MD` in Release) is present wherever Visual
+  Studio is, so redistributables wait for T5's distributable. On Linux the copy keeps the execute bit, which
+  `std::filesystem::copy_file` carries over with the file's permissions.
+- **`exportTo` takes the runtime's path**, and the editor passes `<exe dir>/runtime[.exe]`: both
+  executables build into one `bin` folder (`CMakeLists.txt:29`). Tests pass a stand-in file. A
+  missing runtime fails the export before any folder is touched. `editor` gains
+  `add_dependencies(editor runtime)`, so an editor build always has one to copy.
+- **A repeat export reuses `<folder>/<project name>/`.** Numbered folders go, and so does
+  `findFreeExportFolder`. The export replaces only what it owns: the runtime file, then each of
+  the three pack names, writing the ones the target ships and removing the others. Nothing else
+  in the folder is touched. The runtime goes first, so a runtime that is still running (Windows
+  locks its file) fails the export before any pack changes.
+- **File → Export writes to the editor's executable folder**, the output `exportTo` already
+  defaults to, so the dev export lands in `bin/<config>/Dev/`. E1 has no folder picker, because no
+  file-dialog dependency exists; the picker is a [[Backlog]] entry for T5.
+- **The export runs on the simulation thread as an editor command**, like Save, because the id
+  index and the project's files are the simulation's there. It exports the saved files, since
+  the bake walks the startup scene's file; with unsaved edits it warns that they are not in the
+  export. The startup load stops exporting.
+- **The runtime mounts `assets` beside itself**: `main` passes `executablePath().parent_path()`,
+  as ADR-025 §7 says. A runtime started from `bin/` itself therefore fails with `NotFound`.
+### The Run button
+
+Designed with § *The export command* (S10-D1); S10-T4 builds it.
+
+- **The Run button starts `<folder>/<project name>/runtime[.exe]`.** Reuse fixes that path, so
+  no "last export" is stored. It sits in the File menu below Export. It is enabled when that file
+  exists, checked once at startup and set after each successful export, never per frame. It is
+  disabled while the runtime it started is still running.
+- **Starting a process is OS code, so it goes in `platform`**, ADR-006 §1's OS seam; S10-T4 names
+  it. The child runs with the export folder as its working directory and inherits the editor's
+  console. S10-T4 logs its exit code when it exits. Closing the editor neither waits for the
+  runtime nor stops it.
 
 ### What later rungs inherit
 
