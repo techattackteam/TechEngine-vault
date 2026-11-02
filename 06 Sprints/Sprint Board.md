@@ -17,9 +17,8 @@ kanban-plugin: board
 
 ## Story B: Export · 🤖 Claude
 
-- [ ] **S10-D1** · Design the export command · P1 · 🤖 Claude · 1-2h: what the runtime copy carries, folder reuse, File → Export's folder, how Run finds the last export; rewrites S10-T3 and S10-T4. Vault only. Day 1.
-- [ ] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: export through the menu with the runtime copied beside the packs; the startup load stops exporting; the runtime reads `assets` beside itself. Ends with Miguel's windowed check. Follows S10-D1.
-- [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: starts the last export's runtime and logs its exit code; disabled with no export. Follows S10-T3.
+- [ ] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: an export command on the simulation thread writes the client target into the editor's folder, reusing `<project name>/` and copying the runtime in first; the startup load stops exporting; the runtime reads `assets` beside itself. Ends with Miguel's windowed check. Follows S10-D1.
+- [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: File → Run starts `<exe dir>/<project name>/runtime[.exe]` through a new `platform` process function and logs its exit code; disabled with no export or while it runs. Follows S10-T3.
 
 
 ## Story C: Editor panels
@@ -76,6 +75,10 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 10
+
+- [x] **S10-D1** · Design the export command · P1 · 🤖 Claude · 1-2h: vault `71288cd`, **Nov 2**, by the lane. [[Resources - Design]] § *The export command* and § *The Run button*: the copy is the runtime executable alone, a repeat export reuses `<project name>/` instead of numbering, File → Export writes to the editor's folder, and Run starts the runtime at that fixed path. S10-T3 and S10-T4 are rewritten to match. Unblocks S10-T3.
+	- **One call changes a Decided row** ("it never writes into an existing folder"). The lane took it because Miguel's Oct 31 row handed exactly that question to this card; reverse it in review if the hand-off did not mean that.
+	- **Added beside the card:** the export runs on the simulation thread as a command and exports the saved files with a warning for unsaved edits; process launch goes in `platform`. The folder picker went to the [[Backlog]]. No review conversation exists for a vault-only card, so this entry is the only record.
 
 - [x] **S10-T1** · Multi-select in the hierarchy · P1 · 🟠 Moderate · 2-3h: #178 `9afda8d`, **Nov 1**. Ctrl, Shift and Ctrl+A select through ImGui's multi-select, the selection makes the round trip with main's sequence number, and delete and drag act on the topmost selected entities. Unblocks S10-T2; Story A stays open on S10-T2 and S10-T8.
 	- **Calls the design left open**, now in [[Editor - Design]] § *Multi-select as built*: a move of several counts its position among the children not moved; an entity the `Scene` refuses is skipped instead of stopping the command; a select with a dead entity still stores its sequence, or main would never take a snapshot's set again; and the active entity comes from the last range request, because ImGui's `NavIdItem` lags one click.
