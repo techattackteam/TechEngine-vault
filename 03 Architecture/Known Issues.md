@@ -47,8 +47,9 @@ misbehaves, and a caller that does gets no error to notice.
 
 `engine/base/src/diagnostics/Log.cpp:163` at `bd5788cd`.
 
-**Proposed fix**: return `LogError::NullSink` for a null sink, before the loop, the way
-`addLogSink` does, plus one case in `LogErrorTests.cpp`.
+**Fix:** carded as S10-T10 on 2026-11-03 (S10-D2), which folds in S10-B1. `removeLogSink` takes
+a `LogSink&`, so a null sink can no longer be passed ([[Logger - Design]] § *Sink registration
+and delivery*).
 
 **Trigger:** the next change to `Log.cpp`'s sink table, or a sink that can be null at its
 removal site.

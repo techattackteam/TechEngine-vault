@@ -9,7 +9,8 @@
 [[ADR-006 - v2 core architecture & module layout]] §5 §6
 **Sprint:** [[2026-08 Sprint 02 - Base Foundation]], S2-T2 and S2-T3 ·
 [[2026-08 Sprint 03 - M1 Enablers]], S3-B1 (bring-up) ·
-[[2026-08 Sprint 04 - M2 Concurrency & Serialization]], S4-T3 (sink registration)
+[[2026-08 Sprint 04 - M2 Concurrency & Serialization]], S4-T3 (sink registration) ·
+[[2026-10 Sprint 10 - Close E1]], S10-D2 (sink objects and delivery, built by S10-T10)
 
 ## Purpose
 
@@ -40,7 +41,8 @@ reference is given and the rationale is not copied. Go to the ADR for the *why*.
 | `LogRecord` reaches sinks structured. The sinks are console, a session file, and an in-memory ring. | ADR-011 §3 |
 | The log file is **one file, truncated on open**. No rotation, and no stale runs. | ADR-011 §3 |
 | The file sink is **synchronous**. Async is a later change behind the façade. | ADR-011 §3 |
-| The editor ring-buffer sink is **excluded**, because there is no consumer yet. | ADR-011 §3 |
+| The editor's console registers **a sink of its own**. It was excluded while no editor existed. | ADR-011 §3, amended 2026-11-03 |
+| A record raised while a sink is writing goes to the ring and stderr, **never to the sinks**. A fatal tier still aborts. | ADR-011 §7, amended 2026-11-03 |
 | Each config has a compile-time level gate. Trace is off in RelWithDebInfo. Trace and Debug are off in Release. | ADR-011 §4 |
 | The tick stamp is **pushed by `app`**. `base` holds no `Clock` reference. | ADR-011 §9 |
 | Diagnostics state is process-global by design, and it is **not** a service locator. | ADR-011 §8 |
@@ -61,6 +63,8 @@ reference is given and the rationale is not copied. Go to the ADR for the *why*.
 - Math formatters live with math, not here (ADR-006 §6).
 - The level-usage table below.
 - How a test survives a build with the gate above Info. § *Tests under the level gate*, S7-B1.
+- The sink as an object, the delivery lock that makes removal wait, and the order every sink
+  sees. § *Sink registration and delivery*, S10-D2.
 
 ## Design
 
@@ -90,7 +94,7 @@ flowchart LR
   D --> H["console"]
   D --> R["in-memory ring, last N records"]
   R -. flush on crash .-> G["platform crash handler"]
-  D -. excluded, no consumer .-> E["editor ring to an ImGui panel"]
+  D --> E["editor console, the editor's own sink"]
 ```
 
 ### Channels are module-owned handles (ADR-011 §2)
@@ -202,16 +206,48 @@ end of the table.
 - **Flush-on-crash hook.** The crash handler lives in `platform`, and it is **not** a sink.
   Minidumps and symbolication are out of scope here. ADR-008 §3 gives `runtime` Debug and
   Release only, and pre-authorizes RelWithDebInfo for that work later.
-- **Editor console.** Parked until an editor exists (ADR-011 §3). It would be a lock-free ring
-  feeding an ImGui log panel, the twin of the [[Profiler - Design|Profiler]] panel.
-- **Registration is fallible and the boot path says so** (S4-T3). The table is a fixed 8 slots,
-  so `addLogSink` reports a full table or a null sink. `initLogging` checks it and prints the
-  error's message to stderr, because a failure there means the console and file sink never
-  registered and nothing else would report it. `shutdownLogging` checks `removeLogSink` the same
-  way. Both return a `std::error_code` in the `LogError` category (`NullSink`, `SinkTableFull`,
-  `SinkNotRegistered`) since 2026-10-09, per [[ADR-023 - Public error handling]].
-  A null sink stays a code rather than an assert, because the Logger never calls Assert
-  (ADR-011 §7).
+- **Editor console.** A sink that the editor owns and registers itself (ADR-011 §3, amended
+  2026-11-03). What it keeps and how it reaches main is the editor's:
+  [[Editor - Design]] § *The console*.
+- **Registration is fallible and the boot path says so** (S4-T3). The table is a fixed 8 slots.
+  `initLogging` checks `addLogSink` and prints the error's message to stderr, because a failure
+  there means the console and file sink never registered and nothing else would report it.
+  `shutdownLogging` checks `removeLogSink` the same way. Both return a `std::error_code` in the
+  `LogError` category since 2026-10-09, per [[ADR-023 - Public error handling]]. The codes
+  change with S10-T10 (§ *Sink registration and delivery*).
+
+### Sink registration and delivery
+
+Designed by S10-D2 on 2026-11-03, built by S10-T10. Until then `Log.cpp` keeps a table of
+function pointers (`Log.cpp:150-171`), a sink can hold state only in statics, and a sink can
+still be running after `removeLogSink` returns, because `deliverRecord` reads a slot and then
+calls it with no lock (`Log.cpp:303-313`).
+
+- **A sink is an object.** `LogSink` has one virtual `write(const LogRecord&) noexcept`.
+  `addLogSink(LogSink&)` and `removeLogSink(LogSink&)` take it by reference, so a sink keeps
+  its state as members, and a null sink cannot be written. `LogSinkFn` goes.
+- **`write` is `noexcept`**, because a log call must never throw into the code that logged.
+  A sink handles its own failures.
+- **Delivery holds one mutex.** `deliverRecord` writes the ring first, outside the lock, so the
+  crash trail never waits on a sink. It then calls every registered sink under the lock, and
+  writes the stderr fallback after releasing it. Add and remove take the same mutex, so **once
+  `removeLogSink` returns, no thread is inside that sink**, and its owner may destroy it.
+- **Every sink sees the same order.** One lock delivers each record to all sinks before the
+  next, so the console and the session file always agree. An async sink (ADR-011, *What would
+  move this decision*) must keep this guarantee or argue it away.
+- **The cost is unmeasured.** Formatting stays outside the lock, and both spdlog sinks are
+  `_mt`, so logging was already serialised on their mutexes. A Tracy capture with the task
+  workers logging would show whether the lock matters.
+- **Re-entry.** A `thread_local` flag is set while a thread delivers. A record raised inside a
+  `write` goes to the ring and stderr and skips the sinks (ADR-011 §7). `addLogSink` or
+  `removeLogSink` called inside a `write` returns `LogError::InsideSink` instead of deadlocking.
+- **The codes.** `NullSink` goes, and [[Known Issues]] D5 with it. `SinkTableFull` and
+  `SinkNotRegistered` stay. `SinkAlreadyRegistered` is new: today one function can fill two slots.
+- **Not a locator.** The table holds pointers to sink objects but never hands one back, so
+  nothing reaches a sink through diagnostics, and ADR-011 §8's guardrail holds.
+- **The first sink object** is the shared log-capture guard in `te_test_support`, which replaces
+  the seven copies in the test suites. It keeps its own records, registers in its constructor
+  and removes itself in its destructor.
 
 ### The rendered format (file and console)
 

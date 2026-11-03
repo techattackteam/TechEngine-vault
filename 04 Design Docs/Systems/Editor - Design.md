@@ -84,6 +84,10 @@ message. This note says how those messages are shaped.
 | A move of several counts among the children not moved | The position of a move of several counts among the parent's children that are not moved, and the moved ones land together in hierarchy order. A drop of several at the root is allowed while one of them is a child. | 2026-11-01 (S10-T1), § *Multi-select as built* |
 | A refused entity is skipped, not the whole command | A move or a delete of several skips each entity the `Scene` refuses, and raises the edit revision if anything changed. A move into any moved subtree is still refused whole. | 2026-11-01 (S10-T1), § *Multi-select as built* |
 | `ui/` draws, `edit/` decides | `apps/editor/src/ui/` holds ImGui drawing and the plumbing around it: the panels, the widgets, the theme, the close prompt and the bridge to the render thread. Everything a test can reach lives in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot. Diff coverage skips `ui/`, because no test draws ImGui, so logic put there goes unscored. | 2026-11-02 (S10-T5); `cmake/coverage_report.cmake` |
+| The console is the editor's own log sink | `ConsoleLog`, a member of `EditorApp`, registers a `LogSink` and copies each record into a bounded queue; main drains it at the start of each frame. | 2026-11-03 (S10-D2); ADR-011 §3 amended; § *The console* |
+| A Warn or worse from another thread wakes main | Once, until main drains. Info and below, and anything main logs itself, wait for the next frame main builds. | 2026-11-03 (S10-D2), § *The console* |
+| The console filters by level and text | One toggle per level with its count, and a search on the message. The channel filter waits until modules register channels. | 2026-11-03 (S10-D2), § *The console* |
+| The console keeps 5,000 records | The oldest drop first. Clear empties it. | 2026-11-03 (S10-D2), § *The console* |
 
 ## Threads and channels
 
@@ -423,6 +427,54 @@ Built by S10-T2 (#182 `a6c832f`, 2026-11-03). The calls it made where the design
   are edited, as S10-T1 does for delete and move. Set field, rename and rotation raise the edit
   revision once per command; add and remove still raise it once per entity.
 
+## The console
+
+Designed by S10-D2 on 2026-11-03, on the sink objects of [[Logger - Design]] § *Sink
+registration and delivery*. Built by S10-T11 (the sink) and S10-T12 (the panel). [[Editor -
+Brief]] makes it a Should.
+
+- **Baseline.** Unity's Console toggles each level with its count, searches the text and
+  clears. Unreal's Output Log adds a filter by log category, which is our channel (both from
+  memory). Ours takes Unity's shape, because no module registers a channel yet, so every
+  record is `default/default` and a channel filter would offer one entry.
+- **The sink.** `ConsoleLog` in `edit/` is a `LogSink`. Its `write` runs on whichever thread
+  logged, so it copies the record, message included, into a queue under its own short mutex.
+  The message points into the dispatch call's stack buffer (`Log.hpp:76-78`), so it must be
+  copied. That is one allocation per record, in the editor only. The queue holds 1,024
+  records; on overflow it drops the oldest and counts them, and the next drain adds one
+  "N records dropped" line.
+- **The first records.** `run()` starts logging before `init()` (`App.cpp:42-50`), so
+  `ConsoleLog` first copies the always-on ring (`ringSnapshot`) into its queue, then registers
+  the sink, with nothing logged between the two calls. Only main logs at that point, so the
+  ring's torn-write caveat does not apply.
+- **Removal.** `shutdown()` removes the sink, and `ConsoleLog`'s destructor removes it if it is
+  still registered, because `run()` skips `shutdown()` when `init()` throws (`App.cpp:72`).
+  Removal waits for a `write` in flight, so `ConsoleLog` can be a plain member.
+- **Waking main.** A Warn, Error or Critical from a thread other than main calls the wake
+  callback that `EditorApp` gives `ConsoleLog`, at most once until main drains (an atomic flag).
+  A record from main never wakes, because main drains at its next frame, and Info and below
+  never wake, so a thread that logs every frame cannot keep an idle editor building frames.
+  The wake is safe after the client stops: `Client::wakeMain` posts only while the client is
+  initialized (`engine/client/src/Client.cpp:76-81`).
+
+## The console panel
+
+Designed by S10-D2 with § *The console*. Built by S10-T12.
+
+- **The store.** Main moves drained records into a store in `edit/` that keeps 5,000 and drops
+  the oldest. It keeps a count per level and the list of rows that pass the filter: the level
+  toggles, and a case-insensitive search on the message. Clear empties both.
+- **The panel.** `ui/panels/ConsolePanel` draws the toolbar (Clear, one toggle per level with its
+  count, the search field) and the rows through `ImGuiListClipper`: time, `[t N]`, level and
+  message, Warn and worse in their theme colours. Selecting a row shows its
+  `file:line:function()` and its module and channel. It scrolls with new rows only while the
+  view is at the bottom.
+- **The layout.** The default layout docks the console below the two views. A `layout.ini`
+  saved before the panel existed has no node for it, so it opens floating once.
+- **Won't, for E1.** The exported runtime's log: `Process` hands the child this process's
+  console and streams (`Process.hpp:30`), not the panel. Folding repeated lines, and clearing on
+  Play, which E1 does not have.
+
 ## Entity names
 
 A `Name` component in `core/scene/components/` holds one `std::string`. `App` registers it
@@ -523,6 +575,8 @@ sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore`
 - The snapshot, the session, the commands and the sender: `apps/editor/src/edit/`; the
   dockspace and the panels: `apps/editor/src/ui/PanelsManager.cpp` and `apps/editor/src/ui/panels/`;
   the shared widgets: `apps/editor/src/ui/widgets/`.
+- The sink the console builds on: `engine/base/src/diagnostics/Log.cpp`, `deliverRecord` and
+  the sink table ([[Logger - Design]] § *Sink registration and delivery*).
 - The named `field` of each archive: `engine/core/include/TechEngine/core/serialization/Writer.hpp:101`,
   `Reader.hpp:114`, `ReferenceVisitor.hpp:32`; the field visitor: `FieldVisitor.hpp`, and its two
   walks in `ComponentRegistry.hpp`.

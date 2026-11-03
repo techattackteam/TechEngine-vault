@@ -23,16 +23,17 @@ S10-B2 and S10-T9, and moved the console and the Profiler (Story C) from the lan
 - Every story is cut against a design note: [[Editor - Design]] § *Multi-select*,
   [[Resources - Design]] § *Decided: packs and the runtime layout* (the runtime copy, Oct 31),
   [[Logger - Design]] and [[Profiler - Design]] for the two panels.
-- **First Design card:** S10-D1, the lane's export design, on day 1. Story C, the console and
-  Profiler panels, stays unsized until S10-D2 and S10-D3 cut it, and Story H's build stays unsized until
-  S10-D9.
+- **First Design card:** S10-D1, the lane's export design, on day 1. S10-D2 cut Story C's
+  console half on Nov 3; its Profiler half stays unsized until S10-D3, and Story H's build stays
+  unsized until S10-D9.
 - **Brief check:** the content pipeline has no capability brief, so S10-D8 runs `/brief` before
   S10-D9 designs TEMesh, TEModel and the glTF loader ([[Principles]] P3).
 - **Showcase:** none. E1 ends in an internal demo (S10-T7), which [[Principles]] P4 allows since
   Oct 31.
 - **Coverage gap:** neither the renderer nor the content pipeline has a design note. S10-D4 starts
   `Renderer - Design`, and S10-D9 starts `Content Pipeline - Design`.
-- [[Known Issues]]: D5 is carded as S10-B1 under the three-sprint rule.
+- [[Known Issues]]: D5 was carded as S10-B1 under the three-sprint rule, and S10-T10 fixes it
+  since Nov 3.
 
 ## Stories & tasks
 
@@ -117,7 +118,7 @@ start after S10-T4 merges.
   "enabled when that file exists" clause no longer holds; see [[Resources - Design]] § *The Run
   button*.
 
-### Story C: Editor panels: console and Profiler (Miguel) · ~4 tasks · size after S10-D2 and S10-D3
+### Story C: Editor panels: console and Profiler (Miguel) · 3 console tasks, Profiler sized after S10-D3
 
 The two Shoulds of [[Editor - Brief]] § *Requirements* that have no design yet, moved from the lane
 to Miguel at planning. Both panels touch `EditorApp.cpp` and `PanelsManager.cpp`, so their build
@@ -127,7 +128,44 @@ an ADR. The Profiler half drops first.
 - [ ] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h ·
   done: [[Editor - Design]] decides, against [[Logger - Design]], how records reach main (the sink
   runs on any thread, so a bounded copy), what the panel keeps and drops, and its filters, then
-  cuts the console's build cards into this story.
+  cuts the console's build cards into this story. Cut on Nov 3: grounding found that a sink can
+  hold no state and can still run after its removal, so the console starts with a fix in
+  `base` (S10-T10) instead of a static buffer in the editor. ADR-011 §3 and §7 are amended.
+- [ ] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h ·
+  done: as [[Logger - Design]] § *Sink registration and delivery* decides. `LogSink` has one
+  `write(const LogRecord&) noexcept`; `addLogSink` and `removeLogSink` take a `LogSink&`, and
+  `LogSinkFn` goes. `deliverRecord` writes the ring outside the lock, calls the sinks under one
+  mutex that add and remove also take, and writes the stderr fallback after the lock. A
+  `thread_local` flag sends a record raised inside a `write` to the ring and stderr, and makes
+  add or remove inside a `write` return `LogError::InsideSink`. `NullSink` goes and
+  `SinkAlreadyRegistered` is new. The spdlog sink becomes a `LogSink` local to `Log.cpp`. One
+  log-capture guard in `te_test_support`, itself a `LogSink`, replaces the seven copies that
+  S10-T9 listed, and the other test sinks move to the new API. Absorbs S10-B1, so D5 is deleted
+  from [[Known Issues]]. Tests: after `removeLogSink` returns, while other threads keep logging,
+  the removed sink gets nothing and can be destroyed (TSan and ASan legs); a record logged inside
+  `write` reaches stderr instead of deadlocking; `removeLogSink` inside `write` returns
+  `InsideSink`; a second add of the same sink returns `SinkAlreadyRegistered`; two sinks see the
+  same records in the same order. The macros and every call site stay unchanged.
+- [ ] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h ·
+  done: as [[Editor - Design]] § *The console* decides. `ConsoleLog` in `apps/editor/src/edit/`
+  copies each record into a queue of 1,024 that drops the oldest and counts them; main drains it
+  at the start of each frame. `EditorApp` creates it in `init()` after copying the ring, removes
+  it in `shutdown()`, and gives it a wake callback that a Warn or worse from another thread calls
+  once until main drains. Tests: a record from another thread reaches the drain with its message
+  intact after the log call returns; an overflow drops the oldest and the drain reports the
+  count; a Warn from another thread wakes once until drained, while an Info, or a Warn from
+  main, does not; the ring's records come first; nothing arrives after removal. Follows
+  S10-T10.
+- [ ] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h ·
+  done: as [[Editor - Design]] § *The console panel* decides. The store in `edit/` keeps 5,000
+  records, drops the oldest, counts each level and filters by the level toggles and a
+  case-insensitive search on the message; Clear empties it. `ConsolePanel` in `ui/panels/`
+  draws the toolbar and the rows through the clipper, shows the selected row's
+  `file:line:function()`, and follows new rows only at the bottom. The default layout docks it
+  below the views. Tests: the bound drops the oldest; the counts follow adds, drops and Clear;
+  a level toggle and a search each hide the rows they should. Windowed: a Warn from the
+  simulation shows without moving the mouse, and the toggles, search and Clear work. Follows
+  S10-T11.
 - [ ] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h ·
   done: [[Editor - Design]] decides, against [[Profiler - Design]] and ADR-019's copied timing
   metrics, what the panel shows beside Tracy and where it reads the timings, then cuts the
@@ -150,14 +188,14 @@ an ADR. The Profiler half drops first.
   done: Miguel runs [[Editor - Brief]]'s five scenarios windowed, the runtime's log from the export
   folder names the edited entities, and the result is recorded. E1 is marked closed on the
   [[Roadmap]]. Follows S10-T2 and S10-T3.
-- [ ] **S10-T9** · The base sweep's two leftovers · P3 · 🟡 Light · 1-2h ·
+- [ ] **S10-T9** · The base sweep's leftover · P3 · 🟡 Light · 1-2h ·
   done: the version anchors go (`baseVersion()`, `platformVersion()`, `coreVersion()`, `Base.hpp`,
-  `Base.cpp` and `BaseTests.cpp`, whose glm case repeats `MathTests.cpp`). One log-capture guard in
-  `te_test_support` replaces the seven copies (`LogTests.cpp`, `AssertTests.cpp`,
-  `TaskGraphTests.cpp`, `ResourceCacheTests.cpp`, `RuntimeAppTests.cpp`, `SceneAssetTests.cpp`,
-  and `HierarchyCommandsTests.cpp`, added by S10-T1),
-  with the record fields it copies chosen at `/card-start`. About 65 lines, from the base sweep of
-  Oct 29. Follows S10-B1 (`engine/base`) and S10-T3, which may add a runtime test.
+  `Base.cpp` and `BaseTests.cpp`, whose glm case repeats `MathTests.cpp`). From the base sweep of
+  Oct 29. Its second leftover, one log-capture guard in `te_test_support` for the seven copies
+  (`LogTests.cpp`, `AssertTests.cpp`, `TaskGraphTests.cpp`, `ResourceCacheTests.cpp`,
+  `RuntimeAppTests.cpp`, `SceneAssetTests.cpp` and `HierarchyCommandsTests.cpp`), moved to
+  S10-T10 on Nov 3, where the guard becomes the first `LogSink`. Follows S10-T10
+  (`engine/base`).
 
 ### Story E: Alongside: R1's two ADRs
 
@@ -180,10 +218,9 @@ an ADR. The Profiler half drops first.
 
 ### Story F: Defects
 
-- [ ] **S10-B1** · `removeLogSink(nullptr)` reports success (D5) · P3 · 🤖 Auto · 1-2h ·
-  done: `removeLogSink` returns `LogError::NullSink` for a null sink before the loop, as
-  `addLogSink` does, with one `LogErrorTests.cpp` case; D5 is deleted from [[Known Issues]].
-  Merges before S10-D2's build cards if the console touches `Log.cpp`.
+- [x] **S10-B1** · `removeLogSink(nullptr)` reports success (D5) · P3 · 🤖 Auto · 1-2h ·
+  **folded into S10-T10** on Nov 3 by S10-D2, and taken off the lane: `removeLogSink` now takes a
+  `LogSink&`, so a null sink cannot be passed, and S10-T10 deletes D5.
 - [ ] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h ·
   done: `Scene` keeps an order for root entities, so adding a component or destroying another
   root no longer moves a root, and a saved scene writes its roots in that order. Today
@@ -244,7 +281,8 @@ before the renderer.
 
 - 🤖 Claude features: Story B (S10-D1, S10-T3, S10-T4) and S10-T6, not before Fri Nov 6, after
   S10-T2. Story C moved to Miguel at planning.
-- 🤖 Auto cards: S10-P1, S10-P3 and S10-B1. S10-B1 stays in `engine/base`, and S10-T9 follows it.
+- 🤖 Auto cards: S10-P1 and S10-P3. S10-B1 was folded into Miguel's S10-T10 on Nov 3, so the
+  lane has no `engine/base` card this sprint.
   S10-T5 stays attended, because it edits `.github/workflows/ci.yml`, which the routine's token
   cannot push.
 - Standing prep: S10-P2 (not before Mon Nov 9) and S10-D6 (Tue Nov 10 to Fri Nov 13).
@@ -280,6 +318,9 @@ and Story H's build. At two cards per session that is about ten sessions, agains
 
 - **This is over capacity on purpose.** It drops in this order: S10-T8, Story C's Profiler half,
   then Story H's build cards, which can open Sprint 11 instead. S10-T6 moved to the lane.
+- **S10-D2 cut three 🟠 console cards** (S10-T10 to S10-T12) on Nov 3, one more than an editor-only
+  console would have needed, because the sink fix in `base` comes first. S10-T9 shrank by the
+  guard it gave S10-T10.
 - **Design-heavy:** two ADRs, a brief and a format design. Sprint 09's Design cards each took
   about one session; S10-D9 may become an ADR of its own.
 - **One 🟡 Tuesday goes to lane review**, so the other takes S10-T5, S10-T9 or S10-D5.

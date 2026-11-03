@@ -31,6 +31,17 @@
   `49ee9a99`, the engine tip when they were checked. The first one was made false by this
   ADR's own decision (spdlog has been `LIBS_PRIVATE` since #8) and read as present tense. No
   decision moved. Found by S5-P3.
+- **Amended 2026-11-03, decision:** §3's editor sink is **in**: the editor's console registers
+  a sink of its own, was "Editor ring-buffer sink is excluded: no editor, no consumer". The
+  trigger is the reason itself: the editor exists, and its console is the consumer (S10-D2).
+  The sink is the editor's, not `base`'s; the mechanism is in [[Logger - Design]] § *Sink
+  registration and delivery*.
+- **Amended 2026-11-03, decision:** §7 gains the Logger's own no-recursion rule: **a record
+  raised while a sink is writing goes to the ring and stderr, never to the sinks**. Before, the
+  ADR was silent, and §6 reads as if every fatal line reaches every sink. Since sinks are
+  delivered under one lock (S10-D2), a sink that logs or asserts inside its own write would
+  otherwise deadlock and never abort. So a fatal assert inside a sink still logs and aborts,
+  but its Critical line misses the session file.
 - **Supersedes:** **ADR-006 §6's assert-tier clause only**: the `TE_VERIFY`
   semantics in "`TE_CHECK/TE_VERIFY` always-on for shipped invariants" (ADR-006
   `:254-255`). ADR-006 §6's **logging bullet**, its **`TE_ASSERT`** semantics, the
@@ -152,6 +163,7 @@ on fields instead of re-parsing:
   is precisely what §1 buys, and nothing this sprint needs it.
 - **Editor ring-buffer sink is excluded**: no editor, no consumer
   ([[Planning Workflow - Artifact Gate]]). [[Logger - Design]] is pruned to match.
+  (Amended 2026-11-03: the editor's console is now a sink; see the header entry.)
 - **The crash handler and minidump live in `platform`, not in a sink.** This ADR lands
   only the ring. It does **not** claim symbolicated shipped crash dumps exist: ADR-008 §3
   gives `runtime` Debug + Release only and pre-authorizes RelWithDebInfo "later" for
@@ -232,6 +244,9 @@ abort.** **Never a silent `__debugbreak()` in release** (F10; restates ADR-006 �
   failure happened: a nested `TE_ENSURE` reports and continues, exactly as an unnested one
   would. (Amended 2026-07-27; originally "and aborts", which made a non-fatal tier fatal
   purely by firing inside a handler.)
+- **The Logger's side of the same guard** (amended 2026-11-03): a record raised while a sink
+  is writing, on the same thread, goes to the ring and stderr and skips the sinks. A fatal
+  tier still aborts.
 - **Pre-init fallback**: an assert that fires before the Logger is initialized writes to
   **stderr** (same fallback as §2).
 

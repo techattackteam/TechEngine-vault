@@ -20,7 +20,9 @@ kanban-plugin: board
 
 ## Story C: Editor panels
 
-- [ ] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h: how records reach main, what the panel keeps, its filters; cuts the console's build cards, which follow S10-T4.
+- [ ] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h: `LogSink` by reference, one delivery mutex so removal waits, a re-entry guard, new codes, and one shared log-capture guard for the tests. Absorbs S10-B1 and S10-T9's guard.
+- [ ] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h: `ConsoleLog` copies records into a bounded queue that main drains each frame; a Warn or worse from another thread wakes main. Follows S10-T10.
+- [ ] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h: a store of 5,000 records, level toggles with counts, text search, Clear, docked below the views. Follows S10-T11.
 - [ ] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h: what it shows beside Tracy and where it reads the timings; cuts the Profiler's build cards. Follows S10-D2. First to drop.
 
 
@@ -28,7 +30,7 @@ kanban-plugin: board
 
 - [ ] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h: a toggle shows world values; a World edit goes through `setWorld` on the simulation thread; ends with Miguel's visual check. **Not before Fri Nov 6** (after S10-T2; move the date if S10-T2 slips).
 - [ ] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h: the Editor brief's five scenarios run windowed, the exported runtime's log names the edited entities, and E1 is closed on the [[Roadmap]]. Follows S10-T2 and S10-T3.
-- [ ] **S10-T9** · The base sweep's two leftovers · P3 · 🟡 Light · 1-2h: the version-anchor stubs go, and one shared log-capture guard in `te_test_support` replaces seven copies. Follows S10-B1 and S10-T3.
+- [ ] **S10-T9** · The base sweep's leftover · P3 · 🟡 Light · 1-2h: the version-anchor stubs go. The shared log-capture guard moved to S10-T10. Follows S10-T10.
 
 
 ## Story E: Alongside: R1's two ADRs
@@ -40,7 +42,6 @@ kanban-plugin: board
 
 ## Story F: Defects
 
-- [ ] **S10-B1** · `removeLogSink(nullptr)` reports success (D5) · P3 · 🤖 Auto · 1-2h: return `LogError::NullSink` for a null sink, one `LogErrorTests.cpp` case, and D5 deleted.
 - [ ] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h: `Scene` keeps a root order, so adding a component or destroying a root no longer moves another, and a save keeps the order.
 - [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 · 🟠 Moderate · 2-3h: amend ADR-021 so a reparent that would need shear keeps the world position with an approximate rotation and scale, as Unity does; a zero scale stays refused. Not at the same time as S10-B2, which also edits `Scene.cpp`.
 
@@ -63,6 +64,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h: how records reach main, what the panel keeps, its filters; cuts the console's build cards, which follow S10-T4.
 
 
 ## 👀 Review / Demo
@@ -75,7 +77,6 @@ kanban-plugin: board
 	- **Calls the design left open**, decided with Miguel at `/card-start` and now in [[Editor - Design]] § *Multi-select in the inspector, as built*: the active entity takes the panel's cached quaternion instead of being decomposed, so a single selection uses the same command and leaves one `RotationEditRecord` (half of the [[Backlog]]'s "four records" entry); and an Euler axis is mixed from 0.005° apart, compared modulo 360.
 	- **The in-session review caught a regression:** the rotation command wrote through `setLocal`, which refuses a zero scale that a field edit allows, so such an entity could no longer rotate and the panel's Euler display stopped following it. It now writes through the field walk. Before that, Miguel's first test run had 10 failures: three commands changed the scene without a record or the revision, and `hasMixedNames` treated an empty name as "none yet". The PR has no review conversation, so this entry is the only record.
 	- **Retro:** `Startup.tescene` shipped with the windowed test's scene for the second card running (#178, #182), although the review flagged it both times.
-
 - [x] **S10-P1** · Paper report for the frame and device seam · P2 · 🤖 Auto · report-only: vault, **Nov 3**, by the lane. [[Renderer - Seam Paper Report]] maps the four validated culling, draw-submission and many-lights papers (Olsson 2012, Haar and Aaltonen 2015, Wihlidal 2016, Nanite 2021) onto T1, T2 and Q1, and lists what each asks of the seam in GL 4.5, without choosing. Unblocks S10-D4.
 	- **Weaker than the card assumed:** the sandbox could not open any of the four papers, because their hosts are outside the session's network allowlist, so the report rests on search extracts and memory, each claim tagged. Check a number in the paper before the ADR relies on it.
 - [x] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: #181 `78c48ab`, **Nov 3**, by the lane. File → Run exports, then starts the exported runtime through `platform`'s new `Process`, and logs its exit code. Completes Story B; Story C's panel cards may now touch `EditorApp.cpp` and `PanelsManager.cpp`.
