@@ -334,6 +334,11 @@ groups are kept, because they show where future work will land.
   component with a field that needs a range, or the third custom drawer, likely in R1.
 - #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
   inspect (R2).
+- #prio/medium · **The Profiler panel's build**: recording each Play session's tick, render and
+  main-frame samples, a file per run under `editorSettings/profiler/`, and the panel that lists
+  the runs and graphs the selected one. Designed by S10-D3 on Nov 3, 2026, in [[Editor -
+  Design]] § *The Profiler panel*; it opens with how the producers' buffers reach main at Stop.
+  About two 🟠 cards. **Trigger:** Play in the editor (E11, [[Editor - Brief]]).
 - #prio/medium · **Project launcher UI**: list, open and create projects inside the
   editor executable. [[Project - Design]] records the placement and open storage choice.
   **Trigger:** T5 packaging ([[Editor - Brief]], 2026-10-25).

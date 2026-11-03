@@ -38,7 +38,7 @@ optimizing blind.
 | The pin is a **wire-protocol lock**. The engine's tag and the desktop app's build must match. | ADR-013 §1 |
 | The seam is the **macro set**, not a function boundary. Tracy is in the header only under `TE_PROFILE_ENABLED`. | ADR-013 §2 |
 | The client runs **in-process**, the consumer **out-of-process**, as the Tracy desktop app or `tracy-capture`. No `TracyServer` in our build. | ADR-013 §3 |
-| The in-editor panel is **deferred to T1**, with three routes still open. | ADR-013 §3 |
+| The in-editor panel is **a native panel over recorded Play sessions**, built with Play (E11). Tracy stays the deep-dive path. | ADR-013 §3, amended 2026-11-03; [[Editor - Design]] § *The Profiler panel* |
 | `TE_PROFILE` is a CMake option, **default OFF**. A profiled build is a preset. | ADR-013 §4 |
 | Shipping builds cannot ship the listening socket, because the client is never compiled. | ADR-013 §4 |
 | Sanitizer legs stay `TE_PROFILE=OFF`. | ADR-013 §4 |
@@ -278,13 +278,9 @@ Both tools are downloads from the Tracy release. Neither is built here.
 
 ## Open questions
 
-### The T1 panel
-
-Three routes are open: embed `TracyServer` and `Worker`, build a native panel fed by our own
-frame-time ring, or add nothing beyond the desktop app.
-
-ADR-013 §3 keeps all three open and names the cost of the first. Decide it with T1's
-information, not now.
+**The T1 panel is decided** (S10-D3, 2026-11-03): the native route, over Play sessions recorded
+by the engine's own producers rather than a live ring. [[Editor - Design]] § *The Profiler
+panel* holds it.
 
 ### Transitive OS headers
 

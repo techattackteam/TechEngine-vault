@@ -23,7 +23,6 @@ kanban-plugin: board
 - [ ] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h: `LogSink` by reference, one delivery mutex so removal waits, a re-entry guard, new codes, and one shared log-capture guard for the tests. Absorbs S10-B1 and S10-T9's guard.
 - [ ] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h: `ConsoleLog` copies records into a bounded queue that main drains each frame; a Warn or worse from another thread wakes main. Follows S10-T10.
 - [ ] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h: a store of 5,000 records, level toggles with counts, text search, Clear, docked below the views. Follows S10-T11.
-- [ ] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h: what it shows beside Tracy and where it reads the timings; cuts the Profiler's build cards. Follows S10-D2. First to drop.
 
 
 ## Story D: E1's loose ends
@@ -64,7 +63,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h: how records reach main, what the panel keeps, its filters; cuts the console's build cards, which follow S10-T4.
+- [ ] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h: what it shows beside Tracy and where it reads the timings; cuts the Profiler's build cards. Follows S10-D2. First to drop.
 
 
 ## 👀 Review / Demo
@@ -73,6 +72,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h: vault `372e249`, **Nov 3**. [[Editor - Design]] § *The console* and § *The console panel*: an editor-owned sink feeds a bounded queue that main drains each frame, a Warn or worse from another thread wakes main, and the panel keeps 5,000 records with level and text filters. Cut S10-T10 to S10-T12, which size Story C's console half; Story C stays open on them and S10-D3.
+	- **The card's premise did not hold:** a sink could hold no state, and could still be running after `removeLogSink` returned (`Log.cpp:150-171`, `303-313` at `a6c832f`). The first proposal, a static buffer in the editor, was dropped in discussion as a workaround. The fix went into `base` instead, as S10-T10 ([[Logger - Design]] § *Sink registration and delivery*), and ADR-011 §3 and §7 were amended.
+	- **"Its filters" had half a referent:** no module registers a channel, so every record is `default/default`. The console filters by level and text, and the channel filter waits.
+	- **Scope moved:** S10-B1 was folded into S10-T10 and taken off the lane, and S10-T9's shared log-capture guard moved there too. So the console costs three 🟠 cards, not two.
+	- **Unmeasured:** the cost of the new delivery lock. A Tracy capture with the task workers logging would show it.
 - [x] **S10-T2** · The inspector edits every selected entity · P1 · 🟢 Deep · 4-6h: #182 `a6c832f`, **Nov 3**. The inspector lists the components every selected entity has with a dash for mixed values, and set field, add, remove, rename and a rotation axis edit are each one command with one record per entity. Miguel's windowed check saw three entities show dashes and one position edit move all three. Completes the hierarchy-and-inspector DoD row and unblocks S10-T6 and S10-T7; Story A stays open on the stretch S10-T8.
 	- **Calls the design left open**, decided with Miguel at `/card-start` and now in [[Editor - Design]] § *Multi-select in the inspector, as built*: the active entity takes the panel's cached quaternion instead of being decomposed, so a single selection uses the same command and leaves one `RotationEditRecord` (half of the [[Backlog]]'s "four records" entry); and an Euler axis is mixed from 0.005° apart, compared modulo 360.
 	- **The in-session review caught a regression:** the rotation command wrote through `setLocal`, which refuses a zero scale that a field edit allows, so such an entity could no longer rotate and the panel's Euler display stopped following it. It now writes through the field walk. Before that, Miguel's first test run had 10 failures: three commands changed the scene without a record or the revision, and `hasMixedNames` treated an empty name as "none yet". The PR has no review conversation, so this entry is the only record.

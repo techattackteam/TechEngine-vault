@@ -34,7 +34,8 @@ the editor alongside E11 (T6); the project launcher with packaging (T5).
 | **Must, E1** | Export, then the runtime is started by hand. Its log naming the edited entities and values is the proof. | Scenario 4 |
 | **Must, E1** | The panel layout is remembered between launches, in a file inside the project that git ignores, so each user keeps their own and can reuse it in other projects. | Scenario 5; a must for Miguel's development |
 | **Must, demo** | The map's § *Editor* demo row, unchanged: edit scenes, play and return, terrain tools, an asset browser with import, a visual game UI designer. | [[Capability Map]], 2026-10-23 |
-| **Should** | A Run button that starts the runtime from the editor. A console and cvars. A Profiler panel. | Cut first if E1 runs long |
+| **Should** | A Run button that starts the runtime from the editor. A console and cvars. | Cut first if E1 runs long |
+| **Should, with Play** | A Profiler panel that records each Play session, keeps every run as a file in the project, and graphs the run the user selects, so a run from before a change can be compared with one after it. | Miguel, at S10-D3, 2026-11-03; it needs Play, which comes alongside E11 |
 | **Should** | Multi-select in the hierarchy: Ctrl+click adds or removes one entity, and Shift+click selects the range between two clicks. The inspector then shows the components every selected entity has, shows a dash where their values differ, and applies an edit to all of them. | Scenes grow past what one-at-a-time editing handles; `/triage`, 2026-10-31 |
 | **Won't, for now** | A public video of E1. A build for viewers. | E1 is an internal demo; showcases are cinematic |
 | **Won't, for now** | A project launcher. | Returns with T5 packaging |
@@ -106,4 +107,5 @@ the engine is a `/triage` card), and the rung after R1 is T8 on the [[Roadmap]].
 | The game view | A Must for E1 as a placeholder, added by Miguel without `/triage` because its purpose is already clear. Once the renderer draws, the scene view looks through the editor's own camera and the game view through the scene's main active camera, as in Unity. | 2026-10-31 |
 | The rung after R1 | T8 · Editor workflow: undo, more than one scene and reopening the last one, alongside E3. | 2026-10-31, `/product-review` |
 | Multi-select | A Should for E1, through `/triage`: Ctrl+click and Shift+click in the hierarchy, and an inspector that edits the shared components of every selected entity, as Unity's does. Box selection is left out. | 2026-10-31 |
+| The Profiler panel | It shows recorded Play sessions, not live numbers, and every run is kept until the user deletes it. It waits for Play, because in E1 the editor never simulates. | 2026-11-03, S10-D3 |
 | A persistent id per entity, as v1's `Tag` had | Not a product capability. [[ADR-007 - v2 networking & ECS replication foundation]] §1 already decides it: an opt-in component for entities referenced across documents, revisited when prefabs arrive. | 2026-10-26 |

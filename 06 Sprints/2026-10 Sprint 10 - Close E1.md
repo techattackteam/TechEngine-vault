@@ -24,8 +24,8 @@ S10-B2 and S10-T9, and moved the console and the Profiler (Story C) from the lan
   [[Resources - Design]] § *Decided: packs and the runtime layout* (the runtime copy, Oct 31),
   [[Logger - Design]] and [[Profiler - Design]] for the two panels.
 - **First Design card:** S10-D1, the lane's export design, on day 1. S10-D2 cut Story C's
-  console half on Nov 3; its Profiler half stays unsized until S10-D3, and Story H's build stays
-  unsized until S10-D9.
+  console half on Nov 3, and S10-D3 moved its Profiler half's build to E11 the same day. Story
+  H's build stays unsized until S10-D9.
 - **Brief check:** the content pipeline has no capability brief, so S10-D8 runs `/brief` before
   S10-D9 designs TEMesh, TEModel and the glTF loader ([[Principles]] P3).
 - **Showcase:** none. E1 ends in an internal demo (S10-T7), which [[Principles]] P4 allows since
@@ -118,19 +118,20 @@ start after S10-T4 merges.
   "enabled when that file exists" clause no longer holds; see [[Resources - Design]] § *The Run
   button*.
 
-### Story C: Editor panels: console and Profiler (Miguel) · 3 console tasks, Profiler sized after S10-D3
+### Story C: Editor panels: console and Profiler (Miguel) · 3 console tasks; the Profiler is built with E11
 
 The two Shoulds of [[Editor - Brief]] § *Requirements* that have no design yet, moved from the lane
 to Miguel at planning. Both panels touch `EditorApp.cpp` and `PanelsManager.cpp`, so their build
 cards follow S10-T4. Cvars stay out: where a cvar lives and which thread owns it probably needs
 an ADR. The Profiler half drops first.
 
-- [ ] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h ·
   done: [[Editor - Design]] decides, against [[Logger - Design]], how records reach main (the sink
   runs on any thread, so a bounded copy), what the panel keeps and drops, and its filters, then
   cuts the console's build cards into this story. Cut on Nov 3: grounding found that a sink can
   hold no state and can still run after its removal, so the console starts with a fix in
   `base` (S10-T10) instead of a static buffer in the editor. ADR-011 §3 and §7 are amended.
+  Closed Nov 3 (vault `372e249`).
 - [ ] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h ·
   done: as [[Logger - Design]] § *Sink registration and delivery* decides. `LogSink` has one
   `write(const LogRecord&) noexcept`; `addLogSink` and `removeLogSink` take a `LogSink&`, and
@@ -169,7 +170,9 @@ an ADR. The Profiler half drops first.
 - [ ] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h ·
   done: [[Editor - Design]] decides, against [[Profiler - Design]] and ADR-019's copied timing
   metrics, what the panel shows beside Tracy and where it reads the timings, then cuts the
-  Profiler's build cards into this story. Follows S10-D2.
+  Profiler's build cards into this story. Follows S10-D2. Decided Nov 3, with no build cards in
+  this sprint: the panel graphs recorded Play sessions, so it is built with Play (E11), and its
+  build waits in the [[Backlog]]. ADR-013 §3 is amended.
 
 ### Story D: E1's loose ends (Miguel)
 
@@ -321,6 +324,8 @@ and Story H's build. At two cards per session that is about ten sessions, agains
 - **S10-D2 cut three 🟠 console cards** (S10-T10 to S10-T12) on Nov 3, one more than an editor-only
   console would have needed, because the sink fix in `base` comes first. S10-T9 shrank by the
   guard it gave S10-T10.
+- **S10-D3 cut no build cards** on Nov 3: the Profiler panel waits for Play (E11), so the first
+  thing to drop has dropped by design.
 - **Design-heavy:** two ADRs, a brief and a format design. Sprint 09's Design cards each took
   about one session; S10-D9 may become an ADR of its own.
 - **One 🟡 Tuesday goes to lane review**, so the other takes S10-T5, S10-T9 or S10-D5.

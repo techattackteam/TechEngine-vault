@@ -22,6 +22,12 @@
   so this ADR, [[Profiler - Design]] and [[B3 - Build & Testing Notes]] named the old release
   for 46 days. A reader who trusted them would download a desktop app that refuses to connect. The
   rule that the tag and the desktop app must be the same release is unchanged. S7-P1.
+- **Amended 2026-11-03, decision:** §3's in-editor panel takes the **native route**, was
+  "deferred to T1, not rejected", with embedding `Worker` and a native panel both still open.
+  The trigger is T1 itself: S10-D3 designed the panel. It graphs Play sessions that the
+  engine's own timing producers record, not a live ring, and it is built with Play (E11). No
+  `TracyServer` enters the build, and Tracy stays the deep-dive path. The mechanism is in
+  [[Editor - Design]] § *The Profiler panel*.
 - **Supersedes:** **ADR-006 §5's `Profiler` classification row only** (`:233`: helper
   *service*, "owned + injected via `EngineContext`"). See §9. Every other clause of §5,
   including "profiler wraps the executor" and the F19 fix, **remains in force** and is
@@ -164,7 +170,7 @@ flowchart LR
   cheap: a small native panel fed by *our own* ring of frame times, with Tracy remaining the
   deep-dive path. The design note's "no Tracy ImGui: context clash" reasoning stands and
   is untouched; it is an argument about embedding Tracy's *UI*, which a separate process
-  makes moot.
+  makes moot. (Amended 2026-11-03: T1 took the native route; see the header entry.)
 
 ### 4. Enablement: a build option, default **OFF**, never a shipping runtime flag
 

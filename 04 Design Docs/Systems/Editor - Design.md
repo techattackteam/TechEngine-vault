@@ -88,6 +88,7 @@ message. This note says how those messages are shaped.
 | A Warn or worse from another thread wakes main | Once, until main drains. Info and below, and anything main logs itself, wait for the next frame main builds. | 2026-11-03 (S10-D2), § *The console* |
 | The console filters by level and text | One toggle per level with its count, and a search on the message. The channel filter waits until modules register channels. | 2026-11-03 (S10-D2), § *The console* |
 | The console keeps 5,000 records | The oldest drop first. Clear empties it. | 2026-11-03 (S10-D2), § *The console* |
+| The Profiler panel shows recorded Play sessions | Each Play session is recorded, from Play to Stop, and saved as one file in the project. While Stopped the panel graphs the run the user selects. It is built with Play (E11), not in E1. | 2026-11-03 (S10-D3); ADR-013 §3 amended; § *The Profiler panel* |
 
 ## Threads and channels
 
@@ -474,6 +475,38 @@ Designed by S10-D2 with § *The console*. Built by S10-T12.
 - **Won't, for E1.** The exported runtime's log: `Process` hands the child this process's
   console and streams (`Process.hpp:30`), not the panel. Folding repeated lines, and clearing on
   Play, which E1 does not have.
+
+## The Profiler panel
+
+Designed by S10-D3 on 2026-11-03, against [[Profiler - Design]] and the copied timing metrics of
+ADR-019 §3. **Built with Play (E11)**, because in E1 the editor never ticks
+(`EditorApp::simulationTicks()` returns false), so the simulation's numbers read zero, and the
+title already shows the render's FPS. Tracy stays the live, deep-dive tool; the panel works in
+every build, with or without `TE_PROFILE`.
+
+- **A run is one Play session**, from Play to Stop. Before the first run the panel says so and
+  draws nothing, so main never builds frames only to redraw it (ADR-027 §1).
+- **What a run records.** Every tick: its tick number and work duration. Every render frame: its
+  interval and render work. Every frame main builds: its build time, which no metric measures
+  today. Each sample carries its time in the run. Today's metrics keep only the latest sample
+  (`TimingMetrics.hpp`), so each producer appends to a buffer of its own while recording;
+  sampling the latest values from main would miss most ticks.
+- **The hot paths.** A sample is an append into storage the producer owns, with no lock and no
+  formatting. How the buffers reach main at Stop is decided with E11's Play.
+- **What it keeps beside the samples.** The start time, the duration, the scene and the build
+  config, because a Debug run and a Release run are not comparable.
+- **Where runs live.** One file per run under `project://editorSettings/profiler/`, git-ignored
+  like the layout, named by its start time and written with the serialization primitives
+  ([[ADR-016 - Serialization (binary primitives & describe-once seam)]]) with a format version.
+  Every run is kept until the user deletes it from the panel. A ten-minute run at 60 ticks and
+  144 frames a second is about 4 MB.
+- **During Play** the panel shows that it is recording, the elapsed time, and the current FPS
+  and TPS. The graphs appear after Stop.
+- **After Stop** the panel lists the runs, newest first, and graphs the selected one: frame
+  time, tick work and main's build time over the run, with the average and the worst 1% of
+  each. Hovering a point shows its tick, which matches the `[t N]` of the console's records.
+- **Won't, for now.** The exported runtime's runs, because they would need a second writer in
+  another process. Two runs overlaid on one graph.
 
 ## Entity names
 
