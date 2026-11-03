@@ -18,8 +18,8 @@ entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh 
 the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25), the loaded scene's
 acquires of its references (S9-T3, #159, 2026-10-25), the editor's startup load through the
 cache (S9-T6, #160, 2026-10-26), the bake of what the startup scene reaches (S9-T7, #161,
-2026-10-26), File → Export (S10-T3, #179, 2026-11-02), and File → Run (S10-T4, #181,
-2026-11-03).
+2026-10-26), File → Export with the runtime copy and folder reuse (S10-T3, #179, 2026-11-02),
+and File → Run (S10-T4, #181, 2026-11-03).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -572,9 +572,9 @@ packs files as they are, because every M6 asset is engine-native. T4 adds import
 runtime-form files first, and the bake does not change.
 
 **The export is a function, and its trigger changes with the rungs** (decided Oct 11).
-`Project::exportTo` takes an export target, the id index and an output folder. File → Export
-calls it since S10-T3 (§ *The export command*); before that the editor exported the client
-target once in its startup load (S8-T13). A command-line mode was considered and dropped: the shipped editor calls the function
+`Project::exportTo` takes an export target, the id index, the runtime's path and an output
+folder. File → Export calls it since S10-T3 (§ *The export command*); before that the editor
+exported the client target once in its startup load (S8-T13). A command-line mode was considered and dropped: the shipped editor calls the function
 from its UI, so parsing flags would be code nothing keeps. Unity is the same shape: its build
 menu and `-executeMethod` both call `BuildPipeline.BuildPlayer`. The output defaults to the
 editor's own executable folder. Both executables build into one `${CMAKE_BINARY_DIR}/bin`
@@ -635,8 +635,8 @@ build profiles each carry their own scene list (both from memory).
 - **`exportTo` writes one target into `<folder>/<project name>/assets/`**: only that target's
   packs, with the boot record in its `common.tepack`. A repeat export reuses
   `<project name>/` (§ *The export command*); before S10-T3 it numbered `(1)`, `(2)` instead. The
-  folder is touched only after the startup scene is validated, so a failed export claims no
-  folder. Miguel added the project folder at S8-T13 (#138, 2026-10-15). The project folder is a
+  folder is touched only after the startup scene and the runtime file are validated, so a failed
+  export claims no folder. Miguel added the project folder at S8-T13 (#138, 2026-10-15). The project folder is a
   complete layout once a runtime executable sits beside its `assets/` (T5).
 - **Several targets are T2's job.** While only the client target exists, its folder is
   `<project name>` with no target in the name (S10-D1). How a server target is named beside it
@@ -687,14 +687,17 @@ packs and the runtime layout*). Built by S10-T3 (#179, 2026-11-02) as `ExportCom
 - **The menu reaches the export through a callback.** `PanelsManager` takes a
   `std::function<void()>`, and `EditorApp` builds and submits the command, because
   `EditorCommands` holds neither the `Project` nor the `AssetIndex` nor a non-const registry.
-  S10-T4's Run item follows the same shape unless Miguel asks for one sender.
-- **A missing runtime is the plain `FileError::NotFound`**, logged with its path; no
-  `ProjectError` value was added. The runtime's file name comes from CMake
-  (`$<TARGET_FILE_NAME:runtime>`), not from a guessed suffix.
+  S10-T4's Run item took the same shape. [[Editor - Design]] § *Decided* records the exception.
+- **A missing runtime is the plain `FileError::NotFound`**, logged with its path, and a runtime
+  path that is a folder is `IsADirectory`; no `ProjectError` value was added. The runtime's file
+  name comes from CMake (`$<TARGET_FILE_NAME:runtime>`), not from a guessed suffix.
 - **The unsaved-edits warning reads `EditSession::hasUnsavedEdits()`** on the simulation
   thread, because main's snapshot can be one edit behind.
 - `TE_EDITOR_DEFAULT_PROJECT_ROOT` moved to `te_editor_objects` as PUBLIC, so a test exports
   `projects/dev` and opens it the way the runtime does.
+- **Not covered by any test or CI leg:** the Windows file lock on a running `runtime.exe`, which
+  the reuse bullet above relies on to fail an export before any pack changes.
+
 ### The Run button
 
 Designed with § *The export command* (S10-D1). Built by S10-T4 (#181, 2026-11-03), which the

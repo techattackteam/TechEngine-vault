@@ -64,7 +64,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S10-T5** · Diff coverage leaves out ImGui drawing · P2 · 🟡 Light · 1-2h: `ci.yml` excludes `apps/editor/src/ui/`, the note says `ui/` is drawing only, and the `te_sdk_smoke` comments are fixed.
 
 
 ## 👀 Review / Demo
@@ -75,14 +74,22 @@ kanban-plugin: board
 
 - [x] **S10-P1** · Paper report for the frame and device seam · P2 · 🤖 Auto · report-only: vault, **Nov 3**, by the lane. [[Renderer - Seam Paper Report]] maps the four validated culling, draw-submission and many-lights papers (Olsson 2012, Haar and Aaltonen 2015, Wihlidal 2016, Nanite 2021) onto T1, T2 and Q1, and lists what each asks of the seam in GL 4.5, without choosing. Unblocks S10-D4.
 	- **Weaker than the card assumed:** the sandbox could not open any of the four papers, because their hosts are outside the session's network allowlist, so the report rests on search extracts and memory, each claim tagged. Check a number in the paper before the ADR relies on it.
+
 - [x] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: #181 `78c48ab`, **Nov 3**, by the lane. File → Run exports, then starts the exported runtime through `platform`'s new `Process`, and logs its exit code. Completes Story B; Story C's panel cards may now touch `EditorApp.cpp` and `PanelsManager.cpp`.
 	- **Miguel reversed one decision in review:** Run exports first instead of being enabled when an exported runtime exists, so the lane's flag set by `ExportCommand` became a callback on `ExportCommand`, and the card's "enabled when that file exists, checked at startup" clause no longer holds. The other seven decisions merged as written, now in [[Resources - Design]] § *The Run button*.
 	- The PR has no review conversation; the reversal lives only in its second commit and its edited body, so this entry is the only other record.
-	- **Unverified:** no windowed check is recorded for Export or Run, so the sprint's first DoD line stays open. CI was green on every leg, Windows and the sanitizers included, which is the first time the Windows `Process` code compiled.
-- [x] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: #179 `0dcbc1f`, **Nov 2**, by the lane. File → Export sends the client target into `bin/<config>/Dev/` beside a copy of the runtime, a repeat export reuses that folder, and the runtime mounts `assets` beside itself. Unblocks S10-T4 and, with S10-T2, S10-T7; Story B stays open on S10-T4.
-	- **No decision was reversed:** #179 merged unchanged with its six *Decisions I took*, now in [[Resources - Design]] § *The export command*. The PR has no review conversation, so this entry, built from the card, the PR and the diff, is the only record.
-	- **One `done:` clause was not done:** #174's include order in `PanelsManager.cpp`. The card assumed clang-format would leave the fix alone, but the pinned 19.1.5 moves the header back. It is in the [[Backlog]] as a `.clang-format` question.
-	- **Unverified:** no windowed check is recorded (File → Export, then `Dev/runtime` logs the scene), so the sprint's first DoD line stays open. CI was green on every leg, Windows included.
+	- **Unverified:** no windowed check of Run is recorded. CI was green on every leg, Windows and the sanitizers included, which is the first time the Windows `Process` code compiled.
+
+- [x] **S10-T5** · Diff coverage leaves out ImGui drawing · P2 · 🟡 Light · 1-2h: #180 `f4ece35`, **Nov 2**. diff-cover skips `apps/editor/src/ui/`, the smoke comments name `TechEngineSDKSmoke`, and [[Editor - Design]]'s row "`ui/` draws, `edit/` decides" is the rule's one home. S10-T2's inspector drawing no longer needs `[skip-coverage]`; Story D stays open on S10-T6, S10-T7 and S10-T9.
+	- **One `done:` clause had no referent:** `ci.yml` has no exclude list. The exclusion went into `cmake/coverage_report.cmake`, beside the `tests/` filter that CI and a local run share.
+	- **"`ui/` holds drawing only" was not true:** `ImGuiBridge` holds the three-slot swap between main and render, which the gate no longer scores. The row says "drawing and the plumbing around it" instead.
+	- **Not yet proven:** this PR changed no `ui/` file, and diff-cover's path matching was not checked locally, so S10-T2 is the first PR to exercise the exclusion. The PR has no review conversation, so this entry is the only record.
+
+- [x] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: #179 `0dcbc1f`, **Nov 2**, by the lane. File → Export queues an export command on the simulation thread, a repeat export reuses `bin/<config>/Dev/`, and the runtime copied there reads `assets` beside itself. Miguel's windowed check saw it log the scene. Unblocked S10-T4, and S10-T7 with S10-T2.
+	- **One `done:` clause could not be met:** #174's include order in `PanelsManager.cpp`. The pinned clang-format 19.1.5 moves the paired header back into the private group, so the format gate fails. It is a `.clang-format` or `CONVENTIONS.md` call, kept in the [[Backlog]].
+	- **All six *Decisions I took* were accepted, none reversed.** One lands against [[Editor - Design]]'s "Panels send through one sender" row: Export is a callback that `EditorApp` gives `PanelsManager`, because `EditorCommands` holds neither the project nor a mutable registry. The note now records the exception, and S10-T4's Run took the same route.
+	- **Not checked by any test or CI leg:** the Windows file lock on a running `runtime.exe`, which the design relies on to fail an export before any pack changes. The PR has no review conversation, so this entry is the only record.
+
 - [x] **S10-D1** · Design the export command · P1 · 🤖 Claude · 1-2h: vault `71288cd`, **Nov 2**, by the lane. [[Resources - Design]] § *The export command* and § *The Run button*: the copy is the runtime executable alone, a repeat export reuses `<project name>/` instead of numbering, File → Export writes to the editor's folder, and Run starts the runtime at that fixed path. S10-T3 and S10-T4 are rewritten to match. Unblocks S10-T3.
 	- **One call changes a Decided row** ("it never writes into an existing folder"). The lane took it because Miguel's Oct 31 row handed exactly that question to this card; reverse it in review if the hand-off did not mean that.
 	- **Added beside the card:** the export runs on the simulation thread as a command and exports the saved files with a warning for unsaved edits; process launch goes in `platform`. The folder picker went to the [[Backlog]]. No review conversation exists for a vault-only card, so this entry is the only record.

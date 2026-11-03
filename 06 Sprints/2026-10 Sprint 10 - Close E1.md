@@ -102,9 +102,9 @@ start after S10-T4 merges.
   claims no folder; the copied runtime keeps its execute bit on Linux; a test exports
   `projects/dev` and opens the result as the runtime does. #174's include order in
   `PanelsManager.cpp` is fixed. The PR ends with "needs Miguel's windowed check": the runtime
-  started from `bin/<config>/Dev/` logs the scene. Follows S10-D1. Closed Nov 3 by the lane:
-  #179 `0dcbc1f`, merged Nov 2 with no decision reversed; the include-order clause went to the
-  [[Backlog]], and no windowed check is recorded yet.
+  started from `bin/<config>/Dev/` logs the scene. Follows S10-D1. Closed Nov 2: #179
+  `0dcbc1f`, merged with no decision reversed. The include order was not met, because
+  clang-format reverts it; it stays in the [[Backlog]]. Miguel's windowed check passed.
 - [x] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h ·
   done: a File → Run item below Export starts `<exe dir>/<project name>/runtime[.exe]` as a child
   process, with that folder as its working directory, and logs its exit code when it exits.
@@ -135,7 +135,7 @@ an ADR. The Profiler half drops first.
 
 ### Story D: E1's loose ends (Miguel)
 
-- [ ] **S10-T5** · Diff coverage leaves out ImGui drawing · P2 · 🟡 Light · 1-2h ·
+- [x] **S10-T5** · Diff coverage leaves out ImGui drawing · P2 · 🟡 Light · 1-2h ·
   done: `ci.yml`'s diff coverage excludes `apps/editor/src/ui/`, and [[Editor - Design]] says
   `ui/` holds drawing only, so logic stays in `edit/`. The `te_sdk_smoke` comments in
   `sdk/CMakeLists.txt:9` and `ci.yml` name `TechEngineSDKSmoke`. CI config, so attended.
@@ -257,8 +257,8 @@ before the renderer.
 
 ## Definition of Done
 
-- [ ] File → Export writes a folder with the runtime beside its packs, and the runtime started
-  from it logs the edited scene (S10-T3, Miguel's windowed check).
+- [x] File → Export writes a folder with the runtime beside its packs, and the runtime started
+  from it logs the edited scene (S10-T3, Miguel's windowed check). Nov 2, `0dcbc1f`, #179.
 - [ ] The hierarchy and inspector edit several entities at once, with tests for the set, the
   topmost rule and the per-entity records (S10-T1, S10-T2).
 - [ ] E1's internal demo ran its five scenarios, and E1 is marked closed on the [[Roadmap]]

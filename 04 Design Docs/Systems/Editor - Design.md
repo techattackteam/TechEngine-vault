@@ -15,7 +15,7 @@ frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admissi
 close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
 (S9-T19, #175 `555a9e4`), and main asks for its own next frame without a posted event (S9-T21,
 #177 `4ba9f60`). Multi-select in the hierarchy is built (S10-T1, #178 `9afda8d`); the
-inspector's half waits for S10-T2.
+inspector's half waits for S10-T2. File → Export is built (S10-T3, #179 `0dcbc1f`).
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -69,7 +69,7 @@ message. This note says how those messages are shaped.
 | An App says whether it ticks | A virtual `simulationTicks()`, read once after the startup load. The editor says no; every other App keeps the default yes. | 2026-10-27 (S9-T13), § *Commands and the idle simulation* |
 | Edits publish through their own hook | `publishEdits(const Scene&)` runs after each applied batch, in both loops. `publishSnapshot` stays render's, because render drops a snapshot whose tick did not advance (`engine/client/src/render/SnapshotHistory.cpp:20`). | 2026-10-27 (S9-T13); the `Scene` argument 2026-10-29 (S9-T16), § *Commands and the idle simulation* |
 | Every batch publishes | The editor publishes after every applied batch and once at the end of the startup load. Only a command that changes the scene raises the edit revision, so a select publishes without one. | 2026-10-29 (S9-T16), § *The editor snapshot* |
-| Panels send through one sender | `EditorCommands` builds each command with the edit session and submits it. Panels never touch the session, which belongs to the simulation thread. | 2026-10-29 (S9-T16), § *The hierarchy panel* |
+| Panels send through one sender | `EditorCommands` builds each command with the edit session and submits it. Panels never touch the session, which belongs to the simulation thread. A File menu item whose command needs more than `EditorCommands` holds is a callback that `EditorApp` gives `PanelsManager`: Export needs the `Project`, the `AssetIndex` and a mutable registry, and S10-T4's Run takes the same route. | 2026-10-29 (S9-T16); the menu callback 2026-11-02 (S10-T3, accepted at its merge), § *The hierarchy panel* |
 | Hierarchy edits | A reparent keeps the world transform. A created or dropped child goes first. A reorder is a reparent to the same parent. A right-click selects the row, unless the row is already selected, which keeps the selection. | 2026-10-29 (S9-T16); the selected row 2026-10-31 (S9-D6), § *The hierarchy panel* |
 | The default layout yields to a saved one | It is built only when the dockspace's node does not exist, and a loaded layout creates that node. | 2026-10-29 (S9-T16), § *The layout* |
 | The layout is also saved at shutdown | Besides each `WantSaveIniSettings`, the editor saves once before the ImGui context is destroyed, because ImGui raises the flag only seconds after a change. | 2026-10-31 (S9-T19), § *The layout* |
@@ -83,6 +83,7 @@ message. This note says how those messages are shaped.
 | A rename of several gives them one name | The name field shows a dash when the names differ, and an edit renames every selected entity. | 2026-10-31 (S9-D6), § *Multi-select* |
 | A move of several counts among the children not moved | The position of a move of several counts among the parent's children that are not moved, and the moved ones land together in hierarchy order. A drop of several at the root is allowed while one of them is a child. | 2026-11-01 (S10-T1), § *Multi-select as built* |
 | A refused entity is skipped, not the whole command | A move or a delete of several skips each entity the `Scene` refuses, and raises the edit revision if anything changed. A move into any moved subtree is still refused whole. | 2026-11-01 (S10-T1), § *Multi-select as built* |
+| `ui/` draws, `edit/` decides | `apps/editor/src/ui/` holds ImGui drawing and the plumbing around it: the panels, the widgets, the theme, the close prompt and the bridge to the render thread. Everything a test can reach lives in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot. Diff coverage skips `ui/`, because no test draws ImGui, so logic put there goes unscored. | 2026-11-02 (S10-T5); `cmake/coverage_report.cmake` |
 
 ## Threads and channels
 
@@ -259,8 +260,6 @@ session and submits it; a refused submit logs a warning.
   removes the topmost selected entities and F2 renames the active one, both ignored while a
   name is being typed. Rename edits the row in place;
   Escape restores the old text, so a cancelled rename sends nothing.
-- **What lives where.** `ui/` holds only drawing and interaction. Everything a test can reach is
-  in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot.
 
 ## Fields: names, rows and edits
 
@@ -438,9 +437,10 @@ refuses an existing path, so save writes through `FileAccess` directly, not thro
   calls `open()` and the frame's `draw()` opens it. Discard requests the stop; Cancel and
   Escape close the prompt and keep the window open.
 - E1 has one scene, the startup scene. Since S10-T3 (#179) File → Export, below Save, exports
-  the saved files and warns about unsaved edits ([[Resources - Design]] § *The export command*).
-  Since S10-T4 (#181) File → Run, below Export, exports the same way and then starts the exported
-  runtime ([[Resources - Design]] § *The Run button*).
+  the saved files and warns about unsaved edits; the startup load no longer exports
+  ([[Resources - Design]] § *The export command*). Since S10-T4 (#181) File → Run, below Export,
+  exports the same way and then starts the exported runtime ([[Resources - Design]] § *The Run
+  button*).
 
 ## The layout
 
