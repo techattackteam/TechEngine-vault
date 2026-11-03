@@ -52,7 +52,7 @@ S10-B2 and S10-T9, and moved the console and the Profiler (Story C) from the lan
   selected parent and its selected child is one command with no warning; a move of several keeps
   their order; a move into a moved subtree is refused. Windowed: Ctrl and Shift select, a
   right-click on a selected row keeps the selection, and dragging three rows moves all three.
-- [ ] **S10-T2** · The inspector edits every selected entity · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-T2** · The inspector edits every selected entity · P1 · 🟢 Deep · 4-6h ·
   done: with several entities selected, the snapshot lists the components they all have, with
   the active entity's values, a mixed flag on each field row, and a mixed flag per Euler axis of
   `Transform`'s rotation. The inspector draws a mixed value as a dash with
@@ -259,8 +259,9 @@ before the renderer.
 
 - [x] File → Export writes a folder with the runtime beside its packs, and the runtime started
   from it logs the edited scene (S10-T3, Miguel's windowed check). Nov 2, `0dcbc1f`, #179.
-- [ ] The hierarchy and inspector edit several entities at once, with tests for the set, the
-  topmost rule and the per-entity records (S10-T1, S10-T2).
+- [x] The hierarchy and inspector edit several entities at once, with tests for the set, the
+  topmost rule and the per-entity records (S10-T1, S10-T2). Nov 1, `9afda8d`, #178; Nov 3, `a6c832f`,
+  #182.
 - [ ] E1's internal demo ran its five scenarios, and E1 is marked closed on the [[Roadmap]]
   (S10-T7).
 - [ ] The frame and device seam ADR and the materials ADR are Accepted and indexed by

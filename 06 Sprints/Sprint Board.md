@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: Multi-select
 
-- [ ] **S10-T2** · The inspector edits every selected entity · P1 · 🟢 Deep · 4-6h: shared components with a dash for mixed values, one command and one record per entity, a rotation axis edit per entity. Follows S10-T1.
 - [ ] **S10-T8** · Edit an `AssetRef` in the inspector · P3 · 🟢 Deep · 4-6h · stretch: a picker over the `AssetIndex`, a set that adds the dependency and fills the handle, and the failed-load policy decided at `/card-start`. Follows S10-T2 and S10-T6.
 
 
@@ -72,28 +71,28 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T2** · The inspector edits every selected entity · P1 · 🟢 Deep · 4-6h: #182 `a6c832f`, **Nov 3**. The inspector lists the components every selected entity has with a dash for mixed values, and set field, add, remove, rename and a rotation axis edit are each one command with one record per entity. Miguel's windowed check saw three entities show dashes and one position edit move all three. Completes the hierarchy-and-inspector DoD row and unblocks S10-T6 and S10-T7; Story A stays open on the stretch S10-T8.
+	- **Calls the design left open**, decided with Miguel at `/card-start` and now in [[Editor - Design]] § *Multi-select in the inspector, as built*: the active entity takes the panel's cached quaternion instead of being decomposed, so a single selection uses the same command and leaves one `RotationEditRecord` (half of the [[Backlog]]'s "four records" entry); and an Euler axis is mixed from 0.005° apart, compared modulo 360.
+	- **The in-session review caught a regression:** the rotation command wrote through `setLocal`, which refuses a zero scale that a field edit allows, so such an entity could no longer rotate and the panel's Euler display stopped following it. It now writes through the field walk. Before that, Miguel's first test run had 10 failures: three commands changed the scene without a record or the revision, and `hasMixedNames` treated an empty name as "none yet". The PR has no review conversation, so this entry is the only record.
+	- **Retro:** `Startup.tescene` shipped with the windowed test's scene for the second card running (#178, #182), although the review flagged it both times.
+
 - [x] **S10-P1** · Paper report for the frame and device seam · P2 · 🤖 Auto · report-only: vault, **Nov 3**, by the lane. [[Renderer - Seam Paper Report]] maps the four validated culling, draw-submission and many-lights papers (Olsson 2012, Haar and Aaltonen 2015, Wihlidal 2016, Nanite 2021) onto T1, T2 and Q1, and lists what each asks of the seam in GL 4.5, without choosing. Unblocks S10-D4.
 	- **Weaker than the card assumed:** the sandbox could not open any of the four papers, because their hosts are outside the session's network allowlist, so the report rests on search extracts and memory, each claim tagged. Check a number in the paper before the ADR relies on it.
-
 - [x] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: #181 `78c48ab`, **Nov 3**, by the lane. File → Run exports, then starts the exported runtime through `platform`'s new `Process`, and logs its exit code. Completes Story B; Story C's panel cards may now touch `EditorApp.cpp` and `PanelsManager.cpp`.
 	- **Miguel reversed one decision in review:** Run exports first instead of being enabled when an exported runtime exists, so the lane's flag set by `ExportCommand` became a callback on `ExportCommand`, and the card's "enabled when that file exists, checked at startup" clause no longer holds. The other seven decisions merged as written, now in [[Resources - Design]] § *The Run button*.
 	- The PR has no review conversation; the reversal lives only in its second commit and its edited body, so this entry is the only other record.
 	- **Unverified:** no windowed check of Run is recorded. CI was green on every leg, Windows and the sanitizers included, which is the first time the Windows `Process` code compiled.
-
 - [x] **S10-T5** · Diff coverage leaves out ImGui drawing · P2 · 🟡 Light · 1-2h: #180 `f4ece35`, **Nov 2**. diff-cover skips `apps/editor/src/ui/`, the smoke comments name `TechEngineSDKSmoke`, and [[Editor - Design]]'s row "`ui/` draws, `edit/` decides" is the rule's one home. S10-T2's inspector drawing no longer needs `[skip-coverage]`; Story D stays open on S10-T6, S10-T7 and S10-T9.
 	- **One `done:` clause had no referent:** `ci.yml` has no exclude list. The exclusion went into `cmake/coverage_report.cmake`, beside the `tests/` filter that CI and a local run share.
 	- **"`ui/` holds drawing only" was not true:** `ImGuiBridge` holds the three-slot swap between main and render, which the gate no longer scores. The row says "drawing and the plumbing around it" instead.
 	- **Not yet proven:** this PR changed no `ui/` file, and diff-cover's path matching was not checked locally, so S10-T2 is the first PR to exercise the exclusion. The PR has no review conversation, so this entry is the only record.
-
 - [x] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: #179 `0dcbc1f`, **Nov 2**, by the lane. File → Export queues an export command on the simulation thread, a repeat export reuses `bin/<config>/Dev/`, and the runtime copied there reads `assets` beside itself. Miguel's windowed check saw it log the scene. Unblocked S10-T4, and S10-T7 with S10-T2.
 	- **One `done:` clause could not be met:** #174's include order in `PanelsManager.cpp`. The pinned clang-format 19.1.5 moves the paired header back into the private group, so the format gate fails. It is a `.clang-format` or `CONVENTIONS.md` call, kept in the [[Backlog]].
 	- **All six *Decisions I took* were accepted, none reversed.** One lands against [[Editor - Design]]'s "Panels send through one sender" row: Export is a callback that `EditorApp` gives `PanelsManager`, because `EditorCommands` holds neither the project nor a mutable registry. The note now records the exception, and S10-T4's Run took the same route.
 	- **Not checked by any test or CI leg:** the Windows file lock on a running `runtime.exe`, which the design relies on to fail an export before any pack changes. The PR has no review conversation, so this entry is the only record.
-
 - [x] **S10-D1** · Design the export command · P1 · 🤖 Claude · 1-2h: vault `71288cd`, **Nov 2**, by the lane. [[Resources - Design]] § *The export command* and § *The Run button*: the copy is the runtime executable alone, a repeat export reuses `<project name>/` instead of numbering, File → Export writes to the editor's folder, and Run starts the runtime at that fixed path. S10-T3 and S10-T4 are rewritten to match. Unblocks S10-T3.
 	- **One call changes a Decided row** ("it never writes into an existing folder"). The lane took it because Miguel's Oct 31 row handed exactly that question to this card; reverse it in review if the hand-off did not mean that.
 	- **Added beside the card:** the export runs on the simulation thread as a command and exports the saved files with a warning for unsaved edits; process launch goes in `platform`. The folder picker went to the [[Backlog]]. No review conversation exists for a vault-only card, so this entry is the only record.
-
 - [x] **S10-T1** · Multi-select in the hierarchy · P1 · 🟠 Moderate · 2-3h: #178 `9afda8d`, **Nov 1**. Ctrl, Shift and Ctrl+A select through ImGui's multi-select, the selection makes the round trip with main's sequence number, and delete and drag act on the topmost selected entities. Unblocks S10-T2; Story A stays open on S10-T2 and S10-T8.
 	- **Calls the design left open**, now in [[Editor - Design]] § *Multi-select as built*: a move of several counts its position among the children not moved; an entity the `Scene` refuses is skipped instead of stopping the command; a select with a dead entity still stores its sequence, or main would never take a snapshot's set again; and the active entity comes from the last range request, because ImGui's `NavIdItem` lags one click.
 	- **The in-session review caught two partial moves:** a move that failed partway changed the scene without the unsaved marker, and several entities could not be dropped at the root. Both were fixed before the merge. The PR has no review conversation, so this entry is the only record.

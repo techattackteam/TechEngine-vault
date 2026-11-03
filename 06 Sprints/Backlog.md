@@ -321,11 +321,12 @@ groups are kept, because they show where future work will land.
   a default asset per resource type, which does not exist yet. Today a deleted file goes
   unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
   **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
-- #prio/low · **One rotation edit is four records, and the Euler cache is untested**: the
-  inspector sends a rotation as four set-field commands, so an undo would need four steps, and
-  `InspectorPanel::syncEuler` holds a small state machine that no test reaches while it is
-  private to the panel. A set-rotation command and a class in `edit/` would fix both. Found at
-  S9-T17. **Trigger:** the rung after R1 that brings undo ([[Editor - Brief]]).
+- #prio/low · **The Euler cache is untested**: `InspectorPanel::syncEuler` holds a small state
+  machine that no test reaches while it is private to the panel, and it waits for the exact
+  quaternion it sent. Moving it into a class in `edit/` would make it testable. Found at S9-T17;
+  the other half of this entry, one rotation edit leaving four records, was fixed by S10-T2's
+  set-rotation-axis command (#182). **Trigger:** the rung after R1 that brings undo
+  ([[Editor - Brief]]).
 - #prio/low · **Inspector field hints and a drawer registry**: a generic field has no range,
   speed or display name, and `drawComponent` picks a drawer with an `if` chain on the type. Hints
   would be an optional argument to `visit`'s `field`, which the other archives ignore, so they

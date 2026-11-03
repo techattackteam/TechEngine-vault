@@ -14,8 +14,8 @@ frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admissi
 `acc897a`), the inspector (S9-T17, #173 `9203c26`), save with the unsaved marker and the
 close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
 (S9-T19, #175 `555a9e4`), and main asks for its own next frame without a posted event (S9-T21,
-#177 `4ba9f60`). Multi-select in the hierarchy is built (S10-T1, #178 `9afda8d`); the
-inspector's half waits for S10-T2. File → Export is built (S10-T3, #179 `0dcbc1f`).
+#177 `4ba9f60`). Multi-select is built, in the hierarchy (S10-T1, #178 `9afda8d`) and in the
+inspector (S10-T2, #182 `a6c832f`). File → Export is built (S10-T3, #179 `0dcbc1f`).
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -53,7 +53,7 @@ message. This note says how those messages are shaped.
 | The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. A row's value has the field's exact C++ type, and the read-only kinds reach the visitor by value. | 2026-10-26; exact types 2026-10-30 (S9-T17), § *Fields* |
 | A field edit assigns through the type | The edit walk writes a copy and assigns it back with the component's own `operator=`, so `Transform` re-propagates its subtree. It is a second record entry, `editFields`, beside `visitFields`. | 2026-10-30 (S9-T17), § *Fields* |
 | The editor reaches a component by its type id | `Scene` makes `componentRaw` public and gains `addComponentRaw` (a default value) and `removeComponentRaw`. Both refuse `Hierarchy`, `Transform` and `Name`, and return `bool` like the `Scene` mutators beside them. | 2026-10-30 (S9-T17), § *The inspector* |
-| Old values are plain records in the session | `EditSession` keeps one list of records: a field edit, a rename, an added component, and a removed component with its payload bytes. | 2026-10-30 (S9-T17); ADR-027 §3 §5, § *The inspector* |
+| Old values are plain records in the session | `EditSession` keeps one list of records: a field edit, a rotation edit with the old quaternion, a rename, an added component, and a removed component with its payload bytes. | 2026-10-30 (S9-T17); the rotation edit 2026-11-03 (S10-T2); ADR-027 §3 §5, § *The inspector* |
 | `AssetRef` is read-only in the first inspector | The inspector shows the id. Editing it waits for its own card: a picker, the dependency on the scene entry and the failed-load policy. | 2026-10-30 (S9-T17); the card is S10-T8 |
 | The name is the inspector's header | It is drawn above the components and sent through `EditorCommands::rename`. `Name` is never listed as a component, and a set-field command refuses it, so a rename always leaves a `RenameRecord`. | 2026-10-30 (S9-T17), § *The inspector* |
 | Transform is drawn as v1 drew it | Translation, Rotation and Scale, each as X, Y and Z drags behind red, green and blue letters that reset the axis when clicked. Rotation is shown in Euler degrees. | 2026-10-30 (S9-T17), § *The inspector panel* |
@@ -79,7 +79,7 @@ message. This note says how those messages are shaped.
 | Main keeps its own selection while a select is in flight | A select command carries the whole set and a sequence number from main. Main draws its own set, and ignores the snapshot's until the snapshot carries that number. | 2026-10-31 (S9-D6), § *Multi-select* |
 | Delete and a move act on the topmost selected entities | A selected entity with a selected ancestor is left out, because it dies or moves with that ancestor. Each is one command over a list in hierarchy order. A move into any moved subtree is refused. | 2026-10-31 (S9-D6), § *Multi-select* |
 | The inspector edits every selected entity | It lists the components they all have and shows a dash where their values differ. A field edit writes the same value to each, with one record per entity. Add offers every type that one of them lacks and adds it only where it is missing; Remove removes from all. | [[Editor - Brief]], 2026-10-31; § *Multi-select* |
-| A rotation axis edit keeps each entity's other axes | With several entities selected, the inspector sends the edited Euler axis. The simulation thread decomposes each entity's own rotation, replaces that axis and recomposes it. | 2026-10-31 (S9-D6), § *Multi-select* |
+| A rotation axis edit keeps each entity's other axes | The inspector sends the edited Euler axis with the panel's cached rotation. The active entity takes that rotation as it is; the simulation thread decomposes every other entity's own rotation, replaces that axis and recomposes it. A single selection uses the same command. | 2026-10-31 (S9-D6); the active entity 2026-11-03 (S10-T2), § *Multi-select in the inspector, as built* |
 | A rename of several gives them one name | The name field shows a dash when the names differ, and an edit renames every selected entity. | 2026-10-31 (S9-D6), § *Multi-select* |
 | A move of several counts among the children not moved | The position of a move of several counts among the parent's children that are not moved, and the moved ones land together in hierarchy order. A drop of several at the root is allowed while one of them is a child. | 2026-11-01 (S10-T1), § *Multi-select as built* |
 | A refused entity is skipped, not the whole command | A move or a delete of several skips each entity the `Scene` refuses, and raises the edit revision if anything changed. A move into any moved subtree is still refused whole. | 2026-11-01 (S10-T1), § *Multi-select as built* |
@@ -225,8 +225,9 @@ the first edit, so without it the panels would start empty. The snapshot holds:
 
 - the hierarchy, depth-first: each entity's handle, depth, name and child count;
 - the selected entities, the active one and the sequence number of the last select applied
-  (§ *Multi-select*), and the active entity's components as field rows and the types it can
-  add (§ *The inspector*);
+  (§ *Multi-select*), the components every selected entity has as the active entity's field
+  rows, each with a mixed flag, one mixed flag per Euler axis of `Transform`'s rotation, and the
+  types that any selected entity lacks (§ *The inspector*);
 - the edit revision, raised by each command that changes the scene, and the saved revision.
 
 Roots come in storage order, not a kept order, because `Scene` has no sibling list for them
@@ -328,7 +329,8 @@ across the panel, so labels line up between components. Shared widgets live in `
   component falls back to one row per field, by kind.
 - **Rotation.** The panel keeps its own Euler angles and ignores older snapshots until the
   rotation it sent comes back, because decomposing the quaternion each frame can flip the angles
-  in the middle of a drag. An edit sends all four quaternion fields, so it leaves four records.
+  in the middle of a drag. An edit sends one set-rotation-axis command per changed axis, so it
+  leaves one record per entity (§ *Multi-select in the inspector, as built*).
 - **Drags.** While a drag is active, `dragScalar` hands ImGui the value the drag produced last.
   The snapshot still holds the value from before the edit until the simulation publishes, and
   ImGui would otherwise add the motion to that stale value.
@@ -339,8 +341,8 @@ across the panel, so labels line up between components. Shared widgets live in `
 
 ## Multi-select
 
-Designed by S9-D6 on 2026-10-31. The hierarchy's half is built (§ *Multi-select as built*); the
-inspector's waits for S10-T2. [[Editor - Brief]] makes it an E1 Should: Ctrl+click
+Designed by S9-D6 on 2026-10-31. Both halves are built (§ *Multi-select as built* and
+§ *Multi-select in the inspector, as built*). [[Editor - Brief]] makes it an E1 Should: Ctrl+click
 adds or removes one entity, Shift+click selects a range, and there is no box selection.
 
 - **Baseline.** Unity's inspector lists the components every selected object has, shows a dash
@@ -370,8 +372,8 @@ adds or removes one entity, Shift+click selects a range, and there is no box sel
 - **Rotation.** The panel's Euler cache holds one entity's angles, so with several selected it
   shows the active entity's angles and sends only the edited axis. A quaternion field's mixed
   flag says nothing about one Euler axis, so the simulation thread decomposes each selected
-  rotation and the snapshot carries one mixed flag per Euler axis. If the single-entity edit
-  moves to the same set-rotation-axis command, that also answers the [[Backlog]]'s "one rotation
+  rotation and the snapshot carries one mixed flag per Euler axis. S10-T2 moved the
+  single-entity edit to the same command, which answers half of the [[Backlog]]'s "one rotation
   edit is four records".
 
 ## Multi-select as built
@@ -395,6 +397,31 @@ Built by S10-T1 (#178 `9afda8d`, 2026-11-01). The calls it made where the design
   from, so the clipper never hides it, even when the payload holds only its selected ancestor.
 - **Found beside it:** a reparent under a parent that is rotated and scaled differently per axis
   is refused, because ADR-021 refuses a local transform that needs shear. S10-B3 owns it.
+
+## Multi-select in the inspector, as built
+
+Built by S10-T2 (#182 `a6c832f`, 2026-11-03). The calls it made where the design was silent:
+
+- **The active entity takes the panel's rotation.** `SetRotationAxisCommand` carries the edited
+  axis, its value and the panel's cached quaternion. The active entity takes that quaternion as
+  it is, so the panel's wait for the rotation it sent always ends; only the other entities are
+  decomposed. Decided with Miguel at `/card-start`.
+- **One record per entity.** A rotation edit leaves one `RotationEditRecord` with the old
+  quaternion, not four field records.
+- **Not `setLocal`.** The command writes the four quaternion fields through Transform's field
+  walk, because `setLocal` refuses a zero scale that a field edit allows. The in-session review
+  caught it: through `setLocal`, an entity with a zero scale axis could not rotate, and the
+  panel's Euler display stopped following it.
+- **A mixed Euler axis** differs from the active entity's angle by 0.005° or more, compared
+  modulo 360, so angles that print the same under `%.2f` never show a dash. `EditSession` and the
+  panel each keep that constant.
+- **A mixed checkbox** sets every selected entity to true on a click, as Unity does; ImGui alone
+  would flip the active entity's value and send that.
+- **A mixed text field** applies on Enter even when the text did not change, and leaving it
+  without typing applies nothing.
+- **Skipped entities.** A dead entity, or one that lacks the component, is skipped and the rest
+  are edited, as S10-T1 does for delete and move. Set field, rename and rotation raise the edit
+  revision once per command; add and remove still raise it once per entity.
 
 ## Entity names
 
