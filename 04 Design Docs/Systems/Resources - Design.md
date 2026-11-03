@@ -17,8 +17,8 @@ entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh 
 (S9-T4, #155, 2026-10-24), the reference fields and their walk (S9-T2, #157, 2026-10-24),
 the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25), the loaded scene's
 acquires of its references (S9-T3, #159, 2026-10-25), the editor's startup load through the
-cache (S9-T6, #160, 2026-10-26), and the bake of what the startup scene reaches (S9-T7, #161,
-2026-10-26).
+cache (S9-T6, #160, 2026-10-26), the bake of what the startup scene reaches (S9-T7, #161,
+2026-10-26), and File → Export (S10-T3, #179, 2026-11-02).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -102,7 +102,7 @@ built or run.
 | The runtime mounts `assets` beside its executable and follows the boot record. | ADR-025 §7 |
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
 | The bake walks the startup scene's file and packs each asset it references. A reference the index does not know fails the export with `UnknownReference`; a reference on a side the target does not ship is listed in the boot record's sides, not packed. | Miguel, Oct 26 (S9-T7); § *Export and the runtime layout* |
-| The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`. Before T2, the editor exports the client target in its startup load, into its own executable folder, numbering `<name>(1)`, `<name>(2)` when that folder exists; from S10-T3 a repeat export reuses the folder (next row). | Miguel, Oct 11, 12 and 15; § *Export targets* |
+| The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`. File → Export sends the client target into the editor's executable folder, and a repeat export reuses the folder (S10-T3, two rows down). Until S10-T3 the startup load exported and numbered `<name>(1)`, `<name>(2)`. | Miguel, Oct 11, 12 and 15; § *Export targets* |
 | The export copies the runtime executable into the target's folder, beside its `assets/`, so the runtime reads `assets` beside itself as ADR-025 §7 says, and `main`'s `<exe dir>/Dev` stopgap goes. Nothing takes a path argument. What else the copy needs, and whether a repeat export reuses its folder, are the T2 export card's to decide. | Miguel, Oct 31 (S9-D5); § *Export targets* |
 | The copy is the runtime executable alone, taken from the editor's own folder. A repeat export **reuses** `<folder>/<project name>/` and replaces only the files the export owns. File → Export writes to the editor's executable folder, with no folder picker in E1. The Run button starts `<folder>/<project name>/runtime[.exe]`, so no "last export" is stored. | Lane, Nov 2 (S10-D1, under Miguel's Oct 31 hand-off above); § *The export command* |
 | The editor's engine folder is `<exe dir>/engine`, so `<exe dir>/assets` holds only packs. | Miguel, Oct 11; [[Project - Design]] |
@@ -571,20 +571,18 @@ packs files as they are, because every M6 asset is engine-native. T4 adds import
 runtime-form files first, and the bake does not change.
 
 **The export is a function, and its trigger changes with the rungs** (decided Oct 11).
-`Project::exportTo` takes an export target, the id index and an output folder. T2's export
-command will call it; until then the editor exports the client target once in its startup
-load (S8-T13), after its startup scene exists, and logs a failure without stopping. A command-line mode was considered and dropped: the shipped editor calls the function
+`Project::exportTo` takes an export target, the id index and an output folder. File → Export
+calls it since S10-T3 (§ *The export command*); before that the editor exported the client
+target once in its startup load (S8-T13). A command-line mode was considered and dropped: the shipped editor calls the function
 from its UI, so parsing flags would be code nothing keeps. Unity is the same shape: its build
 menu and `-executeMethod` both call `BuildPipeline.BuildPlayer`. The output defaults to the
 editor's own executable folder. Both executables build into one `${CMAKE_BINARY_DIR}/bin`
 (`CMakeLists.txt:29`), and the editor's engine folder moved from `<exe dir>/assets` to
 `<exe dir>/engine`, matching its alias, so `assets/` there was free for packs.
 
-**Since S8-T13 the packs no longer land beside `runtime`.** `exportTo` writes into
-`<folder>/<project name>/assets/` (§ *Export targets*), so the development export lands in
-`bin/<config>/Dev/assets/`, or `Dev(1)` and later once `Dev` exists, and every editor launch adds
-a folder. Until S10-T3 builds the export command, the runtime reads the first one,
-`<exe dir>/Dev` (§ *The runtime's startup load*). § *The export command* replaces both.
+**The development export lands in `bin/<config>/Dev/`**, the runtime copy beside its
+`assets/`, and a repeat export reuses it (§ *The export command*). `Dev(1)` and later folders that
+earlier builds left are never read again; delete them by hand.
 
 **The bake as built** (S9-T7, #161, 2026-10-26). `exportTo` takes the editor's
 `ComponentRegistry`, reads the startup scene's file into a scratch `Scene`, and collects its ids
@@ -604,10 +602,9 @@ registers the scene loader in `configureSimulation()`, and calls `SceneAsset::lo
 the mesh loader, and its scene log names each entity's mesh. Miguel settled these at S8-T9's `/card-start`:
 
 - **`RuntimeApp` takes a folder and mounts `<folder>/assets` in `init()`**, through a protected
-  `mountAssets()` that the headless tests call, since `init()` also opens the window. `main`
-  passes `<exe dir>/Dev`, the dev project's first export, and ignores `Dev(1)` and later. This
-  is a development stopgap against ADR-025 §7, which still says `<exe dir>/assets`. S10-T3
-  removes it: `main` passes the executable's own folder (§ *The export command*).
+  `mountAssets()` that the headless tests call, since `init()` also opens the window. Since S10-T3
+  (#179) `main` passes the executable's own folder, as ADR-025 §7 says; the `<exe dir>/Dev`
+  stopgap is gone (§ *The export command*).
 - **The order:** open `assets://common.tepack`, read its boot record, `PackSource::open` the
   client's packs at `assets://`, then `find` and load the startup scene into the live scene.
 - **A missing or broken file returns its own error unchanged** (`FileError::NotFound`,
@@ -635,9 +632,8 @@ build profiles each carry their own scene list (both from memory).
 | Listen-server | `common`, `client`, `server` | ListenServer |
 
 - **`exportTo` writes one target into `<folder>/<project name>/assets/`**: only that target's
-  packs, with the boot record in its `common.tepack`. Until S10-T3, when `<project name>` already exists
-  in the folder, it writes `<project name>(1)`, then `(2)`, and so on, and it never writes into an
-  existing folder; S10-T3 makes a repeat export reuse the folder (§ *The export command*). The
+  packs, with the boot record in its `common.tepack`. A repeat export reuses
+  `<project name>/` (§ *The export command*); before S10-T3 it numbered `(1)`, `(2)` instead. The
   folder is touched only after the startup scene is validated, so a failed export claims no
   folder. Miguel added the project folder at S8-T13 (#138, 2026-10-15). The project folder is a
   complete layout once a runtime executable sits beside its `assets/` (T5).
@@ -656,7 +652,8 @@ build profiles each carry their own scene list (both from memory).
 ### The export command
 
 Designed Nov 2 by S10-D1, a 🤖 Claude Design card, under Miguel's Oct 31 hand-off (§ *Decided:
-packs and the runtime layout*). S10-T3 builds the export and S10-T4 the Run button.
+packs and the runtime layout*). Built by S10-T3 (#179, 2026-11-02) as `ExportCommand` in
+`apps/editor/src/edit/`; S10-T4 builds the Run button.
 
 - **The copy is the runtime executable alone**: `runtime.exe` on Windows, `runtime` on Linux.
   Every first-party library and dependency links statically (`cmake/deps.cmake`), engine assets
@@ -683,6 +680,20 @@ packs and the runtime layout*). S10-T3 builds the export and S10-T4 the Run butt
   export. The startup load stops exporting.
 - **The runtime mounts `assets` beside itself**: `main` passes `executablePath().parent_path()`,
   as ADR-025 §7 says. A runtime started from `bin/` itself therefore fails with `NotFound`.
+
+**Calls S10-T3 took as built** (#179, by the lane, merged with no review conversation):
+
+- **The menu reaches the export through a callback.** `PanelsManager` takes a
+  `std::function<void()>`, and `EditorApp` builds and submits the command, because
+  `EditorCommands` holds neither the `Project` nor the `AssetIndex` nor a non-const registry.
+  S10-T4's Run item follows the same shape unless Miguel asks for one sender.
+- **A missing runtime is the plain `FileError::NotFound`**, logged with its path; no
+  `ProjectError` value was added. The runtime's file name comes from CMake
+  (`$<TARGET_FILE_NAME:runtime>`), not from a guessed suffix.
+- **The unsaved-edits warning reads `EditSession::hasUnsavedEdits()`** on the simulation
+  thread, because main's snapshot can be one edit behind.
+- `TE_EDITOR_DEFAULT_PROJECT_ROOT` moved to `te_editor_objects` as PUBLIC, so a test exports
+  `projects/dev` and opens it the way the runtime does.
 ### The Run button
 
 Designed with § *The export command* (S10-D1); S10-T4 builds it.

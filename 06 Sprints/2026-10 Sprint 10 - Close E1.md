@@ -88,7 +88,7 @@ start after S10-T4 merges.
   folder), which folder File → Export writes to, and how the Run button finds the last export;
   S10-T3 and S10-T4 are rewritten to match. Vault only. Closed Nov 2 by the lane:
   [[Resources - Design]] § *The export command* and § *The Run button*.
-- [ ] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h ·
+- [x] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h ·
   done: File → Export queues an export command that runs on the simulation thread and sends the
   client target through `Project::exportTo` into the editor's executable folder; with unsaved
   edits it warns that they are not exported. `exportTo` takes the runtime executable's path (the
@@ -102,7 +102,9 @@ start after S10-T4 merges.
   claims no folder; the copied runtime keeps its execute bit on Linux; a test exports
   `projects/dev` and opens the result as the runtime does. #174's include order in
   `PanelsManager.cpp` is fixed. The PR ends with "needs Miguel's windowed check": the runtime
-  started from `bin/<config>/Dev/` logs the scene. Follows S10-D1.
+  started from `bin/<config>/Dev/` logs the scene. Follows S10-D1. Closed Nov 3 by the lane:
+  #179 `0dcbc1f`, merged Nov 2 with no decision reversed; the include-order clause went to the
+  [[Backlog]], and no windowed check is recorded yet.
 - [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h ·
   done: a File → Run item below Export starts `<exe dir>/<project name>/runtime[.exe]` as a child
   process, with that folder as its working directory, and logs its exit code when it exits.

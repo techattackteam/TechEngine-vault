@@ -17,7 +17,6 @@ kanban-plugin: board
 
 ## Story B: Export · 🤖 Claude
 
-- [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: File → Run starts `<exe dir>/<project name>/runtime[.exe]` through a new `platform` process function and logs its exit code; disabled with no export or while it runs. Follows S10-T3.
 
 
 ## Story C: Editor panels
@@ -71,11 +70,15 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: #179, branch `S10-T3/file-export`, opened Nov 2 by the lane, green on Linux (920 of 920). **Miguel decides:** the six *Decisions I took* in the PR, mainly that Export is a `std::function` on `PanelsManager` rather than an `EditorCommands` sender; the windowed check (File → Export, then `bin/<config>/Dev/runtime` logs the scene); and #174's include order, which was not done because clang-format 19.1.5 moves `<ui/PanelsManager.hpp>` back, so the fix is a `.clang-format` change.
+- [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: #181, branch `S10-T4/run-button`, opened Nov 3 by the lane, green on Linux (927 of 927, diff coverage 86% locally). **Miguel decides:** the eight *Decisions I took* in the PR, mainly that the editor polls the child once per main-thread update, so an idle editor logs the exit at its next event, and that `Process` reports through `FileError`; and the windowed check (File → Export, then File → Run: the runtime logs the scene, Run is greyed out while it runs, and its exit code is logged). The Windows code was not compiled locally.
 
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: #179 `0dcbc1f`, **Nov 2**, by the lane. File → Export sends the client target into `bin/<config>/Dev/` beside a copy of the runtime, a repeat export reuses that folder, and the runtime mounts `assets` beside itself. Unblocks S10-T4 and, with S10-T2, S10-T7; Story B stays open on S10-T4.
+	- **No decision was reversed:** #179 merged unchanged with its six *Decisions I took*, now in [[Resources - Design]] § *The export command*. The PR has no review conversation, so this entry, built from the card, the PR and the diff, is the only record.
+	- **One `done:` clause was not done:** #174's include order in `PanelsManager.cpp`. The card assumed clang-format would leave the fix alone, but the pinned 19.1.5 moves the header back. It is in the [[Backlog]] as a `.clang-format` question.
+	- **Unverified:** no windowed check is recorded (File → Export, then `Dev/runtime` logs the scene), so the sprint's first DoD line stays open. CI was green on every leg, Windows included.
 - [x] **S10-D1** · Design the export command · P1 · 🤖 Claude · 1-2h: vault `71288cd`, **Nov 2**, by the lane. [[Resources - Design]] § *The export command* and § *The Run button*: the copy is the runtime executable alone, a repeat export reuses `<project name>/` instead of numbering, File → Export writes to the editor's folder, and Run starts the runtime at that fixed path. S10-T3 and S10-T4 are rewritten to match. Unblocks S10-T3.
 	- **One call changes a Decided row** ("it never writes into an existing folder"). The lane took it because Miguel's Oct 31 row handed exactly that question to this card; reverse it in review if the hand-off did not mean that.
 	- **Added beside the card:** the export runs on the simulation thread as a command and exports the saved files with a warning for unsaved edits; process launch goes in `platform`. The folder picker went to the [[Backlog]]. No review conversation exists for a vault-only card, so this entry is the only record.
