@@ -23,6 +23,8 @@ Unity's documentation sites could not be fetched from the sandbox (`dev.epicgame
 resolve), so the URP and Unreal claims rest on search-result extracts of their official pages,
 or on memory. Engine code is cited at engine `fc0ed80`.
 
+**The papers behind T1 and T2** are mapped in [[Renderer - Seam Paper Report]] (S10-P1).
+
 ## The questions this report answers
 
 | # | Question | Where it is open |

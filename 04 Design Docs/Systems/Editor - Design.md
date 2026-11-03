@@ -439,6 +439,8 @@ refuses an existing path, so save writes through `FileAccess` directly, not thro
   Escape close the prompt and keep the window open.
 - E1 has one scene, the startup scene. Since S10-T3 (#179) File → Export, below Save, exports
   the saved files and warns about unsaved edits ([[Resources - Design]] § *The export command*).
+  Since S10-T4 (#181) File → Run, below Export, exports the same way and then starts the exported
+  runtime ([[Resources - Design]] § *The Run button*).
 
 ## The layout
 

@@ -105,7 +105,7 @@ start after S10-T4 merges.
   started from `bin/<config>/Dev/` logs the scene. Follows S10-D1. Closed Nov 3 by the lane:
   #179 `0dcbc1f`, merged Nov 2 with no decision reversed; the include-order clause went to the
   [[Backlog]], and no windowed check is recorded yet.
-- [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h ·
+- [x] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h ·
   done: a File → Run item below Export starts `<exe dir>/<project name>/runtime[.exe]` as a child
   process, with that folder as its working directory, and logs its exit code when it exits.
   Starting the process is a new function in `platform`, which this card names. Run is enabled
@@ -113,6 +113,9 @@ start after S10-T4 merges.
   the runtime it started still runs. Closing the editor neither waits for the runtime nor stops
   it. Tests: the process function starts a stand-in program and reports its exit code. The PR
   ends with "needs Miguel's windowed check": Run starts the exported runtime. Follows S10-T3.
+  Closed Nov 3 by the lane: #181 `78c48ab`. In review Miguel made Run export first, so the
+  "enabled when that file exists" clause no longer holds; see [[Resources - Design]] § *The Run
+  button*.
 
 ### Story C: Editor panels: console and Profiler (Miguel) · ~4 tasks · size after S10-D2 and S10-D3
 
@@ -158,10 +161,12 @@ an ADR. The Profiler half drops first.
 
 ### Story E: Alongside: R1's two ADRs
 
-- [ ] **S10-P1** · Paper report for the frame and device seam · P2 · 🤖 Auto · report-only ·
+- [x] **S10-P1** · Paper report for the frame and device seam · P2 · 🤖 Auto · report-only ·
   done: the validated culling, draw submission and many-lights papers ([[Research]], Rendering)
   are mapped onto [[Renderer - Brief]] and [[Renderer - Research Brief]]'s questions, without
-  choosing.
+  choosing. Closed Nov 3 by the lane:
+  [[Renderer - Seam Paper Report]], from search extracts and memory, since no paper host was
+  reachable.
 - [ ] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h ·
   done: `/adr` drafts it from [[Renderer - Brief]] and S10-P1's report; Miguel accepts it, and a
   new `Renderer - Design` indexes it. Meets Q4's ADR line. Follows S10-P1.

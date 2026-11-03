@@ -34,7 +34,6 @@ kanban-plugin: board
 
 ## Story E: Alongside: R1's two ADRs
 
-- [ ] **S10-P1** · Paper report for the frame and device seam · P2 · 🤖 Auto · report-only: culling, draw submission and many-lights papers mapped onto the Renderer brief, without choosing.
 - [ ] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h: `/adr` drafts it, Miguel accepts it, and a new `Renderer - Design` indexes it. Follows S10-P1.
 - [ ] **S10-P3** · Paper report for the materials ADR · P2 · 🤖 Auto · report-only: materials and shading papers mapped onto the Renderer brief, without choosing.
 - [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: `/adr` drafts R1's second ADR, Miguel accepts it, and `Renderer - Design` indexes it. Follows S10-P3 and S10-D4.
@@ -70,11 +69,16 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: #181, branch `S10-T4/run-button`, opened Nov 3 by the lane, green on Linux (927 of 927, diff coverage 86% locally). **Miguel decides:** the eight *Decisions I took* in the PR, mainly that the editor polls the child once per main-thread update, so an idle editor logs the exit at its next event, and that `Process` reports through `FileError`; and the windowed check (File → Export, then File → Run: the runtime logs the scene, Run is greyed out while it runs, and its exit code is logged). The Windows code was not compiled locally.
 
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-P1** · Paper report for the frame and device seam · P2 · 🤖 Auto · report-only: vault, **Nov 3**, by the lane. [[Renderer - Seam Paper Report]] maps the four validated culling, draw-submission and many-lights papers (Olsson 2012, Haar and Aaltonen 2015, Wihlidal 2016, Nanite 2021) onto T1, T2 and Q1, and lists what each asks of the seam in GL 4.5, without choosing. Unblocks S10-D4.
+	- **Weaker than the card assumed:** the sandbox could not open any of the four papers, because their hosts are outside the session's network allowlist, so the report rests on search extracts and memory, each claim tagged. Check a number in the paper before the ADR relies on it.
+- [x] **S10-T4** · The Run button · P2 · 🤖 Claude · 2-3h: #181 `78c48ab`, **Nov 3**, by the lane. File → Run exports, then starts the exported runtime through `platform`'s new `Process`, and logs its exit code. Completes Story B; Story C's panel cards may now touch `EditorApp.cpp` and `PanelsManager.cpp`.
+	- **Miguel reversed one decision in review:** Run exports first instead of being enabled when an exported runtime exists, so the lane's flag set by `ExportCommand` became a callback on `ExportCommand`, and the card's "enabled when that file exists, checked at startup" clause no longer holds. The other seven decisions merged as written, now in [[Resources - Design]] § *The Run button*.
+	- The PR has no review conversation; the reversal lives only in its second commit and its edited body, so this entry is the only other record.
+	- **Unverified:** no windowed check is recorded for Export or Run, so the sprint's first DoD line stays open. CI was green on every leg, Windows and the sanitizers included, which is the first time the Windows `Process` code compiled.
 - [x] **S10-T3** · File → Export · P1 · 🤖 Claude · 2-3h: #179 `0dcbc1f`, **Nov 2**, by the lane. File → Export sends the client target into `bin/<config>/Dev/` beside a copy of the runtime, a repeat export reuses that folder, and the runtime mounts `assets` beside itself. Unblocks S10-T4 and, with S10-T2, S10-T7; Story B stays open on S10-T4.
 	- **No decision was reversed:** #179 merged unchanged with its six *Decisions I took*, now in [[Resources - Design]] § *The export command*. The PR has no review conversation, so this entry, built from the card, the PR and the diff, is the only record.
 	- **One `done:` clause was not done:** #174's include order in `PanelsManager.cpp`. The card assumed clang-format would leave the fix alone, but the pinned 19.1.5 moves the header back. It is in the [[Backlog]] as a `.clang-format` question.

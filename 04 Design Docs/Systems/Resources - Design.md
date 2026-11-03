@@ -18,7 +18,8 @@ entry, loaded by the runtime's startup load (S9-T1, #154, 2026-10-24), the mesh 
 the editor's mesh asset and `MeshRenderer` (S9-T5, #158, 2026-10-25), the loaded scene's
 acquires of its references (S9-T3, #159, 2026-10-25), the editor's startup load through the
 cache (S9-T6, #160, 2026-10-26), the bake of what the startup scene reaches (S9-T7, #161,
-2026-10-26), and File → Export (S10-T3, #179, 2026-11-02).
+2026-10-26), File → Export (S10-T3, #179, 2026-11-02), and File → Run (S10-T4, #181,
+2026-11-03).
 **ADRs:** [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] ·
 [[ADR-025 - Content packs (.tepack and the runtime load path)]] ·
 [[ADR-026 - Reference fields and scene-held acquires]] ·
@@ -653,7 +654,7 @@ build profiles each carry their own scene list (both from memory).
 
 Designed Nov 2 by S10-D1, a 🤖 Claude Design card, under Miguel's Oct 31 hand-off (§ *Decided:
 packs and the runtime layout*). Built by S10-T3 (#179, 2026-11-02) as `ExportCommand` in
-`apps/editor/src/edit/`; S10-T4 builds the Run button.
+`apps/editor/src/edit/`. S10-T4 built the Run button (#181, 2026-11-03).
 
 - **The copy is the runtime executable alone**: `runtime.exe` on Windows, `runtime` on Linux.
   Every first-party library and dependency links statically (`cmake/deps.cmake`), engine assets
@@ -696,16 +697,28 @@ packs and the runtime layout*). Built by S10-T3 (#179, 2026-11-02) as `ExportCom
   `projects/dev` and opens it the way the runtime does.
 ### The Run button
 
-Designed with § *The export command* (S10-D1); S10-T4 builds it.
+Designed with § *The export command* (S10-D1). Built by S10-T4 (#181, 2026-11-03), which the
+lane wrote and Miguel changed in review so that Run exports first.
 
-- **The Run button starts `<folder>/<project name>/runtime[.exe]`.** Reuse fixes that path, so
-  no "last export" is stored. It sits in the File menu below Export. It is enabled when that file
-  exists, checked once at startup and set after each successful export, never per frame. It is
-  disabled while the runtime it started is still running.
-- **Starting a process is OS code, so it goes in `platform`**, ADR-006 §1's OS seam; S10-T4 names
-  it. The child runs with the export folder as its working directory and inherits the editor's
-  console. S10-T4 logs its exit code when it exits. Closing the editor neither waits for the
-  runtime nor stops it.
+- **File → Run exports, then starts `<folder>/<project name>/runtime[.exe]`.** It sits below
+  Export, and each click submits the same export command as File → Export. The runtime starts on
+  main's next update, and only if that export succeeded; a failed export logs that Run started
+  nothing. Run therefore never needs an earlier export, and never starts an export older than the
+  last save. Reuse fixes the path, so no "last export" is stored.
+- **Run is disabled from the click until its export finishes, and while the runtime it started
+  still runs.** `ExportCommand` takes an optional `std::function<void(bool exported)>`, called on
+  the simulation thread; Run's callback stores the result in an atomic and wakes main.
+- **Starting a process is `platform`'s `Process` class** (`TechEngine/platform/process/Process.hpp`),
+  ADR-006 §1's OS seam: `posix_spawn` on Linux, `CreateProcessW` on Windows. It owns the child's
+  handle until the exit is seen. The child runs in the export folder and inherits the editor's
+  console. Closing the editor neither waits for the runtime nor stops it.
+- **`start()` fails through the existing `FileError` codes**, checked before anything spawns, so
+  both platforms agree: `NotFound`, `IsADirectory`, `NotADirectory`, `AccessDenied`, else
+  `IoError`. A relative executable is made absolute first, because the child changes directory.
+- **Main polls for the exit once per update** and logs the exit code. An idle editor sleeps in
+  `waitEvents()`, so the exit is logged at its next event, usually the focus returning when the
+  runtime's window closes. A waiter thread would make the editor's close wait for the runtime.
+  On Linux a child killed by a signal reports 128 plus the signal number, as a shell does.
 
 ### What later rungs inherit
 
