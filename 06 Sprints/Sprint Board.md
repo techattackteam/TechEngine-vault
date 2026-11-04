@@ -35,7 +35,6 @@ kanban-plugin: board
 ## Story E: Alongside: R1's two ADRs
 
 - [ ] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h: `/adr` drafts it, Miguel accepts it, and a new `Renderer - Design` indexes it. Follows S10-P1.
-- [ ] **S10-P3** · Paper report for the materials ADR · P2 · 🤖 Auto · report-only: materials and shading papers mapped onto the Renderer brief, without choosing.
 - [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: `/adr` drafts R1's second ADR, Miguel accepts it, and `Renderer - Design` indexes it. Follows S10-P3 and S10-D4.
 
 
@@ -72,6 +71,8 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-P3** · Paper report for the materials ADR · P2 · 🤖 Auto · report-only: vault `7bfdda8`, **Nov 4**, by the lane. [[Renderer - Materials Paper Report]] maps the seven validated materials papers (Walter 2007, Burley 2012, Karis 2013, Lagarde 2014, Heitz 2014, Kulla and Conty 2017, Substrate 2023) onto the brief's standard material, its five shading models, cut-outs, the sky image and correct brightness, without choosing, and lists what S10-D7 must decide. Unblocks S10-D7 with S10-D4. Story E stays open on S10-D4 and S10-D7.
+	- **Weaker than the card assumed, as S10-P1 was:** no paper could be opened, because every host and mirror is outside the network allowlist. Unlike S10-P1, two primary implementations were reachable on GitHub and read in full: Filament's PBR document and the glTF material specs, which cite six and five of the papers. Claims rest on those, so they report how an engine used each paper, not the paper itself. Substrate rests on search extracts only.
 - [x] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h: vault `372e249`, **Nov 3**. [[Editor - Design]] § *The console* and § *The console panel*: an editor-owned sink feeds a bounded queue that main drains each frame, a Warn or worse from another thread wakes main, and the panel keeps 5,000 records with level and text filters. Cut S10-T10 to S10-T12, which size Story C's console half; Story C stays open on them and S10-D3.
 	- **The card's premise did not hold:** a sink could hold no state, and could still be running after `removeLogSink` returned (`Log.cpp:150-171`, `303-313` at `a6c832f`). The first proposal, a static buffer in the editor, was dropped in discussion as a workaround. The fix went into `base` instead, as S10-T10 ([[Logger - Design]] § *Sink registration and delivery*), and ADR-011 §3 and §7 were amended.
 	- **"Its filters" had half a referent:** no module registers a channel, so every record is `default/default`. The console filters by level and text, and the channel filter waits.

@@ -211,9 +211,11 @@ an ADR. The Profiler half drops first.
 - [ ] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h ·
   done: `/adr` drafts it from [[Renderer - Brief]] and S10-P1's report; Miguel accepts it, and a
   new `Renderer - Design` indexes it. Meets Q4's ADR line. Follows S10-P1.
-- [ ] **S10-P3** · Paper report for the materials ADR · P2 · 🤖 Auto · report-only ·
+- [x] **S10-P3** · Paper report for the materials ADR · P2 · 🤖 Auto · report-only ·
   done: the validated materials and shading papers ([[Research]], Rendering) are mapped onto
-  [[Renderer - Brief]]'s shading models and standard material, without choosing.
+  [[Renderer - Brief]]'s shading models and standard material, without choosing. Closed Nov 4 by
+  the lane (vault `7bfdda8`): [[Renderer - Materials Paper Report]], from Filament's and glTF's
+  documents, since no paper host was reachable.
 - [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h ·
   done: `/adr` drafts R1's second ADR from [[Renderer - Brief]] and S10-P3's report; Miguel accepts
   it, and `Renderer - Design` indexes it. With S10-D4, R1 is unblocked for Sprint 11. Follows
