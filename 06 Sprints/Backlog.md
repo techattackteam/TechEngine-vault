@@ -43,6 +43,13 @@ groups are kept, because they show where future work will land.
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
   ADR).
 
+- #prio/low · **Code sweep leftovers: base**: Found by the code sweep of `core` on Nov 4, 2026
+  ([[2026-11-04 14-12 Auto Run]]). Logic `core` writes by hand that `base` could offer.
+  - The boost hash-combine formula (`0x9e3779b9 + (seed << 6) + (seed >> 2)`) is written twice:
+    `engine/core/include/TechEngine/core/scene/Entity.hpp:31` and
+    `engine/core/src/scene/ArchetypeStorage.cpp:165`. A `hashCombine` in `base` would serve both.
+    It is a new public symbol, and saves about 2 lines.
+
 ## platform
 
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
@@ -211,9 +218,10 @@ groups are kept, because they show where future work will land.
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
   parallel executor shows one system node dominates a tick.
 
-- #prio/medium · **Code sweep leftovers: core**: Found by the code sweep on Oct 20, 2026
-  ([[2026-10-20 15-09 Auto Run]]). #149 fixed nine findings; these need a decision, a new
-  header, or cost about as much as they save. It folds in the two Oct 1 entries #149 did not fix.
+- #prio/medium · **Code sweep leftovers: core**: Found by the code sweep on Nov 4, 2026
+  ([[2026-11-04 14-12 Auto Run]]), and carried from Oct 20 ([[2026-10-20 15-09 Auto Run]]).
+  #149 and #184 fixed what needed no decision; these need a decision, a new header or a new
+  public symbol, or cost about as much as they save. The Oct 20 line numbers were not re-checked on Nov 4.
   - `Scene::unparent` (`engine/core/src/scene/Scene.cpp:417-455`) repeats `setParent`'s
     old-link validation and unlink (`:301-317`, `:356-368`). One private member would serve
     both, about 20 lines, but `setParent` validates the destination between the two halves,
@@ -245,6 +253,45 @@ groups are kept, because they show where future work will land.
   - The pack tests copy one scratch fixture (`engine/core/tests/resources/PackTests.cpp:68`,
     `engine/core/tests/assets/PackSourceTests.cpp:58`), `viewOf` and `bytesOf`, and `patch<T>`
     (`PackTests.cpp:123`, `BootRecordTests.cpp:105`). One test header, about 30 lines.
+  - **Possible hang:** `ResourceCache::runLoadingPhase` loops while any pending entry is still
+    `loading` (`engine/core/src/resources/ResourceCache.cpp:284-292`). If `JobSystem::submit`
+    refuses a batch after shutdown (`engine/core/src/jobs/JobSystem.cpp:66`), `submitLoads` has
+    already marked its entries `loading` (`ResourceCache.cpp:178`) and keeps no batch, so the loop
+    never ends. Looping until `m_pendingLoads` is empty removes about 8 lines, but leaves those
+    entries Pending, which is a decision. Found by reading, not by a test.
+  - `SceneCommandBuffer::Payload` (`engine/core/include/TechEngine/core/scene/SceneCommandBuffer.hpp:37`)
+    hand-rolls the aligned, type-erased value that `IComponentStorage` already provides, as
+    `Scene::addComponentRaw` uses it. About 70 lines, at the cost of a vector per command.
+  - `ReferenceVisitor`'s two pure virtuals (`engine/core/include/TechEngine/core/serialization/ReferenceVisitor.hpp:20`)
+    force an empty override in each of the four `SceneAsset*` visitors. Empty default bodies
+    remove about 16 lines and change a public interface.
+  - The built-in exclusion `!same_as<…Hierarchy>` and friends is spelled out in `Scene.hpp:85`,
+    `:98`, `:104`, `:114`, `Query.hpp:57`, `Schedule.hpp:57` and `ScheduleRegistration.hpp:48`. A
+    `UserComponent` concept is a new public symbol; it saves about 4 lines and keeps the
+    spellings in sync.
+  - `SerialExecutor` rebuilds every input notification for each node, in three loops
+    (`engine/core/src/systems/SerialExecutor.cpp:129-147`). One per-Tick list and one loop, about 8 lines.
+  - `Scene::validateRead` and `validateWrite` differ only in `reads`/`writes` and the message
+    (`engine/core/src/scene/Scene.cpp:584-598`). Merging them needs a flag argument at five call
+    sites, about 6 lines.
+  - `Writer::write(std::string_view)` (`Writer.cpp:59`) repeats `writeSpan<char>`, and
+    `Reader::read(std::string&)` (`Reader.cpp:91`) repeats `readSpan`. About 14 lines; the
+    `TE_ENSURE` text changes.
+  - `PackWriter::add` scans for duplicates and `write` copies and sorts (`PackWriter.cpp:17`, `:32`).
+    Inserting at `lower_bound` removes both, about 9 lines.
+  - `ResourceCache::freeEntry` repeats the null and `acquires` check its only caller just made
+    (`ResourceCache.cpp:319`). About 4 lines.
+  - `Schedule::getEntryByType` returns its map by value (`Schedule.hpp:66`), and
+    `checkedEntry` bounds-checks twice (`Schedule.cpp:78-79`). `JobSystem`'s worker lambda names a
+    `stopToken` it never uses (`JobSystem.cpp:31`), which warns on every build. About 2 lines.
+  - Test setup: the in-memory `AssetSource` and cache harness is copied in `MeshTests.cpp:66`,
+    `SceneAssetTests.cpp:358` and `ResourceCacheTests.cpp:217` (a new test header, about 40 lines).
+    `BootRecordTests.cpp:111`'s `requireSameRecord` is repeated by hand in `PackTests.cpp:312`
+    (a defaulted `operator==` on the boot record types, about 28 lines).
+  - Test setup inside one file: `ArchetypeTests`, `ArchetypeStorageTests` and `QueryTests` repeat
+    the registry and `ArchetypeStorage` setup in about 27 cases (a fixture per file, 60-80 lines;
+    the local components differ per case). `DedicatedThreadTests` repeats its gated entry lambda six
+    times (about 12 lines) and `EventStreamManagerTests` its two-type registry four times (about 9).
 
 - #prio/medium · **`Scene` has no tree-order walk, so every caller writes its own**: four walks
   call `getChildren`, which builds a new vector for each node. Two are depth-first and track the
