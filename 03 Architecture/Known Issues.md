@@ -34,22 +34,3 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
   and a list nobody empties is one nobody reads.
 
 ---
-
-### D5: `removeLogSink(nullptr)` reports success
-
-`removeLogSink` looks for a slot holding the given sink and swaps it to `nullptr`. Passed
-`nullptr`, the compare-and-swap matches the first **empty** slot, swaps `nullptr` for `nullptr`
-and returns `{}`. The table is unchanged, but the caller is told a sink was removed.
-`addLogSink` already rejects a null sink with `LogError::NullSink`; its mirror does not.
-
-**Silent because success is the normal answer.** No caller passes `nullptr` today, so nothing
-misbehaves, and a caller that does gets no error to notice.
-
-`engine/base/src/diagnostics/Log.cpp:163` at `bd5788cd`.
-
-**Fix:** carded as S10-T10 on 2026-11-03 (S10-D2), which folds in S10-B1. `removeLogSink` takes
-a `LogSink&`, so a null sink can no longer be passed ([[Logger - Design]] § *Sink registration
-and delivery*).
-
-**Trigger:** the next change to `Log.cpp`'s sink table, or a sink that can be null at its
-removal site.

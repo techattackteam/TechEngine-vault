@@ -209,19 +209,24 @@ end of the table.
 - **Editor console.** A sink that the editor owns and registers itself (ADR-011 §3, amended
   2026-11-03). What it keeps and how it reaches main is the editor's:
   [[Editor - Design]] § *The console*.
+- **A sink that keeps records keeps a `StoredLogRecord`** (S10-T11, Nov 5). It owns its
+  message and keeps `file` and `function` as views, because those point into
+  `source_location`'s static strings. `LogRecord` stays a view, so a log call allocates
+  nothing; only a sink that keeps the record pays for the copy. The editor console and the
+  test log-capture guard both keep it, and `ringSnapshot` fills it.
 - **Registration is fallible and the boot path says so** (S4-T3). The table is a fixed 8 slots.
   `initLogging` checks `addLogSink` and prints the error's message to stderr, because a failure
   there means the console and file sink never registered and nothing else would report it.
   `shutdownLogging` checks `removeLogSink` the same way. Both return a `std::error_code` in the
-  `LogError` category since 2026-10-09, per [[ADR-023 - Public error handling]]. The codes
-  change with S10-T10 (§ *Sink registration and delivery*).
+  `LogError` category since 2026-10-09, per [[ADR-023 - Public error handling]]. S10-T10
+  changed the codes (§ *Sink registration and delivery*).
 
 ### Sink registration and delivery
 
-Designed by S10-D2 on 2026-11-03, built by S10-T10. Until then `Log.cpp` keeps a table of
-function pointers (`Log.cpp:150-171`), a sink can hold state only in statics, and a sink can
-still be running after `removeLogSink` returns, because `deliverRecord` reads a slot and then
-calls it with no lock (`Log.cpp:303-313`).
+Designed by S10-D2 on 2026-11-03 and built by S10-T10 (#183, `823067d`, Nov 4). Before it,
+`Log.cpp` kept a table of function pointers, a sink could hold state only in statics, and a
+sink could still be running after `removeLogSink` returned, because `deliverRecord` read a slot
+and then called it with no lock.
 
 - **A sink is an object.** `LogSink` has one virtual `write(const LogRecord&) noexcept`.
   `addLogSink(LogSink&)` and `removeLogSink(LogSink&)` take it by reference, so a sink keeps
@@ -232,6 +237,14 @@ calls it with no lock (`Log.cpp:303-313`).
   crash trail never waits on a sink. It then calls every registered sink under the lock, and
   writes the stderr fallback after releasing it. Add and remove take the same mutex, so **once
   `removeLogSink` returns, no thread is inside that sink**, and its owner may destroy it.
+- **The ring has its own mutex**, which `ringWrite`, `ringSnapshot` and `ringClear` take and
+  no sink runs under. Before S10-T10 its slots were claimed with a relaxed `fetch_add`, and
+  two threads could tear the same slot. That race was accepted for a best-effort crash trail
+  until the threaded sink tests made the TSan leg report it (#183). It cannot share the
+  delivery lock, because a record logged inside a `write` reaches the ring while its thread
+  already holds that lock. `ringSnapshot` appends `StoredLogRecord`s and copies each message
+  under the lock, so a later log cannot rewrite a snapshot (Known Issues D7, fixed by
+  S10-T11). It allocates, so the crash path must read the ring some other way.
 - **Every sink sees the same order.** One lock delivers each record to all sinks before the
   next, so the console and the session file always agree. An async sink (ADR-011, *What would
   move this decision*) must keep this guarantee or argue it away.
@@ -241,13 +254,16 @@ calls it with no lock (`Log.cpp:303-313`).
 - **Re-entry.** A `thread_local` flag is set while a thread delivers. A record raised inside a
   `write` goes to the ring and stderr and skips the sinks (ADR-011 §7). `addLogSink` or
   `removeLogSink` called inside a `write` returns `LogError::InsideSink` instead of deadlocking.
-- **The codes.** `NullSink` goes, and [[Known Issues]] D5 with it. `SinkTableFull` and
-  `SinkNotRegistered` stay. `SinkAlreadyRegistered` is new: today one function can fill two slots.
+- **The codes.** `NullSink` went, and [[Known Issues]] D5 with it. `SinkTableFull` and
+  `SinkNotRegistered` stay. `SinkAlreadyRegistered` is new: before it, one function could fill
+  two slots.
 - **Not a locator.** The table holds pointers to sink objects but never hands one back, so
   nothing reaches a sink through diagnostics, and ADR-011 §8's guardrail holds.
-- **The first sink object** is the shared log-capture guard in `te_test_support`, which replaces
-  the seven copies in the test suites. It keeps its own records, registers in its constructor
-  and removes itself in its destructor.
+- **The first sink object** is the shared log-capture guard in `te_test_support`
+  (`LogCapture.hpp`). It replaced nine copies in the test suites, two more than S10-T9 listed.
+  It registers in its constructor and removes itself in its destructor, sets a minimum level
+  (Trace by default) and restores the old one, and keeps its records under its own lock so a
+  test can read them while other threads log.
 
 ### The rendered format (file and console)
 

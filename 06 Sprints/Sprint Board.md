@@ -20,8 +20,6 @@ kanban-plugin: board
 
 ## Story C: Editor panels
 
-- [ ] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h: `LogSink` by reference, one delivery mutex so removal waits, a re-entry guard, new codes, and one shared log-capture guard for the tests. Absorbs S10-B1 and S10-T9's guard.
-- [ ] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h: `ConsoleLog` copies records into a bounded queue that main drains each frame; a Warn or worse from another thread wakes main. Follows S10-T10.
 - [ ] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h: a store of 5,000 records, level toggles with counts, text search, Clear, docked below the views. Follows S10-T11.
 
 
@@ -62,7 +60,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h: what it shows beside Tracy and where it reads the timings; cuts the Profiler's build cards. Follows S10-D2. First to drop.
 
 
 ## 👀 Review / Demo
@@ -71,8 +68,23 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h: #187 `db72fe6`, **Nov 5**. `ConsoleLog` keeps each record as a `StoredLogRecord` in a queue of 1,024 that main drains each frame, and a Warn or worse from another thread wakes main once. Unblocks S10-T12; Story C stays open on it.
+	- **Widened at review:** the scaffold's own `ConsoleRecord` repeated the test guard's `CapturedLog`, so both became `StoredLogRecord` in `base`. `ringSnapshot` now fills it, which fixed [[Known Issues]] D7 in the same PR, and its `capacity` argument went. [[Logger - Design]] § *Sinks* records both.
+	- **Calls against [[Editor - Design]] § *The console*:** main is the thread that calls `start()`; `drain` returns the dropped count but adds no "N records dropped" line, which S10-T12's store now owes; the console stops before `stopImGui()`, because `Client::stop` holds its wake lock while GLFW may log an error.
+	- **Retro: the first build queued `LogRecord`s and never marked the sink registered,** so messages dangled and a destroyed console stayed in the sink table. The card's tests crashed on both, and EditorAppTests' two-launch case caught the second.
+	- **Retro: the branch was first cut from S10-T10's merged branch.** `/card-start`'s gate caught it and the branch was recut from `origin/master`; the empty #186 it had produced was closed.
+- [x] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h: #183 `823067d`, **Nov 4**. A sink is a `LogSink` object, `removeLogSink` now waits for a sink that is still running, and a record logged inside a `write` goes to the ring and stderr. [[Known Issues]] D5 went with `NullSink`. Unblocks S10-T11 and S10-T9; Story C stays open on S10-T11 and S10-T12.
+	- **"The seven copies" were nine:** S10-T9's list missed `EditorCommandsTests.cpp`'s identical copy and `AppTests.cpp`'s `AppWarningCapture`, which kept only Warn records. The shared guard replaced all nine. Its shape (a minimum level, full records under its own lock) was decided at `/card-start`, and S10-T11 has since widened its record into `StoredLogRecord`.
+	- **Retro: TSan found a race the brief had waved through.** The threaded sink tests made the TSan leg report the ring's slot race, which `Log.cpp` had accepted as a best-effort crash trail. `/card-start` guessed the delivery lock would hide it, but `ringWrite` runs before that lock. The ring now has its own mutex (`e552bd1`), recorded in [[Logger - Design]] § *Sink registration and delivery*. Its snapshot still hands out messages a later log can overwrite: D7.
+	- **Retro: the scaffold stubbed the shared guard,** so every migrated suite failed at once (36 cases) and hid which of the card's own tests were red.
+	- **Unmeasured:** the cost of the delivery lock and of the new ring lock.
 - [x] **S10-P3** · Paper report for the materials ADR · P2 · 🤖 Auto · report-only: vault `7bfdda8`, **Nov 4**, by the lane. [[Renderer - Materials Paper Report]] maps the seven validated materials papers (Walter 2007, Burley 2012, Karis 2013, Lagarde 2014, Heitz 2014, Kulla and Conty 2017, Substrate 2023) onto the brief's standard material, its five shading models, cut-outs, the sky image and correct brightness, without choosing, and lists what S10-D7 must decide. Unblocks S10-D7 with S10-D4. Story E stays open on S10-D4 and S10-D7.
 	- **Weaker than the card assumed, as S10-P1 was:** no paper could be opened, because every host and mirror is outside the network allowlist. Unlike S10-P1, two primary implementations were reachable on GitHub and read in full: Filament's PBR document and the glTF material specs, which cite six and five of the papers. Claims rest on those, so they report how an engine used each paper, not the paper itself. Substrate rests on search extracts only.
+- [x] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h: vault `cb2836a`, **Nov 3**. [[Editor - Design]] § *The Profiler panel*: it graphs recorded Play sessions, one file per run under `editorSettings/profiler/`, kept until deleted, and ADR-013 §3 now takes the native route. Story C's planning is done; the story stays open on S10-T10 to S10-T12.
+	- **It cut no build cards, against the card's "cuts the Profiler's build cards":** in E1 the editor never ticks, so the simulation's metrics read zero, the title already shows FPS, and the copied metrics keep only the latest sample. The build waits for Play (E11) in the [[Backlog]].
+	- **A live panel was dropped:** redrawing it while idle would need main to build frames on its own, against ADR-027 §1. Showing recorded runs after Stop avoids that.
+	- **Miguel widened the scope as product owner:** runs are stored and selectable so a run from before a change can be compared with one after it. It went into [[Editor - Brief]] as "Should, with Play" without a `/triage`, since the brief already held the panel.
+	- **Unmeasured:** the 4 MB size of a ten-minute run is an estimate.
 - [x] **S10-D2** · Design the console panel · P2 · 🟠 Moderate · 2-3h: vault `372e249`, **Nov 3**. [[Editor - Design]] § *The console* and § *The console panel*: an editor-owned sink feeds a bounded queue that main drains each frame, a Warn or worse from another thread wakes main, and the panel keeps 5,000 records with level and text filters. Cut S10-T10 to S10-T12, which size Story C's console half; Story C stays open on them and S10-D3.
 	- **The card's premise did not hold:** a sink could hold no state, and could still be running after `removeLogSink` returned (`Log.cpp:150-171`, `303-313` at `a6c832f`). The first proposal, a static buffer in the editor, was dropped in discussion as a workaround. The fix went into `base` instead, as S10-T10 ([[Logger - Design]] § *Sink registration and delivery*), and ADR-011 §3 and §7 were amended.
 	- **"Its filters" had half a referent:** no module registers a channel, so every record is `default/default`. The console filters by level and text, and the channel filter waits.

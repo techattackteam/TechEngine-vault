@@ -132,7 +132,7 @@ an ADR. The Profiler half drops first.
   hold no state and can still run after its removal, so the console starts with a fix in
   `base` (S10-T10) instead of a static buffer in the editor. ADR-011 §3 and §7 are amended.
   Closed Nov 3 (vault `372e249`).
-- [ ] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S10-T10** · Log sinks are objects, and removal waits · P2 · 🟠 Moderate · 2-3h ·
   done: as [[Logger - Design]] § *Sink registration and delivery* decides. `LogSink` has one
   `write(const LogRecord&) noexcept`; `addLogSink` and `removeLogSink` take a `LogSink&`, and
   `LogSinkFn` goes. `deliverRecord` writes the ring outside the lock, calls the sinks under one
@@ -147,7 +147,9 @@ an ADR. The Profiler half drops first.
   `write` reaches stderr instead of deadlocking; `removeLogSink` inside `write` returns
   `InsideSink`; a second add of the same sink returns `SinkAlreadyRegistered`; two sinks see the
   same records in the same order. The macros and every call site stay unchanged.
-- [ ] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h ·
+  Closed Nov 4 (#183, `823067d`): the guard replaced nine copies, not seven, and the ring got
+  its own mutex after the TSan leg reported its slot race.
+- [x] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h ·
   done: as [[Editor - Design]] § *The console* decides. `ConsoleLog` in `apps/editor/src/edit/`
   copies each record into a queue of 1,024 that drops the oldest and counts them; main drains it
   at the start of each frame. `EditorApp` creates it in `init()` after copying the ring, removes
@@ -156,7 +158,14 @@ an ADR. The Profiler half drops first.
   intact after the log call returns; an overflow drops the oldest and the drain reports the
   count; a Warn from another thread wakes once until drained, while an Info, or a Warn from
   main, does not; the ring's records come first; nothing arrives after removal. Follows
-  S10-T10.
+  S10-T10. **Widened on Nov 5 at review:** `StoredLogRecord` in `base/diagnostics/`, a record
+  that owns its message, is what the console keeps and what the test log-capture guard keeps,
+  so the guard's `CapturedLog` goes and the console has no record type of its own. Tests: a
+  stored record copies every field, and keeps its message after the logged buffer changes.
+  **Also fixes [[Known Issues]] D7:** `ringSnapshot` appends `StoredLogRecord`s, copying each
+  message under the ring's lock, and its capacity argument goes. Tests: a snapshot keeps its
+  messages after later records reuse every slot; a snapshot taken while another thread logs
+  reads every message whole (TSan leg). Closed Nov 5: #187 `db72fe6`.
 - [ ] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h ·
   done: as [[Editor - Design]] § *The console panel* decides. The store in `edit/` keeps 5,000
   records, drops the oldest, counts each level and filters by the level toggles and a
@@ -164,15 +173,17 @@ an ADR. The Profiler half drops first.
   draws the toolbar and the rows through the clipper, shows the selected row's
   `file:line:function()`, and follows new rows only at the bottom. The default layout docks it
   below the views. Tests: the bound drops the oldest; the counts follow adds, drops and Clear;
-  a level toggle and a search each hide the rows they should. Windowed: a Warn from the
+  a level toggle and a search each hide the rows they should; a drain that reports dropped
+  records adds one "N records dropped" row (added at S10-T11's close, because `drain` only
+  returns the count). Windowed: a Warn from the
   simulation shows without moving the mouse, and the toggles, search and Clear work. Follows
   S10-T11.
-- [ ] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h ·
+- [x] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h ·
   done: [[Editor - Design]] decides, against [[Profiler - Design]] and ADR-019's copied timing
   metrics, what the panel shows beside Tracy and where it reads the timings, then cuts the
   Profiler's build cards into this story. Follows S10-D2. Decided Nov 3, with no build cards in
   this sprint: the panel graphs recorded Play sessions, so it is built with Play (E11), and its
-  build waits in the [[Backlog]]. ADR-013 §3 is amended.
+  build waits in the [[Backlog]]. ADR-013 §3 is amended. Closed Nov 3 (vault `cb2836a`).
 
 ### Story D: E1's loose ends (Miguel)
 

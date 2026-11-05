@@ -15,7 +15,8 @@ frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admissi
 close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
 (S9-T19, #175 `555a9e4`), and main asks for its own next frame without a posted event (S9-T21,
 #177 `4ba9f60`). Multi-select is built, in the hierarchy (S10-T1, #178 `9afda8d`) and in the
-inspector (S10-T2, #182 `a6c832f`). File → Export is built (S10-T3, #179 `0dcbc1f`).
+inspector (S10-T2, #182 `a6c832f`). File → Export is built (S10-T3, #179 `0dcbc1f`), and so
+is the console's sink (S10-T11, #187 `db72fe6`).
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -444,15 +445,23 @@ Brief]] makes it a Should.
   copied. That is one allocation per record, in the editor only. The queue holds 1,024
   records; on overflow it drops the oldest and counts them, and the next drain adds one
   "N records dropped" line.
+- **As built (S10-T11).** The queue keeps `StoredLogRecord`, the owning record that
+  [[Logger - Design]] § *Sinks* describes, not a type of the editor's own. `drain` returns the
+  dropped count and adds no line, so S10-T12's store turns the count into that line.
 - **The first records.** `run()` starts logging before `init()` (`App.cpp:42-50`), so
   `ConsoleLog` first copies the always-on ring (`ringSnapshot`) into its queue, then registers
-  the sink, with nothing logged between the two calls. Only main logs at that point, so the
-  ring's torn-write caveat does not apply.
+  the sink, with nothing logged between the two calls. The snapshot owns its messages, so a
+  thread that logs during the copy cannot tear one.
 - **Removal.** `shutdown()` removes the sink, and `ConsoleLog`'s destructor removes it if it is
   still registered, because `run()` skips `shutdown()` when `init()` throws (`App.cpp:72`).
-  Removal waits for a `write` in flight, so `ConsoleLog` can be a plain member.
+  Removal waits for a `write` in flight, so `ConsoleLog` can be a plain member. `shutdown()`
+  removes it **before** `stopImGui()`: `Client::stop` holds its wake lock while GLFW may log an
+  error, and a console `write` on another thread takes that lock under the delivery lock to
+  wake main (S10-T11).
 - **Waking main.** A Warn, Error or Critical from a thread other than main calls the wake
   callback that `EditorApp` gives `ConsoleLog`, at most once until main drains (an atomic flag).
+  Main is the thread that called `start()`, which is `init()`'s. The flag is set and cleared
+  under the queue's mutex, so a Warn that lands right after a drain still wakes (S10-T11).
   A record from main never wakes, because main drains at its next frame, and Info and below
   never wake, so a thread that logs every frame cannot keep an idle editor building frames.
   The wake is safe after the client stops: `Client::wakeMain` posts only while the client is

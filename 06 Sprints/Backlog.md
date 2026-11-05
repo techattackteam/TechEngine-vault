@@ -42,6 +42,10 @@ groups are kept, because they show where future work will land.
   declined it ([[ADR-014 - Events (buffered streams) & StringId]] §7, contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
   ADR).
+- #prio/low · **The crash path needs a ring read that does not allocate**: since S10-T11,
+  `ringSnapshot` appends `StoredLogRecord`s, so it allocates a string per record, and a crash
+  handler cannot rely on the heap. [[Logger - Design]] still says the crash path flushes the
+  ring. Found at S10-T11's close, Nov 5. **Trigger:** the platform crash handler is built.
 
 - #prio/low · **Code sweep leftovers: base**: Found by the code sweep of `core` on Nov 4, 2026
   ([[2026-11-04 14-12 Auto Run]]). Logic `core` writes by hand that `base` could offer.
@@ -49,15 +53,6 @@ groups are kept, because they show where future work will land.
     `engine/core/include/TechEngine/core/scene/Entity.hpp:31` and
     `engine/core/src/scene/ArchetypeStorage.cpp:165`. A `hashCombine` in `base` would serve both.
     It is a new public symbol, and saves about 2 lines.
-- #prio/low · **[[Logger - Design]] still describes S10-T10 as unbuilt**: #183 (`823067d`)
-  merged on Nov 4, and the Nov 5 freshness check found the note behind it
-  ([[2026-11-05 09-08 Auto Run]]). § *Sink registration and delivery* opens with "Until then",
-  and its `Log.cpp:150-171` and `303-313` now point at other code. The build also adds what the
-  note does not say: the ring has its own `g_ringMutex` (`Log.cpp:66`), separate from the
-  delivery lock, because TSan caught two threads writing one slot. So the ring no longer tears,
-  and a ring write waits on other ring writes, though never on a sink. [[Known Issues]] D5 is
-  fixed and still listed. **Trigger:** S10-T10's `/card-close`, which should take all of this
-  and delete this entry.
 
 ## platform
 
