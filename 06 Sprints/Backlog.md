@@ -49,6 +49,15 @@ groups are kept, because they show where future work will land.
     `engine/core/include/TechEngine/core/scene/Entity.hpp:31` and
     `engine/core/src/scene/ArchetypeStorage.cpp:165`. A `hashCombine` in `base` would serve both.
     It is a new public symbol, and saves about 2 lines.
+- #prio/low · **[[Logger - Design]] still describes S10-T10 as unbuilt**: #183 (`823067d`)
+  merged on Nov 4, and the Nov 5 freshness check found the note behind it
+  ([[2026-11-05 09-08 Auto Run]]). § *Sink registration and delivery* opens with "Until then",
+  and its `Log.cpp:150-171` and `303-313` now point at other code. The build also adds what the
+  note does not say: the ring has its own `g_ringMutex` (`Log.cpp:66`), separate from the
+  delivery lock, because TSan caught two threads writing one slot. So the ring no longer tears,
+  and a ring write waits on other ring writes, though never on a sink. [[Known Issues]] D5 is
+  fixed and still listed. **Trigger:** S10-T10's `/card-close`, which should take all of this
+  and delete this entry.
 
 ## platform
 
