@@ -156,8 +156,10 @@ Rendering redraws its current value when no newer one exists, using current fram
 dimensions. Publish an initial complete value before simulation reports ready.
 
 The Sep 7 double-buffer proposal is deferred: the small value payload needs no slot-lifetime
-protocol. ADR-018's delivery policy remains unchanged. R1 must settle resource lifetime
-before commands contain references to world data or GPU uploads.
+protocol. ADR-018's delivery policy remains unchanged. Resource lifetime is decided, not yet built (Nov 6):
+[[ADR-028 - Render device seam and frame packets]] §3 replaces the value with pooled frame
+packets that move by ownership, published after ticks and after applied edits, and §4 sends
+uploads in their own ordered channel. [[Renderer - Design]] holds the how.
 
 Under Accepted ADR-019, the app owns the shared Clock; simulation owns the accumulator,
 tick-to-clock mapping and TPS accounting. Preserve the fixed step and delta clamp.

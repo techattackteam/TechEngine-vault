@@ -40,7 +40,7 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **Context handoff** | Main creates the window and never makes the context current. The render thread claims it once and holds it until shutdown. | See *Startup and shutdown order* |
 | **`gladLoadGL` runs on the render thread** | It needs a current context, so it cannot run at startup on main. | See *Startup and shutdown order* |
 | **Frame handoff at M4** | A single-slot `SnapshotMailbox` carries tick/time-stamped complete values; render retains two private values for interpolation. Newest complete wins. | ADR-019 §3; see *The frame command buffer* for the historical baseline |
-| **The snapshot's visual contents are M4's, not R1's** | Clear colour plus a draw flag. The real command-list format belongs to R1's renderer ADR. | ADR-015 §2 |
+| **The snapshot's visual contents are M4's, not R1's** | Clear colour plus a draw flag. R1 replaces it with the frame packet ([[ADR-028 - Render device seam and frame packets]] §3, Nov 6), which is not built yet. | ADR-015 §2; ADR-028 §3 |
 | **Framebuffer dimensions** | Main seeds pixel dimensions and publishes framebuffer callback updates; both writer and render-thread snapshot reader use the same mutex. | S5-T8, #77 |
 | **Triangle resources** | Private `Buffer` and `VertexArray` wrappers use GL 4.5 DSA; `FrameRenderer` owns vertex/index buffers, VAO and checked shader startup. Cleanup precedes context release. | S5-T8, #77 |
 | **CI opens a real window** | Linux uses Xvfb and Mesa llvmpipe; Windows uses pinned Mesa DLLs beside the binaries. | See *How CI proves this*, verified 2026-09-06 |

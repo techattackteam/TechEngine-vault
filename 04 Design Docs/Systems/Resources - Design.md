@@ -450,7 +450,9 @@ with S9-T6, and the bake's walk with S9-T7.
   writes a mesh asset in code, the way S8-T13 writes the startup scene. Until R1 it is loaded and
   never drawn; tests and a runtime log line prove the load. Drawing it needs render's fence and
   a GPU copy keyed by handle, which are R1's. Its payload is a placeholder with the triangle's
-  shape: R1's renderer ADR owns the mesh format and replaces it. The editor writes the mesh only
+  shape. [[ADR-028 - Render device seam and frame packets]] §5 (Nov 6) owns the GPU vertex
+  streams, and `Content Pipeline - Design` (S10-D9) owns the mesh file that replaces it. The
+  fence and the GPU copy are ADR-028 §4. The editor writes the mesh only
   once (S9-T5, below), so that change also has to replace the old file: the index skips a file
   at another version, and `createAsset` refuses to overwrite a file the index does not know.
 - **The mesh as built** (S9-T4, #155, 2026-10-24): `Mesh` in

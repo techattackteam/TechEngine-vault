@@ -29,7 +29,6 @@ kanban-plugin: board
 
 ## Story E: Alongside: R1's two ADRs
 
-- [ ] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h: `/adr` drafts it, Miguel accepts it, and a new `Renderer - Design` indexes it. Follows S10-P1.
 - [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: `/adr` drafts R1's second ADR, Miguel accepts it, and `Renderer - Design` indexes it. Follows S10-P3 and S10-D4.
 
 
@@ -47,7 +46,6 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h: a new `Content Pipeline - Design` decides the mesh and model files, assimp's import and source ids, then cuts the build cards (or drafts an ADR). Follows S10-D8 and S10-D4.
 
 
 ## Story I: Prepare Sprint 11
@@ -58,6 +56,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h: a new `Content Pipeline - Design` decides the mesh and model files, assimp's import and source ids, then cuts the build cards (or drafts an ADR). Follows S10-D8 and S10-D4.
 
 
 ## 👀 Review / Demo
@@ -65,6 +64,12 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 10
+
+- [x] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h: vault `22f1514`, **Nov 6**. [[ADR-028 - Render device seam and frame packets]] is Accepted and [[Renderer - Design]] indexes it: a small GL-shaped device on the render thread, frame packets moved instead of copied, ordered uploads behind render's fence, and a forward E2 frame. Unblocks S10-D7 and S10-D9; Story E stays open on S10-D7.
+	- **Miguel moved three calls in review:** GL 4.6 instead of keeping 4.5, `ARB_bindless_texture` required as in v1, and light clusters built in compute as in v1 instead of on the CPU. He confirmed from v1 that RenderDoc cannot capture bindless GL, so captures go through Nsight.
+	- **Grounding found two gaps no artifact had named:** the editor never sent render a frame after an edit, because `publishSnapshot` runs only on ticks and gets no `Scene`; and the snapshot was copied by value about four times a frame. ADR-028 §3 answers both. The scene view's camera, from main on ADR-019 §4's path, was added in review because the editor's two views made "the camera" plural.
+	- **Written and corrected before acceptance:** §4 had merged render's fence with the GPU copy's lifetime, and §5 said packets hold mesh offsets, when the GPU's in-flight draw commands do. v1's copy-on-remove mesh buffers are recorded in [[Renderer - Design]] § *Geometry buffers* as the thing not to repeat.
+	- **ADRs touched:** ADR-005 amended for the 4.6 and bindless floor; ADR-006 §5's Renderer row partially superseded ([[ADR Index]]). **Retro:** the ADR runs about 166 lines against the usual 120, for six decisions. S10-D9 was started first and the order gate sent it back. A vault-only card has no PR conversation, so this entry is the only record.
 
 - [x] **S10-T8** · Edit an `AssetRef` in the inspector · P3 · 🟢 Deep · 4-6h · stretch: #190 `6764a8a`, **Nov 6**. The inspector sets an `AssetRef` through a picker over the index's assets of the field's type, and `SetAssetFieldCommand` adds the id as a dependency of the scene entry and fills the handle. Completes Story A.
 	- **"Which `visitAsset` now passes" meant more than the type:** writing the field needs its id and handle by reference too, so asset fields are no longer a read-only kind. [[Editor - Design]] § *Fields* now says so.

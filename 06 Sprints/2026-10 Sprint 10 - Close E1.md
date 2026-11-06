@@ -222,9 +222,12 @@ an ADR. The Profiler half drops first.
   choosing. Closed Nov 3 by the lane:
   [[Renderer - Seam Paper Report]], from search extracts and memory, since no paper host was
   reachable.
-- [ ] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h ·
   done: `/adr` drafts it from [[Renderer - Brief]] and S10-P1's report; Miguel accepts it, and a
-  new `Renderer - Design` indexes it. Meets Q4's ADR line. Follows S10-P1.
+  new `Renderer - Design` indexes it. Meets Q4's ADR line. Follows S10-P1. Closed Nov 6 (vault
+  `22f1514`): [[ADR-028 - Render device seam and frame packets]], Accepted, indexed by
+  [[Renderer - Design]]. ADR-005 is amended for the GL 4.6 and bindless floor, and ADR-006 §5's
+  Renderer row is partially superseded.
 - [x] **S10-P3** · Paper report for the materials ADR · P2 · 🤖 Auto · report-only ·
   done: the validated materials and shading papers ([[Research]], Rendering) are mapped onto
   [[Renderer - Brief]]'s shading models and standard material, without choosing. Closed Nov 4 by
@@ -336,7 +339,7 @@ before the renderer.
 - [ ] E1's internal demo ran its five scenarios, and E1 is marked closed on the [[Roadmap]]
   (S10-T7).
 - [ ] The frame and device seam ADR and the materials ADR are Accepted and indexed by
-  `Renderer - Design` (S10-D4, S10-D7).
+  `Renderer - Design` (S10-D4, S10-D7). Half met: ADR-028 on Nov 6, vault `22f1514` (S10-D4).
 - [ ] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
   build cards (S10-D8, S10-D9).
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
