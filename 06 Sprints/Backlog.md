@@ -214,7 +214,7 @@ groups are kept, because they show where future work will land.
   Sep 27. **Trigger:** the next change to `ComponentRegistry`'s registration call.
   **Fired Oct 11:** S8-T3 (#127) changed `registerComponent`'s body to fill the serialization
   adapters, and it still takes the tag as an argument
-  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:45`). **Re-armed Oct 24:**
+  (`engine/core/include/TechEngine/core/scene/ComponentRegistry.hpp:51` at `e59d77c`). **Re-armed Oct 24:**
   not picked for Sprint 09; the trigger is now the next change to `registerComponent`'s
   signature.
 
@@ -541,6 +541,9 @@ groups are kept, because they show where future work will land.
     them in the unit tier.
 
   **Trigger:** the repository goes private, or `win ASan`'s test step passes 4 minutes.
+  **Fired Nov 6:** the step took between 4 min 7 s and 5 min 46 s on each of the last six
+  `master` runs (Nov 5-6, `db72fe6` to `e59d77c`), and 5 min 41 s on run 42282140339 for
+  `e59d77c`. The step has no timeout of its own, so the job's 20 minutes is the only cap.
 
 - #prio/low · **`delete_branch_on_merge` is off**: [[ADR-009 - Branching strategy & merge rules]]
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
@@ -550,10 +553,12 @@ groups are kept, because they show where future work will land.
   `check()` greps literals, so a rename empties the pattern and the gate passes on an empty
   search instead of failing (S4-T2). **Trigger:** a third gate, or the next rename that
   crosses one of the existing patterns.
-  **Fired Oct 18:** S8-T10 (#141) added a third `check` to `ci.yml`, for
-  `internal::g_(componentTypeSlot|resourceTypeTag)` under `engine/core/include/`. **Re-armed
-  Oct 24:** not picked for Sprint 09; the trigger is now a fourth gate, or the next rename that
-  crosses a pattern.
+  **Fired Oct 18:** S8-T10 (#141) added a `check` to `ci.yml`, for
+  `internal::g_(componentTypeSlot|resourceTypeTag)` under `engine/core/include/`. That made four
+  gates, not three: the Tracy-spelling gate (#37, Aug 8) is the fourth (`ci.yml:96-107` at
+  `e59d77c`). **Re-armed Oct 24:** not picked for Sprint 09; the trigger is now one gate more than
+  those four, or the next rename that crosses a pattern. All three log and slot patterns still
+  match code at `e59d77c` (checked Nov 6).
 - #prio/low · **Reconcile ADR-017's `main()` clause**: each executable defines `main()`
   and calls `runApp<AppType>()`; ADR-017 § *Decision* 3 instead places `main()` in a shared
   header. [[Project - Design]] § *Entry point and presentation boundary* records the
@@ -583,6 +588,9 @@ groups are kept, because they show where future work will land.
   comma on Oct 26. Rename them, and decide whether `CONVENTIONS.md` § *Unit tests* bans the
   comma. Found in S9-T12, where it made a deterministic failure look like a race. **Trigger:**
   the next test that seems to pass and fail with no code change, or the next sweep of a test file.
+  **Fired Nov 5:** the lane swept `RenderThreadTests.cpp` (#185) and `AppTests.cpp` (#191) and
+  kept every name, commas included: `engine/client/tests/render/RenderThreadTests.cpp:92` and
+  `engine/app/tests/AppTests.cpp:243`, `:721` and `:1026` at `e59d77c`.
 ## Ideas (unsorted)
 
 - _drop raw ideas here; untagged until triage gives them a `#prio/…` and, when useful, a `Trigger:`_
