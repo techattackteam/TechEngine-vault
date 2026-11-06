@@ -46,6 +46,11 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
+- [ ] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only: assimp's merge flags, a slot per source material with no atlas, MikkTSpace and negative-scale winding, glTF extensions through assimp, BC compression libraries, and whether TEMesh v2 carries an optional second UV set for R7's baked LOD; decides nothing. Feeds S10-D9.
+- [ ] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h: assimp with only its glTF, FBX and OBJ importers, linked into `apps/editor` alone; the PR states the clean build time before and after.
+- [ ] **S10-T14** · The import block and the TEModel file · P1 · 🟢 Deep · 4-6h: the import block and the `.temodel` node table in `core`, with write, read and tests, and the model kind in the asset index.
+- [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h: a job imports glTF, FBX or OBJ into a folder beside it, a `.temodel` plus one `.temesh` per source mesh, scale and up axis baked in. Until the asset browser, one hardcoded file is imported at startup, skipped when its folder exists. Follows S10-T13 and S10-T14.
+- [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h: one edit command builds the model's entities under one root at the origin, with no link to the file. Until the asset browser, a *Place model* menu entry with a typed path sends it. Follows S10-T14.
 
 
 ## Story I: Prepare Sprint 11

@@ -4,8 +4,7 @@
 **Goals:** E1 for export (M6, T2); E2 for import and the asset browser (T4, on E2's critical
 path); the demo for packaging (T5). Skeletons and animation come with C1, for G3.
 **Status:** agreed (2026-10-31)
-**Feeds:** `Content Pipeline - Design` (S10-D9), or the ADR it drafts if the model format proves
-ADR-level.
+**Feeds:** [[Content Pipeline - Design]] (S10-D9).
 
 ## Who uses it
 
@@ -100,3 +99,5 @@ From memory, not checked against current docs:
 | Import settings | A Must in E2 for scale and up axis, kept with the asset. | 2026-10-31 |
 | Drag and drop from Explorer | Won't for now. | 2026-10-31 |
 | Re-import on file change | Won't; re-import is by hand. | 2026-10-31 |
+| Links and prefabs | None: "there wont be any link/prefab features." | 2026-11-06 |
+| A placed model | A copy: "Once the model is added to the scene the changes made wont reflect the others nor the model file." | 2026-11-06 |

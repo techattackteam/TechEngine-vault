@@ -753,7 +753,6 @@ lane wrote and Miguel changed in review so that Run exports first.
   system, which the bake copies into the boot record. Owner: R1, the first engine system with
   content of its own.
 - **How a system holds a soft reference and learns it is ready.** Owner: A1.
-- **Sidecar or registry for an imported source's id.** Owner: T4.
 - **What a listen-server opens.** Probably all three packs. Owner: netcode, with
   [[Project - Design]] § *Open questions*.
 - **Whether `Window` outlives a project reload** ([[Window - Design]] § *Open questions*) stays

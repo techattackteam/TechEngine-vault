@@ -302,6 +302,47 @@ before the renderer.
   ([[Resources - Design]] § *Open questions*, owner T4); then it cuts the build cards into this
   story. If the model format proves ADR-level, the card drafts the ADR instead and the build
   waits. Follows S10-D8 and S10-D4, because the seam ADR decides the vertex layout.
+- [ ] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only ·
+  done: a run report answers these questions without choosing. How does assimp merge a file
+  into one mesh (`aiProcess_PreTransformVertices`, `aiProcess_OptimizeMeshes`), and what does
+  each flag lose? How does a merge keep one material slot per source material, with no texture
+  atlas? How are MikkTSpace tangents generated, and how is winding fixed under a negative scale?
+  Which glTF material extensions (clear coat, sheen, transmission) survive assimp? Which BC
+  compression libraries fit, and how fast are they? Should TEMesh v2 carry an optional second
+  UV set, which R7's baked mesh LOD would need, so that baking never breaks the file format?
+  Cut Nov 6 at S10-D9. Feeds S10-D9's vertex attributes and the merge build card.
+
+The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]]; the mesh, material,
+texture and re-import cards wait on S10-P4. They can open Sprint 11 (§ *Capacity note*). Order: S10-T13
+and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
+
+- [ ] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h ·
+  done: assimp is pinned in `cmake/deps.cmake` with only its glTF, FBX and OBJ importers, and it
+  links into `apps/editor` alone; the runtime and `TechEngine::sdk` do not link it. The PR states
+  the editor's clean build time before and after.
+- [ ] **S10-T14** · The import block and the TEModel file · P1 · 🟢 Deep · 4-6h ·
+  done: `core` gains the import block and the `.temodel` node table, with write and read, and the
+  editor's asset index lists the model kind (`apps/editor/src/assets/AssetIndex.cpp:33-36`).
+  Today's `.temesh` gets no import block yet; that comes with TEMesh v2. Tests: a model with a
+  root and nested nodes writes and reads back equal; a node list with a parent after its child, or
+  with two roots, is refused with an error code; the import block round-trips; the asset index
+  lists a `.temodel`.
+- [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h ·
+  done: an editor command imports a glTF, FBX or OBJ file as a job, into a folder beside it: a
+  `.temodel`, and one `.temesh` per source mesh in today's format, with scale and up axis baked
+  in. Until the asset browser exists, the editor imports one hardcoded source file at startup
+  and skips it quietly when its folder already exists; a `TODO` names the browser's card. Tests: a small glTF fixture imports with its node and mesh counts; a scale of
+  0.01 and a Z-up axis give the expected vertex positions and an identity root; importing into
+  an existing folder is refused, because re-import does not exist yet
+  (`apps/editor/src/EditorApp.cpp:434-456` refuses to overwrite). Follows S10-T13 and S10-T14.
+- [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h ·
+  done: placing a `.temodel` builds its entities in the open scene through one edit command
+  (ADR-027 §3): `Name`, `Transform`, `Hierarchy` and `MeshRenderer`, under one root at the origin,
+  with no reference to the model file. Until the asset browser exists, a small *Place model* menu
+  entry takes a typed path and sends the same command; placing at startup is out, because every
+  launch would add another copy to a saved scene. Tests: a three-node model adds three entities with their parents and
+  local transforms; placing it twice gives two independent trees; editing one copy changes
+  neither the other nor the file. Follows S10-T14.
 
 ### Story I: Prepare Sprint 11 (standing)
 
@@ -317,16 +358,16 @@ before the renderer.
 
 - 🤖 Claude features: Story B (S10-D1, S10-T3, S10-T4) and S10-T6, not before Fri Nov 6, after
   S10-T2. Story C moved to Miguel at planning.
-- 🤖 Auto cards: S10-P1 and S10-P3. S10-B1 was folded into Miguel's S10-T10 on Nov 3, so the
+- 🤖 Auto cards: S10-P1, S10-P3 and S10-P4 (cut Nov 6 at S10-D9). S10-B1 was folded into Miguel's S10-T10 on Nov 3, so the
   lane has no `engine/base` card this sprint.
   S10-T5 stays attended, because it edits `.github/workflows/ci.yml`, which the routine's token
   cannot push.
 - Standing prep: S10-P2 (not before Mon Nov 9) and S10-D6 (Tue Nov 10 to Fri Nov 13).
 - PR load: four PR-producing lane cards over two weeks (three 🤖 Claude, one 🤖 Auto), well under
-  the limit. S10-P1, S10-P2, S10-P3 and S10-D1 are free. Review costs about 2h, inside one 🟡
+  the limit. S10-P1, S10-P2, S10-P3, S10-P4 and S10-D1 are free. Review costs about 2h, inside one 🟡
   Tuesday.
 - The routine runs at 09:07 and 14:07 Lisbon on weekdays ([[Autonomous Lane - Routine Prompt]]).
-  With only seven lane cards, its fires will often find nothing to take; the afternoon fallback
+  With only eight lane cards, its fires will often find nothing to take; the afternoon fallback
   sweeps a module then.
 
 ## Definition of Done

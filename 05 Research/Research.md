@@ -6,6 +6,20 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
+- [ ] https://userpages.cs.umbc.edu/olano/papers/aps/ (Rendering)
+	**Appearance-Preserving Simplification**, SIGGRAPH 1998: bakes colour and normals into textures while a mesh is simplified. Queued Nov 6 for R7's mesh LOD, after S10-D9 kept atlas baking out of the merge.
+- [ ] https://mgarland.org/files/papers/quadric2.pdf (Rendering)
+	**Simplifying Surfaces with Color and Texture using Quadric Error Metrics**, IEEE Visualization 1998: quadric simplification that keeps UVs and colour. Queued Nov 6 for R7's mesh LOD.
+- [ ] https://microsoft.com/en-us/research/wp-content/uploads/2017/01/isochart.pdf (Rendering)
+	**Iso-charts**, SGP 2004: automatic chart generation for texture atlases (the method behind D3DX's UVAtlas). Queued Nov 6 for R7's baked LOD atlases.
+- [ ] https://www.cs.ubc.ca/labs/imager/tr/2018/BoxCutter/Limper2018_BoxCutter.pdf (Rendering)
+	**Box Cutter: Atlas Refinement for Efficient Packing via Void Elimination**, SIGGRAPH 2018: packs atlas charts more tightly. Queued Nov 6 for R7's baked LOD atlases.
+- [ ] https://cragl.cs.gmu.edu/seamless/ (Rendering)
+	**Seamless: Seam Erasure and Seam-Aware Decoupling of Shape from Mesh Resolution**, SIGGRAPH Asia 2017: removes texture seams and simplifies a mesh without breaking its UVs. Queued Nov 6 for R7's baked LOD atlases.
+- [ ] https://gdcvault.com/play/1021761/Adaptive-Virtual-Texture-Rendering-in (Rendering)
+	**Adaptive Virtual Texture Rendering in Far Cry 4**, GDC 2015: bakes terrain materials into a virtual texture. Queued Nov 6 for the static heightmap terrain (W3), as the terrain side of material baking. A talk, not a paper.
+- [ ] http://www.terathon.com/lengyel/Lengyel-VoxelTerrain.pdf (Rendering)
+	**Voxel-Based Terrain for Real-Time Virtual Simulations** (Transvoxel), Lengyel, UC Davis PhD thesis 2010: level of detail for marching-cubes terrain. Queued Nov 6 for E6's distance detail. The link comes from a 2010 mailing-list post and was not opened.
 
 
 ## TO VALIDATE - MIGUEL REVIEW🔍
