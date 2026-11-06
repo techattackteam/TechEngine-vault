@@ -24,6 +24,12 @@
   fallback and tidy's performance suggestions blocked builds. Miguel confirmed on 2026-10-09
   that it is permanent, not a pause. The mechanism is in
   [[ADR-008 - v2 build & testing baseline]] §5. S7-P1.
+- **Amended 2026-11-06, decision:** the *Graphics API* row's "OpenGL 4.5+ (core, DSA)" and the
+  rationale's "Target **4.5 core with DSA**" → **OpenGL 4.6 core with DSA, and
+  `ARB_bindless_texture` required.** 4.6 brings `gl_DrawID`, the GPU-written draw count and
+  SPIR-V loading into core, and bindless lets one multi-draw cover many materials. The
+  *Graphics* trigger, which names bindless as something GL "can't serve well", has not fired:
+  the extension serves it. S10-D4 ([[ADR-028 - Render device seam and frame packets]] §2).
 
 ## Context
 
@@ -108,6 +114,9 @@ renderer god-object (F22): passes talk to a **thin internal device/command seam*
 not raw GL, so a future backend can slot in without touching every pass. This is a
 *small* seam, **not** a full RHI; a full abstraction now would be speculative
 generality. Lands concretely in B2.
+
+> **Amended 2026-11-06:** the target is OpenGL **4.6** core with DSA, and
+> `ARB_bindless_texture` is required. See the header entry and ADR-028 §2.
 
 **FetchContent, with a local-source escape hatch.** Deps are acquired by CMake,
 version-pinned by `GIT_TAG`, no external package manager (vcpkg rejected on

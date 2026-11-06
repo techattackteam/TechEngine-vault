@@ -1,0 +1,146 @@
+# Renderer: Design
+
+> Living design doc. The decisions that are hard to reverse are in
+> [[ADR-028 - Render device seam and frame packets]] (Accepted 2026-11-06). This note holds the *how*, and
+> it is R1's hub: plan and ground renderer work from here.
+
+**Module:** `client` (the device, the passes, the render thread) · `apps/clientapp` and `app`
+(the extraction hook) · `core` (mesh and material types)
+**Kind:** system
+**Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`. Nothing is built
+beyond M4's triangle (`engine/client/src/render/FrameRenderer.cpp`).
+**ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
+[[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
+[[ADR-018 - Main and simulation threads, render-owned GL]] §2 ·
+[[ADR-019 - Fixed simulation ticks, render interpolation and shared clock]] §3 ·
+[[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §6 ·
+[[ADR-027 - Editor threads, edit commands and play sessions]] §1
+**Product:** [[Renderer - Brief]] · **Research:** [[Renderer - Research Brief]],
+[[Renderer - Seam Paper Report]], [[Renderer - Materials Paper Report]] ·
+**Backlog:** [[Backlog]]
+
+## Purpose
+
+The renderer draws the `Scene` through a camera, the same way in the editor's scene view and
+in the runtime. The `Scene` belongs to the simulation thread and GL to the render thread, so
+the renderer is two halves: a hook that reads the `Scene` into a frame packet, and a frame on
+the render thread that draws packets through a small device.
+
+## Decided
+
+| What | Call | Ref |
+|---|---|---|
+| A small device, shaped for GL | Typed handles, pipeline objects bound whole, explicit render passes. Passes never call GL. It executes immediately; there is no recorded command stream. | ADR-028 §1 |
+| The scene view is a render target | The editor draws the same frame into a texture that ImGui shows. | ADR-028 §1; ADR-027 §1 |
+| OpenGL 4.6 | The floor rises from 4.5. | ADR-028 §2 |
+| Bindless textures are required | `ARB_bindless_texture`, with no fallback. Texture handles live in a material buffer that each draw indexes through `gl_DrawID`. | ADR-028 §2 |
+| The frame packet | Read from the `Scene` after ticks and after applied edits; pooled and moved by ownership, never copied. ADR-019 §3's delivery and interpolation stand. | ADR-028 §3 |
+| Views | A frame draws one packet into one or more views, each with a target and a camera. The runtime has the window; the editor has its scene view and game view. A hidden view is not drawn. Light clusters depend on the camera, so each view builds its own. | ADR-028 §3 |
+| The scene view's camera | It comes from main on ADR-019 §4's latest-value path, not from the packet, so it moves with no packet and no tick. The game view uses the scene's main active camera from the packet. | ADR-028 §3; [[Editor - Design]] § *The layout* |
+| The renderer is not a scheduled System | It is the extraction hook plus the render-thread frame. | ADR-028 §3, against ADR-006 §5 |
+| Uploads cross in order | Mesh, texture and material uploads are never dropped. One GPU copy per resource handle. | ADR-028 §4 |
+| Render's fence | Simulation defers a free until render reports the upload done. A reload keeps its handle and sends a new upload. | ADR-028 §4; ADR-024 §6 |
+| The GPU copy's lifetime | Render drops a copy on a release request, once no packet in its history names the handle and the GPU has finished the frames that drew it. | ADR-028 §4 |
+| E2's frame | Depth pre-pass, light clusters built and filled in compute as in v1, one forward lit pass with CPU-written multi-draws, sky, final image. | ADR-028 §5 |
+| Compute from E2 | The device dispatches compute and binds storage buffers. A pass that writes in compute issues GL's coarse memory barrier through the device; per-resource barriers stay out. | ADR-028 §5 §6 |
+| Shared geometry buffers | Static meshes share one set: a position buffer, an attribute buffer and a 32-bit index buffer. A new vertex layout gets its own set. A mesh never moves once placed. | ADR-028 §5; § *Geometry buffers* |
+| Who owns the mesh | This note owns the GPU streams and attributes; `Content Pipeline - Design` (S10-D9) owns the file. | ADR-028 §5 |
+| One backend | No backend interface; Vulkan or D3D12 later replaces the device, not the passes. | ADR-028 §6 |
+
+## Design
+
+```mermaid
+flowchart LR
+    subgraph Sim["Simulation thread"]
+        X["Extraction hook<br/>reads the Scene"]
+        U["Upload requests"]
+    end
+    subgraph Render["Render thread"]
+        H["Packet history<br/>two entries"]
+        F["Frame: passes"]
+        D["Device"]
+        G["GPU copies<br/>by handle"]
+    end
+    X -->|"packet, latest wins"| H
+    H -->|"released packets"| X
+    U -->|"ordered, never dropped"| G
+    G -->|"upload done, copy dropped"| U
+    H --> F --> D
+    G --> D
+```
+
+### Geometry buffers
+
+| Buffer | Holds |
+|---|---|
+| Positions | Every static mesh's positions, 12 bytes each. |
+| Attributes | Every static mesh's other attributes, interleaved: normal, tangent, UVs. |
+| Indices | Every static mesh's indices, 32-bit. |
+
+One vertex array binds the two vertex buffers to two bindings.
+
+- **Why positions are apart.** The depth pre-pass reads only positions, and from E3 so does
+  every shadow pass. Interleaved, each vertex fetch would pull the whole vertex into the cache
+  to use 12 bytes of it. All five engines in [[Renderer - Research Brief]] § *Q2 mapped* split
+  them for the same reason. The gain is not measured on Sponza or Bistro.
+- **One vertex index, two buffers.** A mesh's vertices sit at the same index range in both
+  vertex buffers, so one `baseVertex` serves both streams.
+- **Fixed size, immutable storage.** The set is created once with `glNamedBufferStorage`,
+  sized at startup, and never resized. When it fills, a second block is added, and each block
+  draws with its own multi-draw.
+- **A free-list allocator, and meshes never move.** A freed range goes back to the list when
+  render drops the mesh's GPU copy (ADR-028 §4), so no frame the GPU is still drawing reads it.
+- **What v1 did, and why not again.** v1 grew its buffers by reallocating and copying them
+  (`engine/client/src/renderer/mesh/VertexBuffer.cpp:100-108` at `v1-reference`). Removing a
+  mesh copied the buffer's tail down over it and shifted every later mesh's offsets
+  (`engine/client/src/renderer/resources/GpuResourceManager.cpp:99-112`). That costs a copy of
+  the buffer per removal, and it moves offsets that frames still in flight use, which ADR-028
+  §3's packets cannot allow.
+- **Not in this set:** geometry the CPU rewrites each frame (debug lines, UI) gets its own
+  streaming buffer, so it never fragments the static set.
+
+### Build notes
+
+Mechanism sections land as the build cards are cut. Known build work:
+
+- **glad2** is regenerated with `--api gl:core=4.6` and `ARB_bindless_texture`
+  (`cmake/deps.cmake:167`), and the startup check (`RenderThread.cpp:93`) names both
+  requirements when one fails.
+- **The packet pool** needs four packets for simulation never to wait: one being filled, one
+  in the slot, two in render's history.
+- **GPU captures** go through Nsight, since RenderDoc cannot capture bindless GL (Miguel, v1).
+- **The light clusters follow v1's two dispatches:** one builds each cluster's bounds, one
+  assigns lights. v1 ran both every frame and read the light count from the live `Scene`
+  (`engine/client/src/renderer/passes/LightCullingPass.cpp:19-49` at `v1-reference`). Here the
+  lights come from the packet, and the bounds depend only on the projection and the viewport,
+  so they are rebuilt only when one of those changes.
+
+## Open questions
+
+- **The vertex attributes, the tangent encoding and the index width.** Two vectors or a
+  quaternion; 32-bit only or 16 and 32. Owner: S10-D9, with this note.
+- **Where instance transforms are interpolated:** on the CPU per frame, or on the GPU from both
+  packets' buffers. Owner: E2b, measured against the stress scene.
+- **How render matches an instance across two packets** to interpolate it, for example by
+  entity in a stable order, and what it does with one that appears or vanishes between them.
+  Owner: R1's packet card.
+- **How the editor's scene camera is driven** (orbit, fly, focus on the selection). Owner: T3's
+  viewport tools. Presentation input while Stopped and which camera is the main active camera
+  stay open in [[Editor - Design]] § *Open questions*.
+- **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.
+  Owner: R1's first frame card.
+- **The shader format:** GLSL source, or SPIR-V compiled offline, which GL 4.6 loads. Owner:
+  S10-D7, because it is the surface shader contract.
+- **The material buffer's layout** and sampler handles for live edits. Owner: S10-D7.
+- **Where the project names the renderer's settings asset** ([[Resources - Design]] §
+  *Open questions*, owner R1).
+- **Whether lights go only to occupied clusters,** found from the depth pre-pass, or to every
+  cluster as v1 did. With hundreds of lights, every cluster may be enough. Owner: E2b.
+- **An ordered pass list or a render graph.** E2 needs only the list; ADR-013 §8's GPU zones
+  attach to each pass either way.
+
+## References
+
+- M4's triangle and the snapshot path: `engine/client/src/render/`.
+- The copies ADR-028 removes: `SnapshotMailbox.cpp:6`, `:14`; `SnapshotHistory.cpp:17-29`, `:42`.
+- The publish points: `engine/app/src/SimulationThread.cpp:189-191`, `:211-214`, `:226-229`.

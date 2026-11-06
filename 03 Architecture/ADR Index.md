@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 028 | [[ADR-028 - Render device seam and frame packets]] | Accepted | 2026-11 |
 | 027 | [[ADR-027 - Editor threads, edit commands and play sessions]] | Accepted | 2026-10 |
 | 026 | [[ADR-026 - Reference fields and scene-held acquires]] | Accepted | 2026-10 |
 | 025 | [[ADR-025 - Content packs (.tepack and the runtime load path)]] | Accepted | 2026-10 |
@@ -41,7 +42,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 - Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/`, history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **028** (numbers are never reused).
+> Next number is **029** (numbers are never reused).
 
 ### Partial supersessions
 
@@ -55,6 +56,7 @@ anyone noticed (2026-08-20).
 
 | Clause | Superseded by | Scope |
 | --- | --- | --- |
+| [[ADR-006 - v2 core architecture & module layout]] §5: the Renderer row, "**System** (final phase, client-side) \| owns GPU device+graph"; §1: "GL 4.5 device seam" in the `client` row | [[ADR-028 - Render device seam and frame packets]] §1-3 | Accepted Nov 6: the renderer is an extraction hook on the simulation thread, run after ticks and after applied edits, plus a frame on the render thread that owns the device. It is not a scheduled System, because a stopped editor never ticks. The device targets GL 4.6. `client` owning rendering and GPU upload, and the renderer as a replaceable default, remain. |
 | [[ADR-006 - v2 core architecture & module layout]] §4: the **`ResourceRegistry& resources` field** of the `EngineContext` sketch; §5: "injected via `EngineContext`", for the resource cache only | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4 | Accepted Oct 10: `App` owns the cache and hands it to the simulation side, because only the simulation thread may use it. The DI rule, context immutability, "holds no systems" and the `app` composition root remain. |
 | [[ADR-020 - System scheduling and task-graph execution]] §1: the barrier-operations list | [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §5 | Accepted Oct 10, takes effect with A1: the barrier gains a resource step after structural commands and NetId assignment that issues the Tick's soft-reference requests, publishes finished loads and drains frees. Its order against the event step is A1's to fix. The rest of §1 remains. |
 | [[ADR-016 - Serialization (binary primitives & describe-once seam)]] §6: "asset containers to T4's bake" | [[ADR-025 - Content packs (.tepack and the runtime load path)]] §1 §6 | Accepted Oct 10: the `.tepack` container and the export land at M6; T4 keeps importers. ADR-025 renamed its bake to export on Oct 12. The scene layout (M5/M6), snapshot packets (N3), the compression trigger and the 2026-08-30 amendment remain. |
