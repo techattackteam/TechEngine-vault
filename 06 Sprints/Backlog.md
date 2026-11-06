@@ -224,6 +224,7 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **Code sweep leftovers: core**: Found by the code sweep on Nov 4, 2026
   ([[2026-11-04 14-12 Auto Run]]), and carried from Oct 20 ([[2026-10-20 15-09 Auto Run]]).
+  The `engine/app` sweep on Nov 6 added the built-in registration line ([[2026-11-06 14-07 Auto Run]]).
   #149 and #184 fixed what needed no decision; these need a decision, a new header or a new
   public symbol, or cost about as much as they save. The Oct 20 line numbers were not re-checked on Nov 4.
   - `Scene::unparent` (`engine/core/src/scene/Scene.cpp:417-455`) repeats `setParent`'s
@@ -254,6 +255,13 @@ groups are kept, because they show where future work will land.
   - `HierarchyTests` and `TransformTests` repeat the registry, built-in registration and
     `Scene` setup about 33 times. A `SceneFixture` beside `registerBuiltInSceneComponents` in
     `tests/scene/SceneTestRegistry.hpp` saves about 60 lines.
+  - Registering the three built-in components (`Hierarchy`, `Transform`, `Name`) is written by
+    hand outside `core`: `engine/app/src/App.cpp:124-132` (only when missing),
+    `engine/app/tests/SimulationThreadTests.cpp:96`, `apps/editor/tests/edit/EditTestScene.hpp:95`,
+    `apps/editor/tests/project/ProjectTests.cpp:92`, `apps/editor/tests/EditorAppTests.cpp:279`,
+    and `apps/runtime/tests/RuntimeAppTests.cpp:395` and `:841`. `core`'s own tests already share
+    `registerBuiltInSceneComponents` (`engine/core/tests/scene/SceneTestRegistry.hpp:31`). A
+    public `core` function would serve all of them; it is a new public symbol, and saves about 15 lines.
   - The pack tests copy one scratch fixture (`engine/core/tests/resources/PackTests.cpp:68`,
     `engine/core/tests/assets/PackSourceTests.cpp:58`), `viewOf` and `bytesOf`, and `patch<T>`
     (`PackTests.cpp:123`, `BootRecordTests.cpp:105`). One test header, about 30 lines.
