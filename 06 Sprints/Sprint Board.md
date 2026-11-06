@@ -46,7 +46,8 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only: assimp's merge flags, a slot per source material with no atlas, MikkTSpace and negative-scale winding, glTF extensions through assimp, BC compression libraries, and whether TEMesh v2 carries an optional second UV set for R7's baked LOD; decides nothing. Feeds S10-D9.
+- [ ] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only: assimp's merge flags, a slot per source material with no atlas, MikkTSpace and negative-scale winding, glTF extensions through assimp, BC compression libraries, and whether TEMesh v2 carries an optional second UV set for R7's baked LOD; decides nothing. Feeds S10-D10.
+- [ ] **S10-D10** · Design TEMesh v2, textures and re-import · P1 · 🟢 Deep · 4-6h: [[Content Pipeline - Design]] decides the mesh file, materials per slot, the texture file and re-import's stable ids, files the ADR-024 §9 amendment, then cuts those build cards. Split from S10-D9. Follows S10-P4.
 - [ ] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h: assimp with only its glTF, FBX and OBJ importers, linked into `apps/editor` alone; the PR states the clean build time before and after.
 - [ ] **S10-T14** · The import block and the TEModel file · P1 · 🟢 Deep · 4-6h: the import block and the `.temodel` node table in `core`, with write, read and tests, and the model kind in the asset index.
 - [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h: a job imports glTF, FBX or OBJ into a folder beside it, a `.temodel` plus one `.temesh` per source mesh, scale and up axis baked in. Until the asset browser, one hardcoded file is imported at startup, skipped when its folder exists. Follows S10-T13 and S10-T14.
@@ -61,7 +62,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h: a new `Content Pipeline - Design` decides the mesh and model files, assimp's import and source ids, then cuts the build cards (or drafts an ADR). Follows S10-D8 and S10-D4.
 
 
 ## 👀 Review / Demo
@@ -69,6 +69,12 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 10
+
+- [x] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h: vault `d430705`, **Nov 6**, **split**. [[Content Pipeline - Design]] decides the model half: TEModel as its own node table, a folder per import, scale and up axis baked in, an import block inside every imported file (neither sidecar nor registry), and placed models as copies. It cut S10-P4 and S10-T13 to S10-T16. The mesh half moved to S10-D10, after S10-P4's report. No ADR was needed.
+	- **Miguel's calls during grounding:** no prefabs or links, so a placed model is a copy, now two rows in [[Content Pipeline - Brief]] § *Decided*. A node's meshes stay separate child entities even after TEMesh v2, against Claude's proposal to join them into slots. Until the asset browser exists, one file is imported at startup, and placement goes through a menu entry, because placing at startup would add a copy on every launch.
+	- **The brief contradicted itself:** its Oct 31 quote packs a merged mesh "into just a single mesh and material", while the next row keeps a slot per source material. Material slots won, because a single material means v1's texture atlas bake, which never worked. Atlas baking moved to R7's mesh LOD, and seven candidate papers are queued on [[Research]].
+	- **Retro:** the `done:` clause assumed one session could decide both files, but the mesh waits on research. The card was split instead of left open. A vault-only card has no PR conversation, so this entry is the only record.
+
 
 - [x] **S10-D4** · The frame and device seam ADR · P1 · 🟢 Deep · 4-6h: vault `22f1514`, **Nov 6**. [[ADR-028 - Render device seam and frame packets]] is Accepted and [[Renderer - Design]] indexes it: a small GL-shaped device on the render thread, frame packets moved instead of copied, ordered uploads behind render's fence, and a forward E2 frame. Unblocks S10-D7 and S10-D9; Story E stays open on S10-D7.
 	- **Miguel moved three calls in review:** GL 4.6 instead of keeping 4.5, `ARB_bindless_texture` required as in v1, and light clusters built in compute as in v1 instead of on the CPU. He confirmed from v1 that RenderDoc cannot capture bindless GL, so captures go through Nsight.

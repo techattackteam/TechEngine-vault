@@ -6,7 +6,7 @@
 **Module:** `core` (the model and mesh formats, the import block) · `apps/editor` (assimp, the
 import, placement)
 **Kind:** system
-**Status:** the model is designed (2026-11-06, S10-D9) against engine `a67c4d4`; the mesh waits
+**Status:** the model is designed (2026-11-06, S10-D9) against engine `a67c4d4`; the mesh is S10-D10's, and waits
 on S10-P4's report. Nothing is built beyond the triangle's `Mesh`
 (`engine/core/include/TechEngine/core/mesh/Mesh.hpp:19-29`).
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
@@ -76,15 +76,15 @@ the editor fills it in.
 
 - **TEMesh v2.** One mesh with material slots, each slot one index range. Its vertex attributes,
   tangents and an optional second UV set for R7's baked mesh LOD wait on S10-P4's report. Owner:
-  S10-D9, after S10-P4.
+  S10-D10, after S10-P4.
 - **Materials per slot on the renderer.** The lean: the mesh file keeps a default material per
   slot, and `MeshRenderer` holds overrides matched by slot name, as Unreal does from memory.
-  The material type itself is S10-D7's. Owner: S10-D9 with TEMesh v2.
-- **Textures:** BC compression, mips, and which library. Waits on S10-P4. Owner: S10-D9.
+  The material type itself is S10-D7's. Owner: S10-D10, with TEMesh v2.
+- **Textures:** BC compression, mips, and which library. Waits on S10-P4. Owner: S10-D10.
 - **Re-import reloads at once.** It needs a dated amendment to ADR-024 §9, whose reload waits.
-  Filed with the re-import card's design, not yet.
+  Owner: S10-D10.
 - **The merged mesh.** One material slot per source material, with no texture atlas. Atlas
-  baking belongs to R7's mesh LOD, whose papers are queued on [[Research]].
+  baking belongs to R7's mesh LOD, whose papers are queued on [[Research]]. Owner: S10-D10.
 
 ## References
 

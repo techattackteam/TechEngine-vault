@@ -296,12 +296,14 @@ before the renderer.
   *Content pipeline*: what import must bring in for E2 (meshes, submeshes, materials, textures,
   the node tree), from which formats, and what the asset browser waits for. Closed Oct 31
   (vault `a5ed725`).
-- [ ] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-D9** · Design TEMesh, TEModel and the glTF loader · P1 · 🟢 Deep · 4-6h ·
   done: a new `Content Pipeline - Design` decides the runtime-form mesh and model files, how
   assimp's import writes them (ADR-025 §6), and sidecar or registry for a source's id
   ([[Resources - Design]] § *Open questions*, owner T4); then it cuts the build cards into this
   story. If the model format proves ADR-level, the card drafts the ADR instead and the build
-  waits. Follows S10-D8 and S10-D4, because the seam ADR decides the vertex layout.
+  waits. Follows S10-D8 and S10-D4, because the seam ADR decides the vertex layout. Closed Nov 6
+  (vault `d430705`), split: [[Content Pipeline - Design]] decides the model and cut its build
+  cards below, and the mesh half moved to S10-D10. No ADR was needed.
 - [ ] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only ·
   done: a run report answers these questions without choosing. How does assimp merge a file
   into one mesh (`aiProcess_PreTransformVertices`, `aiProcess_OptimizeMeshes`), and what does
@@ -310,10 +312,17 @@ before the renderer.
   Which glTF material extensions (clear coat, sheen, transmission) survive assimp? Which BC
   compression libraries fit, and how fast are they? Should TEMesh v2 carry an optional second
   UV set, which R7's baked mesh LOD would need, so that baking never breaks the file format?
-  Cut Nov 6 at S10-D9. Feeds S10-D9's vertex attributes and the merge build card.
+  Cut Nov 6 at S10-D9. Feeds S10-D10's vertex attributes and the merge build card.
+- [ ] **S10-D10** · Design TEMesh v2, textures and re-import · P1 · 🟢 Deep · 4-6h ·
+  done: [[Content Pipeline - Design]] decides TEMesh v2 (material slots as index ranges, its
+  vertex attributes and tangents, whether it keeps an optional second UV set, and its import
+  block), materials per slot on `MeshRenderer`, the merged mesh, the texture file (BC compression,
+  mips and the library), and how a re-import keeps each file's id. It files ADR-024 §9's dated
+  decision amendment, so a re-import reloads at once, then cuts those build cards into this story.
+  Split from S10-D9 on Nov 6. Follows S10-P4; the slots point at S10-D7's material type.
 
 The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]]; the mesh, material,
-texture and re-import cards wait on S10-P4. They can open Sprint 11 (§ *Capacity note*). Order: S10-T13
+texture and re-import cards wait on S10-D10. They can open Sprint 11 (§ *Capacity note*). Order: S10-T13
 and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
 
 - [ ] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h ·
@@ -382,7 +391,8 @@ and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
 - [ ] The frame and device seam ADR and the materials ADR are Accepted and indexed by
   `Renderer - Design` (S10-D4, S10-D7). Half met: ADR-028 on Nov 6, vault `22f1514` (S10-D4).
 - [ ] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
-  build cards (S10-D8, S10-D9).
+  build cards (S10-D8, S10-D9). Half met: the brief on Oct 31 (vault `a5ed725`), and the
+  model's cards on Nov 6 (vault `d430705`); the mesh's cards wait on S10-D10.
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
   first, #181 `78c48ab`).
