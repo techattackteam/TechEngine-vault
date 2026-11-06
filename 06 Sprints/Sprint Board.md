@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: Multi-select
 
-- [ ] **S10-T8** · Edit an `AssetRef` in the inspector · P3 · 🟢 Deep · 4-6h · stretch: a picker over the `AssetIndex`, a set that adds the dependency and fills the handle, and the failed-load policy decided at `/card-start`. Follows S10-T2 and S10-T6.
 
 
 ## Story B: Export · 🤖 Claude
@@ -38,6 +37,7 @@ kanban-plugin: board
 
 - [ ] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h: `Scene` keeps a root order, so adding a component or destroying a root no longer moves another, and a save keeps the order.
 - [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 · 🟠 Moderate · 2-3h: amend ADR-021 so a reparent that would need shear keeps the world position with an approximate rotation and scale, as Unity does; a zero scale stays refused. Not at the same time as S10-B2, which also edits `Scene.cpp`.
+- [ ] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate · 2-3h: when the manifest names a scene no asset source holds, the startup load recovers as it does with no scene named, adopting or creating `Startup.tescene`, so the editor can save again. A file that exists but does not load is still never overwritten.
 
 
 ## Story G: Product follow-up
@@ -66,6 +66,12 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T8** · Edit an `AssetRef` in the inspector · P3 · 🟢 Deep · 4-6h · stretch: #190 `6764a8a`, **Nov 6**. The inspector sets an `AssetRef` through a picker over the index's assets of the field's type, and `SetAssetFieldCommand` adds the id as a dependency of the scene entry and fills the handle. Completes Story A.
+	- **"Which `visitAsset` now passes" meant more than the type:** writing the field needs its id and handle by reference too, so asset fields are no longer a read-only kind. [[Editor - Design]] § *Fields* now says so.
+	- **Decided at `/card-start`, in [[Editor - Design]] § *Decided*:** the command runs its own loading phase and writes only a Ready entry, so a failed load changes nothing. A created startup scene is now loaded back, because the first launch's scene had no cache entry to add a dependency to.
+	- **Calls the note did not make:** the picker reads a copy of the index in the snapshot, a server asset is refused and left out of the picker (a `/card-review` finding), and `core` gained `ResourceCache::getState(ResourceSlotId)`. There is no way to clear a reference: an empty id is not in the index, and no artifact decides it.
+	- **Found beside the card:** a manifest that names a missing scene leaves the editor unable to save, carded as S10-B4. The dev project never had a mesh, because its scene predates S9-T5; it now ships `Triangle.temesh`.
+	- **Retro: the first push failed CI twice.** The Run test raced its own fake runtime on UBSan and now waits for a release file, and diff coverage was 79% until the refusal branches got tests. Miguel asked Claude to write the logic of this 🟢 card. The PR has no review conversation, so this entry is the only record. **Unverified:** no recorded windowed pick of the triangle, or runtime log of it.
 - [x] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h: #189 `4a8af74`, **Nov 6**. The editor's console docks below the views and keeps 5,000 records in `ConsoleHistory`, with a level and text filter, Clear, and the selected row's source. Completes Story C, since the Profiler's build waits for E11.
 	- **Changed at Miguel's windowed check, against [[Editor - Design]] § *The console panel*:** the level toggles left the toolbar for one *Show* dropdown with their counts, which also hides the time and tick columns. Debug rows are blue, and the rows sit on a darker background. The note now records the new toolbar.
 	- **Calls the note did not make:** the "N records dropped" row is Info, Clear keeps the filters, and the selection is a copy of the record, so a drop cannot leave it dangling.

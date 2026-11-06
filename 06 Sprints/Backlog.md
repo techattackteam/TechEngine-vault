@@ -378,6 +378,11 @@ groups are kept, because they show where future work will land.
   the other half of this entry, one rotation edit leaving four records, was fixed by S10-T2's
   set-rotation-axis command (#182). **Trigger:** the rung after R1 that brings undo
   ([[Editor - Brief]]).
+- #prio/low · **Clear an `AssetRef` in the inspector**: the asset picker has no None entry,
+  because `SetAssetFieldCommand` refuses an id the index does not hold, and an empty id never is.
+  Clearing needs its own rule for the empty id (no dependency to add) and a row in
+  [[Editor - Design]]. Found at S10-T8. **Trigger:** the first time a reference must be removed
+  without removing its component, likely with E2's materials.
 - #prio/low · **Inspector field hints and a drawer registry**: a generic field has no range,
   speed or display name, and `drawComponent` picks a drawer with an `if` chain on the type. Hints
   would be an optional argument to `visit`'s `field`, which the other archives ignore, so they

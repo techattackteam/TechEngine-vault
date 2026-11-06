@@ -16,7 +16,7 @@ close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the rememb
 (S9-T19, #175 `555a9e4`), and main asks for its own next frame without a posted event (S9-T21,
 #177 `4ba9f60`). Multi-select is built, in the hierarchy (S10-T1, #178 `9afda8d`) and in the
 inspector (S10-T2, #182 `a6c832f`), and so are the inspector's Local and World modes (S10-T6,
-#188 `1ac607d`). File → Export is built (S10-T3, #179 `0dcbc1f`), and so is the console, its
+#188 `1ac607d`), and its asset picker (S10-T8, #190 `6764a8a`). File → Export is built (S10-T3, #179 `0dcbc1f`), and so is the console, its
 sink (S10-T11, #187 `db72fe6`) and its panel (S10-T12, #189 `4a8af74`).
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
@@ -52,11 +52,12 @@ message. This note says how those messages are shaped.
 | The editor ends ImGui around the client | GLFW's backend shuts down while the window exists, then the client stops, then the context is destroyed. Both `shutdown()` and the destructor run it, and each step checks its own state. | 2026-10-26 (S9-T11), § *The ImGui frame on main* |
 | ImGui's GL is the one GL outside `client` | Third-party code in the editor issues GL, on the render thread only. | 2026-10-26; [[Window - Design]] |
 | Every `visit` field has a name | `archive.field("mesh", value.mesh)`. `Writer`, `Reader` and `ReferenceVisitor` ignore it. | 2026-10-26; [[Serialization - Design]] |
-| The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. A row's value has the field's exact C++ type, and the read-only kinds reach the visitor by value. | 2026-10-26; exact types 2026-10-30 (S9-T17), § *Fields* |
+| The inspector reads field rows | A field visitor in `core` flattens a component into rows; main draws widgets from rows and never sees the C++ type. A row's value has the field's exact C++ type, and the read-only kinds reach the visitor by value. An asset field reaches it by reference with its type tag, so the set command can write its id and handle. | 2026-10-26; exact types 2026-10-30 (S9-T17); asset fields 2026-11-06 (S10-T8), § *Fields* |
 | A field edit assigns through the type | The edit walk writes a copy and assigns it back with the component's own `operator=`, so `Transform` re-propagates its subtree. It is a second record entry, `editFields`, beside `visitFields`. | 2026-10-30 (S9-T17), § *Fields* |
 | The editor reaches a component by its type id | `Scene` makes `componentRaw` public and gains `addComponentRaw` (a default value) and `removeComponentRaw`. Both refuse `Hierarchy`, `Transform` and `Name`, and return `bool` like the `Scene` mutators beside them. | 2026-10-30 (S9-T17), § *The inspector* |
 | Old values are plain records in the session | `EditSession` keeps one list of records: a field edit, a rotation edit with the old quaternion, a rename, an added component, and a removed component with its payload bytes. | 2026-10-30 (S9-T17); the rotation edit 2026-11-03 (S10-T2); ADR-027 §3 §5, § *The inspector* |
-| `AssetRef` is read-only in the first inspector | The inspector shows the id. Editing it waits for its own card: a picker, the dependency on the scene entry and the failed-load policy. | 2026-10-30 (S9-T17); the card is S10-T8 |
+| An `AssetRef` is set through a picker, and loads before it is written | The picker offers the asset index's ids of the field's type. The set command refuses an unknown id, a server asset, an id of another type and a scene with no cache entry, and the picker leaves server assets out. It adds the id as a dependency of the scene entry, runs the loading phase itself, and writes the fields only when the new entry is Ready. A failed load therefore changes nothing and only warns, and the failed entry stays held until the scene is released. | 2026-11-06 (S10-T8 `/card-start`; server assets at its `/card-review`), § *Commands and the idle simulation* |
+| A created startup scene is loaded back | After the editor writes `Startup.tescene`, it loads the file through `SceneAsset::load`, so a scene the startup load created has a cache entry, and its triangle's handle is filled. An adopted `Startup.tescene` or a failed load has no entry, and an asset set on it is refused. | 2026-11-06 (S10-T8 `/card-start`) |
 | The name is the inspector's header | It is drawn above the components and sent through `EditorCommands::rename`. `Name` is never listed as a component, and a set-field command refuses it, so a rename always leaves a `RenameRecord`. | 2026-10-30 (S9-T17), § *The inspector* |
 | Transform is drawn as v1 drew it | Translation, Rotation and Scale, each as X, Y and Z drags behind red, green and blue letters that reset the axis when clicked. Rotation is shown in Euler degrees. | 2026-10-30 (S9-T17), § *The inspector panel* |
 | The theme | v1's colors, set right after the context is created, with four changes: readable disabled text, gray grabs, tabs lighter than their bar with an accent overline on the focused panel, and a selection stronger than hover. Hover is a neutral gray, so a panel that marks a selected item with `Header` pushes `HeaderHovered` as `Header` around it, as the hierarchy does. `Header` also colors the inspector's component headers. | 2026-10-31 (S9-T20) |
@@ -209,10 +210,12 @@ commands accepted but not applied at shutdown are reported as cancelled.
 - The queue is open only while the simulation thread runs, so a command submitted before the
   run or after stop is rejected. Commands still queued at shutdown are cancelled with one
   warning that gives their count.
-- A batch is a loading phase (ADR-026 §4): a command that sets an `AssetRef` adds the id as a
-  dependency of the scene entry, and the batch drains the load before it publishes.
-  `App::applyCommands` runs `runLoadingPhase()` after a non-empty batch; an error logs one
-  warning and the app keeps running (`engine/app/src/App.cpp:206`).
+- A batch is a loading phase (ADR-026 §4). `App::applyCommands` runs `runLoadingPhase()` after
+  a non-empty batch; an error logs one warning and the app keeps running
+  (`engine/app/src/App.cpp:219`). A command is destroyed before that phase runs, so the command
+  that sets an `AssetRef` runs its own phase after adding the id as a dependency of the scene
+  entry. It writes the fields only when the new entry is Ready, which also catches an entry that
+  had already failed, a case the batch's phase reports with no error.
 - **The idle loop consumes no input.** `beginTick` is the only consumer of the `InputBuffer`,
   so a Stopped editor would fill it into overflow recovery. The editor detaches it once, at the
   end of `init()`, through `ClientApp::detachInput()` and `Client::detachInput()`, which sets
@@ -281,7 +284,9 @@ name still compiles. The field visitor can refuse it by offering no nameless ove
 `core/serialization` gains a field visitor shaped like `ReferenceVisitor`: a templated
 `field(name, value)` that dispatches to one virtual function per C++ type. It has no nameless
 `field(value)`, so a `visit` that forgets a name does not compile against it. The read-only
-kinds reach it by value, so no visitor can write them. Each registered component gains two
+kinds reach it by value, so no visitor can write them. An `AssetRef<T>` reaches it as its id and
+handle slot by reference, with `resourceTypeTag<T>()`, which is empty until a cache registers a
+loader for `T` (S10-T8). Each registered component gains two
 walks in its registry record, beside `visitReferences`: `visitFields` walks the component in
 place, and `editFields` walks a copy and assigns it back with the component's own `operator=`.
 The copy is what keeps derived state right, because `Transform`'s assignment re-propagates its
@@ -293,7 +298,7 @@ subtree (`engine/core/src/scene/Transform.cpp:8`). Neither walk refuses a zero s
 | `bool`, signed and unsigned integers, `float`, `double` | Checkbox or drag field. |
 | `std::string` | Text field. The entity's name is the inspector's header instead (§ *The inspector*). |
 | `StringId` | Read-only, shown as its hash. |
-| `AssetRef<T>` | Read-only, shown as the asset id, until its own card (S10-T8, [[2026-10 Sprint 10 - Close E1]]). |
+| `AssetRef<T>` | A picker over the client and common assets of the field's type, shown by path. It has no None entry, so a reference cannot be cleared yet. Set through `SetAssetFieldCommand` (§ *Commands and the idle simulation*); built by S10-T8 (#190 `6764a8a`). |
 | `Entity` | Read-only in E1, shown as the target's name. |
 | A bulk vector | Read-only, shown as its element count. |
 
@@ -606,9 +611,6 @@ sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore`
 
 ## Open questions
 
-- **A failed load inside an edit batch only warns.** The command has already changed the scene,
-  so the scene keeps a reference whose handle is empty. No command sets an `AssetRef` until the
-  inspector can edit one. Owner: S10-T8 ([[2026-10 Sprint 10 - Close E1]]).
 - **Presentation input while Stopped.** E2's scene view camera needs presentation input while
   the `InputBuffer` is detached. Owner: T3.
 - **Which camera is the main active camera.** The game view draws through it, but no camera

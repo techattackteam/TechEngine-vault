@@ -68,14 +68,15 @@ S10-B2 and S10-T9, and moved the console and the Profiler (Story C) from the lan
   row is mixed only when a value differs. Windowed: two entities with different positions show a
   dash, and typing a value moves both. #174's comment in `EditSession::collectComponents` comes
   back. Follows S10-T1.
-- [ ] **S10-T8** · Edit an `AssetRef` in the inspector · P3 · 🟢 Deep · 4-6h · stretch ·
+- [x] **S10-T8** · Edit an `AssetRef` in the inspector · P3 · 🟢 Deep · 4-6h · stretch ·
   done: the inspector edits an `AssetRef` field through a picker that offers the `AssetIndex` ids
   of the field's type, which `FieldVisitor::visitAsset` now passes. A set-field command adds the
   id as a dependency of the scene entry (`App::m_sceneHandle`) and fills the handle, so a
   `MeshRenderer` added in the editor gets its mesh. `/card-start` decides the policy for a load
   that fails inside a batch, and [[Editor - Design]] § *Open questions* records it. Tests: a set
   over a known mesh fills the handle; a set over an unknown id is refused. Follows S10-T2 and the
-  lane's S10-T6, because all three change the inspector.
+  lane's S10-T6, because all three change the inspector. Closed Nov 6: #190 `6764a8a`. The
+  policy went into [[Editor - Design]] § *Decided*, which answered and removed the open question.
 
 ### Story B: Export, and run the export · 🤖 Claude
 
@@ -259,6 +260,20 @@ an ADR. The Profiler half drops first.
   with scale (1, 2, 1) is accepted and keeps its world position; a parent with a zero scale axis
   is still refused. How close the world rotation and scale must stay is decided with the
   amendment. It edits `Scene.cpp` like S10-B2, so the two do not run at the same time.
+- [ ] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate ·
+  2-3h ·
+  done: when the manifest names a startup scene that no asset source holds, the startup load logs
+  the error and then recovers as it does when no scene is named: it adopts an indexed
+  `Startup.tescene` or creates one, and points the manifest at it, so the editor opens on a scene
+  it can save. A named scene whose file exists but does not load keeps today's behaviour (an
+  empty scene, and saving refused), so a file the editor could not read is never overwritten.
+  Today any failed load opens an empty scene with no scene file, so every save is refused and
+  only a hand edit of `project.toml` recovers (`apps/editor/src/EditorApp.cpp:105-107` at
+  `4a8af74`). Found at S10-T8 on Nov 6, after `Startup.tescene` was deleted. Tests: a manifest
+  that names a missing scene ends with a loaded scene, a manifest that names the new one, and a
+  save that writes; a named scene that does not parse still opens empty and refuses to save.
+  "The editor keeps running with a startup scene it cannot find" changes with it. Saving into a
+  new file (Save As) is not part of it: it is T8's "more than one scene" on the [[Capability Map]].
 
 ### Story G: Product follow-up
 

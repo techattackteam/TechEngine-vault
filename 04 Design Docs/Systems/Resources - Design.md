@@ -430,9 +430,9 @@ with S9-T6, and the bake's walk with S9-T7.
   loaders, and `simulationStartupLoad()` calls `m_resources.setSource(m_source)`, which stores a
   pointer the cache asks for each id's availability and bytes. A named startup scene then loads
   with `SceneAsset::load` into `m_sceneHandle`, which the base `simulationShutdown()` releases. A
-  scene that does not load is logged, and the editor opens on an empty scene. A newly created
-  startup scene is not loaded through the cache on its first launch; it stays as built, with its
-  `MeshRenderer` handle empty.
+  scene that does not load is logged, and the editor opens on an empty scene. Since S10-T8
+  (#190 `6764a8a`) a newly created startup scene is cleared and loaded back the same way, so
+  it has a scene entry and its triangle's handle is filled on the first launch.
 - **The reference walk as built** (S9-T2, #157, 2026-10-24): `AssetRef<T>` in
   `core/resources/AssetRef.hpp`, and `ReferenceVisitor` in `core/serialization/`, an abstract
   class with `visitEntity` and `visitAsset` hooks. Its `field` recurses into a type with its own
