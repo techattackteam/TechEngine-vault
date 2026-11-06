@@ -325,10 +325,11 @@ The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]]; th
 texture and re-import cards wait on S10-D10. They can open Sprint 11 (§ *Capacity note*). Order: S10-T13
 and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
 
-- [ ] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h ·
   done: assimp is pinned in `cmake/deps.cmake` with only its glTF, FBX and OBJ importers, and it
   links into `apps/editor` alone; the runtime and `TechEngine::sdk` do not link it. The PR states
-  the editor's clean build time before and after.
+  the editor's clean build time before and after. Closed Nov 6: #192 `e59d77c`. Miguel waived
+  the build times at the close, so the PR states neither.
 - [ ] **S10-T14** · The import block and the TEModel file · P1 · 🟢 Deep · 4-6h ·
   done: `core` gains the import block and the `.temodel` node table, with write and read, and the
   editor's asset index lists the model kind (`apps/editor/src/assets/AssetIndex.cpp:33-36`).

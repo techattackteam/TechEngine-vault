@@ -7,7 +7,8 @@
 import, placement)
 **Kind:** system
 **Status:** the model is designed (2026-11-06, S10-D9) against engine `a67c4d4`; the mesh is S10-D10's, and waits
-on S10-P4's report. Nothing is built beyond the triangle's `Mesh`
+on S10-P4's report. assimp is in the editor's build with only its glTF, FBX and OBJ importers
+(S10-T13, `cmake/deps.cmake`); nothing else is built beyond the triangle's `Mesh`
 (`engine/core/include/TechEngine/core/mesh/Mesh.hpp:19-29`).
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
 [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9 ·
