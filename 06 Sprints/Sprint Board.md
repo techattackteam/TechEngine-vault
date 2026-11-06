@@ -25,7 +25,6 @@ kanban-plugin: board
 
 ## Story D: E1's loose ends
 
-- [ ] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h: a toggle shows world values; a World edit goes through `setWorld` on the simulation thread; ends with Miguel's visual check. **Not before Fri Nov 6** (after S10-T2; move the date if S10-T2 slips).
 - [ ] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h: the Editor brief's five scenarios run windowed, the exported runtime's log names the edited entities, and E1 is closed on the [[Roadmap]]. Follows S10-T2 and S10-T3.
 - [ ] **S10-T9** · The base sweep's leftover · P3 · 🟡 Light · 1-2h: the version-anchor stubs go. The shared log-capture guard moved to S10-T10. Follows S10-T10.
 
@@ -64,6 +63,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h: #188 on `S10-T6/local-world-modes`, opened Nov 6 by the lane. Linux debug green (967 of 967). **Needs Miguel's visual check** of the toggle (World drags on a child of a moved, rotated parent) and a yes or no on the seven *Decisions I took* in the PR body.
 
 
 ## ✅ Done: Sprint 10
