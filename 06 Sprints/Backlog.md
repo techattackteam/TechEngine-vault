@@ -373,8 +373,8 @@ groups are kept, because they show where future work will land.
   unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
   **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
 - #prio/low · **The Euler cache is untested**: `InspectorPanel::syncEuler` holds a small state
-  machine that no test reaches while it is private to the panel, and it waits for the exact
-  quaternion it sent. Moving it into a class in `edit/` would make it testable. Found at S9-T17;
+  machine that no test reaches while it is private to the panel. It waits for the exact
+  quaternion it sent in Local mode, and within 1e-4 per component in World mode (S10-T6, #188). Moving it into a class in `edit/` would make it testable. Found at S9-T17;
   the other half of this entry, one rotation edit leaving four records, was fixed by S10-T2's
   set-rotation-axis command (#182). **Trigger:** the rung after R1 that brings undo
   ([[Editor - Brief]]).
@@ -426,6 +426,12 @@ groups are kept, because they show where future work will land.
   `.clang-format`'s main-include detection learns these paths, or `CONVENTIONS.md` accepts
   the order. Found by S10-T3 (#179) on Nov 2, 2026; [[2026-11-02 14-37 Auto Run]]. #179 merged
   without deciding it. **Trigger:** the next change to `.clang-format`.
+
+- #prio/low · **The console repeats `Log.cpp`'s `localTime`**: `ConsolePanel.cpp` formats a
+  record's local time with its own copy of the reentrant `localtime_s` / `localtime_r` helper,
+  because the one in `engine/base/src/diagnostics/Log.cpp` is `static`. A small helper in
+  `base` would serve both. Found at S10-T12 (#189) on Nov 6, 2026. **Trigger:** a third place
+  that formats a record's time, or the next change to the console's row format.
 
 ## etc: cross-cutting
 

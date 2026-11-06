@@ -230,6 +230,10 @@ Non-uniform parent scale may produce approximate world decomposition in the insp
 the rendered result remains correct. UI delivery remains separate from the Scene
 storage port, while these data and command requirements guide its design.
 
+Built by S10-T6 (#188 `1ac607d`, Nov 6): [[Editor - Design]] § *The inspector panel*. Today an
+edit whose conversion needs shear is refused for that entity rather than approximated; S10-B3
+amends that.
+
 ## Project extension contract
 
 A project registers its component types through the same typed registration entry point as

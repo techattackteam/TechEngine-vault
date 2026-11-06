@@ -20,7 +20,6 @@ kanban-plugin: board
 
 ## Story C: Editor panels
 
-- [ ] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h: a store of 5,000 records, level toggles with counts, text search, Clear, docked below the views. Follows S10-T11.
 
 
 ## Story D: E1's loose ends
@@ -63,11 +62,21 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h: #188 on `S10-T6/local-world-modes`, opened Nov 6 by the lane. Linux debug green (967 of 967). **Needs Miguel's visual check** of the toggle (World drags on a child of a moved, rotated parent) and a yes or no on the seven *Decisions I took* in the PR body.
 
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h: #189 `4a8af74`, **Nov 6**. The editor's console docks below the views and keeps 5,000 records in `ConsoleHistory`, with a level and text filter, Clear, and the selected row's source. Completes Story C, since the Profiler's build waits for E11.
+	- **Changed at Miguel's windowed check, against [[Editor - Design]] § *The console panel*:** the level toggles left the toolbar for one *Show* dropdown with their counts, which also hides the time and tick columns. Debug rows are blue, and the rows sit on a darker background. The note now records the new toolbar.
+	- **Calls the note did not make:** the "N records dropped" row is Info, Clear keeps the filters, and the selection is a copy of the record, so a drop cannot leave it dangling.
+	- **A new row must show in the frame that adds it:** `SetScrollHereY` lands a frame late and the idle editor may not build that frame, so the panel sets the scroll and the content size before `BeginChild`.
+	- **Retro: the first `addDroppedRow` pointed a `LogRecord`'s message at a temporary string,** and `add` skipped every batch with no drops. `/card-review` traced both from three failing tests before the PR. The PR has no review conversation, so this entry is the only record.
+	- **Unverified:** no record that a Warn from the simulation shows without moving the mouse, the windowed clause the scroll call above exists for.
+- [x] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h: #188 `1ac607d`, **Nov 6**, by the lane. A Mode row on `Transform` shows world values, and a World edit becomes a `SetWorldAxisCommand` that calls `setWorld` on the simulation thread against the current parent chain. Unblocks S10-T8; Story D stays open on S10-T7 and S10-T9.
+	- **All seven *Decisions I took* merged as written, none reversed.** The PR has no review conversation, so nothing records what was weighed and rejected.
+	- **The shear limit stays S10-B3's:** a World edit under a rotated, non-uniformly scaled parent is refused for that entity and logged, as ADR-021 decides today.
+	- **New in the edit records:** `LocalTransformRecord`, because one `setWorld` can change position, rotation and scale at once. **World mode's Euler cache matches within 1e-4**, because a world rotation never comes back bit for bit.
+	- **Unverified:** no visual check of the toggle is recorded.
 - [x] **S10-T11** · The console's sink · P2 · 🟠 Moderate · 2-3h: #187 `db72fe6`, **Nov 5**. `ConsoleLog` keeps each record as a `StoredLogRecord` in a queue of 1,024 that main drains each frame, and a Warn or worse from another thread wakes main once. Unblocks S10-T12; Story C stays open on it.
 	- **Widened at review:** the scaffold's own `ConsoleRecord` repeated the test guard's `CapturedLog`, so both became `StoredLogRecord` in `base`. `ringSnapshot` now fills it, which fixed [[Known Issues]] D7 in the same PR, and its `capacity` argument went. [[Logger - Design]] § *Sinks* records both.
 	- **Calls against [[Editor - Design]] § *The console*:** main is the thread that calls `start()`; `drain` returns the dropped count but adds no "N records dropped" line, which S10-T12's store now owes; the console stops before `stopImGui()`, because `Client::stop` holds its wake lock while GLFW may log an error.

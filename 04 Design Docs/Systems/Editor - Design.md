@@ -15,8 +15,9 @@ frame on main are built (S9-T11, #162 `6df5fa6`), and so are the command admissi
 close prompt (S9-T18, #174 `0fdbcc1`), and the placeholder views with the remembered layout
 (S9-T19, #175 `555a9e4`), and main asks for its own next frame without a posted event (S9-T21,
 #177 `4ba9f60`). Multi-select is built, in the hierarchy (S10-T1, #178 `9afda8d`) and in the
-inspector (S10-T2, #182 `a6c832f`). File → Export is built (S10-T3, #179 `0dcbc1f`), and so
-is the console's sink (S10-T11, #187 `db72fe6`).
+inspector (S10-T2, #182 `a6c832f`), and so are the inspector's Local and World modes (S10-T6,
+#188 `1ac607d`). File → Export is built (S10-T3, #179 `0dcbc1f`), and so is the console, its
+sink (S10-T11, #187 `db72fe6`) and its panel (S10-T12, #189 `4a8af74`).
 **ADRs:** [[ADR-027 - Editor threads, edit commands and play sessions]] ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §1 §2 ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -87,7 +88,7 @@ message. This note says how those messages are shaped.
 | `ui/` draws, `edit/` decides | `apps/editor/src/ui/` holds ImGui drawing and the plumbing around it: the panels, the widgets, the theme, the close prompt and the bridge to the render thread. Everything a test can reach lives in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot. Diff coverage skips `ui/`, because no test draws ImGui, so logic put there goes unscored. | 2026-11-02 (S10-T5); `cmake/coverage_report.cmake` |
 | The console is the editor's own log sink | `ConsoleLog`, a member of `EditorApp`, registers a `LogSink` and copies each record into a bounded queue; main drains it at the start of each frame. | 2026-11-03 (S10-D2); ADR-011 §3 amended; § *The console* |
 | A Warn or worse from another thread wakes main | Once, until main drains. Info and below, and anything main logs itself, wait for the next frame main builds. | 2026-11-03 (S10-D2), § *The console* |
-| The console filters by level and text | One toggle per level with its count, and a search on the message. The channel filter waits until modules register channels. | 2026-11-03 (S10-D2), § *The console* |
+| The console filters by level and text | A *Show* dropdown lists each level with its count, and a search field takes the message. The channel filter waits until modules register channels. | 2026-11-03 (S10-D2); dropdown 2026-11-06 (S10-T12), § *The console panel* |
 | The console keeps 5,000 records | The oldest drop first. Clear empties it. | 2026-11-03 (S10-D2), § *The console* |
 | The Profiler panel shows recorded Play sessions | Each Play session is recorded, from Play to Stop, and saved as one file in the project. While Stopped the panel graphs the run the user selects. It is built with Play (E11), not in E1. | 2026-11-03 (S10-D3); ADR-013 §3 amended; § *The Profiler panel* |
 
@@ -342,8 +343,14 @@ across the panel, so labels line up between components. Shared widgets live in `
   ImGui would otherwise add the motion to that stale value.
 - **Text.** `TextEditField` holds the edit and reports it once, when it ends; Escape restores
   the old text. The hierarchy's rename uses the same widget.
-- **Not built:** the Local and World modes that [[Scene - Design]] § *Editor Local / World
-  editing* agreed on Sep 12. The panel shows local values only ([[Backlog]] → editor).
+- **Local and World** (S10-T6), as [[Scene - Design]] § *Editor Local / World editing* agreed.
+  A *Mode* row heads `Transform`; it is panel state, not saved, and applies to the whole
+  selection. The snapshot carries the active entity's world values with per-axis mixed flags.
+  A World edit sends `SetWorldAxisCommand`, which replaces one axis of each entity's current
+  world TRS and calls `setWorld` on the simulation thread, and leaves one
+  `LocalTransformRecord` per entity, because `setWorld` can change all three parts. An entity
+  whose edit would need shear is skipped and logged (ADR-021; S10-B3 revisits it). In World
+  mode the Euler cache accepts a returned rotation within 1e-4 per quaternion component.
 
 ## Multi-select
 
@@ -471,14 +478,22 @@ Brief]] makes it a Should.
 
 Designed by S10-D2 with § *The console*. Built by S10-T12.
 
-- **The store.** Main moves drained records into a store in `edit/` that keeps 5,000 and drops
-  the oldest. It keeps a count per level and the list of rows that pass the filter: the level
-  toggles, and a case-insensitive search on the message. Clear empties both.
-- **The panel.** `ui/panels/ConsolePanel` draws the toolbar (Clear, one toggle per level with its
-  count, the search field) and the rows through `ImGuiListClipper`: time, `[t N]`, level and
-  message, Warn and worse in their theme colours. Selecting a row shows its
-  `file:line:function()` and its module and channel. It scrolls with new rows only while the
-  view is at the bottom.
+- **The store.** Main moves drained records into `ConsoleHistory` in `edit/`, which keeps 5,000
+  and drops the oldest. It keeps a count per level and the list of rows that pass the filter:
+  the levels shown, and a case-insensitive search on the message. A drain that reports dropped
+  records adds one Info row, "N records dropped", before its batch. Clear empties the records
+  and keeps the filters (S10-T12).
+- **The panel.** `ui/panels/ConsolePanel` draws the toolbar (Clear, the *Show* dropdown, the
+  search field) and the rows through `ImGuiListClipper`, on a darker background. The dropdown
+  lists each level with its count and the two columns, time and `[t N]`, which start shown and
+  are not saved. A row is the dimmed time and tick, then the level and the first line of the
+  message, with Debug in blue and Warn, Error and Critical in their own colours (constants in
+  the panel, since `EditorTheme` has none). Selecting a row keeps a copy of the record and
+  shows its `file:line:function()` and its module and channel.
+- **Following the bottom.** While the view is at the bottom, a change in the row count sets the
+  child's content size and scroll before `BeginChild`, so a new row shows in the frame that
+  adds it. `SetScrollHereY` would land a frame late, and an idle editor may not build that
+  frame (S10-T12).
 - **The layout.** The default layout docks the console below the two views. A `layout.ini`
   saved before the panel existed has no node for it, so it opens floating once.
 - **Won't, for E1.** The exported runtime's log: `Process` hands the child this process's

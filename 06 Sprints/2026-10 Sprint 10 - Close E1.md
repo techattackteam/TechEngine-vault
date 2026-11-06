@@ -166,7 +166,7 @@ an ADR. The Profiler half drops first.
   message under the ring's lock, and its capacity argument goes. Tests: a snapshot keeps its
   messages after later records reuse every slot; a snapshot taken while another thread logs
   reads every message whole (TSan leg). Closed Nov 5: #187 `db72fe6`.
-- [ ] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S10-T12** · The console panel · P2 · 🟠 Moderate · 2-3h ·
   done: as [[Editor - Design]] § *The console panel* decides. The store in `edit/` keeps 5,000
   records, drops the oldest, counts each level and filters by the level toggles and a
   case-insensitive search on the message; Clear empties it. `ConsolePanel` in `ui/panels/`
@@ -177,7 +177,8 @@ an ADR. The Profiler half drops first.
   records adds one "N records dropped" row (added at S10-T11's close, because `drain` only
   returns the count). Windowed: a Warn from the
   simulation shows without moving the mouse, and the toggles, search and Clear work. Follows
-  S10-T11.
+  S10-T11. Closed Nov 6: #189 `4a8af74`. At the windowed check the level toggles moved into a
+  *Show* dropdown that also hides the time and tick; see [[Editor - Design]] § *The console panel*.
 - [x] **S10-D3** · Design the Profiler panel · P3 · 🟠 Moderate · 2-3h ·
   done: [[Editor - Design]] decides, against [[Profiler - Design]] and ADR-019's copied timing
   metrics, what the panel shows beside Tracy and where it reads the timings, then cuts the
@@ -191,13 +192,14 @@ an ADR. The Profiler half drops first.
   done: `ci.yml`'s diff coverage excludes `apps/editor/src/ui/`, and [[Editor - Design]] says
   `ui/` holds drawing only, so logic stays in `edit/`. The `te_sdk_smoke` comments in
   `sdk/CMakeLists.txt:9` and `ci.yml` name `TechEngineSDKSmoke`. CI config, so attended.
-- [ ] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h ·
+- [x] **S10-T6** · Local and World modes in the transform inspector · P3 · 🤖 Claude · 2-3h ·
   done: a toggle shows world values, and a World edit is converted to local on the simulation
   thread through `setWorld` ([[Scene - Design]] § *Editor Local / World editing*). A test sets a
   world position on a child of a moved parent and reads back the expected local value. The PR
   ends with "needs Miguel's visual check" for the toggle. Moved to the lane at planning. **Not
   before Fri Nov 6**: S10-T2 is planned for Thu Nov 5 and changes the same inspector files, so if
-  S10-T2 slips, Miguel moves this date with it.
+  S10-T2 slips, Miguel moves this date with it. Closed Nov 6 by the lane: #188 `1ac607d`, merged
+  with no decision reversed.
 - [ ] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h ·
   done: Miguel runs [[Editor - Brief]]'s five scenarios windowed, the runtime's log from the export
   folder names the edited entities, and the result is recorded. E1 is marked closed on the
@@ -322,8 +324,9 @@ before the renderer.
   `Renderer - Design` (S10-D4, S10-D7).
 - [ ] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
   build cards (S10-D8, S10-D9).
-- [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
-  counted for the retro.
+- [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
+  counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
+  first, #181 `78c48ab`).
 
 ## Capacity note
 
