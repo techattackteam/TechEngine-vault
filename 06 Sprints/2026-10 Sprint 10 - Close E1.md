@@ -330,13 +330,13 @@ and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
   links into `apps/editor` alone; the runtime and `TechEngine::sdk` do not link it. The PR states
   the editor's clean build time before and after. Closed Nov 6: #192 `e59d77c`. Miguel waived
   the build times at the close, so the PR states neither.
-- [ ] **S10-T14** · The import block and the TEModel file · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-T14** · The import block and the TEModel file · P1 · 🟢 Deep · 4-6h ·
   done: `core` gains the import block and the `.temodel` node table, with write and read, and the
   editor's asset index lists the model kind (`apps/editor/src/assets/AssetIndex.cpp:33-36`).
   Today's `.temesh` gets no import block yet; that comes with TEMesh v2. Tests: a model with a
   root and nested nodes writes and reads back equal; a node list with a parent after its child, or
   with two roots, is refused with an error code; the import block round-trips; the asset index
-  lists a `.temodel`.
+  lists a `.temodel`. Closed Nov 6: #193 `ac594e4`. It ran as a 🟠 Moderate.
 - [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h ·
   done: an editor command imports a glTF, FBX or OBJ file as a job, into a folder beside it: a
   `.temodel`, and one `.temesh` per source mesh in today's format, with scale and up axis baked
