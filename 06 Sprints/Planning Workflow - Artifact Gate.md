@@ -363,15 +363,19 @@ weekday. Cost table in [[Autonomous Lane - Design]] § *Cost model*.
 ### The 🤖 Claude gate
 
 **Decided 2026-10-23, narrowed 2026-11-09.** A 🤖 Claude feature is a small feature that
-Claude implements on its own: it writes the engine logic to a design Miguel made, builds and
-tests on Linux, and opens PRs. Miguel picks it at planning, says what it builds and what it
-leaves out, and reviews every PR. Why the split exists: [[Technical Lead Charter]] § *Who writes
-the code*.
+Claude implements on its own: it builds to the design Miguel made, decides the smaller things
+that design leaves open, builds and tests on Linux, and opens PRs. Miguel picks it at planning,
+says what it builds and what it leaves out, and reviews every PR. Why the split exists:
+[[Technical Lead Charter]] § *Who writes the code*.
 
-**Design is never automated (Miguel, 2026-11-09).** The lane does not run Design cards. A
-feature's design-note decisions are taken in an attended session, with Miguel, before the
-feature is picked; Claude may draft the options there, and Miguel decides. Its cards' `done:`
-clauses then say what is built, and the lane builds only that.
+**A feature's design is Miguel's; the small calls inside it are Claude's (2026-11-09).** What a
+feature is (what it does for the user, its scope, its shape across cards) is decided in an
+attended session before the feature is picked. Claude may draft the options there, and Miguel
+decides. The lane runs no Design card for a whole feature, such as the asset browser. Inside an
+implementation card, Claude decides and designs what the card leaves undecided, when the
+decision is small, stays in one module and fits the feature's settled direction: it records the
+decision in the design note and lists it in the PR, and Miguel accepts or reverses it in
+review.
 
 **What makes a good one.** About 2 to 5 cards. Contained: mostly one module, or behind an
 existing seam, and nothing Miguel's cards build against in the same sprint. Its ADR-level
@@ -383,14 +387,15 @@ handling, glue) and features the [[Roadmap]] or a design note already names.
 | Row of the gate | Inside a 🤖 Claude feature |
 |---|---|
 | Reversible, local or obvious | Claude decides and lists it in the PR. |
-| Design note: non-trivial, settled direction, one module | **Never the lane's** since 2026-11-09. It is decided with Miguel before planning picks the feature. A card that finds one stops, and the question goes on its board line. |
+| Design note: small, settled direction, one module | Claude decides it while implementing, records it in the design note, lists it in the PR, and keeps building. If Miguel's review disagrees, the work goes back. |
+| Design note: changes what the feature does or its scope, or shapes several cards | Miguel's, before planning picks the feature (2026-11-09). A card that finds one stops, and the question and a proposed answer go on its board line. |
 | ADR: hard to reverse or cross-module | Never Claude's. It exists before planning picks the feature, or the feature's first card drafts it as **Proposed** and nothing is built until Miguel accepts it. |
 
 A decision that changes an existing *Decided* row counts as ADR-level here, whatever its size.
 
 **How it is planned.** A feature is picked only once its design note decides what it builds.
 Its cards are cut at planning, or in the attended design session, never by the lane. Until
-2026-11-09 a 🤖 Claude Design card let the lane take those decisions itself (S10-D1 was the
+2026-11-09 a 🤖 Claude Design card let the lane design a whole feature itself (S10-D1 was the
 last one).
 
 **How it reports.** Every PR body has a *Decisions I took* section, one line per decision with

@@ -16,7 +16,7 @@ there to answer one.
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | Opus 5.5 (`claude-opus-5-5`), read off the routine on 2026-09-26. The lane's risk is judgment on bug fixes, not throughput. |
 | `cron_expression` | `CRON_TZ=Europe/Lisbon 7 9,14 * * 1-5`: **09:07 and 14:07 Lisbon time, weekdays**, set on 2026-10-25. The routine had stored the Oct 23 expression `7 9,14 * * 1-5` as `CRON_TZ=Europe/Lisbon 7 10,15 * * 1-5`, an hour later than intended, so read the stored value back after every schedule change. Cut from four fires on **2026-08-31**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
-| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27. Read off the routine on 2026-10-25: next fire Mon Oct 26 09:07 Lisbon. The prompt below, with the 🤖 Claude steps from S8-P11, was pasted into the routine on Oct 23 after #153 merged. **Owes a paste:** the sweep's outward look-for, added on 2026-11-01, and step 5's 🤖 Claude paragraph, narrowed on 2026-11-09 so the lane never designs. |
+| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27. Read off the routine on 2026-10-25: next fire Mon Oct 26 09:07 Lisbon. The prompt below, with the 🤖 Claude steps from S8-P11, was pasted into the routine on Oct 23 after #153 merged. **Owes a paste:** the sweep's outward look-for, added on 2026-11-01, and step 5's 🤖 Claude paragraph, narrowed on 2026-11-09 so the lane never designs a whole feature. |
 | **Why two and not four** | **Claude's weekly usage limit**, not the CI budget. Four fires a weekday spent enough of the weekly allowance to compete with Miguel's own attended sessions, which are the lane's whole point. See [[Autonomous Lane - Design]] § *Cost model*. |
 | **DST** | **No change owed.** The `CRON_TZ=Europe/Lisbon` prefix keeps the fires at 09:07 and 14:07 local through both clock changes. In UTC they move: 09:07 and 14:07 in winter, 08:07 and 13:07 in summer, and both pairs stay on the right side of step 4's 12:00 UTC split. Not yet seen across a change: check the first fire after **2027-03-28**. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |
@@ -251,14 +251,16 @@ specifies the behaviour. If you find yourself choosing how something should beha
 decision, and it is Miguel's.
 ON A "🤖 Claude" CARD, you implement a feature that Miguel designed. Read
 docs/06 Sprints/Planning Workflow - Artifact Gate.md § "The 🤖 Claude gate" and follow it.
-The card's done: clauses and its design note say what gets built; build that and nothing
-more. Take only implementation choices inside them, and write each one, with its reason,
-under a "Decisions I took" heading in the PR body and in the report. A design decision (one
-that changes what the feature does, a design-note or ADR-level one, or one that changes an
-existing Decided row) stops the card: open no PR, and put the question and your proposed
-answer on the card's board line (step 9). NEVER RUN A DESIGN CARD. Design is Miguel's; a
-Design card tagged for the lane is mis-scoped, so leave it in To Do and report it.
-NEVER RECOMMEND A DESIGN CARD FOR THE LANE in a prep brief or a report either.
+The card's done: clauses and its design note say what gets built; build that. When the card
+leaves a smaller thing undecided, decide and design it yourself if it is small, stays in one
+module and fits the feature's settled direction: record it in the design note, and write each
+decision, with its reason, under a "Decisions I took" heading in the PR body and in the report.
+A bigger decision stops the card: one that changes what the feature does or its scope, shapes
+several cards, crosses modules, is ADR-level, or changes an existing Decided row. Open no PR,
+and put the question and your proposed answer on the card's board line (step 9).
+NEVER RUN A DESIGN CARD. A whole feature's design is Miguel's; a Design card tagged for the
+lane is mis-scoped, so leave it in To Do and report it. Never recommend one for the lane in a
+prep brief or a report either.
 If a card turns out to need a decision its gate does not allow, a Windows leg, a demo
 capture, a visual check the gate does not allow yet, or any change under .github/workflows/,
 it was mis-scoped: stop, do not improvise, and say so in the report so it can be re-planned.
