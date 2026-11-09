@@ -320,6 +320,15 @@ groups are kept, because they show where future work will land.
 
 ## client
 
+- #prio/high · **CI's software GL cannot run R1's GL floor**: ADR-028 §2 requires GL 4.6 and
+  `ARB_bindless_texture` with no fallback. Both CI legs draw with Mesa's `llvmpipe`
+  (`.github/workflows/ci.yml:158`, `:211-212`), and on Mesa 25.2.8 it gives at most GL 4.5 core
+  and no bindless (measured with `glxinfo` on Nov 9). The render thread starts only when its GL
+  check passes (`engine/client/src/render/RenderThread.cpp:93`), so raising that check fails the
+  window and render tests on every leg. Zink over lavapipe would not start under Xvfb in the
+  lane's sandbox, so it is unproven. ADR-028 § *Consequences* does not mention CI. Found by S10-P2
+  ([[2026-11-09 14-12 Auto Run]]). **Trigger:** R1's first card that raises the GL check, or
+  S10-D6's cut of R1.
 - #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
   purpose, so `ClientApp`'s failure handling has no test. That covers the stop it requests from
   the render thread, the stop in `mainThreadUpdate()` when `failed()` is set, and the throw in

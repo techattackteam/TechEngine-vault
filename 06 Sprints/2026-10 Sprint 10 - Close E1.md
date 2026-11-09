@@ -357,10 +357,11 @@ and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
 
 ### Story I: Prepare Sprint 11 (standing)
 
-- [ ] **S10-P2** · Prep brief for Sprint 11 · P2 · 🤖 Auto · report-only ·
+- [x] **S10-P2** · Prep brief for Sprint 11 · P2 · 🤖 Auto · report-only ·
   done: a run report lists the *Decided* rows with no code behind them, the open questions
   blocking them, the fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides
-  nothing. **Not before Mon Nov 9**: a fire before that leaves it in To Do.
+  nothing. **Not before Mon Nov 9**: a fire before that leaves it in To Do. Closed Nov 9 by the
+  lane: [[2026-11-09 14-12 Auto Run]].
 - [ ] **S10-D6** · Prepare Sprint 11 · P1 · 🟠 Moderate · 2-3h ·
   done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Runs in
   week 2, Tue Nov 10 to Fri Nov 13, after S10-P2's brief.

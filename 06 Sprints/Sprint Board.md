@@ -53,7 +53,6 @@ kanban-plugin: board
 
 ## Story I: Prepare Sprint 11
 
-- [ ] **S10-P2** · Prep brief for Sprint 11 · P2 · 🤖 Auto · report-only: unbuilt *Decided* rows, blocking questions, fired triggers, candidate 🤖 Claude features; decides nothing. **Not before Mon Nov 9.**
 - [ ] **S10-D6** · Prepare Sprint 11 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 11's goal and draft cut into the Sprint 10 note. Tue Nov 10 to Fri Nov 13, after S10-P2.
 
 
@@ -67,6 +66,7 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-P2** · Prep brief for Sprint 11 · P2 · 🤖 Auto · report-only: vault, **Nov 9**, by the lane. [[2026-11-09 14-12 Auto Run]] is S10-D6's reading list. Its main finding was measured, not read: CI's `llvmpipe` gives GL 4.5 with no bindless textures, so R1's GL 4.6 floor (ADR-028 §2) cannot start a render thread on CI (filed in the [[Backlog]], `#prio/high`). It also found that no card cuts R1's build cards. Unblocks S10-D6.
 - [x] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only: vault `9a27c99`, **Nov 9**, by the lane. [[Content Pipeline - Mesh Import Report]] answers the card's six questions from assimp 6.0.5's source, MikkTSpace, the glTF spec and six BC libraries, and ends with eight questions for S10-D10. Unblocks S10-D10; Story H stays open on S10-D10, S10-T15 and S10-T16.
 	- **Stronger than S10-P1 and S10-P3 on code, weaker on speed:** every source except the speed figures was cloned and read. Building the compressors to time them was refused by the sandbox, and the one independent benchmark's host fails at the proxy, so "how fast are they?" rests on search extracts and the authors' own claims.
 	- **Found in assimp, not assumed by the card:** `aiProcess_PreTransformVertices`'s flattening path never fixes winding under a negative scale (only its keep-hierarchy path and `OptimizeGraph` do), and a quantized or meshopt-compressed glTF imports garbage positions instead of failing. Both are inputs to S10-D10's questions, not defects of ours.
