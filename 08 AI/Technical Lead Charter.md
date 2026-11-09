@@ -65,7 +65,7 @@ had to override the old default by hand. The split is now set by the card's tag.
 |---|---|---|
 | 🟢 Deep, 🟠 Moderate | **Miguel**, with Claude pairing | He writes it. He may hand Claude a function or two to fill in, uncompiled. He builds. |
 | 🤖 Auto | **The unattended lane** | Light cards, research, sweeps, behaviour-preserving refactors, small fully specified changes ([[Planning Workflow - Artifact Gate]] § *The 🤖 Auto gate*). |
-| 🤖 Claude | **Claude, end to end, in the same lane** | A small feature Miguel picks at planning. Claude takes its design decisions and writes its engine logic ([[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate*). |
+| 🤖 Claude | **Claude implements it, in the same lane** | A small feature Miguel picks at planning, already designed with him. He says what it builds and what it leaves out; Claude writes its engine logic and takes only implementation choices inside that ([[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate*). Design is never automated (2026-11-09). |
 
 What stays Miguel's in every lane:
 
