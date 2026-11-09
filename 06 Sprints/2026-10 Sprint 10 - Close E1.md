@@ -314,14 +314,15 @@ before the renderer.
   UV set, which R7's baked mesh LOD would need, so that baking never breaks the file format?
   Cut Nov 6 at S10-D9. Feeds S10-D10's vertex attributes and the merge build card. Closed Nov 9
   by the lane (vault `9a27c99`): [[Content Pipeline - Mesh Import Report]]. No speed was measured.
-- [ ] **S10-D10** · Design TEMesh v2 and re-import · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-D10** · Design TEMesh v2 and re-import · P1 · 🟢 Deep · 4-6h ·
   done: [[Content Pipeline - Design]] decides TEMesh v2 (material slots as index ranges, its
   vertex attributes and tangents, whether it keeps an optional second UV set, and its import
   block), materials per slot on `MeshRenderer`, the merged mesh, and how a re-import keeps each
   file's id. It files ADR-024 §9's dated decision amendment, so a re-import reloads at once, then
   cuts those build cards into this story. Split from S10-D9 on Nov 6. Follows S10-P4; the slots
   point at S10-D7's material type. Narrowed on Nov 9: the texture file moved to S10-D11, because
-  its formats follow what S10-D7's material samples.
+  its formats follow what S10-D7's material samples. Closed Nov 9 (vault `5408328`): it cut
+  S10-D11 and S10-T17 to S10-T21.
 - [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h ·
   done: a `/triage` decides whether the sky's HDR image comes through import, since
   [[Content Pipeline - Brief]] lists only PNG, JPEG, TGA and DDS. Then
@@ -349,7 +350,7 @@ S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T1
   root and nested nodes writes and reads back equal; a node list with a parent after its child, or
   with two roots, is refused with an error code; the import block round-trips; the asset index
   lists a `.temodel`. Closed Nov 6: #193 `ac594e4`. It ran as a 🟠 Moderate.
-- [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h ·
   done: an editor command imports a glTF, FBX or OBJ file as a job, into a folder beside it: a
   `.temodel`, and one `.temesh` per source mesh in today's format, with scale and up axis baked
   in. Until the asset browser exists, the editor imports one hardcoded source file at startup
@@ -357,6 +358,7 @@ S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T1
   0.01 and a Z-up axis give the expected vertex positions and an identity root; importing into
   an existing folder is refused, because re-import does not exist yet
   (`apps/editor/src/EditorApp.cpp:434-456` refuses to overwrite). Follows S10-T13 and S10-T14.
+  Closed Nov 9: #194 `9c93b8f`. The TODO is `TODO(E2)`, because no browser card exists yet.
 - [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h ·
   done: placing a `.temodel` builds its entities in the open scene through one edit command
   (ADR-027 §3): `Name`, `Transform`, `Hierarchy` and `MeshRenderer`, under one root at the origin,
@@ -454,8 +456,9 @@ S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T1
 - [ ] The frame and device seam ADR and the materials ADR are Accepted and indexed by
   `Renderer - Design` (S10-D4, S10-D7). Half met: ADR-028 on Nov 6, vault `22f1514` (S10-D4).
 - [ ] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
-  build cards (S10-D8, S10-D9). Half met: the brief on Oct 31 (vault `a5ed725`), and the
-  model's cards on Nov 6 (vault `d430705`); the mesh's cards wait on S10-D10.
+  build cards (S10-D8, S10-D9). Mostly met: the brief on Oct 31 (vault `a5ed725`), the model's
+  cards on Nov 6 (vault `d430705`), and the mesh's cards on Nov 9 (S10-D10, vault `5408328`). The
+  texture card waits on S10-D11, and the material card on S10-D7.
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
   first, #181 `78c48ab`).

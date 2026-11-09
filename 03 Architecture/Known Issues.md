@@ -34,3 +34,21 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
   and a list nobody empties is one nobody reads.
 
 ---
+
+### D8: A zero or negative import scale is not refused
+
+`importModel` multiplies every baked position and node translation by `ImportSettings::scale`
+without checking it. A scale of zero collapses the model onto its origin. A negative scale
+mirrors it, so every triangle's winding is reversed and its front faces turn away.
+
+**Silent because the files are valid.** The model and its meshes write and read back without an
+error; the first symptom is a renderer drawing the model inside out, or not at all. Today the
+only caller is the startup import, which passes the default scale of 1, so nothing misbehaves.
+
+`apps/editor/src/assets/ModelImport.cpp:61` at `9c93b8f4`. Logged by S10-T15's PR (#194).
+
+**Fix:** refuse a scale that is not a finite number above zero with an error code, before
+assimp reads the file.
+
+**Trigger:** the first caller with settings other than the defaults (the asset browser's
+import), or the next change to the bake (S10-T19 or S10-T20).

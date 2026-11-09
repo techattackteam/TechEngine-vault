@@ -12,8 +12,9 @@ materials per slot, the merged mesh and re-import are designed (2026-11-09, S10-
 the editor's build with only its glTF, FBX and OBJ importers (S10-T13, `cmake/deps.cmake`). The
 model file and the import block are built, with write and read (S10-T14,
 `engine/core/include/TechEngine/core/model/Model.hpp` and
-`engine/core/include/TechEngine/core/assets/ImportBlock.hpp`). The import, the placement, TEMesh
-v2 and re-import are not.
+`engine/core/include/TechEngine/core/assets/ImportBlock.hpp`). The import is built (S10-T15,
+`apps/editor/src/assets/ModelImport.hpp`), writing today's mesh. The placement, TEMesh v2 and
+re-import are not.
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
 [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9 (amended 2026-11-09) ·
 [[ADR-026 - Reference fields and scene-held acquires]] §2 §3 ·
@@ -36,13 +37,14 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | TEModel is its own node table | Not a scene fragment. Placement builds the entities from the nodes. | Miguel, 2026-11-06; § *The model file* |
 | An entity per mesh | A node with one mesh carries it. A node with several gets one child entity per mesh, because each source mesh has one material. This stays after TEMesh v2: a model never joins a node's meshes into slots. | Miguel, 2026-11-06; § *The model file* |
 | A folder per import | Importing `Sponza.gltf` writes a `Sponza/` folder beside it: `Sponza.temodel`, then `Meshes/`, `Materials/` and `Textures/`. | Miguel, 2026-11-06 |
-| Scale and up axis are baked at import | They are applied to the mesh vertices and the node transforms, so the placed root starts at identity. The settings live in the root asset's import block and are applied again on re-import. | Miguel, 2026-11-06 |
+| Scale and up axis are baked at import | They are applied to the mesh vertices and the node transforms, so the settings never land on the placed root. A source root's own transform is kept. The settings live in the root asset's import block and are applied again on re-import. | Miguel, 2026-11-06; S10-T15 (#194), 2026-11-09 |
 | The import block | Every imported file (model, mesh, material, texture) carries one: the source path, the source key and the settings. Its type is in `core`; only the editor writes it; it ships in the packs inside every packed file and the runtime skips it. A `.temodel` itself is never packed, because the export packs only what a scene reaches and a placed copy does not reference its model. | S10-D9, 2026-11-06; § *The import block* |
 | The import block's layout | A byte count first, so a reader can step over the block. The source key is an index and a name. Every block writes its settings, and the up axis is Y or Z. | Miguel, 2026-11-06 (S10-T14); § *The import block* |
 | Import is editor-only, on the job system | assimp links into `apps/editor` alone. An import runs as a job and never blocks the editor's frame. | S10-D9, 2026-11-06 |
+| The import's own calls | Ids, refusals, file names, FBX pivots and closing the editor during an import. | S10-T15 (#194), 2026-11-09; § *The import* |
 | Placement is one edit command | Main sends it; the simulation thread builds the entities. | ADR-027 §3 |
 | Materials are created once | A re-import never overwrites a material file that already exists. | [[Content Pipeline - Brief]] § *Decided* |
-| Before the asset browser | The editor imports one hardcoded source file at startup, skipped when its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
+| Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/Sponza.gltf`, skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
 | Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path. Re-import goes through a *Re-import* menu entry with a typed path, like placement. | S10-D10, 2026-11-09 |
 | The model starts on today's mesh | Until TEMesh v2, a model's meshes are written in today's format (positions and indices), and its nodes carry no materials. | S10-D9, 2026-11-06 |
 | TEMesh v2 is one mesh with slots | One vertex set, one index list, and one slot per source material: a name, a range of whole triangles and a default material. A model's mesh has one slot; a merged mesh has one per source material. | S10-D10, 2026-11-09; § *The mesh file* |
@@ -70,7 +72,9 @@ A `.temodel` is a binary blob with its own `BlobKind`, like the mesh and the sce
 - **A node list in parent-first order**, so a node's parent is always earlier. Each node has a
   name, its parent's index (none for the root), a local translation, rotation and scale, and
   an optional mesh reference. Materials come from the mesh (§ *Materials per slot*).
-- **Exactly one root.** A source with several top-level nodes gets a root named after the file.
+- **Exactly one root, always named after the file.** A source with several top-level nodes gets
+  a new root. A lone top-level node is the root: it keeps its transform and loses its name,
+  because assimp gives no way to tell a root it added (`ROOT`, `RootNode`) from a real one.
 
 Placing a model walks the list once and creates an entity per node, with `Name`, `Transform`,
 `Hierarchy` and, where the node has a mesh, `MeshRenderer`. The new root goes at the scene's
@@ -100,6 +104,30 @@ former open question, sidecar or registry: neither, the data lives inside each f
 
 The type is in `core` because the runtime must step over it when it reads a packed file. Only
 the editor fills it in.
+
+## The import
+
+Built by S10-T15 (#194): `importModel` in `apps/editor/src/assets/ModelImport.cpp`, run as a job
+by `ImportModelCommand` in `apps/editor/src/edit/`. These calls came from the card, not the
+design above.
+
+- **Ids are drawn on the worker** by `randomResourceId()`, because the job needs them before it
+  writes a file and the asset index belongs to the simulation thread. The job then submits
+  `RegisterImportedAssetsCommand`, which adds the records there and skips, with a log line, a
+  record whose id is taken.
+- **Refusals** are `ProjectError` codes: `SourceUnreadable`, `SourceHasNoMeshes` (a model with no
+  triangle mesh places nothing visible) and `ImportFolderExists`. A failed import leaves no
+  folder behind.
+- **Every triangle mesh is written**, even one that no node uses. Points and lines are skipped.
+- **Mesh file names** keep ASCII letters, digits, space, `.`, `_` and `-`. A clash, compared
+  without case because Windows treats `Part_A` and `part_a` as one file, gets `_1`, `_2`.
+- **FBX pivots are off** (`AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS`). With them on, every FBX node
+  arrives as a chain of pivot helper nodes.
+- **The request carries the `Side`**, instead of deriving it from the path, which would hardcode
+  the assets root a second time.
+- **Closing waits for running imports**, in `EditorApp::shutdown()`, so a large import holds the
+  close until assimp returns. The destructor waits too, but too late for a job's log lines,
+  which wake main through a virtual call.
 
 ## The mesh file
 
@@ -174,7 +202,9 @@ By hand only ([[Content Pipeline - Brief]]), and refused unless the editor is St
 1. **Read the folder.** Every file under the import folder gives its kind, source key and id.
 2. **Match each output** against files of its kind: by name first; among equal names, the index
    decides; an empty name matches by index alone. Matching by index first would hand every id to
-   the wrong output when a tool reorders its arrays, with no error.
+   the wrong output when a tool reorders its arrays, with no error. assimp itself reorders: its
+   glTF reader lists meshes in the order the nodes first name them, not in the file's order
+   (found by S10-T15's two-mesh fixture).
 3. **Write.** A matched output keeps its id; a new one gets a fresh id. A matched material is
    never rewritten. An old file with no match stays and is logged, since E2's browser cannot
    delete and a scene that names it must still open.
@@ -201,26 +231,16 @@ By hand only ([[Content Pipeline - Brief]]), and refused unless the editor is St
 
 ## Porting v1's import
 
-v1's model import worked, and this design already follows its shape: a folder per import, a
-`.temodel`, and a child node per mesh. S10-T15 ports its assimp walk from
-`v1-reference:runtime/editor/src/resources/loaders/AssimpLoader.cpp` and `ModelLoader.cpp`.
-The code depends on v1's `ResourceSystem`, `FileSystem` and `Buffer`, so it is ported, not
-copied. v1's model file is a recursive tree, so T14 takes nothing from it. Fix these on the
-way:
+v1's model import worked, and this design follows its shape: a folder per import, a
+`.temodel`, and a child node per mesh. S10-T15 ported its assimp walk from
+`v1-reference:runtime/editor/src/resources/loaders/AssimpLoader.cpp` and `ModelLoader.cpp`
+(#194), with v1's Euler rotations, name-matched meshes, surviving points and lines, and
+frame-bound import fixed on the way ([[v1 Code Audit]] F14). Two fixes are still owed:
 
-- **Rotation goes through Euler angles** (`processScene`, then `convertNode`), which loses
-  precision and breaks near gimbal lock. Keep the quaternion from `Decompose`.
-- **No scale or up axis** is applied. This design bakes both at import.
-- **Meshes are matched by name across the project** (`isMeshRegistered`), so two models' meshes
-  named "Cube" share one file. Here every output gets its own id and a source key.
 - **An unnamed material is named after its pointer address**, which changes on every run, so a
-  re-import could never find it.
-- **Points and lines survive `aiProcess_Triangulate`**, and `Mesh::read` refuses an index count
-  that is not whole triangles. Add `aiProcess_SortByPType` and skip any mesh that isn't made of
-  triangles.
-- **The import runs on the editor's frame** ([[v1 Code Audit]] F14). Here it is a job.
-- **Normals and UVs are written**, but today's mesh holds positions and indices only, until
-  TEMesh v2. Leave `MeshLoader.cpp` alone: it is the atlas merge below.
+  re-import could never find it. Owner: the material card, after S10-D7.
+- **Normals and UVs are not written yet**, because today's mesh holds positions and indices only.
+  Owner: S10-T19. Leave v1's `MeshLoader.cpp` alone: it is the atlas merge below.
 
 ## References
 

@@ -442,7 +442,16 @@ groups are kept, because they show where future work will land.
   subfolder has the same order (`SaveSceneCommand.cpp`, `ExportCommand.cpp`). Either
   `.clang-format`'s main-include detection learns these paths, or `CONVENTIONS.md` accepts
   the order. Found by S10-T3 (#179) on Nov 2, 2026; [[2026-11-02 14-37 Auto Run]]. #179 merged
-  without deciding it. **Trigger:** the next change to `.clang-format`.
+  without deciding it. **Trigger:** the next change to `.clang-format`. **Fired Nov 9:** S10-T15
+  (#194) added `assimp` to its third-party include roots, and did not decide this.
+- #prio/low · **Import's untested paths**: no FBX fixture exists, so only glTF and OBJ are imported
+  in tests, and the cleanup that removes a half-written import folder has no case, because
+  nothing in `FileAccess` lets a test fail one write. Found at S10-T15 (#194) on Nov 9, 2026.
+  **Trigger:** S10-T19, which rewrites the import's mesh write.
+- #prio/low · **Cancel an import**: closing the editor waits for every running import, so a large
+  source holds the close until assimp returns ([[Content Pipeline - Design]] § *The import*).
+  assimp's `ProgressHandler` can stop a read. Found at S10-T15 (#194) on Nov 9, 2026.
+  **Trigger:** the asset browser's import, or the first close that waits long enough to notice.
 
 - #prio/low · **The console repeats `Log.cpp`'s `localTime`**: `ConsolePanel.cpp` formats a
   record's local time with its own copy of the reentrant `localtime_s` / `localtime_r` helper,

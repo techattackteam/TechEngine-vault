@@ -29,7 +29,6 @@ kanban-plugin: board
 
 ## Story E: Alongside: R1's two ADRs
 
-- [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: `/adr` drafts R1's second ADR, Miguel accepts it, and `Renderer - Design` indexes it. Follows S10-P3 and S10-D4.
 
 
 ## Story F: Defects
@@ -46,7 +45,6 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h: a job imports glTF, FBX or OBJ into a folder beside it, a `.temodel` plus one `.temesh` per source mesh, scale and up axis baked in. Until the asset browser, one hardcoded file is imported at startup, skipped when its folder exists. Follows S10-T13 and S10-T14.
 - [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h: one edit command builds the model's entities under one root at the origin, with no link to the file. Until the asset browser, a *Place model* menu entry with a typed path sends it. Follows S10-T14.
 - [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h: a `/triage` of the sky's HDR image, then [[Content Pipeline - Design]] decides `.tetexture`, the BC format per material input, the mips, the encoder and the decoder, and cuts the texture card. No ADR. Follows S10-D7. Split from S10-D10.
 - [ ] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h: `Mesh` at version 2 with the import block, stream flags, four streams and slots, its default materials listed as dependencies, and `Triangle.temesh` written again. Follows S10-T14.
@@ -63,7 +61,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S10-D10** · Design TEMesh v2 and re-import · P1 · 🟢 Deep · 4-6h: [[Content Pipeline - Design]] decides the mesh file, materials per slot, the merged mesh and re-import's stable ids, files the ADR-024 §9 amendment, then cuts those build cards. Split from S10-D9; the texture file moved to S10-D11 on Nov 9. Follows S10-P4.
+- [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: `/adr` drafts R1's second ADR, Miguel accepts it, and `Renderer - Design` indexes it. Follows S10-P3 and S10-D4.
 
 
 ## 👀 Review / Demo
@@ -72,6 +70,17 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h: #194 `9c93b8f`, **Nov 9**. A job imports glTF, FBX or OBJ into a folder beside the source, and a second command adds the records to the asset index on the simulation thread. Unblocks S10-T19 together with S10-T17; Story H stays open on S10-T16 to S10-T21 and S10-D11.
+	- **Two `done:` clauses had no referent:** no asset browser card exists, so the TODO is `TODO(E2)`. No source file ships in `projects/dev`, so the startup import of `assets/client/Sponza.gltf` is also skipped when the file is missing, and does nothing until one is dropped in. Nobody has run it on a real Sponza yet.
+	- **The PR lists eleven calls that no artifact made**, among them: the root is always named after the file, a source root keeps its own transform, ids are drawn on the worker, and closing the editor waits for imports. The PR has no review conversation, so nothing records a reversal. The calls are now in [[Content Pipeline - Design]] § *The import*.
+	- **Written and deleted before merge:** a test that destroyed the editor during an import without calling `shutdown()`. TSan on the Linux leg caught the job's log line waking main through a virtual call after the destructor had already rewritten the vptr. Only `shutdown()` can wait in time; the destructor still waits, but too late for the log lines.
+	- **Found in assimp:** its glTF reader lists meshes in the order the nodes first name them, not in the file's order, so a mesh's index is a weak source key. [[Content Pipeline - Design]] § *Re-import* records it for S10-T21.
+	- **Logged, not fixed:** a zero or negative import scale is not refused (D8). Not tested: an FBX source, and a write that fails halfway ([[Backlog]]).
+- [x] **S10-D10** · Design TEMesh v2 and re-import · P1 · 🟢 Deep · 4-6h: vault `5408328`, **Nov 9**, **narrowed**. [[Content Pipeline - Design]] decides the mesh file, materials per slot, the merged mesh and re-import, and ADR-024 §9 has its dated amendment. It cut S10-D11 and S10-T17 to S10-T21. Unblocks S10-T17; Story H stays open on S10-T15 to S10-T21 and S10-D11.
+	- **Textures moved to S10-D11** (Miguel): a texture's BC format follows what S10-D7's material samples, so deciding it here would have guessed at the material. Miguel also asked whether the texture file needed its own ADR; it does not, because a wrong format costs a version bump and a re-import.
+	- **Miguel's calls against the note's lean:** a `MeshRenderer` holds exactly one material per mesh slot, copied from the mesh's defaults and matched by slot name after a re-import. The note had leaned toward Unreal-style overrides, and Claude proposed materials on the mesh only; Miguel rejected both.
+	- **The slot list had no way to be stored:** `Writer` and `Reader` refuse a vector of `AssetRef` (Miguel, Oct 24), and `ReferenceVisitor` skips one silently. Miguel chose to visit each element, which refines the Oct 24 row in [[Resources - Design]]. Claude's first brief had wrongly called the whole failure silent.
+	- **Retro:** the card started before S10-D7, although its slots point at S10-D7's type, so S10-T18, S10-D11 and the material card all wait on it. Grounding also found [[Renderer - Design]]'s attribute question still owned by S10-D9, and asking about an index width that ADR-028 §5 had already decided; the card's commit resolved it. A vault-only card has no PR conversation, so this entry is the only record.
 - [x] **S10-P2** · Prep brief for Sprint 11 · P2 · 🤖 Auto · report-only: vault, **Nov 9**, by the lane. [[2026-11-09 14-12 Auto Run]] is S10-D6's reading list. Its main finding was measured, not read: CI's `llvmpipe` gives GL 4.5 with no bindless textures, so R1's GL 4.6 floor (ADR-028 §2) cannot start a render thread on CI (filed in the [[Backlog]], `#prio/high`). It also found that no card cuts R1's build cards. Unblocks S10-D6.
 - [x] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only: vault `9a27c99`, **Nov 9**, by the lane. [[Content Pipeline - Mesh Import Report]] answers the card's six questions from assimp 6.0.5's source, MikkTSpace, the glTF spec and six BC libraries, and ends with eight questions for S10-D10. Unblocks S10-D10; Story H stays open on S10-D10, S10-T15 and S10-T16.
 	- **Stronger than S10-P1 and S10-P3 on code, weaker on speed:** every source except the speed figures was cloned and read. Building the compressors to time them was refused by the sandbox, and the one independent benchmark's host fails at the proxy, so "how fast are they?" rests on search extracts and the authors' own claims.
