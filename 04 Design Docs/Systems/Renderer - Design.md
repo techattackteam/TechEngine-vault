@@ -45,6 +45,8 @@ the render thread that draws packets through a small device.
 | Compute from E2 | The device dispatches compute and binds storage buffers. A pass that writes in compute issues GL's coarse memory barrier through the device; per-resource barriers stay out. | ADR-028 §5 §6 |
 | Shared geometry buffers | Static meshes share one set: a position buffer, an attribute buffer and a 32-bit index buffer. A new vertex layout gets its own set. A mesh never moves once placed. | ADR-028 §5; § *Geometry buffers* |
 | Who owns the mesh | This note owns the GPU streams and attributes; `Content Pipeline - Design` (S10-D9) owns the file. | ADR-028 §5 |
+| The vertex attributes | A normal (`float3`), a tangent (`float4`, `w` the bitangent's sign) and UV0 (`float2`), unpacked until measured. A stream a mesh lacks is filled with defaults at upload. Indices are 32-bit only. | S10-D10, 2026-11-09; ADR-028 §5; [[Content Pipeline - Design]] § *The mesh file* |
+| A slot with no material entry | It draws with the mesh's default material. | S10-D10, 2026-11-09; [[Content Pipeline - Design]] § *Materials per slot* |
 | One backend | No backend interface; Vulkan or D3D12 later replaces the device, not the passes. | ADR-028 §6 |
 
 ## Design
@@ -74,7 +76,7 @@ flowchart LR
 | Buffer | Holds |
 |---|---|
 | Positions | Every static mesh's positions, 12 bytes each. |
-| Attributes | Every static mesh's other attributes, interleaved: normal, tangent, UVs. |
+| Attributes | Every static mesh's other attributes, interleaved: normal, tangent and UV0, 36 bytes. |
 | Indices | Every static mesh's indices, 32-bit. |
 
 One vertex array binds the two vertex buffers to two bindings.
@@ -117,8 +119,10 @@ Mechanism sections land as the build cards are cut. Known build work:
 
 ## Open questions
 
-- **The vertex attributes, the tangent encoding and the index width.** Two vectors or a
-  quaternion; 32-bit only or 16 and 32. Owner: S10-D9, with this note.
+- **A mirrored instance.** An entity whose world matrix has a negative determinant needs its
+  front face flipped, and the front face is pipeline state, so one multi-draw cannot hold both.
+  The lean is a second multi-draw for mirrored instances. A merged mesh has none, because import
+  flips its triangles. Owner: R1's first frame card.
 - **Where instance transforms are interpolated:** on the CPU per frame, or on the GPU from both
   packets' buffers. Owner: E2b, measured against the stress scene.
 - **How render matches an instance across two packets** to interpolate it, for example by

@@ -129,11 +129,6 @@ groups are kept, because they show where future work will land.
   `std::error_code`) before a `SceneError` can exist. **Trigger:** the first caller that has to
   tell two of those reasons apart, likely the editor's hierarchy panel.
 
-- #prio/medium · **Resources: hot-reload**: decided in shape by [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9: a reload swaps
-  data behind a live handle in a loading phase, with no generation bump, and fenced readers
-  treat it as a free. Eviction stays explicit release only. **Trigger:** file watching
-  ([[Backlog]] → `platform`) and an editor workflow that needs it.
-
 - #prio/medium · **A scene load does not notice a reference that was already Failed**: the
   load's loading phase reports only the errors it drains, so a dependency that failed before
   this load and is still held elsewhere produces no error, and its handle is filled with a

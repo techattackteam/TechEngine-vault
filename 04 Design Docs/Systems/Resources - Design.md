@@ -70,7 +70,7 @@ built or run.
 | Replicated components carry a `ResourceId`, never a handle. | ADR-024 §7, ADR-007 §2 |
 | A scene is an entry with an id, streamed into the live `Scene`; no parsed copy is cached. | ADR-024 §8 (amended Oct 24) |
 | Scene components are framed by stable tag and byte length. Per-type versions land with T1's scene save. | ADR-024 §8 |
-| Hot-reload swaps data behind a live handle; eviction is explicit release only. Both wait. | ADR-024 §9 |
+| A reload swaps data behind a live handle in a loading phase, acquiring new dependencies before releasing old ones. It lands with re-import, while the editor is Stopped; reload on a file change and eviction (explicit release only) still wait. | ADR-024 §9 (amended Nov 9); [[Content Pipeline - Design]] § *Re-import* |
 | The cache is `ResourceCache`, owned by `App`; one instance holds every type behind its type tag. | ADR-024 §1 (amended Oct 18); § *The cache as built* |
 | A reference cycle is invalid content: the loading phase rejects the edge that closes one. | Miguel, Oct 18; § *The cache as built* |
 | A loading phase is two non-blocking halves, submit and drain, looped until nothing is pending or loading. A failure does not stop it; the phase returns the first error drained. | Miguel, Oct 18; § *Loads on the job system, as built* |
@@ -79,7 +79,7 @@ built or run.
 | An `Entity` field holds the live handle and saves its target's authoring row. An `AssetRef<T>` holds `{ResourceId, ResourceHandle<T>}` and saves the id. An empty field is valid. A replicated component holds a bare `ResourceId`. | ADR-026 §2 |
 | One reference visitor over `visit` serves the scene writer, the reader's second pass, the scene's acquire set and the bake. The scene header has no dependency table. | ADR-026 §3 |
 | A live `AssetRef<T>` names only an asset its scene holds. An editor edit acquires the new asset at once and releases the old one when the scene reloads. | ADR-026 §4 |
-| A scene save rewrites each `Entity` to its row on a copy of the component, so the live scene is untouched. A target with no row saves as empty with a warning, a row past the last entity is `Malformed`, and a vector of `Entity` or `AssetRef` does not compile. | Miguel, Oct 24; § *Reference fields* |
+| A scene save rewrites each `Entity` to its row on a copy of the component, so the live scene is untouched. A target with no row saves as empty with a warning, a row past the last entity is `Malformed`, and a vector of `Entity` or `AssetRef` is never bulk-copied. It does not compile today; the slot card (S10-T18) visits such a vector element by element. | Miguel, Oct 24 and Nov 9; § *Reference fields*; [[Content Pipeline - Design]] § *Materials per slot* |
 | The mesh is the second resource type. Before T4 the editor writes one in code, and until R1 it is loaded, not drawn. | Miguel, Oct 18; § *Reference fields* |
 | A loaded scene is a cache entry, and its references are that entry's dependencies, so releasing the scene releases them. | ADR-024 §3 §8, Miguel, Oct 20; § *Reference fields* |
 | Loading a scene through the cache is one `core` function, which every app's startup load calls with its own source. | Miguel, Oct 23; § *Reference fields* |

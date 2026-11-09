@@ -314,17 +314,28 @@ before the renderer.
   UV set, which R7's baked mesh LOD would need, so that baking never breaks the file format?
   Cut Nov 6 at S10-D9. Feeds S10-D10's vertex attributes and the merge build card. Closed Nov 9
   by the lane (vault `9a27c99`): [[Content Pipeline - Mesh Import Report]]. No speed was measured.
-- [ ] **S10-D10** · Design TEMesh v2, textures and re-import · P1 · 🟢 Deep · 4-6h ·
+- [ ] **S10-D10** · Design TEMesh v2 and re-import · P1 · 🟢 Deep · 4-6h ·
   done: [[Content Pipeline - Design]] decides TEMesh v2 (material slots as index ranges, its
   vertex attributes and tangents, whether it keeps an optional second UV set, and its import
-  block), materials per slot on `MeshRenderer`, the merged mesh, the texture file (BC compression,
-  mips and the library), and how a re-import keeps each file's id. It files ADR-024 §9's dated
-  decision amendment, so a re-import reloads at once, then cuts those build cards into this story.
-  Split from S10-D9 on Nov 6. Follows S10-P4; the slots point at S10-D7's material type.
+  block), materials per slot on `MeshRenderer`, the merged mesh, and how a re-import keeps each
+  file's id. It files ADR-024 §9's dated decision amendment, so a re-import reloads at once, then
+  cuts those build cards into this story. Split from S10-D9 on Nov 6. Follows S10-P4; the slots
+  point at S10-D7's material type. Narrowed on Nov 9: the texture file moved to S10-D11, because
+  its formats follow what S10-D7's material samples.
+- [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h ·
+  done: a `/triage` decides whether the sky's HDR image comes through import, since
+  [[Content Pipeline - Brief]] lists only PNG, JPEG, TGA and DDS. Then
+  [[Content Pipeline - Design]] decides the `.tetexture` file, the BC format for each input that
+  S10-D7's material samples, the mips, the encoder and the image decoder, and how a re-import
+  matches a texture; then it cuts the texture build card into this story. No ADR: a wrong format
+  costs a version bump and a re-import. Follows S10-D7. Split from S10-D10 on Nov 9. The
+  candidates are mapped in [[Content Pipeline - Mesh Import Report]] §6.
 
-The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]]; the mesh, material,
-texture and re-import cards wait on S10-D10. They can open Sprint 11 (§ *Capacity note*). Order: S10-T13
-and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
+The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]], and the mesh's on
+Nov 9 (S10-D10). The material and texture cards wait on S10-D7 and S10-D11. They can open Sprint 11
+(§ *Capacity note*). Order: S10-T13 and S10-T14 come first; S10-T15 follows both, and S10-T16
+follows S10-T14. S10-T17 follows S10-T14; S10-T18 follows S10-T17 and S10-D7; S10-T19 follows
+S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T18 and S10-T19.
 
 - [x] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h ·
   done: assimp is pinned in `cmake/deps.cmake` with only its glTF, FBX and OBJ importers, and it
@@ -354,6 +365,55 @@ and S10-T14 come first; S10-T15 follows both, and S10-T16 follows S10-T14.
   launch would add another copy to a saved scene. Tests: a three-node model adds three entities with their parents and
   local transforms; placing it twice gives two independent trees; editing one copy changes
   neither the other nor the file. Follows S10-T14.
+- [ ] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h ·
+  done: `Mesh` is TEMesh v2 at `MESH_KIND` version 2 ([[Content Pipeline - Design]] § *The mesh
+  file*): the id, the import block, the stream flags, the four streams, `u32` indices and the slots,
+  with write and read. Its loader lists each non-null default material as a dependency.
+  `projects/dev/assets/client/Triangle.temesh` is written again, and the asset index still lists a
+  mesh. Tests: a mesh with two slots and every stream writes and reads back equal; a mesh with
+  positions only reads back with empty optional streams; a slot range past the indices, a gap or
+  an overlap between slots, a range that is not whole triangles, and no slots at all are each
+  refused with `ReadError::Malformed`; a version 1 file is refused with `ReadError::BadVersion`;
+  the loader's dependencies hold the non-null defaults and no null one. Follows S10-T14.
+- [ ] **S10-T18** · Materials per slot on `MeshRenderer` · P1 · 🟢 Deep · 4-6h ·
+  done: `Writer`, `Reader`, `ReferenceVisitor` and `FieldVisitor` visit a vector of a visitable
+  type element by element, and the bulk path still refuses a vector of `Entity` or `AssetRef`.
+  `MeshRenderer` gains its slot list ([[Content Pipeline - Design]] § *Materials per slot*), the
+  inspector shows one row per slot, and the list is rebuilt by slot name when the editor opens a
+  scene and after a re-import. Tests: a scene with a two-slot renderer saves and loads its
+  materials, and both the scene's acquire set and the bake's walk name them; after the mesh's
+  slots are reordered, a rebuild keeps each material on its named slot; a new slot takes its
+  default; a removed slot is dropped. Follows S10-T17 and S10-D7's material type.
+- [ ] **S10-T19** · Import writes TEMesh v2 · P1 · 🟢 Deep · 4-6h ·
+  done: S10-T15's import writes v2 meshes with one slot each, normals (generated when missing),
+  the file's tangents or MikkTSpace's re-indexed through meshoptimizer, and UV0. MikkTSpace and
+  meshoptimizer are pinned in `cmake/deps.cmake` and linked by the editor alone. A glTF whose
+  `extensionsUsed` lists `KHR_mesh_quantization` or a meshopt compression extension is refused
+  with an error code before assimp reads it. Tests: a glTF fixture with tangents keeps them; one
+  without gets unit tangents with `w` of ±1; after a Z-up bake, `cross(n, t.xyz) * w` still matches
+  the baked bitangent; a quantized fixture is refused. Follows S10-T15 and S10-T17.
+- [ ] **S10-T20** · Import as one merged mesh · P1 · 🟢 Deep · 4-6h ·
+  done: import in merged mode writes the root `.temesh` from the model walk
+  ([[Content Pipeline - Design]] § *The merged mesh*): world transforms baked, triangles flipped
+  under a negative determinant, tangents' `w` multiplied by its sign, one slot per source material
+  and missing streams filled with defaults. Placing a merged mesh adds one entity with `Name`,
+  `Transform` and `MeshRenderer` through one edit command. Tests: a two-node glTF with one node
+  scaled −1 on X gives the mirrored half's triangles in reversed order; two materials give two
+  slots in material-index order; a part without UV0 joins with zero UVs; placing it adds one
+  entity whose slot list matches the mesh. Follows S10-T19 and S10-T16.
+- [ ] **S10-T21** · Re-import keeps ids and reloads · P1 · 🟢 Deep · 4-6h ·
+  done: a *Re-import* menu entry with a typed path re-imports a source file into its folder while
+  the editor is Stopped, and is refused otherwise ([[Content Pipeline - Design]] § *Re-import*).
+  Outputs match old files by source key, name first, and keep their ids; matched materials are
+  untouched; unmatched old files stay and are logged; importing the other way switches the root
+  asset. `ResourceCache` gains a reload that replaces payloads behind live handles in a loading
+  phase (ADR-024 §9, amended Nov 9), and the open scene's slot lists are rebuilt after it. S10-T15's
+  refusal to import into an existing folder becomes this path. Tests: re-importing an unchanged
+  fixture keeps every id; a fixture whose meshes are reordered keeps each id on its named mesh; a
+  new mesh gets a fresh id and a removed one's file stays; a handle held across a reload resolves
+  to the new payload with the same generation; a reload that adds a dependency acquires it, and
+  one that drops a dependency releases it. Follows S10-T18 and S10-T19. It may split at the cache's
+  reload.
 
 ### Story I: Prepare Sprint 11 (standing)
 

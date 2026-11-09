@@ -18,6 +18,13 @@
   Oct 20, so that releasing the scene releases its references through the cache's own counts
   ([[Resources - Design]] § *Reference fields*). S8-D2; recorded at the Sprint 08 boundary
   drift check.
+- **Amended 2026-11-09, decision:** §9's "Hot-reload and eviction wait" → a reload lands now,
+  for re-import only. The editor's re-import sends one reload command, which the Stopped
+  simulation thread runs as a loading phase: each loaded entry's payload is replaced behind its
+  live handle with no generation bump, and its new dependencies are acquired before the old
+  ones are released. Reload on a file change, and eviction, still wait. Re-import is a Must for
+  E2, and every scene that uses an asset must keep working after it ([[Content Pipeline - Brief]]
+  § *Requirements*). S10-D10; [[Content Pipeline - Design]] § *Re-import*.
 - **Partially supersedes:** each rowed in [[ADR Index]] § *Partial supersessions*.
   - ADR-006 §4, the **`ResourceRegistry& resources` field** of the `EngineContext` sketch, and
     §5's "injected via `EngineContext`" for this one service (§4 below). The DI rule, context
@@ -169,6 +176,9 @@ client mesh. A replicated component carries the `ResourceId`, never a handle (AD
   upgrade hook for any type that needs one, land then.
 
 ### 9. Hot-reload and eviction wait, under one rule
+
+> **Amended 2026-11-09:** a reload lands with re-import, as a loading phase while the editor is
+> Stopped; reload on a file change and eviction still wait (S10-D10).
 
 A reload will replace the data behind a live handle in a loading phase, without a generation
 bump, so no consumer keeps a pointer into resource data across a loading phase. Eviction is

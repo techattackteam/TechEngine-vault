@@ -46,9 +46,14 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-D10** · Design TEMesh v2, textures and re-import · P1 · 🟢 Deep · 4-6h: [[Content Pipeline - Design]] decides the mesh file, materials per slot, the texture file and re-import's stable ids, files the ADR-024 §9 amendment, then cuts those build cards. Split from S10-D9. Follows S10-P4.
 - [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h: a job imports glTF, FBX or OBJ into a folder beside it, a `.temodel` plus one `.temesh` per source mesh, scale and up axis baked in. Until the asset browser, one hardcoded file is imported at startup, skipped when its folder exists. Follows S10-T13 and S10-T14.
 - [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h: one edit command builds the model's entities under one root at the origin, with no link to the file. Until the asset browser, a *Place model* menu entry with a typed path sends it. Follows S10-T14.
+- [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h: a `/triage` of the sky's HDR image, then [[Content Pipeline - Design]] decides `.tetexture`, the BC format per material input, the mips, the encoder and the decoder, and cuts the texture card. No ADR. Follows S10-D7. Split from S10-D10.
+- [ ] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h: `Mesh` at version 2 with the import block, stream flags, four streams and slots, its default materials listed as dependencies, and `Triangle.temesh` written again. Follows S10-T14.
+- [ ] **S10-T18** · Materials per slot on `MeshRenderer` · P1 · 🟢 Deep · 4-6h: the four visitors walk a vector element by element, `MeshRenderer` holds one material per slot, and the list is rebuilt by slot name. Follows S10-T17 and S10-D7.
+- [ ] **S10-T19** · Import writes TEMesh v2 · P1 · 🟢 Deep · 4-6h: normals, the file's tangents or MikkTSpace's, UV0, one slot per mesh; quantized and meshopt glTF refused. MikkTSpace and meshoptimizer join the editor's build. Follows S10-T15 and S10-T17.
+- [ ] **S10-T20** · Import as one merged mesh · P1 · 🟢 Deep · 4-6h: the model walk baked and joined by material, mirrored parts flipped, placed as one entity. Follows S10-T19 and S10-T16.
+- [ ] **S10-T21** · Re-import keeps ids and reloads · P1 · 🟢 Deep · 4-6h: outputs keep their ids by source key, materials stay untouched, and the cache reloads behind live handles while Stopped. May split at the reload. Follows S10-T18 and S10-T19.
 
 
 ## Story I: Prepare Sprint 11
@@ -58,6 +63,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S10-D10** · Design TEMesh v2 and re-import · P1 · 🟢 Deep · 4-6h: [[Content Pipeline - Design]] decides the mesh file, materials per slot, the merged mesh and re-import's stable ids, files the ADR-024 §9 amendment, then cuts those build cards. Split from S10-D9; the texture file moved to S10-D11 on Nov 9. Follows S10-P4.
 
 
 ## 👀 Review / Demo
