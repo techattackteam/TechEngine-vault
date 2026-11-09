@@ -46,7 +46,6 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only: assimp's merge flags, a slot per source material with no atlas, MikkTSpace and negative-scale winding, glTF extensions through assimp, BC compression libraries, and whether TEMesh v2 carries an optional second UV set for R7's baked LOD; decides nothing. Feeds S10-D10.
 - [ ] **S10-D10** · Design TEMesh v2, textures and re-import · P1 · 🟢 Deep · 4-6h: [[Content Pipeline - Design]] decides the mesh file, materials per slot, the texture file and re-import's stable ids, files the ADR-024 §9 amendment, then cuts those build cards. Split from S10-D9. Follows S10-P4.
 - [ ] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h: a job imports glTF, FBX or OBJ into a folder beside it, a `.temodel` plus one `.temesh` per source mesh, scale and up axis baked in. Until the asset browser, one hardcoded file is imported at startup, skipped when its folder exists. Follows S10-T13 and S10-T14.
 - [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h: one edit command builds the model's entities under one root at the origin, with no link to the file. Until the asset browser, a *Place model* menu entry with a typed path sends it. Follows S10-T14.
@@ -68,6 +67,10 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only: vault `9a27c99`, **Nov 9**, by the lane. [[Content Pipeline - Mesh Import Report]] answers the card's six questions from assimp 6.0.5's source, MikkTSpace, the glTF spec and six BC libraries, and ends with eight questions for S10-D10. Unblocks S10-D10; Story H stays open on S10-D10, S10-T15 and S10-T16.
+	- **Stronger than S10-P1 and S10-P3 on code, weaker on speed:** every source except the speed figures was cloned and read. Building the compressors to time them was refused by the sandbox, and the one independent benchmark's host fails at the proxy, so "how fast are they?" rests on search extracts and the authors' own claims.
+	- **Found in assimp, not assumed by the card:** `aiProcess_PreTransformVertices`'s flattening path never fixes winding under a negative scale (only its keep-hierarchy path and `OptimizeGraph` do), and a quantized or meshopt-compressed glTF imports garbage positions instead of failing. Both are inputs to S10-D10's questions, not defects of ours.
+	- A vault-only card has no PR conversation, so this entry is the only record.
 - [x] **S10-T14** · The import block and the TEModel file · P1 · 🟢 Deep · 4-6h: #193 `ac594e4`, **Nov 6**. `core` has the import block and the `.temodel` node table with write and read, and the editor's asset index lists the model kind. Unblocks S10-T15 together with S10-T13, and S10-T16; Story H stays open on those two and the mesh's cards.
 	- **The design note left the import block's layout open**, and listed the block before the model's id, where the asset index could not read the id. `/card-start` stopped on both. Miguel decided four calls: a byte count first, so a reader can step over the block; the source key as an index and a name; settings written in every block; and an up axis of Y or Z. All of it is now in [[Content Pipeline - Design]] § *The import block* and § *The model file*.
 	- **Fixed before the PR:** the first read failed four of the scaffold's tests. The quaternion's w was never written, both reads changed the object before checking the bytes, and `Model::read` turned every error into `Malformed` and ignored the block's own. Claude rewrote both reads at Miguel's request.

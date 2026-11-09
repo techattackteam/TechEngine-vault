@@ -6,8 +6,8 @@
 **Module:** `core` (the model and mesh formats, the import block) · `apps/editor` (assimp, the
 import, placement)
 **Kind:** system
-**Status:** the model is designed (2026-11-06, S10-D9) against engine `a67c4d4`; the mesh is S10-D10's, and waits
-on S10-P4's report. assimp is in the editor's build with only its glTF, FBX and OBJ importers
+**Status:** the model is designed (2026-11-06, S10-D9) against engine `a67c4d4`; the mesh is S10-D10's; S10-P4's
+report is in ([[Content Pipeline - Mesh Import Report]], Nov 9). assimp is in the editor's build with only its glTF, FBX and OBJ importers
 (S10-T13, `cmake/deps.cmake`). The model file and the import block are built, with write and
 read (S10-T14, `engine/core/include/TechEngine/core/model/Model.hpp` and
 `engine/core/include/TechEngine/core/assets/ImportBlock.hpp`). The import, the placement and
@@ -87,16 +87,19 @@ the editor fills it in.
 ## Open questions
 
 - **TEMesh v2.** One mesh with material slots, each slot one index range. Its vertex attributes,
-  tangents and an optional second UV set for R7's baked mesh LOD wait on S10-P4's report. Owner:
-  S10-D10, after S10-P4.
+  tangents and an optional second UV set for R7's baked mesh LOD are mapped in
+  [[Content Pipeline - Mesh Import Report]] §4 and §7. Owner: S10-D10.
 - **Materials per slot on the renderer.** The lean: the mesh file keeps a default material per
   slot, and `MeshRenderer` holds overrides matched by slot name, as Unreal does from memory.
   The material type itself is S10-D7's. Owner: S10-D10, with TEMesh v2.
-- **Textures:** BC compression, mips, and which library. Waits on S10-P4. Owner: S10-D10.
+- **Textures:** BC compression, mips, and which library. The libraries are mapped in
+  [[Content Pipeline - Mesh Import Report]] §6; no speed was measured. Owner: S10-D10.
 - **Re-import reloads at once.** It needs a dated amendment to ADR-024 §9, whose reload waits.
   Owner: S10-D10.
 - **The merged mesh.** One material slot per source material, with no texture atlas. Atlas
-  baking belongs to R7's mesh LOD, whose papers are queued on [[Research]]. Owner: S10-D10.
+  baking belongs to R7's mesh LOD, whose papers are queued on [[Research]]. assimp's
+  flattening merge does not fix winding under a negative scale
+  ([[Content Pipeline - Mesh Import Report]] §3). Owner: S10-D10.
 
 ## Porting v1's import
 

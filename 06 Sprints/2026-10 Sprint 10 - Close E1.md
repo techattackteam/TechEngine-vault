@@ -304,7 +304,7 @@ before the renderer.
   waits. Follows S10-D8 and S10-D4, because the seam ADR decides the vertex layout. Closed Nov 6
   (vault `d430705`), split: [[Content Pipeline - Design]] decides the model and cut its build
   cards below, and the mesh half moved to S10-D10. No ADR was needed.
-- [ ] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only ·
+- [x] **S10-P4** · Research report for mesh merging and import · P2 · 🤖 Auto · report-only ·
   done: a run report answers these questions without choosing. How does assimp merge a file
   into one mesh (`aiProcess_PreTransformVertices`, `aiProcess_OptimizeMeshes`), and what does
   each flag lose? How does a merge keep one material slot per source material, with no texture
@@ -312,7 +312,8 @@ before the renderer.
   Which glTF material extensions (clear coat, sheen, transmission) survive assimp? Which BC
   compression libraries fit, and how fast are they? Should TEMesh v2 carry an optional second
   UV set, which R7's baked mesh LOD would need, so that baking never breaks the file format?
-  Cut Nov 6 at S10-D9. Feeds S10-D10's vertex attributes and the merge build card.
+  Cut Nov 6 at S10-D9. Feeds S10-D10's vertex attributes and the merge build card. Closed Nov 9
+  by the lane (vault `9a27c99`): [[Content Pipeline - Mesh Import Report]]. No speed was measured.
 - [ ] **S10-D10** · Design TEMesh v2, textures and re-import · P1 · 🟢 Deep · 4-6h ·
   done: [[Content Pipeline - Design]] decides TEMesh v2 (material slots as index ranges, its
   vertex attributes and tangents, whether it keeps an optional second UV set, and its import
