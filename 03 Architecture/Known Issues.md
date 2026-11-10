@@ -52,3 +52,25 @@ assimp reads the file.
 
 **Trigger:** the first caller with settings other than the defaults (the asset browser's
 import), or the next change to the bake (S10-T19 or S10-T20).
+
+### D9: An editor destroyed during an import races the import's log lines
+
+`EditorApp::~EditorApp()` waits for running imports, but the destructor has already rewritten
+the object's vptr when the wait starts. A job that logs meanwhile wakes main through the console,
+a virtual call on the app, so the job's read of the vptr races the destructor's write. TSan
+reported it on the Linux leg of #194, and the test that reached it was deleted instead of
+fixed. `shutdown()` waits first, so it is safe.
+
+**Silent because no normal path reaches it.** `App::run()` calls `shutdown()` whenever `init()`
+completed, and the startup import starts after `init()`, in the startup load. Only a caller
+that skips `shutdown()` reaches the race: a test that bootstraps an editor and destroys it, or a
+new entry point. Outside TSan it is undefined behaviour with no symptom.
+
+`apps/editor/src/EditorApp.cpp:63-68` at `9c93b8f4`.
+
+**Fix:** not decided. The job could stop logging through the app before the app dies, or the
+editor's imports could be owned by a member destroyed before the app's virtual calls end.
+
+**Trigger:** the next change to how `EditorApp` starts or stops imports (the asset browser's
+import, or cancelling an import in the [[Backlog]]), or any test that destroys an editor
+without `shutdown()`.

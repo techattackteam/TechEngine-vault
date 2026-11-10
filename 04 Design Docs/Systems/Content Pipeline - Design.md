@@ -127,7 +127,7 @@ design above.
   the assets root a second time.
 - **Closing waits for running imports**, in `EditorApp::shutdown()`, so a large import holds the
   close until assimp returns. The destructor waits too, but too late for a job's log lines,
-  which wake main through a virtual call.
+  which wake main through a virtual call ([[Known Issues]] D9).
 
 ## The mesh file
 
