@@ -53,6 +53,10 @@ groups are kept, because they show where future work will land.
     `engine/core/include/TechEngine/core/scene/Entity.hpp:31` and
     `engine/core/src/scene/ArchetypeStorage.cpp:165`. A `hashCombine` in `base` would serve both.
     It is a new public symbol, and saves about 2 lines.
+  - Added by the `apps` sweep on Nov 10 ([[2026-11-10 14-12 Auto Run]]). The console names a log level and formats a
+    record's time by hand (`apps/editor/src/ui/panels/ConsolePanel.cpp:26`, `:171`), as `base`
+    does privately (`engine/base/src/diagnostics/Log.cpp:119`, `:398`). The `localTime` copy is the
+    editor's entry "The console repeats `Log.cpp`'s `localTime`". About 25 lines.
 
 ## platform
 
@@ -109,6 +113,12 @@ groups are kept, because they show where future work will land.
     size in a public header. About 8 lines.
   - `FileAccess::list` splits the virtual path before `resolveExisting` splits it again
     (`engine/platform/src/files/FileAccess.cpp:189`). About 2 lines.
+  - Added by the `apps` sweep on Nov 10 ([[2026-11-10 14-12 Auto Run]]). The editor converts between text and
+    `FileAccess`'s bytes by hand (`apps/editor/src/project/Project.cpp:69`, `:125`;
+    `apps/editor/src/EditorApp.cpp:271`, `:285`), and treats `AlreadyExists` after
+    `createDirectory` and `NotFound` after `remove` as success (`Project.cpp:225`, `:237`, `:254`,
+    `:311`; `EditorApp.cpp:280`). Text and idempotent calls in `FileAccess` would serve them.
+    These are new public symbols. About 10 lines.
 
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
@@ -470,6 +480,46 @@ groups are kept, because they show where future work will land.
   because the one in `engine/base/src/diagnostics/Log.cpp` is `static`. A small helper in
   `base` would serve both. Found at S10-T12 (#189) on Nov 6, 2026. **Trigger:** a third place
   that formats a record's time, or the next change to the console's row format.
+
+- #prio/medium · **Code sweep leftovers: apps**: Found by the code sweep on Nov 10, 2026
+  ([[2026-11-10 14-12 Auto Run]]). Lines are at engine `9c93b8f`; #195 shifts some of them in `InspectorCommands.cpp`.
+  - Eight commands open their entity loop with the same two guards, an `!entity.valid()` warning and
+    a `!scene.contains(entity)` warning (`apps/editor/src/edit/HierarchyCommands.cpp:36`, `:66`,
+    `:171`; `apps/editor/src/edit/InspectorCommands.cpp:54`, `:156`, `:233`, `:293`, `:357`).
+    `contains` already refuses an invalid entity, so one check would do, but the two warnings would
+    become one. About 30 lines.
+  - `SetFieldCommand::apply` and `SetAssetFieldCommand::apply` share their per-entity loop, from
+    the guard to the `FieldEditRecord` (`apps/editor/src/edit/InspectorCommands.cpp:53-86`,
+    `:155-188`). Their logging and their slot differ, so a shared helper needs choosing. About 25
+    lines.
+  - The single-entity `EditorSnapshot::resolveDrop` (`apps/editor/src/edit/EditorSnapshot.cpp:99`)
+    gives the same answer as the span overload for one entity, except when the parent is not in
+    the snapshot. Dropping it changes `HierarchyPanel.cpp:176` and the tests that call it. About
+    20 lines.
+  - `EditorApp::configureSimulation` and `RuntimeApp::configureSimulation` make the same three
+    registrations (`apps/editor/src/EditorApp.cpp:99`, `apps/runtime/src/RuntimeApp.cpp:39`).
+    `ClientApp` could make them once, but that is a new override in its public header. About 12
+    lines.
+  - `EULER_MIXED_EPSILON` (`apps/editor/src/edit/EditSession.cpp:20`) must equal the inspector's
+    `EULER_DISPLAY_EPSILON` (`apps/editor/src/ui/panels/InspectorPanel.cpp:33`). One shared
+    constant would remove the "must match" comment. About 2 lines.
+  - Test copies in the editor's test executable, about 50 lines together:
+    - The triangle `meshBytes` (`apps/editor/tests/project/ProjectTests.cpp:617`,
+      `apps/editor/tests/edit/AssetEditHarness.hpp:159`). About 6 lines.
+    - `registerExportComponents` (`apps/editor/tests/project/ProjectTests.cpp:91`) is typed out
+      again at `apps/editor/tests/EditorAppTests.cpp:283`. About 3 lines.
+    - A directory entry count, three times (`apps/editor/tests/assets/ModelImportTests.cpp:133`,
+      `apps/editor/tests/EditorAppTests.cpp:203`, `apps/editor/tests/edit/SaveSceneCommandTests.cpp:72`).
+      About 5 lines.
+    - "Records nothing, revision kept" checks, about ten times in
+      `apps/editor/tests/edit/InspectorCommandsTests.cpp` (from `:171`), and "asset set refused"
+      five times (from `:926`). About 12 lines.
+    - "File content unchanged", six times in `apps/editor/tests/EditorAppTests.cpp` (from `:641`),
+      and "scene held once" twice (`:521`, `:562`). About 13 lines.
+    - `ExportScratch::readBootRecord`'s body typed out again at
+      `apps/editor/tests/project/ProjectTests.cpp:589`. About 6 lines.
+    - Six fixtures mount a scratch project as `MountedProject` does
+      (`apps/editor/tests/project/ProjectTests.cpp:69`). About 10 lines.
 
 ## etc: cross-cutting
 
