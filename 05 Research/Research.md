@@ -6,16 +6,6 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://userpages.cs.umbc.edu/olano/papers/aps/ (Rendering)
-	**Appearance-Preserving Simplification**, SIGGRAPH 1998: bakes colour and normals into textures while a mesh is simplified. Queued Nov 6 for R7's mesh LOD, after S10-D9 kept atlas baking out of the merge.
-- [ ] https://mgarland.org/files/papers/quadric2.pdf (Rendering)
-	**Simplifying Surfaces with Color and Texture using Quadric Error Metrics**, IEEE Visualization 1998: quadric simplification that keeps UVs and colour. Queued Nov 6 for R7's mesh LOD.
-- [ ] https://microsoft.com/en-us/research/wp-content/uploads/2017/01/isochart.pdf (Rendering)
-	**Iso-charts**, SGP 2004: automatic chart generation for texture atlases (the method behind D3DX's UVAtlas). Queued Nov 6 for R7's baked LOD atlases.
-- [ ] https://www.cs.ubc.ca/labs/imager/tr/2018/BoxCutter/Limper2018_BoxCutter.pdf (Rendering)
-	**Box Cutter: Atlas Refinement for Efficient Packing via Void Elimination**, SIGGRAPH 2018: packs atlas charts more tightly. Queued Nov 6 for R7's baked LOD atlases.
-- [ ] https://cragl.cs.gmu.edu/seamless/ (Rendering)
-	**Seamless: Seam Erasure and Seam-Aware Decoupling of Shape from Mesh Resolution**, SIGGRAPH Asia 2017: removes texture seams and simplifies a mesh without breaking its UVs. Queued Nov 6 for R7's baked LOD atlases.
 - [ ] https://gdcvault.com/play/1021761/Adaptive-Virtual-Texture-Rendering-in (Rendering)
 	**Adaptive Virtual Texture Rendering in Far Cry 4**, GDC 2015: bakes terrain materials into a virtual texture. Queued Nov 6 for the static heightmap terrain (W3), as the terrain side of material baking. A talk, not a paper.
 - [ ] http://www.terathon.com/lengyel/Lengyel-VoxelTerrain.pdf (Rendering)
@@ -82,6 +72,21 @@ kanban-plugin: board
 	Sellers (AMD), Foley (Intel), Everitt and McDonald (NVIDIA) show how OpenGL cuts per-draw cost: multi-draw indirect with the draw count read from a buffer, persistent-mapped buffers, texture arrays and bindless textures; the GL reference for R1's draw submission, which v1 built on `glMultiDrawElementsIndirect`. A talk, not a paper; the GDC Vault page is partly paywalled, and the slides are public on SlideShare.
 - [ ] https://advances.realtimerendering.com/s2020/RenderingDoomEternal.pdf - **Rendering the Hellscape of Doom Eternal** | SIGGRAPH 2020 Advances in Real-Time Rendering in Games (Rendering)
 	id Software's forward renderer at a high frame rate; background for R1's hundreds of lights and its draw submission. Search found only the PDF link, so the speakers and what the talk covers are not confirmed.
+- [ ] https://userpages.cs.umbc.edu/olano/papers/aps/ - **Appearance-Preserving Simplification** | ACM SIGGRAPH 1998 (Rendering)
+	Could not resolve: userpages.cs.umbc.edu is blocked from the lane's cloud session, and so are the mdsoar.org copy and the ACM page (DOI 10.1145/280814.280832). A web search confirms Cohen, Olano and Manocha, SIGGRAPH 1998, pp. 115-122: the simplifier filters only positions and keeps colour and normals in texture and normal maps over the mesh's parameterization, which is the baking side of R7's mesh LOD. The paper itself was not read.
+	Queued Nov 6 for R7's mesh LOD, after S10-D9 kept atlas baking out of the merge.
+- [ ] https://mgarland.org/files/papers/quadric2.pdf - **Simplifying Surfaces with Color and Texture using Quadric Error Metrics** | IEEE Visualization 1998 (Rendering)
+	Could not resolve: mgarland.org and dblp are blocked from the lane's cloud session. A web search confirms Garland and Heckbert, IEEE Visualization 1998 (sources disagree on the pages, 263-269 or 279-286): edge collapse with quadrics extended over per-vertex colour and texture coordinates. That is the attribute-aware simplifier R7's LOD would get through meshoptimizer, which S10-D10 decided to add to the editor's build (S10-T19). The paper itself was not read.
+	Queued Nov 6 for R7's mesh LOD.
+- [ ] https://microsoft.com/en-us/research/wp-content/uploads/2017/01/isochart.pdf - **Iso-charts: Stretch-driven Mesh Parameterization using Spectral Analysis** | Eurographics SGP 2004 (Rendering)
+	Zhou, Snyder, Guo and Shum build a texture atlas automatically, using an MDS (isomap) embedding with graph-cut chart boundaries to bound stretch; it is how R7's baked LOD mesh could get the UV set of its own that [[Content Pipeline - Design]] gives it, most likely through an existing library (UVAtlas implements it) rather than code of ours.
+	Queued Nov 6 for R7's baked LOD atlases.
+- [ ] https://www.cs.ubc.ca/labs/imager/tr/2018/BoxCutter/Limper2018_BoxCutter.pdf - **Box Cutter: Atlas Refinement for Efficient Packing via Void Elimination** | ACM SIGGRAPH 2018 (Rendering)
+	Could not resolve: www.cs.ubc.ca, publica.fraunhofer.de and the ACM page are blocked from the lane's cloud session. A web search confirms Limper, Vining and Sheffer, ACM TOG 37(4), SIGGRAPH 2018: it cuts large empty boxes out of an atlas and repacks the charts, about 68% better packing at a 50% boundary-length cap. It would tighten R7's baked LOD atlases, a refinement after charting. The paper itself was not read.
+	Queued Nov 6 for R7's baked LOD atlases.
+- [ ] https://cragl.cs.gmu.edu/seamless/ - **Seamless: Seam Erasure and Seam-Aware Decoupling of Shape from Mesh Resolution** | ACM SIGGRAPH Asia 2017 (Rendering)
+	Could not resolve: cragl.cs.gmu.edu and the alecjacobson.com copy of the PDF are blocked from the lane's cloud session. A web search confirms Liu, Ferguson, Jacobson and Gingold, ACM TOG 36(6), SIGGRAPH Asia 2017: seam erasure, and edge-collapse conditions that keep one seam-free texture valid at every LOD. For R7 it is the option of keeping the source's UVs and textures instead of baking a new atlas per LOD. The paper itself was not read.
+	Queued Nov 6 for R7's baked LOD atlases.
 
 
 ## Rendering 👽
