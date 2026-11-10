@@ -61,7 +61,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: `/adr` drafts R1's second ADR, Miguel accepts it, and `Renderer - Design` indexes it. Follows S10-P3 and S10-D4.
 
 
 ## 👀 Review / Demo
@@ -70,6 +69,12 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: vault `9a69f70`, **Nov 10**. [[ADR-029 - Materials, surfaces and lobes]] is Accepted and [[Renderer - Design]] indexes it: a material is a surface plus values, the engine owns the light loop and calls lobes, one lit model with layers driven by values, GLSL source, photometric units, and four sampled textures. Unblocks S10-D11, and S10-T18 together with S10-T17; it completes Story E.
+	- **Miguel's calls:** clear coat, sheen and transmission are postponed out of E2, which moved a Must in [[Renderer - Brief]] and left the three with no goal. He also asked that developers can add their own lobes; the brief lists that as *Won't*, so the lobe seam is built internal and waits on a `/triage`. A material edit is an undo step, written on Save.
+	- **Grounding found a gap no artifact had named:** every edit command changes a component on an entity, so nothing says how a value inside an asset is edited, undone or saved. ADR-029 §7 points at an asset edit path that is not designed ([[Backlog]], `#prio/high`).
+	- **Moved out of the ADR:** a shader per feature set, as Unity, Unreal and Godot do, can replace always-present layers later behind the same files, so that choice is in [[Renderer - Design]] § *Materials*. The lit model's terms from S10-P3's report were never discussed and stay there as leans.
+	- **The `done:` clause overstates:** "R1 is unblocked for Sprint 11" holds for the design only. CI's software GL cannot run R1's GL floor ([[Backlog]] § *client*), and no card cuts the material file yet.
+	- **Retro:** the reason the brief gave for the three extras, that the reference models look wrong without them, was never checked against Sponza and Bistro. Most Unreal and Unity facts in the ADR are from memory, and ADR-016 and ADR-026 were not read in full for the consistency check. A vault-only card has no PR conversation, so this entry is the only record.
 - [x] **S10-T15** · Import a source file as a model · P1 · 🟢 Deep · 4-6h: #194 `9c93b8f`, **Nov 9**. A job imports glTF, FBX or OBJ into a folder beside the source, and a second command adds the records to the asset index on the simulation thread. Unblocks S10-T19 together with S10-T17; Story H stays open on S10-T16 to S10-T21 and S10-D11.
 	- **Two `done:` clauses had no referent:** no asset browser card exists, so the TODO is `TODO(E2)`. No source file ships in `projects/dev`, so the startup import of `assets/client/Sponza.gltf` is also skipped when the file is missing, and does nothing until one is dropped in. Nobody has run it on a real Sponza yet.
 	- **The PR lists eleven calls that no artifact made**, among them: the root is always named after the file, a source root keeps its own transform, ids are drawn on the worker, and closing the editor waits for imports. The PR has no review conversation, so nothing records a reversal. The calls are now in [[Content Pipeline - Design]] § *The import*.

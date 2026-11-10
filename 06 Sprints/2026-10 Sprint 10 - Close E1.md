@@ -233,10 +233,13 @@ an ADR. The Profiler half drops first.
   [[Renderer - Brief]]'s shading models and standard material, without choosing. Closed Nov 4 by
   the lane (vault `7bfdda8`): [[Renderer - Materials Paper Report]], from Filament's and glTF's
   documents, since no paper host was reachable.
-- [ ] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h ·
+- [x] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h ·
   done: `/adr` drafts R1's second ADR from [[Renderer - Brief]] and S10-P3's report; Miguel accepts
   it, and `Renderer - Design` indexes it. With S10-D4, R1 is unblocked for Sprint 11. Follows
-  S10-P3 and S10-D4.
+  S10-P3 and S10-D4. Closed Nov 10 (vault `9a69f70`): [[ADR-029 - Materials, surfaces and lobes]],
+  Accepted, indexed by [[Renderer - Design]]. Clear coat, sheen and transmission are postponed
+  out of E2 in [[Renderer - Brief]]. R1's design is unblocked; CI's GL floor and the material
+  file card are not.
 
 ### Story F: Defects
 
@@ -453,12 +456,14 @@ S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T1
   #182.
 - [ ] E1's internal demo ran its five scenarios, and E1 is marked closed on the [[Roadmap]]
   (S10-T7).
-- [ ] The frame and device seam ADR and the materials ADR are Accepted and indexed by
-  `Renderer - Design` (S10-D4, S10-D7). Half met: ADR-028 on Nov 6, vault `22f1514` (S10-D4).
+- [x] The frame and device seam ADR and the materials ADR are Accepted and indexed by
+  `Renderer - Design` (S10-D4, S10-D7). ADR-028 on Nov 6, vault `22f1514` (S10-D4); ADR-029 on
+  Nov 10, vault `9a69f70` (S10-D7).
 - [ ] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
   build cards (S10-D8, S10-D9). Mostly met: the brief on Oct 31 (vault `a5ed725`), the model's
   cards on Nov 6 (vault `d430705`), and the mesh's cards on Nov 9 (S10-D10, vault `5408328`). The
-  texture card waits on S10-D11, and the material card on S10-D7.
+  texture card waits on S10-D11. ADR-029 names the material type since Nov 10 (S10-D7), and
+  the material file card is not cut yet.
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
   first, #181 `78c48ab`).

@@ -8,7 +8,8 @@
 **Module:** `client` (the device, the passes, the render thread) · `apps/clientapp` and `app`
 (the extraction hook) · `core` (mesh and material types)
 **Kind:** system
-**Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`. Nothing is built
+**Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`; materials designed on
+2026-11-10 (S10-D7) against `ac594e4`. Nothing is built
 beyond M4's triangle (`engine/client/src/render/FrameRenderer.cpp`).
 **ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
 [[ADR-029 - Materials, surfaces and lobes]] ·
