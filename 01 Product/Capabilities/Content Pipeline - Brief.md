@@ -32,7 +32,7 @@ path); the demo for packaging (T5). Skeletons and animation come with C1, for G3
 | **Must, E2** | Supported source formats: glTF, FBX and OBJ. | Bistro's FBX; Miguel, 2026-10-31 |
 | **Must, E2** | Textures in PNG, JPEG, TGA and DDS. | What the three formats reference |
 | **Must, E2** | At import, the user chooses a merged mesh or a model. A merged mesh is one mesh with one material slot per source material. A model keeps the file's hierarchy, with an entity per mesh. The file can be imported again the other way. | Scenarios 1 and 3 |
-| **Must, E2** | glTF's material extras that the renderer draws (clear coat, sheen, transmission) and cut-outs come through import. | [[Renderer - Brief]], *Must, E2* |
+| **Must, E2** | Cut-outs come through import. glTF's material extras (clear coat, sheen, transmission) come through when the renderer draws them, which is after E2 since 2026-11-09. | [[Renderer - Brief]] § *Decided* |
 | **Must, E2** | Re-import updates an asset in place: every scene that uses it keeps working, and a material the user edited is never overwritten. | Scenario 4 |
 | **Must, E2** | Import settings for scale and up axis, kept with the asset and applied again on re-import. | Scenario 2 |
 | **Must, E2** | A list-only asset browser: it lists the project's assets by folder, imports a file, and places a model in the scene. | Scenarios 1 and 3 |

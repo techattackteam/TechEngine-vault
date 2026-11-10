@@ -1,8 +1,9 @@
 # Renderer: Design
 
 > Living design doc. The decisions that are hard to reverse are in
-> [[ADR-028 - Render device seam and frame packets]] (Accepted 2026-11-06). This note holds the *how*, and
-> it is R1's hub: plan and ground renderer work from here.
+> [[ADR-028 - Render device seam and frame packets]] (Accepted 2026-11-06) and
+> [[ADR-029 - Materials, surfaces and lobes]] (Accepted 2026-11-10). This note holds the *how*,
+> and it is R1's hub: plan and ground renderer work from here.
 
 **Module:** `client` (the device, the passes, the render thread) · `apps/clientapp` and `app`
 (the extraction hook) · `core` (mesh and material types)
@@ -10,6 +11,7 @@
 **Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`. Nothing is built
 beyond M4's triangle (`engine/client/src/render/FrameRenderer.cpp`).
 **ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
+[[ADR-029 - Materials, surfaces and lobes]] ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
 [[ADR-018 - Main and simulation threads, render-owned GL]] §2 ·
 [[ADR-019 - Fixed simulation ticks, render interpolation and shared clock]] §3 ·
@@ -48,6 +50,15 @@ the render thread that draws packets through a small device.
 | The vertex attributes | A normal (`float3`), a tangent (`float4`, `w` the bitangent's sign) and UV0 (`float2`), unpacked until measured. A stream a mesh lacks is filled with defaults at upload. Indices are 32-bit only. | S10-D10, 2026-11-09; ADR-028 §5; [[Content Pipeline - Design]] § *The mesh file* |
 | A slot with no material entry | It draws with the mesh's default material. | S10-D10, 2026-11-09; [[Content Pipeline - Design]] § *Materials per slot* |
 | One backend | No backend interface; Vulkan or D3D12 later replaces the device, not the passes. | ADR-028 §6 |
+| A material is a surface and values | A surface is shader code that only fills inputs. A material is an asset in `core` that names one surface and stores its values. The standard material is the engine's own surface, and the only one in E2. | ADR-029 §1 |
+| Surface, lobe, light loop | The engine owns the light loop and calls lobes. Its diffuse and specular are lobes from E2. Developers cannot add a lobe until a `/triage` opens the seam. | ADR-029 §2 |
+| One lit model | Layers are always in the program and switched by values. A shading model value selects lit or unlit. | ADR-029 §3 |
+| Postponed out of E2 | Clear coat, sheen and transmission. | Miguel, 2026-11-09; ADR-029 §3 |
+| Draw buckets | Alpha mode (opaque, cut-out, blended) and double-sided are material state, and each combination has its own multi-draw. Cut-outs skip the depth pre-pass. | ADR-029 §4 |
+| Shaders are GLSL source | The engine assembles one program per surface and lobe set from its own sources and the surface. No offline compiler, no SPIR-V. | ADR-029 §5 |
+| Units | Photometric light values, and a fixed exposure on the camera until R2. | ADR-029 §6 |
+| What the standard material samples | Base color, a packed occlusion, roughness and metallic map, a normal and emissive. Wrap and filter live on the texture asset. | ADR-029 §7 |
+| Editing a material | Each edit is an undo step, and the file is written on Save. The asset edit path itself is not designed. | Miguel, 2026-11-09; [[Backlog]] § *editor & tooling* |
 
 ## Design
 
@@ -101,6 +112,31 @@ One vertex array binds the two vertex buffers to two bindings.
 - **Not in this set:** geometry the CPU rewrites each frame (debug lines, UI) gets its own
   streaming buffer, so it never fragments the static set.
 
+### Materials
+
+How a program is put together, from ADR-029 §1, §2 and §5:
+
+```mermaid
+flowchart LR
+    S["Surface<br/>fills the inputs"] --> P["One program"]
+    L["Lobes<br/>diffuse, specular"] --> P
+    E["Engine source<br/>declarations, light loop"] --> P
+    P --> B["One multi-draw<br/>per draw bucket"]
+    M["Material buffer<br/>one record per material"] -->|"gl_DrawID"| B
+```
+
+- **A draw command** is one mesh slot with one material, and its instances. Commands are
+  grouped by program, then by bucket.
+- **The material buffer** holds one record per material, with the same layout for every
+  material of one surface: the values, then a bindless handle per texture. An edit rewrites one
+  record through ADR-028 §4's ordered channel. The exact layout is open (§ *Open questions*).
+- **An empty texture input** uses its factor alone.
+- **Adding a layer later** (clear coat, sheen): new inputs that default to zero, new record
+  fields, one lobe, and a version step of the material file.
+- **A variant per layer set** stays possible behind the same files. If the layer tests measure
+  too slow, the engine can compile a program for materials that leave a layer at zero. Unity,
+  Unreal and Godot work this way from the start.
+
 ### Build notes
 
 Mechanism sections land as the build cards are cut. Known build work:
@@ -133,9 +169,18 @@ Mechanism sections land as the build cards are cut. Known build work:
   stay open in [[Editor - Design]] § *Open questions*.
 - **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.
   Owner: R1's first frame card.
-- **The shader format:** GLSL source, or SPIR-V compiled offline, which GL 4.6 loads. Owner:
-  S10-D7, because it is the surface shader contract.
-- **The material buffer's layout** and sampler handles for live edits. Owner: S10-D7.
+- **The material buffer's exact layout,** and the material file's. Owner: the material file
+  card, cut after ADR-029 is accepted.
+- **The lit model's terms.** [[Renderer - Materials Paper Report]] § *What S10-D7 still has to
+  decide* lists them, and ADR-029 leaves them here because they change no file. The leans, none
+  of them decided: Lambert diffuse, the height-correlated Smith visibility term, energy
+  compensation from the start because it shares the split sum's table, and a fixed 4%
+  reflectance as glTF has. Owner: R1's lit pass card.
+- **What a slot with a null material draws.** Import writes null defaults until the material
+  file exists ([[Content Pipeline - Design]] § *The mesh file*). Owner: the material file card.
+- **How a developer's surface declares its values,** and how a Script sets one on a single
+  entity. Owner: the surface shader card, alongside E11.
+- **Whether developers may write lobes.** The seam is internal. Owner: a `/triage`.
 - **Where the project names the renderer's settings asset** ([[Resources - Design]] §
   *Open questions*, owner R1).
 - **Whether lights go only to occupied clusters,** found from the depth pre-pass, or to every

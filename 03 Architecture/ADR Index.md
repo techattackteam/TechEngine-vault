@@ -10,6 +10,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 029 | [[ADR-029 - Materials, surfaces and lobes]] | Accepted | 2026-11 |
 | 028 | [[ADR-028 - Render device seam and frame packets]] | Accepted | 2026-11 |
 | 027 | [[ADR-027 - Editor threads, edit commands and play sessions]] | Accepted | 2026-10 |
 | 026 | [[ADR-026 - Reference fields and scene-held acquires]] | Accepted | 2026-10 |
@@ -42,7 +43,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > [[ADR-003 - Renderer direction (rendergraph vs rewrite)]] describe the **v1 reference
 > prototype** and are moved to `_archive v1/`, history/prior art, out of the active list.
 > Mine them via [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **029** (numbers are never reused).
+> Next number is **030** (numbers are never reused).
 
 ### Partial supersessions
 

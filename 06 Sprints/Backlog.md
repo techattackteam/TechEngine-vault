@@ -384,6 +384,18 @@ groups are kept, because they show where future work will land.
   a default asset per resource type, which does not exist yet. Today a deleted file goes
   unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
   **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
+- #prio/high · **Design the asset edit path**: the editor cannot edit a value that lives in an
+  asset. Every edit command changes a component on an entity
+  (`apps/editor/src/edit/InspectorCommands.hpp:26`, `:47`), and a material's roughness lives in
+  its own file, shared by every entity that uses it. Decided by Miguel on Nov 9: each edit is an
+  undo step, and the file is written on Save. Still to design: the command and what it changes
+  in the cache, how an undo record names an asset, how the editor tracks an unsaved asset and
+  which file Save writes, what Play does with an edited asset, and how an edit stays behind
+  render's fence (ADR-028 §4). Textures and settings assets will use the same path. Read ADR-024
+  and ADR-027 first: if their rules already cover it, this is a section in [[Editor - Design]]
+  and not a new ADR. It is a design card, not a build card. Found at S10-D7's `/card-start`
+  ([[ADR-029 - Materials, surfaces and lobes]] §7). **Trigger:** the material inspector's card;
+  it does not block S10-T18 or S10-D11.
 - #prio/low · **The Euler cache is untested**: `InspectorPanel::syncEuler` holds a small state
   machine that no test reaches while it is private to the panel. It waits for the exact
   quaternion it sent in Local mode, and within 1e-4 per component in World mode (S10-T6, #188). Moving it into a class in `edit/` would make it testable. Found at S9-T17;

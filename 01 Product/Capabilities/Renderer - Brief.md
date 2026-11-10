@@ -36,7 +36,8 @@ materials and shading models, and the renderer's design note.
 |---|---|---|
 | **Must, E2** | Imported glTF reference models (Sponza, Bistro), seen through a camera in the runtime and in the editor's scene view, and the two look identical. | Scenarios 1 and 4 |
 | **Must, E2** | Each mesh slot has a material on the engine's standard material: textures and values, no shader code. Edits in the inspector show in the scene view at once, with no recompile or reload. | Scenario 2; `/triage` |
-| **Must, E2** | Shading models: lit, unlit, and glTF's common extras: clear coat, sheen and transmission. | Reference models look wrong without them |
+| **Must, E2** | Shading models: lit and unlit. | Reference models need both |
+| **Must, goal not set** | glTF's common extras: clear coat, sheen and transmission. Postponed out of E2 on 2026-11-09 (§ *Decided*). | Whether Sponza and Bistro use them is not checked |
 | **Must, E2** | Lighting: a sun and a sky image that lights and reflects. No shadows. Shiny surfaces reflect only the sky. | Scenario 3 |
 | **Must, E2b** | Hundreds of local lights. | Scenario 3; E2 split on 2026-10-31 |
 | **Must, E2** | A finished image: correct brightness for a bright sky and dark corners, and smooth edges. | Scenario 4; a comparison video |
@@ -121,4 +122,5 @@ None. The three owed to `/product-review` were settled on 2026-10-31 (§ *Decide
 | How E2's video shows the count | Copies of the reference models in a stress scene. | 2026-10-30 |
 | The renderer's bar | P1's one exception: stand out among indie engines (Godot 4, Flax, Bevy, Stride), without competing with Unreal or Unity. Mesh LOD joins R7; particles stay out until Phase 2 is mapped. | 2026-10-31, `/product-review` |
 | E2's scene | Reference scenes are allowed until E5; from E5 on, every showcase is shaped like TechAttack ([[Reference Game]]). | 2026-10-31, `/product-review` |
+| The three extras leave E2 | Clear coat, sheen and transmission are postponed: "I feel for now we can post pone that part." E2 ships lit and unlit. This replaces the 2026-10-30 row *E2's shading models*. Transmission also needs the scene behind the surface, which E2's frame does not draw. No goal is set for them yet; [[ADR-029 - Materials, surfaces and lobes]] §3 says how a layer is added later. | 2026-11-09, S10-D7 |
 | E2's size | Split in two. E2 shows the models, materials, sun, sky and finished image; E2b shows hundreds of local lights and the stress scene. T4 is on E2's critical path. | 2026-10-31, `/product-review` |
