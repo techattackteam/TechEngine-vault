@@ -30,7 +30,8 @@ path); the demo for packaging (T5). Skeletons and animation come with C1, for G3
 |---|---|---|
 | **Must, showcase (E2)** | Sponza and Bistro are imported and drawn with their materials and textures ([[Renderer - Brief]] § *Requirements*). | Scenarios 1 and 2 |
 | **Must, E2** | Supported source formats: glTF, FBX and OBJ. | Bistro's FBX; Miguel, 2026-10-31 |
-| **Must, E2** | Textures in PNG, JPEG, TGA and DDS. | What the three formats reference |
+| **Must, E2** | Textures in PNG, JPEG, TGA and DDS, beside the model file or embedded in it as PNG or JPEG (a `.glb`, an FBX). | What the three formats reference; embedded images, Miguel, 2026-11-10 |
+| **Must, E2** | The sky image as a Radiance `.hdr`, imported on its own rather than through a model file. | [[Renderer - Brief]]'s sky image; `/triage`, 2026-11-10 |
 | **Must, E2** | At import, the user chooses a merged mesh or a model. A merged mesh is one mesh with one material slot per source material. A model keeps the file's hierarchy, with an entity per mesh. The file can be imported again the other way. | Scenarios 1 and 3 |
 | **Must, E2** | Cut-outs come through import. glTF's material extras (clear coat, sheen, transmission) come through when the renderer draws them, which is after E2 since 2026-11-09. | [[Renderer - Brief]] § *Decided* |
 | **Must, E2** | Re-import updates an asset in place: every scene that uses it keeps working, and a material the user edited is never overwritten. | Scenario 4 |
@@ -38,7 +39,7 @@ path); the demo for packaging (T5). Skeletons and animation come with C1, for G3
 | **Must, E2** | A list-only asset browser: it lists the project's assets by folder, imports a file, and places a model in the scene. | Scenarios 1 and 3 |
 | **Must, demo** | Export to content packs (M6), a packaged demo build (T5), and the editor's asset browser with import. | [[Capability Map]], unchanged |
 | **Should, E2** | Compressed glTF (Draco or meshopt). | Cut first if E2 runs long |
-| **Won't, for now** | Other formats as supported inputs. assimp may read them, but nothing promises them; more come if needed. | Miguel, 2026-10-31 |
+| **Won't, for now** | Other formats as supported inputs. assimp may read them, but nothing promises them; more come if needed. EXR is one of them, because the sky needs only `.hdr`. Embedded images stored as raw pixels are refused. | Miguel, 2026-10-31; EXR and raw pixels, 2026-11-10 |
 | **Won't, for now** | Thumbnails, rename and delete in the browser. Drag and drop from Windows Explorer. Re-import on its own when a source file changes. | The browser is list-only in E2 |
 | **Won't, for now** | Skeletons and animation (until C1). Morph targets. Cameras and lights stored in the source file. | Not needed by E2 |
 
@@ -101,3 +102,5 @@ From memory, not checked against current docs:
 | Re-import on file change | Won't; re-import is by hand. | 2026-10-31 |
 | Links and prefabs | None: "there wont be any link/prefab features." | 2026-11-06 |
 | A placed model | A copy: "Once the model is added to the scene the changes made wont reflect the others nor the model file." | 2026-11-06 |
+| The sky's image | A Radiance `.hdr`, a Must in E2, for the sky only. EXR stays out (`/triage` at S10-D11). | 2026-11-10 |
+| Embedded images | A Must: "yes we must support it". PNG and JPEG only; raw-pixel images are not needed. | 2026-11-10 |

@@ -474,6 +474,23 @@ groups are kept, because they show where future work will land.
   source holds the close until assimp returns ([[Content Pipeline - Design]] § *The import*).
   assimp's `ProgressHandler` can stop a read. Found at S10-T15 (#194) on Nov 9, 2026.
   **Trigger:** the asset browser's import, or the first close that waits long enough to notice.
+- #prio/medium · **Sponza ships in `projects/dev` with no licence file**: S10-T16 (#196) added
+  `Sponza.gltf`, `Sponza.bin` and its import to `projects/dev/assets/client`, about 14.5 MB, by
+  Miguel's choice. The Khronos sample carries its own licence and credits, and nothing in the
+  repo states them. Copy the sample's LICENSE beside the source and credit it wherever a
+  showcase uses it. Found at S10-T16's close on Nov 10, 2026. **Trigger:** before the first
+  showcase or public release that shows Sponza.
+- #prio/low · **Placement loads its meshes in one blocking step**: `PlaceModelCommand` runs the
+  cache's loading phase on the simulation thread and waits, as `SetAssetFieldCommand` does. The
+  UI keeps drawing, since main reads snapshots, but the hierarchy shows the model late. Loading
+  over several frames needs a decision on a placement that is still waiting when the scene is
+  saved, cleared or replaced. Found at S10-T16 on Nov 10, 2026. **Trigger:** a measured stall,
+  or R1 if render then waits on the simulation thread.
+- #prio/low · **Child entities of a split mesh have assimp's names**: Sponza's one unnamed mesh
+  arrives as about a hundred primitives, so placement gives the root children named
+  `meshes[0]-0` and onwards. Naming each after its material would read better once import
+  writes materials. Found at S10-T16 on Nov 10, 2026. **Trigger:** S10-T19, or the material
+  file card.
 
 - #prio/low · **The console repeats `Log.cpp`'s `localTime`**: `ConsolePanel.cpp` formats a
   record's local time with its own copy of the reentrant `localtime_s` / `localtime_r` helper,

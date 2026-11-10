@@ -8,12 +8,14 @@ import, placement)
 **Kind:** system
 **Status:** the model is designed (2026-11-06, S10-D9) against engine `a67c4d4`. TEMesh v2,
 materials per slot, the merged mesh and re-import are designed (2026-11-09, S10-D10) against
-`ac594e4`, from [[Content Pipeline - Mesh Import Report]]. Textures are S10-D11's. assimp is in
+`ac594e4`, from [[Content Pipeline - Mesh Import Report]]. Textures are designed (2026-11-10,
+S10-D11) against `ccece28`; no texture code exists. assimp is in
 the editor's build with only its glTF, FBX and OBJ importers (S10-T13, `cmake/deps.cmake`). The
 model file and the import block are built, with write and read (S10-T14,
 `engine/core/include/TechEngine/core/model/Model.hpp` and
 `engine/core/include/TechEngine/core/assets/ImportBlock.hpp`). The import is built (S10-T15,
-`apps/editor/src/assets/ModelImport.hpp`), writing today's mesh. The placement, TEMesh v2 and
+`apps/editor/src/assets/ModelImport.hpp`), writing today's mesh. The placement is built (S10-T16,
+`apps/editor/src/edit/PlaceModelCommand.hpp`). TEMesh v2 and
 re-import are not.
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
 [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9 (amended 2026-11-09) ·
@@ -43,6 +45,10 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Import is editor-only, on the job system | assimp links into `apps/editor` alone. An import runs as a job and never blocks the editor's frame. | S10-D9, 2026-11-06 |
 | The import's own calls | Ids, refusals, file names, FBX pivots and closing the editor during an import. | S10-T15 (#194), 2026-11-09; § *The import* |
 | Placement is one edit command | Main sends it; the simulation thread builds the entities. | ADR-027 §3 |
+| Placement reads the model by path | The command finds the record in the asset index and reads the `.temodel` through `FileAccess` on the simulation thread. The cache has no model loader, because a placed copy keeps nothing from the file. | S10-T16 (#196), 2026-11-10 |
+| One bad mesh refuses the whole model | A mesh that is not in the index, is not a mesh, is a server asset or fails to load leaves the scene with no new entity. A mesh that loaded before the refusal stays a dependency of the scene until the scene is released. | Miguel, 2026-11-10 (S10-T16) |
+| The root is copied as stored | Placement adds no offset: the root keeps the transform the model stores for it. | Miguel, 2026-11-10 (S10-T16) |
+| Placement waits for its meshes | It runs the cache's loading phase on the simulation thread, as an asset field set does. Loading over several frames waits for a measured stall ([[Backlog]] § *editor & tooling*). | S10-T16 (#196), 2026-11-10 |
 | Materials are created once | A re-import never overwrites a material file that already exists. | [[Content Pipeline - Brief]] § *Decided* |
 | Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/Sponza.gltf`, skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
 | Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path. Re-import goes through a *Re-import* menu entry with a typed path, like placement. | S10-D10, 2026-11-09 |
@@ -58,8 +64,14 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5 |
 | Re-import keeps every id | Outputs are matched to their old files by source key. Old files with no match are left in place and logged. | S10-D10, 2026-11-09; § *Re-import* |
 | Re-import reloads at once | Only while the editor is Stopped. | ADR-024 §9 (amended 2026-11-09); § *Re-import* |
-| Textures are their own card | The texture file, its BC formats, mips and library are S10-D11's, after S10-D7 names what a material samples. | Miguel, 2026-11-09 |
-| New dependencies | MikkTSpace and meshoptimizer, pinned in `cmake/deps.cmake` and linked by the editor alone, as assimp is. No ADR. | Miguel, 2026-11-09 |
+| The texture file | A `.tetexture` holds one 2D image in its GPU format, with every mip, its wrap and its filter. No ADR: a wrong format costs a version bump and a re-import. | S10-D11, 2026-11-10; § *The texture file* |
+| A file per image, purpose and sampler | An image shared by many materials for one purpose is written once. Used for two purposes or with two samplers, it is written twice. | S10-D11, 2026-11-10; § *Texture import* |
+| A format per purpose | Base color and emissive are BC7 sRGB, the packed ORM is BC7 linear, a normal map is BC5, and the sky is uncompressed `RGB9E5`. | S10-D11, 2026-11-10; § *Texture import* |
+| One packed ORM | When occlusion and metallic-roughness are separate images, import packs them into one texture, so the material keeps ADR-029 §7's four. | S10-D11, 2026-11-10 |
+| One path for every image | Every source is decoded and encoded again, a DDS included, and every mip is built at import. | S10-D11, 2026-11-10 |
+| Embedded images | PNG and JPEG stored inside a `.glb` or an FBX are imported like files beside it. Raw-pixel ones are refused. | Miguel, 2026-11-10; [[Content Pipeline - Brief]] |
+| The sky is imported on its own | A Radiance `.hdr`, through its own menu entry, not through a model. | `/triage`, 2026-11-10; § *The sky image* |
+| New dependencies | MikkTSpace and meshoptimizer (2026-11-09); stb_image, bcdec and bc7enc_rdo, its `rgbcx` and scalar `bc7enc` with no ispc (2026-11-10). Each is pinned in `cmake/deps.cmake` and linked by the editor alone, as assimp is. No ADR. | Miguel, 2026-11-09 and 2026-11-10 |
 
 ## The model file
 
@@ -78,7 +90,8 @@ A `.temodel` is a binary blob with its own `BlobKind`, like the mesh and the sce
 
 Placing a model walks the list once and creates an entity per node, with `Name`, `Transform`,
 `Hierarchy` and, where the node has a mesh, `MeshRenderer`. The new root goes at the scene's
-root, at the origin. Entity ids are fresh; the model file is not referenced by the result.
+root, with the transform the model stores for it. Entity ids are fresh; the model file is not
+referenced by the result.
 
 The meshes are shared, not copied: every placed copy points at the same mesh ids. So a
 re-import that changes a mesh's triangles shows in every copy, while a re-import that adds or
@@ -195,6 +208,77 @@ path never fixes winding under a negative scale ([[Content Pipeline - Mesh Impor
 - **Output:** `Sponza/Sponza.temesh` as the root asset, beside `Materials/`, with no `.temodel`.
   It is placed as one entity: `Name`, `Transform` and `MeshRenderer`.
 
+## The texture file
+
+A `.tetexture` is `TEXTURE_KIND`, a binary blob like the mesh. In order:
+
+- **Its id, straight after the header**, for the asset index's 16-byte read.
+- **The import block**, with the default settings, because a texture has no settings of its own
+  in E2.
+- **The shape**, a `u8` that is always 2D in E2. A cube map later is a new value, not a new
+  version.
+- **The format:** `BC7_SRGB`, `BC7_UNORM`, `BC5_UNORM` or `RGB9E5`. Whether the data is sRGB is
+  part of the format, so there is no colour space field. BC1 and BC6H can join later as values.
+- **Width and height**, `u32` each, and **the mip count**, always the full chain down to 1×1.
+- **The sampler:** wrap U and wrap V (repeat, clamp or mirror, as glTF has), and the filter
+  (linear with trilinear mips, or nearest). It lives on the texture (ADR-029 §7), so a material
+  holds one handle per input. Anisotropy is one renderer setting, not a texture field.
+- **The mips, largest first**, each a `u32` byte count and its data. BC data comes in 4×4 blocks,
+  so a level smaller than 4 pixels still takes one block.
+
+The purpose (base color, normal and so on) is stored only in the source key, because the format
+already says everything the renderer needs.
+
+## Texture import
+
+Import writes a model's textures into `Textures/` while it walks the materials, because a
+texture's format follows the input that samples it.
+
+| Input | Format | Mips |
+|---|---|---|
+| Base color, alpha included | `BC7_SRGB` | Built in linear float, then encoded back to sRGB |
+| Occlusion, roughness, metallic | `BC7_UNORM` | Linear |
+| Normal | `BC5_UNORM`, its z rebuilt in the shader | Renormalized at every level |
+| Emissive | `BC7_SRGB` | As base color |
+
+- **Packing the ORM.** When the occlusion and metallic-roughness inputs name the same image, the
+  texture is made from it. When they differ, import builds one image: red from occlusion, green
+  and blue from metallic-roughness, after scaling the smaller image up to the larger one's size.
+  A missing image's channels are 1, so the material's factor applies alone.
+- **Decoding.** stb_image reads PNG, JPEG, TGA and HDR from a file or from memory. A DDS is read
+  by import's own small reader, and its blocks are decoded with bcdec. Every image is then encoded
+  again, so a DDS is compressed twice and loses a little quality.
+- **Embedded images.** assimp keeps them in `aiScene::mTextures`, and `GetEmbeddedTexture` finds
+  one from a material's texture path. One with `mHeight == 0` holds PNG or JPEG bytes and is
+  decoded from memory. A raw-pixel one is refused with a log line, and the input stays empty.
+- **Mips** are a 2×2 box filter of the level above.
+- **Encoding.** bc7enc_rdo's `rgbcx` writes BC5 and its scalar `bc7enc` writes BC7, in plain C++.
+  `RGB9E5` needs no encoder.
+- **The source key's name** holds the image's path relative to the source, the purpose and the
+  sampler, for example `Textures/wall.png#normal#repeat-linear`, so a key never depends on which
+  material the walk reached first. An embedded image uses its own name when assimp has one,
+  otherwise `*<index>`. A packed ORM names both images: `ao.png+mr.png#orm#repeat-linear`.
+  Re-import matches it by name, as for meshes (§ *Re-import*).
+
+**Known costs.** Cut-outs thin out in distant mips (Sponza's plants), because keeping the alpha
+coverage needs the material's cutoff; that waits for a measured need. BC7 encoding at good
+quality is slow, and no speed is measured ([[Content Pipeline - Mesh Import Report]] §6), so the
+first Bistro import gives the brief's import time its number.
+
+## The sky image
+
+The sky has no model file, so an *Import image* menu entry with a typed path imports it, like
+*Place model*, until the asset browser exists. It writes one `.tetexture` beside the source and
+named after it: `Sky.hdr` gives `Sky.tetexture`, with no folder, because there is one output.
+It is the root asset, so its key is empty and a re-import rewrites the same file.
+
+Its format is `RGB9E5`, a core GL format that the renderer samples as it is. A 4096×2048 sky with
+its mips takes about 43 MB, against about 11 MB in BC6H. BC6H joins as a format value if
+memory asks for it, with no version bump.
+
+How the image becomes the sky's lighting (filtered levels for rough reflections, and the diffuse
+light) is the renderer's ([[Renderer - Design]] § *Open questions*).
+
 ## Re-import
 
 By hand only ([[Content Pipeline - Brief]]), and refused unless the editor is Stopped.
@@ -221,11 +305,8 @@ By hand only ([[Content Pipeline - Brief]]), and refused unless the editor is St
 
 ## Open questions
 
-- **Textures:** the texture file, its BC formats per material input, mips and the library. They
-  follow what a material samples. Owner: S10-D11, after S10-D7, starting with a `/triage` of the
-  sky's HDR image, which no format in [[Content Pipeline - Brief]] covers.
-- **The material file** that import writes into `Materials/`. Owner: S10-D7's type, then a build
-  card cut after it.
+- **The material file** that import writes into `Materials/`. Owner: S10-T23, then S10-T24 for
+  the walk that writes the materials and their textures.
 - **A mirrored instance in a model:** a placed node with a negative determinant needs its front
   face flipped. Owner: R1, in [[Renderer - Design]] § *Open questions*.
 
@@ -238,7 +319,7 @@ v1's model import worked, and this design follows its shape: a folder per import
 frame-bound import fixed on the way ([[v1 Code Audit]] F14). Two fixes are still owed:
 
 - **An unnamed material is named after its pointer address**, which changes on every run, so a
-  re-import could never find it. Owner: the material card, after S10-D7.
+  re-import could never find it. Owner: S10-T24.
 - **Normals and UVs are not written yet**, because today's mesh holds positions and indices only.
   Owner: S10-T19. Leave v1's `MeshLoader.cpp` alone: it is the atlas merge below.
 

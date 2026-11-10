@@ -335,11 +335,13 @@ before the renderer.
   costs a version bump and a re-import. Follows S10-D7. Split from S10-D10 on Nov 9. The
   candidates are mapped in [[Content Pipeline - Mesh Import Report]] §6.
 
-The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]], and the mesh's on
-Nov 9 (S10-D10). The material and texture cards wait on S10-D7 and S10-D11. They can open Sprint 11
+The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]], the mesh's on
+Nov 9 (S10-D10), and the texture and material cards on Nov 10 (S10-D11). They can open Sprint 11
 (§ *Capacity note*). Order: S10-T13 and S10-T14 come first; S10-T15 follows both, and S10-T16
 follows S10-T14. S10-T17 follows S10-T14; S10-T18 follows S10-T17 and S10-D7; S10-T19 follows
 S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T18 and S10-T19.
+S10-T22 follows S10-T14; S10-T23 follows S10-T22; S10-T24 follows S10-T23 and S10-T19; S10-T25
+follows S10-T22.
 
 - [x] **S10-T13** · assimp in the editor build · P1 · 🟠 Moderate · 2-3h ·
   done: assimp is pinned in `cmake/deps.cmake` with only its glTF, FBX and OBJ importers, and it
@@ -362,14 +364,14 @@ S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T1
   an existing folder is refused, because re-import does not exist yet
   (`apps/editor/src/EditorApp.cpp:434-456` refuses to overwrite). Follows S10-T13 and S10-T14.
   Closed Nov 9: #194 `9c93b8f`. The TODO is `TODO(E2)`, because no browser card exists yet.
-- [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h ·
   done: placing a `.temodel` builds its entities in the open scene through one edit command
   (ADR-027 §3): `Name`, `Transform`, `Hierarchy` and `MeshRenderer`, under one root at the origin,
   with no reference to the model file. Until the asset browser exists, a small *Place model* menu
   entry takes a typed path and sends the same command; placing at startup is out, because every
   launch would add another copy to a saved scene. Tests: a three-node model adds three entities with their parents and
   local transforms; placing it twice gives two independent trees; editing one copy changes
-  neither the other nor the file. Follows S10-T14.
+  neither the other nor the file. Follows S10-T14. Closed Nov 10: #196 `9233481`.
 - [ ] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h ·
   done: `Mesh` is TEMesh v2 at `MESH_KIND` version 2 ([[Content Pipeline - Design]] § *The mesh
   file*): the id, the import block, the stream flags, the four streams, `u32` indices and the slots,
@@ -419,6 +421,52 @@ S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T1
   to the new payload with the same generation; a reload that adds a dependency acquires it, and
   one that drops a dependency releases it. Follows S10-T18 and S10-T19. It may split at the cache's
   reload.
+- [ ] **S10-T22** · The texture file · P1 · 🟠 Moderate · 2-3h ·
+  done: `core` gains `Texture` at `TEXTURE_KIND` version 1 ([[Content Pipeline - Design]] §
+  *The texture file*): the id, the import block, the shape, the format, the size, the mip count,
+  the sampler and the mips, with write and read. Its loader is registered in the editor and the
+  runtime (`apps/editor/src/EditorApp.cpp:102-103`, `apps/runtime/src/RuntimeApp.cpp:42-43`), and
+  the asset index lists the texture kind (`apps/editor/src/assets/AssetIndex.cpp:35-37`). Tests: a
+  `BC7_SRGB` texture and an `RGB9E5` texture, each with a full mip chain, write and read back
+  equal; a mip count that is not the full chain for the size, a mip whose byte count does not
+  match its format and size, a shape other than 2D and an unknown format are each refused with
+  `ReadError::Malformed`; the asset index lists a `.tetexture`. Follows S10-T14. Cut Nov 10 at
+  S10-D11.
+- [ ] **S10-T23** · The material file · P1 · 🟢 Deep · 4-6h ·
+  done: `core` gains `Material` and its `.tematerial` file
+  ([[ADR-029 - Materials, surfaces and lobes]]): the id, the import block, the surface, the
+  shading model, the alpha mode and its cutoff, the double-sided flag, and each factor beside its
+  `AssetRef<Texture>`, one per input of ADR-029 §7, with write and read. Its loader, in the editor
+  and the runtime, lists each non-null texture as a dependency, and the asset index lists the
+  material kind. The card settles the file's layout and the material buffer's, and what a slot
+  with a null material draws, and records them in [[Renderer - Design]] (§ *Open questions* names
+  this card). Tests: a material with all four textures writes and reads back equal; one with no
+  textures reads back with null references and its factors; an unknown alpha mode or shading
+  model is refused with `ReadError::Malformed`; the loader's dependencies hold the non-null
+  textures and no null one; the asset index lists a `.tematerial`. Follows S10-T22. Cut Nov 10 at
+  S10-D11.
+- [ ] **S10-T24** · Import writes materials and textures · P1 · 🟢 Deep · 4-6h ·
+  done: S10-T15's import writes one `.tematerial` per source material into `Materials/`, and their
+  textures into `Textures/` ([[Content Pipeline - Design]] § *Texture import*), and each v2 mesh
+  slot names its material as the default. An unnamed material gets a stable name from its index,
+  not its pointer address (§ *Porting v1's import*). stb_image, bcdec and bc7enc_rdo are pinned in
+  `cmake/deps.cmake` and linked by the editor alone. Tests: two materials that share a base color
+  image write that texture once; separate occlusion and metallic-roughness images give one ORM
+  texture, red from occlusion and green and blue from the other; a material with no occlusion
+  gives a red of 1; a `.glb` fixture's embedded PNG is imported; a BC1 DDS fixture is decoded and
+  written as BC7; each texture has its input's format and a full mip chain; the mip builder keeps a
+  normal map's texels unit length at every level; each texture's source key names its path,
+  purpose and sampler. Follows S10-T23 and S10-T19. It may split at the textures. Cut Nov 10 at
+  S10-D11.
+- [ ] **S10-T25** · Import the sky image · P1 · 🟠 Moderate · 2-3h ·
+  done: an *Import image* menu entry with a typed path imports a `.hdr` file as a job into
+  `<name>.tetexture` beside it, as `RGB9E5` with a full mip chain and an empty source key
+  ([[Content Pipeline - Design]] § *The sky image*). Importing when that file already exists is
+  refused, as a model's folder is, until S10-T21's re-import; a path that is not a `.hdr` is
+  refused with an error code. Tests: a small `.hdr` fixture gives an `RGB9E5` texture of its size
+  with a full mip chain, whose top level matches the source within `RGB9E5`'s precision; an
+  existing output is refused; a `.png` path is refused. Follows S10-T22; whichever of S10-T24 and
+  this card lands first pins stb_image. Cut Nov 10 at S10-D11.
 
 ### Story I: Prepare Sprint 11 (standing)
 
@@ -461,9 +509,8 @@ S10-T15 and S10-T17; S10-T20 follows S10-T19 and S10-T16; S10-T21 follows S10-T1
   Nov 10, vault `9a69f70` (S10-D7).
 - [ ] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
   build cards (S10-D8, S10-D9). Mostly met: the brief on Oct 31 (vault `a5ed725`), the model's
-  cards on Nov 6 (vault `d430705`), and the mesh's cards on Nov 9 (S10-D10, vault `5408328`). The
-  texture card waits on S10-D11. ADR-029 names the material type since Nov 10 (S10-D7), and
-  the material file card is not cut yet.
+  cards on Nov 6 (vault `d430705`), the mesh's cards on Nov 9 (S10-D10, vault `5408328`), and the
+  texture and material cards on Nov 10 (S10-D11).
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
   first, #181 `78c48ab`).

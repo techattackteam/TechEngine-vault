@@ -170,15 +170,17 @@ Mechanism sections land as the build cards are cut. Known build work:
   stay open in [[Editor - Design]] § *Open questions*.
 - **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.
   Owner: R1's first frame card.
-- **The material buffer's exact layout,** and the material file's. Owner: the material file
-  card, cut after ADR-029 is accepted.
+- **The material buffer's exact layout,** and the material file's. Owner: S10-T23.
 - **The lit model's terms.** [[Renderer - Materials Paper Report]] § *What S10-D7 still has to
   decide* lists them, and ADR-029 leaves them here because they change no file. The leans, none
   of them decided: Lambert diffuse, the height-correlated Smith visibility term, energy
   compensation from the start because it shares the split sum's table, and a fixed 4%
   reflectance as glTF has. Owner: R1's lit pass card.
+- **How the sky image becomes lighting:** the filtered levels for rough reflections and the
+  diffuse light, built at load or at import. The file is one 2D `RGB9E5` image with ordinary mips
+  ([[Content Pipeline - Design]] § *The sky image*). Owner: R1's sky card.
 - **What a slot with a null material draws.** Import writes null defaults until the material
-  file exists ([[Content Pipeline - Design]] § *The mesh file*). Owner: the material file card.
+  file exists ([[Content Pipeline - Design]] § *The mesh file*). Owner: S10-T23.
 - **How a developer's surface declares its values,** and how a Script sets one on a single
   entity. Owner: the surface shader card, alongside E11.
 - **Whether developers may write lobes.** The seam is internal. Owner: a `/triage`.

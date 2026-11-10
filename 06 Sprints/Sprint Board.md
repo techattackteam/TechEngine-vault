@@ -45,13 +45,15 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h: one edit command builds the model's entities under one root at the origin, with no link to the file. Until the asset browser, a *Place model* menu entry with a typed path sends it. Follows S10-T14.
-- [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h: a `/triage` of the sky's HDR image, then [[Content Pipeline - Design]] decides `.tetexture`, the BC format per material input, the mips, the encoder and the decoder, and cuts the texture card. No ADR. Follows S10-D7. Split from S10-D10.
 - [ ] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h: `Mesh` at version 2 with the import block, stream flags, four streams and slots, its default materials listed as dependencies, and `Triangle.temesh` written again. Follows S10-T14.
 - [ ] **S10-T18** · Materials per slot on `MeshRenderer` · P1 · 🟢 Deep · 4-6h: the four visitors walk a vector element by element, `MeshRenderer` holds one material per slot, and the list is rebuilt by slot name. Follows S10-T17 and S10-D7.
 - [ ] **S10-T19** · Import writes TEMesh v2 · P1 · 🟢 Deep · 4-6h: normals, the file's tangents or MikkTSpace's, UV0, one slot per mesh; quantized and meshopt glTF refused. MikkTSpace and meshoptimizer join the editor's build. Follows S10-T15 and S10-T17.
 - [ ] **S10-T20** · Import as one merged mesh · P1 · 🟢 Deep · 4-6h: the model walk baked and joined by material, mirrored parts flipped, placed as one entity. Follows S10-T19 and S10-T16.
 - [ ] **S10-T21** · Re-import keeps ids and reloads · P1 · 🟢 Deep · 4-6h: outputs keep their ids by source key, materials stay untouched, and the cache reloads behind live handles while Stopped. May split at the reload. Follows S10-T18 and S10-T19.
+- [ ] **S10-T22** · The texture file · P1 · 🟠 Moderate · 2-3h: `Texture` at `TEXTURE_KIND` with its format, sampler and full mip chain, write and read, its loader, and the asset index listing it. Follows S10-T14.
+- [ ] **S10-T23** · The material file · P1 · 🟢 Deep · 4-6h: `Material` and `.tematerial` with ADR-029's values and four texture references, its loader's dependencies, and the file and material buffer layouts recorded in [[Renderer - Design]]. Follows S10-T22.
+- [ ] **S10-T24** · Import writes materials and textures · P1 · 🟢 Deep · 4-6h: one material per source material, textures per input with ORM packing, embedded images and DDS, stable material names; stb_image, bcdec and bc7enc_rdo join the editor's build. May split at the textures. Follows S10-T23 and S10-T19.
+- [ ] **S10-T25** · Import the sky image · P1 · 🟠 Moderate · 2-3h: an *Import image* menu entry turns a `.hdr` into an `RGB9E5` `.tetexture` beside it. Follows S10-T22.
 
 
 ## Story I: Prepare Sprint 11
@@ -61,6 +63,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h: a `/triage` of the sky's HDR image, then [[Content Pipeline - Design]] decides `.tetexture`, the BC format per material input, the mips, the encoder and the decoder, and cuts the texture card. No ADR. Follows S10-D7. Split from S10-D10.
 
 
 ## 👀 Review / Demo
@@ -69,6 +72,11 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h: #196 `9233481`, **Nov 10**. *File → Place model...* sends one edit command that reads a `.temodel` by path and builds its entities under one root, with each mesh held by the scene. Miguel placed Sponza in the editor. Unblocks S10-T20 together with S10-T19; Story H stays open on S10-T17 to S10-T21.
+	- **No artifact said where the model is read.** The cache has no `Model` loader, and none is needed, because a placed copy keeps nothing from the file; the command reads it through `FileAccess` on the simulation thread. Miguel also decided that one bad mesh refuses the whole model. Both calls are now in [[Content Pipeline - Design]] § *Decided*.
+	- **"At the origin" meant less than it said:** the design note keeps a source root's own transform, so the clause means no placement offset. The root is copied as stored.
+	- **Written and deleted before merge:** warning branches for `createEntity`, `setParent` and the cleanup's `destroyEntity`. Diff coverage stopped at 75% on them. None can fail, because `Model::read` guarantees the parent-first order, so they became `TE_CHECK`, and a zero scale is the one real build failure.
+	- **Retro:** the PR adds Sponza's source (9.5 MB) and its import to `projects/dev` by choice, with no licence file beside it ([[Backlog]] § *editor & tooling*). The PR has no description or review conversation, so this entry is the only record.
 - [x] **S10-D7** · The materials and shading models ADR · P2 · 🟢 Deep · 4-6h: vault `9a69f70`, **Nov 10**. [[ADR-029 - Materials, surfaces and lobes]] is Accepted and [[Renderer - Design]] indexes it: a material is a surface plus values, the engine owns the light loop and calls lobes, one lit model with layers driven by values, GLSL source, photometric units, and four sampled textures. Unblocks S10-D11, and S10-T18 together with S10-T17; it completes Story E.
 	- **Miguel's calls:** clear coat, sheen and transmission are postponed out of E2, which moved a Must in [[Renderer - Brief]] and left the three with no goal. He also asked that developers can add their own lobes; the brief lists that as *Won't*, so the lobe seam is built internal and waits on a `/triage`. A material edit is an undo step, written on Save.
 	- **Grounding found a gap no artifact had named:** every edit command changes a component on an entity, so nothing says how a value inside an asset is edited, undone or saved. ADR-029 §7 points at an asset edit path that is not designed ([[Backlog]], `#prio/high`).
