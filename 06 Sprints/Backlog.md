@@ -320,8 +320,10 @@ groups are kept, because they show where future work will land.
   depth-first**, so that all four share one order and as much of the same logic as possible.
   Its order is the row order on disk, so the change alters the bytes a save writes. The reader
   only requires a parent's row to come before its children's (`SceneAsset.cpp:137`), and a
-  depth-first walk keeps that. Found while pairing on S10-T1, Nov 1. **Trigger:** S10-B2,
-  which gives `Scene` a root order for the walk to use, or a fifth hand-written walk.
+  depth-first walk keeps that. Found while pairing on S10-T1, Nov 1. Since S10-B2 (#197, Nov 10)
+  the roots are a sibling list too, so the walk can start at the first root and allocate
+  nothing; S10-B2 left the walk out on purpose. **Trigger:** a fifth hand-written walk, or the
+  next card that changes one of the four.
 
 ## client
 
@@ -386,6 +388,13 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/low · **The hierarchy panel cannot reorder roots**: a drop between two roots draws no
+  highlight, and a drop to the root always lands last. Since S10-B2 (#197, Nov 10) `Scene` can do
+  both: `reorderChild` accepts a root, and `unparent(child, position, mode)` puts a child at a
+  position among the roots. What is missing is `EditorSnapshot::resolveDrop` giving a root
+  position, and `ReparentEntityCommand` passing it through for a reorder and a move to the root
+  ([[Editor - Design]] § *The hierarchy panel*). Miguel kept it out of S10-B2 on Nov 10.
+  **Trigger:** Miguel wants to order roots in the editor, or the next card on the hierarchy panel.
 - #prio/xhigh · **Deleting an asset in the editor**: Miguel's wanted behaviour, Oct 26, 2026.
   Before the delete, a warning lists the scenes that use the asset. After it, each reference
   points at its type's default asset. Loading a scene with an asset that is not there warns

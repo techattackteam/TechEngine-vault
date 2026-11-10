@@ -240,8 +240,8 @@ the first edit, so without it the panels would start empty. The snapshot holds:
   types that any selected entity lacks (§ *The inspector*);
 - the edit revision, raised by each command that changes the scene, and the saved revision.
 
-Roots come in storage order, not a kept order, because `Scene` has no sibling list for them
-([[Backlog]] → core). Collapsed branches and scroll positions are main's own UI state, not part
+Roots come in the order `Scene` keeps for them since S10-B2 (#197, Nov 10; [[Scene - Design]]
+§ *Built-in hierarchy*): a new entity and a move to the root land last. Collapsed branches and scroll positions are main's own UI state, not part
 of the snapshot. The whole snapshot is rebuilt on each change. At 1,000 entities that is a few
 kilobytes per edit; ADR-027 § *What would move this* names the measurement that would change it.
 
@@ -261,7 +261,8 @@ session and submits it; a refused submit logs a warning.
   hovered gap into a position: `Scene` counts a position among the other children, so a move
   down inside the same parent lands one gap earlier.
 - **Drops the panel refuses.** A drop into the dragged entity's own subtree, a drop that changes
-  nothing, and any reorder between roots draw no highlight. A command the `Scene` still rejects,
+  nothing, and any reorder between roots draw no highlight. `Scene` can reorder roots since
+  S10-B2, but the panel does not use it yet ([[Backlog]] § *editor & tooling*). A command the `Scene` still rejects,
   such as one for an entity that died in the meantime, logs a warning and changes nothing. No
   caller needs to tell the reasons apart, so the [[Backlog]]'s `bool` mutator entry stays armed.
 - **Commands.** Create, delete, reparent, rename and select. A reparent and a move to the root

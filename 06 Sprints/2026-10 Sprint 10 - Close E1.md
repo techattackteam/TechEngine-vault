@@ -246,13 +246,14 @@ an ADR. The Profiler half drops first.
 - [x] **S10-B1** · `removeLogSink(nullptr)` reports success (D5) · P3 · 🤖 Auto · 1-2h ·
   **folded into S10-T10** on Nov 3 by S10-D2, and taken off the lane: `removeLogSink` now takes a
   `LogSink&`, so a null sink cannot be passed, and S10-T10 deletes D5.
-- [ ] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h · #197 `1b67345`, Nov 10 ·
   done: `Scene` keeps an order for root entities, so adding a component or destroying another
   root no longer moves a root, and a saved scene writes its roots in that order. Today
   `Scene::getRoots()` returns archetype storage order (`engine/core/src/scene/Scene.cpp:238` at
   `5c57bf8`), and removal swap-erases; found at S9-T16's `/card-start`. Tests: a root that gains a component keeps its position;
   destroying a root leaves the others in order; a save and a read keep the order. Whether the
-  hierarchy may then reorder roots is decided at `/card-start`.
+  hierarchy may then reorder roots is decided at `/card-start`. Decided Nov 10: `Scene` takes a
+  root position, and the panel's drop between roots stays refused ([[Backlog]]).
 - [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 ·
   🟠 Moderate · 2-3h ·
   done: a `PreserveWorld` reparent whose new local transform would need shear is accepted with an
@@ -326,14 +327,15 @@ before the renderer.
   point at S10-D7's material type. Narrowed on Nov 9: the texture file moved to S10-D11, because
   its formats follow what S10-D7's material samples. Closed Nov 9 (vault `5408328`): it cut
   S10-D11 and S10-T17 to S10-T21.
-- [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h ·
   done: a `/triage` decides whether the sky's HDR image comes through import, since
   [[Content Pipeline - Brief]] lists only PNG, JPEG, TGA and DDS. Then
   [[Content Pipeline - Design]] decides the `.tetexture` file, the BC format for each input that
   S10-D7's material samples, the mips, the encoder and the image decoder, and how a re-import
   matches a texture; then it cuts the texture build card into this story. No ADR: a wrong format
   costs a version bump and a re-import. Follows S10-D7. Split from S10-D10 on Nov 9. The
-  candidates are mapped in [[Content Pipeline - Mesh Import Report]] §6.
+  candidates are mapped in [[Content Pipeline - Mesh Import Report]] §6. Closed Nov 10 (vault
+  `9915e78`): it cut S10-T22 to S10-T25, the material file's cards among them.
 
 The model's cards below were cut on Nov 6 from [[Content Pipeline - Design]], the mesh's on
 Nov 9 (S10-D10), and the texture and material cards on Nov 10 (S10-D11). They can open Sprint 11
@@ -372,7 +374,7 @@ follows S10-T22.
   launch would add another copy to a saved scene. Tests: a three-node model adds three entities with their parents and
   local transforms; placing it twice gives two independent trees; editing one copy changes
   neither the other nor the file. Follows S10-T14. Closed Nov 10: #196 `9233481`.
-- [ ] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h ·
   done: `Mesh` is TEMesh v2 at `MESH_KIND` version 2 ([[Content Pipeline - Design]] § *The mesh
   file*): the id, the import block, the stream flags, the four streams, `u32` indices and the slots,
   with write and read. Its loader lists each non-null default material as a dependency.
@@ -382,6 +384,8 @@ follows S10-T22.
   an overlap between slots, a range that is not whole triangles, and no slots at all are each
   refused with `ReadError::Malformed`; a version 1 file is refused with `ReadError::BadVersion`;
   the loader's dependencies hold the non-null defaults and no null one. Follows S10-T14.
+  Closed Nov 10: #198 `d781e99`. It also rewrote the 103 Sponza meshes and gave the import a key
+  and one slot per mesh.
 - [ ] **S10-T18** · Materials per slot on `MeshRenderer` · P1 · 🟢 Deep · 4-6h ·
   done: `Writer`, `Reader`, `ReferenceVisitor` and `FieldVisitor` visit a vector of a visitable
   type element by element, and the bulk path still refuses a vector of `Entity` or `AssetRef`.
@@ -507,10 +511,10 @@ follows S10-T22.
 - [x] The frame and device seam ADR and the materials ADR are Accepted and indexed by
   `Renderer - Design` (S10-D4, S10-D7). ADR-028 on Nov 6, vault `22f1514` (S10-D4); ADR-029 on
   Nov 10, vault `9a69f70` (S10-D7).
-- [ ] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
-  build cards (S10-D8, S10-D9). Mostly met: the brief on Oct 31 (vault `a5ed725`), the model's
-  cards on Nov 6 (vault `d430705`), the mesh's cards on Nov 9 (S10-D10, vault `5408328`), and the
-  texture and material cards on Nov 10 (S10-D11).
+- [x] The content pipeline's brief is agreed, and `Content Pipeline - Design` has cut Story H's
+  build cards (S10-D8, S10-D9). The brief on Oct 31 (vault `a5ed725`), the model's cards on Nov 6
+  (vault `d430705`), the mesh's cards on Nov 9 (S10-D10, vault `5408328`), and the texture and
+  material cards on Nov 10 (S10-D11, vault `9915e78`).
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
   first, #181 `78c48ab`).

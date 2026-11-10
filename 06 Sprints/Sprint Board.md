@@ -33,7 +33,6 @@ kanban-plugin: board
 
 ## Story F: Defects
 
-- [ ] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h: `Scene` keeps a root order, so adding a component or destroying a root no longer moves another, and a save keeps the order.
 - [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 · 🟠 Moderate · 2-3h: amend ADR-021 so a reparent that would need shear keeps the world position with an approximate rotation and scale, as Unity does; a zero scale stays refused. Not at the same time as S10-B2, which also edits `Scene.cpp`.
 - [ ] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate · 2-3h: when the manifest names a scene no asset source holds, the startup load recovers as it does with no scene named, adopting or creating `Startup.tescene`, so the editor can save again. A file that exists but does not load is still never overwritten.
 
@@ -45,7 +44,6 @@ kanban-plugin: board
 
 ## Story H: Meshes and models before the renderer
 
-- [ ] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h: `Mesh` at version 2 with the import block, stream flags, four streams and slots, its default materials listed as dependencies, and `Triangle.temesh` written again. Follows S10-T14.
 - [ ] **S10-T18** · Materials per slot on `MeshRenderer` · P1 · 🟢 Deep · 4-6h: the four visitors walk a vector element by element, `MeshRenderer` holds one material per slot, and the list is rebuilt by slot name. Follows S10-T17 and S10-D7.
 - [ ] **S10-T19** · Import writes TEMesh v2 · P1 · 🟢 Deep · 4-6h: normals, the file's tangents or MikkTSpace's, UV0, one slot per mesh; quantized and meshopt glTF refused. MikkTSpace and meshoptimizer join the editor's build. Follows S10-T15 and S10-T17.
 - [ ] **S10-T20** · Import as one merged mesh · P1 · 🟢 Deep · 4-6h: the model walk baked and joined by material, mirrored parts flipped, placed as one entity. Follows S10-T19 and S10-T16.
@@ -63,8 +61,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h: a `/triage` of the sky's HDR image, then [[Content Pipeline - Design]] decides `.tetexture`, the BC format per material input, the mips, the encoder and the decoder, and cuts the texture card. No ADR. Follows S10-D7. Split from S10-D10.
-
 
 ## 👀 Review / Demo
 
@@ -72,6 +68,19 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-T17** · TEMesh v2's file · P1 · 🟢 Deep · 4-6h: #198 `d781e99`, **Nov 10**. `Mesh` is at `MESH_KIND` version 2 with the import block, stream flags, four streams and slots, and its loader lists the non-null default materials. Unblocks S10-T18 and S10-T19; Story H stays open on S10-T18 to S10-T25.
+	- **The `Triangle.temesh` clause was too narrow.** #196 had committed 103 version 1 Sponza meshes, and `Startup.tescene` names every one, so a one-off script rewrote them as version 2 with their ids kept. Their import keys come from the raw names in `Sponza.temodel`.
+	- **The import had to change with the format.** It writes through `Mesh::write`, and a mesh with no slot is refused, so each imported mesh now gets its source key and one slot named after its material. That part of S10-T19 landed here; [[Content Pipeline - Design]] § *The import* records it.
+	- **Retro:** Miguel asked Claude to build this 🟢 card end to end, so Claude cut the branch (the session was still on merged S10-B2's), wrote it, and built it (`windows-debug`, before the PR). The PR has no review conversation, so this entry comes from the card, the PR description and the diff.
+- [x] **S10-B2** · Roots keep their order · P2 · 🟠 Moderate · 2-3h: #197 `1b67345`, **Nov 10**. The roots are a sibling list that `Scene` holds, linked like children, so a component change or a destroyed root no longer moves another, and a save writes them in that order. Unblocks S10-B3, which edits the same `Scene.cpp`; Story F stays open on S10-B3 and S10-B4.
+	- **The open call went to `Scene` only.** `reorderChild` now accepts a root, and `unparent` takes a position among the roots, but the hierarchy panel still refuses a drop between roots ([[Backlog]] § *editor & tooling*). Recorded in [[Scene - Design]] § *Built-in hierarchy*.
+	- **The tree-walk entry's trigger fired and was kept out**, so a save's bytes change only by the root order ([[Backlog]] § *core*). `destroyEntity` also stopped refreshing the transforms of a subtree it is about to destroy, which it did as a side effect of `unparent`.
+	- **Retro:** Miguel asked Claude to build this 🟠 card end to end, so Claude wrote and built it (`windows-debug`, before the PR) and cut the branch, which `/card-start` found missing. The PR has no review conversation, so this entry comes from the card, the PR description and the diff.
+- [x] **S10-D11** · Design the texture file · P1 · 🟠 Moderate · 2-3h: vault `9915e78`, **Nov 10**. [[Content Pipeline - Design]] decides the `.tetexture` file, a format per material input, mips built at import, stb_image, bcdec and bc7enc_rdo, and keys that name path, purpose and sampler. Unblocks S10-T22 and S10-T25; Story H stays open on S10-T17 to S10-T25.
+	- **The `/triage` found the sky image already on the map** (the Capability Map's Renderer row and the Roadmap's E2 row), so only [[Content Pipeline - Brief]]'s format list changed: `.hdr` for the sky is a Must and EXR stays out. Miguel also made embedded PNG and JPEG a Must; raw-pixel embedded images are refused.
+	- **It cut four cards, not one.** No card owned the material file after S10-D7 closed without cutting it, so S10-D11 cut S10-T23 and S10-T24, and the sky needed its own import (S10-T25) because no model file names it.
+	- **ADR-029 §7's packed ORM has no single source in glTF**, which stores occlusion and metallic-roughness apart, so import packs two images into one texture and its key names both. BC6H is out for E2: the only plain C++ encoder lacks it, so the sky is `RGB9E5` at about four times the memory.
+	- **Retro:** four calls beyond Miguel's accepted leans are in the note (the sky's file has no folder, the key holds the sampler, a missing ORM channel is 1, the smaller image is scaled up). bcdec, Bistro shipping DDS and every encoder speed are from memory or search extracts; only assimp's embedded-texture API was read, in its fetched headers. A vault-only card has no PR conversation, so this entry is the only record.
 - [x] **S10-T16** · Place a model as copies · P1 · 🟠 Moderate · 2-3h: #196 `9233481`, **Nov 10**. *File → Place model...* sends one edit command that reads a `.temodel` by path and builds its entities under one root, with each mesh held by the scene. Miguel placed Sponza in the editor. Unblocks S10-T20 together with S10-T19; Story H stays open on S10-T17 to S10-T21.
 	- **No artifact said where the model is read.** The cache has no `Model` loader, and none is needed, because a placed copy keeps nothing from the file; the command reads it through `FileAccess` on the simulation thread. Miguel also decided that one bad mesh refuses the whole model. Both calls are now in [[Content Pipeline - Design]] § *Decided*.
 	- **"At the origin" meant less than it said:** the design note keeps a source root's own transform, so the clause means no placement offset. The root is copied as stored.

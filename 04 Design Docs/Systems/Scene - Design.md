@@ -184,6 +184,14 @@ direct Scene tests register the built-ins in their fixtures, `Name` included sin
 reader appends every child, and the walk made a wide parent quadratic to load. Inserting in
 the middle still walks. `setParent` and `unparent` check and update the link with the others.
 
+**Roots keep an order, added at S10-B2 (#197, 2026-11-10).** The roots are siblings too:
+`Scene` holds a `Hierarchy` as their list (`engine/core/include/TechEngine/core/scene/Scene.hpp`,
+`m_roots`), and each root links to its neighbours as children do. The order no longer follows
+archetype storage, so a component change or a destroyed root moves no other root, and a save
+writes the roots in this order. A new entity is the last root, and `unparent` appends at the end
+unless it is given a position. `reorderChild` accepts a root. The editor's hierarchy panel does
+not reorder roots yet ([[Editor - Design]] § *The hierarchy panel*).
+
 ## Transform propagation: shipped Sep 18
 
 One Transform stores local and world position, quaternion rotation and scale. Local TRS
