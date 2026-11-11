@@ -47,8 +47,9 @@ groups are kept, because they show where future work will land.
   handler cannot rely on the heap. [[Logger - Design]] still says the crash path flushes the
   ring. Found at S10-T11's close, Nov 5. **Trigger:** the platform crash handler is built.
 
-- #prio/low · **Code sweep leftovers: base**: Found by the code sweep of `core` on Nov 4, 2026
-  ([[2026-11-04 14-12 Auto Run]]). Logic `core` writes by hand that `base` could offer.
+- #prio/low · **Code sweep leftovers: base**: Found by the code sweep on Nov 11, 2026
+  ([[2026-11-11 14-10 Auto Run]]); the first two bullets came from the `core` sweep on Nov 4
+  ([[2026-11-04 14-12 Auto Run]]) and the `apps` sweep on Nov 10.
   - The boost hash-combine formula (`0x9e3779b9 + (seed << 6) + (seed >> 2)`) is written twice:
     `engine/core/include/TechEngine/core/scene/Entity.hpp:31` and
     `engine/core/src/scene/ArchetypeStorage.cpp:165`. A `hashCombine` in `base` would serve both.
@@ -57,6 +58,13 @@ groups are kept, because they show where future work will land.
     record's time by hand (`apps/editor/src/ui/panels/ConsolePanel.cpp:26`, `:171`), as `base`
     does privately (`engine/base/src/diagnostics/Log.cpp:119`, `:398`). The `localTime` copy is the
     editor's entry "The console repeats `Log.cpp`'s `localTime`". About 25 lines.
+  - `logChannelModule` (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:117`) and
+    `assertKindName` (`engine/base/include/TechEngine/base/diagnostics/Assert.hpp:41`) are public,
+    but nothing outside their own `.cpp` calls them. Each could be `static` there. Removing a
+    used public symbol is your call. About 4 lines.
+  - Test-only: `FillerSink` (`engine/base/tests/diagnostics/LogErrorTests.cpp:20`) is the
+    no-op sink that `CountingSink` (`engine/base/tests/diagnostics/LogTests.cpp:38`) already is,
+    in the same test executable. Sharing it needs a new test header. About 5 lines.
 
 ## platform
 
