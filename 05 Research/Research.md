@@ -6,14 +6,16 @@ kanban-plugin: board
 
 ## TO VALIDATE 📋🤔
 
-- [ ] https://gdcvault.com/play/1021761/Adaptive-Virtual-Texture-Rendering-in (Rendering)
-	**Adaptive Virtual Texture Rendering in Far Cry 4**, GDC 2015: bakes terrain materials into a virtual texture. Queued Nov 6 for the static heightmap terrain (W3), as the terrain side of material baking. A talk, not a paper.
-- [ ] http://www.terathon.com/lengyel/Lengyel-VoxelTerrain.pdf (Rendering)
-	**Voxel-Based Terrain for Real-Time Virtual Simulations** (Transvoxel), Lengyel, UC Davis PhD thesis 2010: level of detail for marching-cubes terrain. Queued Nov 6 for E6's distance detail. The link comes from a 2010 mailing-list post and was not opened.
 
 
 ## TO VALIDATE - MIGUEL REVIEW🔍
 
+- [ ] https://gdcvault.com/play/1021761/Adaptive-Virtual-Texture-Rendering-in - **Adaptive Virtual Texture Rendering in Far Cry 4** | GDC 2015 (Rendering)
+	Could not resolve: gdcvault.com is blocked by this session's network policy, and its slides and video need a Vault login anyway. A web search confirms the title, the speaker (Ka Chen, Ubisoft Montreal) and the abstract: terrain materials baked into an adaptive virtual texture at 10 texels/cm over a 10 km world. It fits the Capability Map's static heightmap terrain (W3, *Later*) and not E5 or E6, whose terrain is voxel.
+	Queued Nov 6 for the static heightmap terrain (W3), as the terrain side of material baking. A talk, not a paper.
+- [ ] http://www.terathon.com/lengyel/Lengyel-VoxelTerrain.pdf - **Voxel-Based Terrain for Real-Time Virtual Simulations** | UC Davis PhD thesis 2010 (Rendering)
+	Could not resolve: www.terathon.com and transvoxel.org are blocked by this session's network policy, and a web search found no other copy of the thesis, only later work that cites Transvoxel. If it is the Transvoxel thesis, it fits E6's terrain detail that drops off with distance, because its transition cells join voxel chunks of different resolutions without cracks.
+	Lengyel. Queued Nov 6 for E6's distance detail. The link comes from a 2010 mailing-list post and was not opened.
 - [ ] https://graphics.stanford.edu/courses/cs468-03-winter/Papers/ibsrb.pdf - **Impulse-based Simulation of Rigid Bodies** | ACM I3D 1995 (Physics)
 	Mirtich and Canny model every contact as collision impulses; background for the S1 lane, since Jolt will own the solver and TechEngine will not write one.
 - [ ] https://www.cs.toronto.edu/~jacobson/seminar/mueller-et-al-2007.pdf - **Position Based Dynamics** | JVCIR 2007 (Physics)

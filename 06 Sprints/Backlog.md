@@ -324,6 +324,14 @@ groups are kept, because they show where future work will land.
   the roots are a sibling list too, so the walk can start at the first root and allocate
   nothing; S10-B2 left the walk out on purpose. **Trigger:** a fifth hand-written walk, or the
   next card that changes one of the four.
+- #prio/low · **Three design-note passages still describe `MeshRenderer` before S10-T18**: #199
+  (`099823e`, Nov 10) gave it a `slots` list and taught `Writer`, `Reader`, `ReferenceVisitor` and
+  `FieldVisitor` to walk a vector element by element, but nothing in the vault was edited after it.
+  [[Content Pipeline - Design]]:208 still says the visitors refuse or skip a vector of references, and
+  its References at :351 and :353 say the renderer holds a mesh only and a vector shows only its
+  size. [[Resources - Design]]:470 says `MeshRenderer` holds one `AssetRef<Mesh>`. Found by the
+  vault freshness check in [[2026-11-11 09-08 Auto Run]]. **Trigger:** S10-T18's `/card-close`,
+  which should fix them in place and delete this entry.
 
 ## client
 
