@@ -14,10 +14,10 @@ the editor's build with only its glTF, FBX and OBJ importers (S10-T13, `cmake/de
 model file and the import block are built, with write and read (S10-T14,
 `engine/core/include/TechEngine/core/model/Model.hpp` and
 `engine/core/include/TechEngine/core/assets/ImportBlock.hpp`). The import is built (S10-T15,
-`apps/editor/src/assets/ModelImport.hpp`). The placement is built (S10-T16,
+`apps/editor/src/assets/ModelImporter.hpp`). The placement is built (S10-T16,
 `apps/editor/src/edit/PlaceModelCommand.hpp`). TEMesh v2's file is built, with write and read
-(S10-T17, `engine/core/include/TechEngine/core/mesh/Mesh.hpp`). Import's streams and re-import
-are not.
+(S10-T17, `engine/core/include/TechEngine/core/mesh/Mesh.hpp`). Import writes the vertex streams
+(S10-T19, `apps/editor/src/assets/MeshImporter.hpp`). Re-import is not built.
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
 [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9 (amended 2026-11-09) ·
 [[ADR-026 - Reference fields and scene-held acquires]] §2 §3 ·
@@ -53,17 +53,20 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Materials are created once | A re-import never overwrites a material file that already exists. | [[Content Pipeline - Brief]] § *Decided* |
 | Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/Sponza.gltf`, skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
 | Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path. Re-import goes through a *Re-import* menu entry with a typed path, like placement. | S10-D10, 2026-11-09 |
-| The model starts on positions only | Until S10-T19, a model's meshes are TEMesh v2 with positions, indices, the source key and one slot named after the source material, with a null default. Its nodes carry no materials. | S10-D9, 2026-11-06; S10-T17 (#198), 2026-11-10 |
+| UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. S10-T24's texture rows and R1's shader must agree with this. | Miguel, 2026-11-11 (S10-T19); § *The import's streams* |
+| The import's stream calls | Flat normals when a file has none, no tangents without UV0, the `extensionsUsed` scanner, the scale refusal and the two importer classes. | Miguel, 2026-11-11 (S10-T19, #201); § *The import's streams* |
 | TEMesh v2's own calls | Stream counts, unknown stream bits, empty slots and the loader's duplicates. | S10-T17 (#198), 2026-11-10; § *The mesh file* |
 | TEMesh v2 is one mesh with slots | One vertex set, one index list, and one slot per source material: a name, a range of whole triangles and a default material. A model's mesh has one slot; a merged mesh has one per source material. | S10-D10, 2026-11-09; § *The mesh file* |
 | The vertex streams | Positions, then a normal, a `vec4` tangent and UV0, each optional stream behind a presence flag. No second UV set: R7's baked LOD makes its own mesh, which carries its own. | S10-D10, 2026-11-09; § *The mesh file*; [[Content Pipeline - Mesh Import Report]] §7 |
 | Tangents | The file's own tangents when it has them; otherwise MikkTSpace after the scale and up axis are baked, then re-indexed with meshoptimizer. assimp's `aiProcess_CalcTangentSpace` is not used, because it is not MikkTSpace. | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §4 |
 | A model node carries no materials | The mesh names its default material, so `MODEL_KIND` stays at version 1. | S10-D10, 2026-11-09 |
-| Materials per slot | A `MeshRenderer` holds one material per mesh slot, no more and no fewer, each stored with its slot's name. Placement, and picking a mesh in the inspector, copy the mesh's defaults. After that the list is the entity's own. | Miguel, 2026-11-09; § *Materials per slot* |
+| Materials per slot | A `MeshRenderer` holds one material per mesh slot, no more and no fewer, each stored with its slot's name. Placement, and picking a mesh in the inspector, copy the mesh's defaults through the same rebuild that runs when a scene opens, over the entities they touch. After that the list is the entity's own. | Miguel, 2026-11-09; the rebuild 2026-11-10 (S10-T18); § *Materials per slot* |
 | Slots match by name | When a mesh's slots change, a renderer's list is rebuilt in the mesh's order by slot name: a kept name keeps its material, a new slot takes the default, and a slot that is gone is dropped and logged. | Miguel, 2026-11-09; § *Materials per slot* |
 | A slot list is walked, not bulk-copied | `Writer`, `Reader`, `ReferenceVisitor` and `FieldVisitor` visit a vector of references element by element. This refines [[Resources - Design]]'s Oct 24 row, whose point was that no live handle is bulk-copied. | Miguel, 2026-11-09 |
+| The material type before S10-T23 | `MeshRenderer.hpp` forward-declares `Material`, and S10-T23 defines it. Until then no loader exists, so the inspector's picker lists no materials, and the slot card's tests stop at the scene's reference walk instead of loading a material. | Miguel, 2026-11-10 (S10-T18) |
+| Slots under multi-select | The inspector shows slot rows only when every selected renderer has the same slot names in the same order. Otherwise it shows one read-only line saying that the materials differ. A row count that differs is flagged on the component's row, because each row's own mixed flag compares only the rows that both entities have. | Miguel, 2026-11-10 (S10-T18); § *Materials per slot* |
 | The engine merges, not assimp | A merged mesh comes from the model walk: each node's world transform is baked into its meshes, triangles are flipped where the determinant is negative, and meshes are joined by material. `aiProcess_PreTransformVertices` is not used. | S10-D10, 2026-11-09; § *The merged mesh* |
-| Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5 |
+| Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
 | Re-import keeps every id | Outputs are matched to their old files by source key. Old files with no match are left in place and logged. | S10-D10, 2026-11-09; § *Re-import* |
 | Re-import reloads at once | Only while the editor is Stopped. | ADR-024 §9 (amended 2026-11-09); § *Re-import* |
 | The texture file | A `.tetexture` holds one 2D image in its GPU format, with every mip, its wrap and its filter. No ADR: a wrong format costs a version bump and a re-import. | S10-D11, 2026-11-10; § *The texture file* |
@@ -122,17 +125,17 @@ the editor fills it in.
 
 ## The import
 
-Built by S10-T15 (#194): `importModel` in `apps/editor/src/assets/ModelImport.cpp`, run as a job
-by `ImportModelCommand` in `apps/editor/src/edit/`. These calls came from the card, not the
-design above.
+Built by S10-T15 (#194): `ModelImporter::importFile` in `apps/editor/src/assets/ModelImporter.cpp`
+since S10-T19 (#201), run as a job by `ImportModelCommand` in `apps/editor/src/edit/`. These
+calls came from the card, not the design above.
 
 - **Ids are drawn on the worker** by `randomResourceId()`, because the job needs them before it
   writes a file and the asset index belongs to the simulation thread. The job then submits
   `RegisterImportedAssetsCommand`, which adds the records there and skips, with a log line, a
   record whose id is taken.
 - **Refusals** are `ProjectError` codes: `SourceUnreadable`, `SourceHasNoMeshes` (a model with no
-  triangle mesh places nothing visible) and `ImportFolderExists`. A failed import leaves no
-  folder behind.
+  triangle mesh places nothing visible), `ImportFolderExists`, and since S10-T19
+  `SourceCompressed` and `InvalidImportScale`. A failed import leaves no folder behind.
 - **Every triangle mesh is written**, even one that no node uses. Points and lines are skipped.
 - **Mesh file names** keep ASCII letters, digits, space, `.`, `_` and `-`. A clash, compared
   without case because Windows treats `Part_A` and `part_a` as one file, gets `_1`, `_2`.
@@ -148,6 +151,35 @@ design above.
   close until assimp returns. The destructor waits too, but too late for a job's log lines,
   which wake main through a virtual call ([[Known Issues]] D9).
 
+### The import's streams
+
+Built by S10-T19 (#201). Miguel took these calls at the card's start, on Nov 11:
+
+- **Two importers.** `ModelImporter` walks the scene, names the files and writes them;
+  `MeshImporter` turns one `aiMesh` into a baked `Mesh`, so a later mesh-only import reuses it.
+  Such an import must pass the same assimp steps (`IMPORT_STEPS` in `ModelImporter.cpp`), or a mesh
+  without normals comes back with none, and must set the slot itself, since its name comes from the
+  scene's materials.
+- **Normals.** A file's own are kept. A mesh with none gets flat normals from
+  `aiProcess_GenNormals`, as glTF requires. They are turned by the up axis, never scaled, and
+  normalized.
+- **UV0 and `w`.** UV0 is stored as assimp gives it, and `cross(n, t.xyz) * w` points the way V
+  grows in it. A file tangent's `w` is the sign of `dot(cross(n, t), b)` with assimp's bitangent,
+  negated for a glTF source, because assimp flips glTF's V (`glTF2Importer.cpp:644`) but builds the
+  bitangent from glTF's own `w` (`:597`). The test that a generated and a file tangent agree on one
+  quad holds this.
+- **No UV0, no tangents.** MikkTSpace needs UVs, and a normal map cannot be sampled without them,
+  so the stream is left out and the upload fills its default.
+- **MikkTSpace runs after the bake**, then `meshopt_generateVertexRemapMulti` welds the corners
+  again, merging two only when all four streams match bit for bit.
+- **The scale is refused** unless it is a finite number above zero, so the model's bake is always a
+  rotation and a positive uniform scale: no winding or `w` flips there. S10-T20's merged bake still
+  needs the determinant rule below.
+- **The extension check** is a small scanner, not a JSON parser, because the editor links none. It
+  reads the `extensionsUsed` key, in a `.glb`'s JSON chunk too, and refuses `KHR_mesh_quantization`,
+  `EXT_meshopt_compression` (what gltfpack writes) and `KHR_meshopt_compression`. It reads the whole
+  file, so a large `.glb` is read twice ([[Backlog]] § *editor & tooling*).
+
 ## The mesh file
 
 TEMesh v2 is `MESH_KIND` at version 2. The reader refuses version 1, so
@@ -160,7 +192,8 @@ TEMesh v2 is `MESH_KIND` at version 2. The reader refuses version 1, so
   indices are always present. An absent stream costs no bytes, and the upload fills defaults. A
   later stream (UV1, colours, skin weights) is a new bit, not a new version.
 - **The streams**, each one value per vertex: positions `float3`, normals `float3`, tangents
-  `float4` whose `w` is the bitangent's sign (±1, as glTF's), and UV0 `float2`. They stay
+  `float4` whose `w` is the bitangent's sign (±1, against UV0 as stored; § *The import's
+  streams*), and UV0 `float2`. They stay
   unpacked until a measurement asks otherwise ([[Renderer - Design]] § *Geometry buffers*).
 - **The indices**, `u32`, whole triangles.
 - **The slots**, at least one: a name, a first index, an index count and a default material id.
@@ -190,7 +223,8 @@ Built by S10-T17 (#198), in `engine/core/src/mesh/Mesh.cpp`. These calls came fr
   cache counts references, so a duplicate costs one more count.
 - **The committed version 1 meshes were rewritten in place**, with their ids kept, because
   `Startup.tescene` names all 103 Sponza meshes. Their keys come from the raw mesh names that
-  `Sponza.temodel` stores.
+  `Sponza.temodel` stores. S10-T19 (#201) then imported Sponza again from scratch, with new ids
+  and a new `Startup.tescene`.
 
 ## Materials per slot
 
@@ -200,15 +234,17 @@ Built by S10-T17 (#198), in `engine/core/src/mesh/Mesh.cpp`. These calls came fr
 - **Filled from the mesh.** Placement copies each mesh's default materials, so placement loads
   the meshes first. Picking another mesh in the inspector does the same.
 - **Rebuilt by name** when the editor opens a scene, once its meshes are ready, and over the open
-  scene after a re-import. The rebuild is not an undo step.
+  scene after a re-import (S10-T21). The rebuild is not an undo step.
 - **A slot with no entry draws with the mesh's default.** That covers a scene nobody opened since
   a re-import and then exported, which still holds its old list.
 - **Editing a slot** in the inspector is an ordinary `AssetRef` edit (ADR-026 §4).
 
-The material type is S10-D7's. Today `Writer` and `Reader` refuse a vector of references
-(`engine/core/include/TechEngine/core/serialization/Writer.hpp:95-97`, `Reader.hpp:108`), and
-`ReferenceVisitor::field` skips a vector without a word (`ReferenceVisitor.hpp:25-29`), so the slot
-card adds a walked vector path to all four visitors.
+As built (S10-T18, #199): `Writer`, `Reader`, `ReferenceVisitor` and `FieldVisitor` walk a vector
+of a visited type element by element, and a bare vector of `Entity` or `AssetRef` still fails to
+compile (`engine/core/include/TechEngine/core/serialization/Writer.hpp:95`, `Reader.hpp:109`,
+`ReferenceVisitor.hpp:38`, `FieldVisitor.hpp:120`). The rebuild is `MeshRenderer::rebuildSlots`
+(`engine/core/src/mesh/MeshRenderer.cpp`), and the editor acquires each new default in
+`apps/editor/src/edit/MaterialSlotRebuild.cpp`.
 
 From memory: Unity's renderer holds a full material array indexed by submesh, and Unreal's
 component holds overrides by slot index, with the names on the mesh. This shape is Unity's full
@@ -338,16 +374,18 @@ v1's model import worked, and this design follows its shape: a folder per import
 `.temodel`, and a child node per mesh. S10-T15 ported its assimp walk from
 `v1-reference:runtime/editor/src/resources/loaders/AssimpLoader.cpp` and `ModelLoader.cpp`
 (#194), with v1's Euler rotations, name-matched meshes, surviving points and lines, and
-frame-bound import fixed on the way ([[v1 Code Audit]] F14). Two fixes are still owed:
+frame-bound import fixed on the way ([[v1 Code Audit]] F14). S10-T19 took nothing from v1's
+streams: its `aiProcess_CalcTangentSpace` and `aiProcess_GenSmoothNormals` are what the design
+rejects, and it wrote zero UVs where TEMesh v2 writes no stream. One fix is still owed:
 
 - **An unnamed material is named after its pointer address**, which changes on every run, so a
-  re-import could never find it. Owner: S10-T24.
-- **Normals and UVs are not written yet**, because the import fills only a v2 mesh's positions.
-  Owner: S10-T19. Leave v1's `MeshLoader.cpp` alone: it is the atlas merge below.
+  re-import could never find it. Owner: S10-T24. Leave v1's `MeshLoader.cpp` alone: it is the
+  atlas merge below.
 
 ## References
 
 - v1's merge baked every material into one atlas and never worked; the per-slot merge avoids it.
-- `engine/core/include/TechEngine/core/mesh/MeshRenderer.hpp:10-19`: the renderer holds a mesh only.
-- `engine/core/include/TechEngine/core/serialization/FieldVisitor.hpp:120-122`: a vector field
-  shows only its size in the inspector, so a slot list will need list rows.
+- `engine/core/include/TechEngine/core/mesh/MeshRenderer.hpp:13-40`: the renderer holds its mesh
+  and one `MaterialSlot` per mesh slot.
+- `apps/editor/src/ui/panels/InspectorPanel.cpp:239`: the inspector draws the slot list's walked
+  fields as one row per slot.

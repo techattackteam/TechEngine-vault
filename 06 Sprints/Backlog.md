@@ -330,16 +330,10 @@ groups are kept, because they show where future work will land.
   only requires a parent's row to come before its children's (`SceneAsset.cpp:137`), and a
   depth-first walk keeps that. Found while pairing on S10-T1, Nov 1. Since S10-B2 (#197, Nov 10)
   the roots are a sibling list too, so the walk can start at the first root and allocate
-  nothing; S10-B2 left the walk out on purpose. **Trigger:** a fifth hand-written walk, or the
-  next card that changes one of the four.
-- #prio/low · **Three design-note passages still describe `MeshRenderer` before S10-T18**: #199
-  (`099823e`, Nov 10) gave it a `slots` list and taught `Writer`, `Reader`, `ReferenceVisitor` and
-  `FieldVisitor` to walk a vector element by element, but nothing in the vault was edited after it.
-  [[Content Pipeline - Design]]:208 still says the visitors refuse or skip a vector of references, and
-  its References at :351 and :353 say the renderer holds a mesh only and a vector shows only its
-  size. [[Resources - Design]]:470 says `MeshRenderer` holds one `AssetRef<Mesh>`. Found by the
-  vault freshness check in [[2026-11-11 09-08 Auto Run]]. **Trigger:** S10-T18's `/card-close`,
-  which should fix them in place and delete this entry.
+  nothing; S10-B2 left the walk out on purpose. S10-T18 (#199, Nov 10) added a fifth, breadth-first:
+  the whole-scene `rebuildMaterialSlots` (`apps/editor/src/edit/MaterialSlotRebuild.cpp:54`), so
+  the first trigger has fired. **Trigger:** a sixth hand-written walk, the next card that changes
+  one of the five, or Miguel scheduling it now.
 
 ## client
 
@@ -437,6 +431,11 @@ groups are kept, because they show where future work will land.
   the other half of this entry, one rotation edit leaving four records, was fixed by S10-T2's
   set-rotation-axis command (#182). **Trigger:** the rung after R1 that brings undo
   ([[Editor - Brief]]).
+- #prio/low · **A `.glb` is read twice at import**: the `extensionsUsed` check reads the whole
+  file before assimp reads it again (`ModelImporter::checkGltfExtensions`, S10-T19, #201), while it
+  needs only the 20-byte header and the JSON chunk. `FileAccess::readRange` can read just those.
+  Nothing is measured. Found while filling S10-T19's stubs. **Trigger:** an import of a large
+  `.glb` that is measured to be slow.
 - #prio/low · **Clear an `AssetRef` in the inspector**: the asset picker has no None entry,
   because `SetAssetFieldCommand` refuses an id the index does not hold, and an empty id never is.
   Clearing needs its own rule for the empty id (no dependency to add) and a row in

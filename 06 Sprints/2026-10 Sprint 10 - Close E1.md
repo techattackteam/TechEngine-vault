@@ -386,7 +386,7 @@ follows S10-T22.
   the loader's dependencies hold the non-null defaults and no null one. Follows S10-T14.
   Closed Nov 10: #198 `d781e99`. It also rewrote the 103 Sponza meshes and gave the import a key
   and one slot per mesh.
-- [ ] **S10-T18** · Materials per slot on `MeshRenderer` · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-T18** · Materials per slot on `MeshRenderer` · P1 · 🟢 Deep · 4-6h ·
   done: `Writer`, `Reader`, `ReferenceVisitor` and `FieldVisitor` visit a vector of a visitable
   type element by element, and the bulk path still refuses a vector of `Entity` or `AssetRef`.
   `MeshRenderer` gains its slot list ([[Content Pipeline - Design]] § *Materials per slot*), the
@@ -395,7 +395,9 @@ follows S10-T22.
   materials, and both the scene's acquire set and the bake's walk name them; after the mesh's
   slots are reordered, a rebuild keeps each material on its named slot; a new slot takes its
   default; a removed slot is dropped. Follows S10-T17 and S10-D7's material type.
-- [ ] **S10-T19** · Import writes TEMesh v2 · P1 · 🟢 Deep · 4-6h ·
+  Closed Nov 10: #199 `099823e`. The rebuild after a re-import is S10-T21's, and the material
+  type stays a forward declaration until S10-T23.
+- [x] **S10-T19** · Import writes TEMesh v2 · P1 · 🟢 Deep · 4-6h ·
   done: S10-T15's import writes v2 meshes with one slot each, normals (generated when missing),
   the file's tangents or MikkTSpace's re-indexed through meshoptimizer, and UV0. MikkTSpace and
   meshoptimizer are pinned in `cmake/deps.cmake` and linked by the editor alone. A glTF whose
@@ -403,6 +405,8 @@ follows S10-T22.
   with an error code before assimp reads it. Tests: a glTF fixture with tangents keeps them; one
   without gets unit tangents with `w` of ±1; after a Z-up bake, `cross(n, t.xyz) * w` still matches
   the baked bitangent; a quantized fixture is refused. Follows S10-T15 and S10-T17.
+  Closed Nov 11: #201 `c99bf04`. It also fixed D8, split the import into `ModelImporter` and
+  `MeshImporter`, and imported Sponza again with the streams.
 - [ ] **S10-T20** · Import as one merged mesh · P1 · 🟢 Deep · 4-6h ·
   done: import in merged mode writes the root `.temesh` from the model walk
   ([[Content Pipeline - Design]] § *The merged mesh*): world transforms baked, triangles flipped

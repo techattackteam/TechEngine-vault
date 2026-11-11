@@ -79,7 +79,7 @@ built or run.
 | An `Entity` field holds the live handle and saves its target's authoring row. An `AssetRef<T>` holds `{ResourceId, ResourceHandle<T>}` and saves the id. An empty field is valid. A replicated component holds a bare `ResourceId`. | ADR-026 §2 |
 | One reference visitor over `visit` serves the scene writer, the reader's second pass, the scene's acquire set and the bake. The scene header has no dependency table. | ADR-026 §3 |
 | A live `AssetRef<T>` names only an asset its scene holds. An editor edit acquires the new asset at once and releases the old one when the scene reloads. | ADR-026 §4 |
-| A scene save rewrites each `Entity` to its row on a copy of the component, so the live scene is untouched. A target with no row saves as empty with a warning, a row past the last entity is `Malformed`, and a vector of `Entity` or `AssetRef` is never bulk-copied. It does not compile today; the slot card (S10-T18) visits such a vector element by element. | Miguel, Oct 24 and Nov 9; § *Reference fields*; [[Content Pipeline - Design]] § *Materials per slot* |
+| A scene save rewrites each `Entity` to its row on a copy of the component, so the live scene is untouched. A target with no row saves as empty with a warning, a row past the last entity is `Malformed`, and a vector of `Entity` or `AssetRef` is never bulk-copied. A bare vector of either does not compile; a vector of a visited type, such as `MeshRenderer`'s slot list, is walked element by element. | Miguel, Oct 24 and Nov 9; S10-T18 (#199), Nov 10; § *Reference fields*; [[Content Pipeline - Design]] § *Materials per slot* |
 | The mesh is the second resource type. Before T4 the editor writes one in code, and until R1 it is loaded, not drawn. | Miguel, Oct 18; § *Reference fields* |
 | A loaded scene is a cache entry, and its references are that entry's dependencies, so releasing the scene releases them. | ADR-024 §3 §8, Miguel, Oct 20; § *Reference fields* |
 | Loading a scene through the cache is one `core` function, which every app's startup load calls with its own source. | Miguel, Oct 23; § *Reference fields* |
@@ -468,8 +468,8 @@ with S9-T6, and the bake's walk with S9-T7.
   loader hooks members of their payload types). The editor registers it (S9-T6), and so does the runtime, with `MeshRenderer` (S9-T7).
 - **The mesh component as built** (S9-T5, #158, 2026-10-25): `MeshRenderer` in
   `core/mesh/MeshRenderer.hpp` holds one `AssetRef<Mesh>`. The name follows v1, whose
-  `MeshRenderer` paired a mesh with a material; it gains its material when R1 adds one, and
-  that split is not final (Miguel, Oct 25). The editor registers it in `configureSimulation()`.
+  `MeshRenderer` paired a mesh with a material. Since S10-T18 (#199, Nov 10) it also holds one
+  material per mesh slot ([[Content Pipeline - Design]] § *Materials per slot*). The editor registers it in `configureSimulation()`.
   When the editor creates the startup scene, it writes the triangle as
   `assets/client/Triangle.temesh`, a client asset, and puts a `MeshRenderer` on the scene's root.
   An indexed mesh at that path is reused. Both assets go through `EditorApp::createAsset(path,
