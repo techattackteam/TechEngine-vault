@@ -111,8 +111,8 @@ groups are kept, because they show where future work will land.
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
   that section.
 
-- #prio/low · **Code sweep leftovers: platform**: Found by the code sweep on Oct 30, 2026
-  ([[2026-10-30 14-53 Auto Run]]), and carried from the Oct 9 sweep.
+- #prio/low · **Code sweep leftovers: platform**: Found by the code sweep on Nov 12, 2026
+  ([[2026-11-12 14-09 Auto Run]]), and carried from the Oct 9 and Oct 30 sweeps.
   - The four input event builders are copied in `engine/platform/tests/input/InputStateTests.cpp:17`
     and `engine/platform/tests/input/InputBufferTests.cpp:16`. Sharing them needs a new test
     header. About 16 lines.
@@ -127,6 +127,9 @@ groups are kept, because they show where future work will land.
     `createDirectory` and `NotFound` after `remove` as success (`Project.cpp:225`, `:237`, `:254`,
     `:311`; `EditorApp.cpp:280`). Text and idempotent calls in `FileAccess` would serve them.
     These are new public symbols. About 10 lines.
+  - `InputState::capturedAt` is written by `apply` (`engine/platform/src/input/InputState.cpp:6`)
+    and read nowhere, tests included. `InputEvent::capturedAt` is the one that is read. Deleting
+    the field drops the age of the presentation copy, which a renderer may want. About 2 lines.
 
 - #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
