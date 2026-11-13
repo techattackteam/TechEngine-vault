@@ -70,7 +70,7 @@ built or run.
 | Replicated components carry a `ResourceId`, never a handle. | ADR-024 §7, ADR-007 §2 |
 | A scene is an entry with an id, streamed into the live `Scene`; no parsed copy is cached. | ADR-024 §8 (amended Oct 24) |
 | Scene components are framed by stable tag and byte length. Per-type versions land with T1's scene save. | ADR-024 §8 |
-| A reload swaps data behind a live handle in a loading phase, acquiring new dependencies before releasing old ones. It lands with re-import, while the editor is Stopped; reload on a file change and eviction (explicit release only) still wait. | ADR-024 §9 (amended Nov 9); [[Content Pipeline - Design]] § *Re-import* |
+| A reload swaps data behind a live handle in a loading phase, acquiring new dependencies before releasing old ones. Built as `ResourceCache::reload(ids)` (S10-T21, in review), used by re-import while the editor is Stopped; reload on a file change and eviction (explicit release only) still wait. | ADR-024 §9 (amended Nov 9); [[Content Pipeline - Design]] § *The reload as built* |
 | The cache is `ResourceCache`, owned by `App`; one instance holds every type behind its type tag. | ADR-024 §1 (amended Oct 18); § *The cache as built* |
 | A reference cycle is invalid content: the loading phase rejects the edge that closes one. | Miguel, Oct 18; § *The cache as built* |
 | A loading phase is two non-blocking halves, submit and drain, looped until nothing is pending or loading. A failure does not stop it; the phase returns the first error drained. | Miguel, Oct 18; § *Loads on the job system, as built* |
@@ -277,6 +277,14 @@ S9-T1 (#154, 2026-10-24) added two owner-only calls, settled at its `/card-start
 - **`takePayload(handle, out)` moves a Ready payload out** and leaves a default one in its place;
   it returns `false` for any entry that is not Ready. It exists because `resolve` returns a const
   payload, and the scene load must free its bytes while the entry stays held.
+
+### The reload as built
+
+S10-T21 (in review) added `reload(ids)`, an owner-only call that runs as a loading phase. It
+reads each loaded id again and replaces its payload behind the live handle, so the slot, the
+generation and the acquire count stay. New dependencies are acquired before the old ones are
+released, and a failed reload keeps the old payload. The calls it took are in
+[[Content Pipeline - Design]] § *The reload as built*.
 
 ### Loads on the job system, as built
 

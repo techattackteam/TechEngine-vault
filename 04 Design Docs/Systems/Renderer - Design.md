@@ -233,6 +233,10 @@ Mechanism sections land as the build cards are cut. Known build work:
   of them decided: Lambert diffuse, the height-correlated Smith visibility term, energy
   compensation from the start because it shares the split sum's table, and a fixed 4%
   reflectance as glTF has. Owner: R1's lit pass card.
+- **Which way a texture is sampled.** Import stores texture rows top row first with no flip,
+  and stores UV0 as assimp gives it, so the shader or the upload must sample at `(u, 1 - v)` or
+  flip the rows. The sky image follows the same rule ([[Content Pipeline - Design]] § *Texture
+  rows and V*). Owner: R1's first frame card.
 - **How the sky image becomes lighting:** the filtered levels for rough reflections and the
   diffuse light, built at load or at import. The file is one 2D `RGB9E5` image with ordinary mips
   ([[Content Pipeline - Design]] § *The sky image*). Owner: R1's sky card.
