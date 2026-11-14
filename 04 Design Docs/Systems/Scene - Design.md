@@ -49,6 +49,7 @@ PR #90 as `ea5d0c9c`, PR #91 as `4da771af` and PR #92 as `2a50f8cb`.
 | S6-T6-T9 schedule conflicts from component access only. Shared-singleton access waits for a concrete scheduled singleton conflict. | ADR-020 §2, Sep 19 amendment; vocabulary amended Oct 10 |
 | Simulation performs fixed ticks; presentation consumes copied snapshots and never accesses live Scene storage. | ADR-019 §1-3, superseding ADR-007's variable/presentation pipeline |
 | Serialization uses the existing Writer/Reader and ADL visit seam. Scene document layout belongs to its consumer. | ADR-016 §2 and §6; [[Serialization - Design]] |
+| A transform edit refreshes its subtree before returning. A conversion that needs shear keeps the world position with the closest local TRS; a zero scale axis is refused. | ADR-021 and its Nov 14 amendment; § *Transform propagation* |
 
 ## Confirmed requirements: Sep 12
 
@@ -197,8 +198,25 @@ not reorder roots yet ([[Editor - Design]] § *The hierarchy panel*).
 One Transform stores local and world position, quaternion rotation and scale. Local TRS
 is authoritative. `setLocal` validates and stores it, then Scene refreshes that entity
 and all descendants before returning. `setWorld` converts the requested world TRS
-against the current parent chain and takes the same path. Reject an unrepresentable
-local shear without changing values. Zero scale is rejected; small nonzero scales remain valid.
+against the current parent chain and takes the same path. Zero scale is rejected; small
+nonzero scales remain valid.
+
+**A conversion that needs shear is approximated, not refused** (ADR-021's Nov 14 amendment,
+S10-B3, #204 `6836c87`). A world edit, a `PreserveWorld` reparent and a `PreserveWorld` detach
+share `decomposeLocalMatrix` (`engine/core/src/scene/Scene.cpp`):
+
+- **Exact path first.** The column lengths become the scale and the normalised columns the
+  rotation. If that `R * S` rebuilds the matrix within 1e-4, it is the result.
+- **Otherwise the closest TRS.** The position is the matrix's own translation, so the world
+  position is kept. The rotation is the polar factor of the 3x3, by eight steps of
+  Frobenius-scaled Newton iteration, and each scale is `dot(R column, matrix column)`. A
+  negative determinant mirrors X first, as the exact path does.
+- **Still refused:** a zero or non-finite column, a non-finite result, and a 3x3 whose
+  column-normalised determinant is at most 1e-5. A matrix flattened by a zero scale axis rounds
+  to about 1e-7, not zero, so a zero test alone would accept it; the cost is that a real shear
+  from a scale ratio near 1e5 is refused too.
+- **No closeness bound.** The world rotation and scale move by whatever the parent's shear
+  takes, as in Unity.
 
 Scene binds each default-constructed Transform to its Scene and Entity at creation.
 Assigning values to a bound Transform retains the destination binding and refreshes its
@@ -238,9 +256,9 @@ Non-uniform parent scale may produce approximate world decomposition in the insp
 the rendered result remains correct. UI delivery remains separate from the Scene
 storage port, while these data and command requirements guide its design.
 
-Built by S10-T6 (#188 `1ac607d`, Nov 6): [[Editor - Design]] § *The inspector panel*. Today an
-edit whose conversion needs shear is refused for that entity rather than approximated; S10-B3
-amends that.
+Built by S10-T6 (#188 `1ac607d`, Nov 6): [[Editor - Design]] § *The inspector panel*. Since
+S10-B3 (#204, Nov 14) an edit whose conversion needs shear is approximated, as § *Transform
+propagation* describes.
 
 ## Project extension contract
 

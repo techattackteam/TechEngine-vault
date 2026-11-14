@@ -254,8 +254,8 @@ an ADR. The Profiler half drops first.
   destroying a root leaves the others in order; a save and a read keep the order. Whether the
   hierarchy may then reorder roots is decided at `/card-start`. Decided Nov 10: `Scene` takes a
   root position, and the panel's drop between roots stays refused ([[Backlog]]).
-- [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 ·
-  🟠 Moderate · 2-3h ·
+- [x] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 ·
+  🟠 Moderate · 2-3h · #204 `6836c87`, Nov 14 ·
   done: a `PreserveWorld` reparent whose new local transform would need shear is accepted with an
   approximate result, as Unity does: the child keeps its world position, and its local rotation
   and scale are the closest a local TRS can hold, so its world picks up the parent's shear. A zero
@@ -267,8 +267,10 @@ an ADR. The Profiler half drops first.
   with scale (1, 2, 1) is accepted and keeps its world position; a parent with a zero scale axis
   is still refused. How close the world rotation and scale must stay is decided with the
   amendment. It edits `Scene.cpp` like S10-B2, so the two do not run at the same time.
-- [ ] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate ·
-  2-3h ·
+  Decided Nov 14: `setWorld` and a `PreserveWorld` detach take the same rule, and no closeness
+  bound applies, only a degeneracy threshold ([[Scene - Design]] § *Transform propagation*).
+- [x] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate ·
+  2-3h · #204 `6836c87`, Nov 14 ·
   done: when the manifest names a startup scene that no asset source holds, the startup load logs
   the error and then recovers as it does when no scene is named: it adopts an indexed
   `Startup.tescene` or creates one, and points the manifest at it, so the editor opens on a scene
@@ -281,6 +283,7 @@ an ADR. The Profiler half drops first.
   save that writes; a named scene that does not parse still opens empty and refuses to save.
   "The editor keeps running with a startup scene it cannot find" changes with it. Saving into a
   new file (Save As) is not part of it: it is T8's "more than one scene" on the [[Capability Map]].
+  Closed Nov 14 on the same PR as S10-B3, which completes Story F.
 
 ### Story G: Product follow-up
 
@@ -526,7 +529,8 @@ follows S10-T22.
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
   first, #181 `78c48ab`). Nov 14: #203's eight decisions, built by Claude and Fable on Miguel's
-  Story H cards, accepted as merged at the close with no reversal.
+  Story H cards, accepted as merged at the close with no reversal. Nov 14: #204's six decisions on
+  Miguel's Story F cards, merged with none reversed in review.
 
 ## Capacity note
 

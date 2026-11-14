@@ -401,6 +401,20 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/medium · **An adopted `Startup.tescene` opens empty and cannot be saved**: when the
+  startup load adopts an existing, indexed `Startup.tescene`, it points `project.toml` at it but
+  does not load it, so that launch shows an empty scene and refuses every save; the next launch
+  loads it. Since S10-B4 (#204, Nov 14) a manifest that names a scene no file holds reaches this
+  too, not only a manifest with no scene. The fix is to load the adopted file, as a created one is
+  ([[Editor - Design]] § *Decided*, "A created startup scene is loaded back"). Found at S10-B4's
+  build, Nov 14. **Trigger:** the next card on the startup load, or a missing startup scene seen
+  in use.
+- #prio/low · **An unindexed `Startup.tescene` stops the editor at startup**: when the startup
+  load must create `Startup.tescene` and a file of that name exists but the asset index skipped
+  it, `EditorApp::requireNewAssetPath` stops the editor through `TE_CHECK` instead of logging.
+  Since S10-B4 (#204, Nov 14) a manifest that names a scene no file holds reaches this as well;
+  only the no-scene case has a test. Found at S10-B4's build, Nov 14. **Trigger:** the next card
+  on the startup load.
 - #prio/low · **The hierarchy panel cannot reorder roots**: a drop between two roots draws no
   highlight, and a drop to the root always lands last. Since S10-B2 (#197, Nov 10) `Scene` can do
   both: `reorderChild` accepts a root, and `unparent(child, position, mode)` puts a child at a

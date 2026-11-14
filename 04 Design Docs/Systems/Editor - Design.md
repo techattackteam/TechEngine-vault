@@ -66,6 +66,7 @@ message. This note says how those messages are shaped.
 | Persistent entity ids stay opt-in | An entity's disk id is its row in its scene file, reassigned at each save. A UUID is an opt-in component for cross-document entities. | ADR-007 §1 |
 | Save is a command | The simulation writes the scene and publishes the saved revision. Save is T1's; T2 keeps only Export. | 2026-10-26, § *Save* |
 | A save writes only the file the live scene came from | The edit session holds a scene file only after the startup load read that file or created it. A failed load, or a `Startup.tescene` adopted without being loaded, leaves it unset, and a save is refused with a warning. | 2026-10-31 (S9-T18), § *Save* |
+| A named startup scene that no file holds is replaced | When the asset index does not know the id `project.toml` names, the startup load logs it and adopts or creates `Startup.tescene`, as it does with no scene named. A named scene whose file exists but does not load opens empty and is never overwritten. A scene indexed on the server side counts as held. | 2026-11-14 (S10-B4, #204 `6836c87`) |
 | Save on close is one command | Save in the close prompt sends a save command that requests the stop itself, on the simulation thread, after a successful write. A stop cancels the commands still queued, so main cannot submit a save and then stop. A failed save leaves the editor open. | 2026-10-31 (S9-T18), § *Save* |
 | A command never waits for a tick | An accepted command wakes the simulation thread, which applies the batch at the top of each loop pass, never inside a tick. The queue is open only while that thread runs. | 2026-10-26 (S9-T12), § *Commands and the idle simulation* |
 | No game input while Stopped | The editor detaches the `InputBuffer` while Stopped. ImGui reads input through its own callbacks. | 2026-10-26, § *Commands and the idle simulation* |
@@ -354,8 +355,9 @@ across the panel, so labels line up between components. Shared widgets live in `
   selection. The snapshot carries the active entity's world values with per-axis mixed flags.
   A World edit sends `SetWorldAxisCommand`, which replaces one axis of each entity's current
   world TRS and calls `setWorld` on the simulation thread, and leaves one
-  `LocalTransformRecord` per entity, because `setWorld` can change all three parts. An entity
-  whose edit would need shear is skipped and logged (ADR-021; S10-B3 revisits it). In World
+  `LocalTransformRecord` per entity, because `setWorld` can change all three parts. An edit that
+  would need shear is approximated since S10-B3 ([[Scene - Design]] § *Transform propagation*);
+  only an entity under a zero scale axis is still skipped and logged. In World
   mode the Euler cache accepts a returned rotation within 1e-4 per quaternion component.
 
 ## Multi-select
@@ -415,7 +417,8 @@ Built by S10-T1 (#178 `9afda8d`, 2026-11-01). The calls it made where the design
 - **The drag payload** is an array of `Entity`. The panel remembers the row the drag started
   from, so the clipper never hides it, even when the payload holds only its selected ancestor.
 - **Found beside it:** a reparent under a parent that is rotated and scaled differently per axis
-  is refused, because ADR-021 refuses a local transform that needs shear. S10-B3 owns it.
+  was refused, because ADR-021 refused a local transform that needs shear. S10-B3 (#204, Nov 14)
+  made it keep the world position with an approximate rotation and scale.
 
 ## Multi-select in the inspector, as built
 

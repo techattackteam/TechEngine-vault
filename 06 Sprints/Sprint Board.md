@@ -33,8 +33,6 @@ kanban-plugin: board
 
 ## Story F: Defects
 
-- [ ] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 · 🟠 Moderate · 2-3h: amend ADR-021 so a reparent that would need shear keeps the world position with an approximate rotation and scale, as Unity does; a zero scale stays refused. Not at the same time as S10-B2, which also edits `Scene.cpp`.
-- [ ] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate · 2-3h: when the manifest names a scene no asset source holds, the startup load recovers as it does with no scene named, adopting or creating `Startup.tescene`, so the editor can save again. A file that exists but does not load is still never overwritten.
 
 
 ## Story G: Product follow-up
@@ -54,12 +52,22 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
+
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate · 2-3h: #204 `6836c87`, **Nov 14**. When `project.toml` names a scene the asset index does not know, the startup load logs it and adopts or creates `Startup.tescene`; a named file that does not load still opens empty and is never overwritten. With S10-B3 it completes Story F.
+	- **"No asset source holds it" was decided before the load,** as the index not knowing the id (`LooseSource::find` gives `Unknown`), so a scene indexed on the server side counts as held and is not replaced.
+	- **Logged, not fixed, both now reached from more manifests:** an adopted `Startup.tescene` is not loaded, so that launch still cannot save; and an unindexed `Startup.tescene` on disk now stops the editor through `requireNewAssetPath`'s check. Both are in the [[Backlog]] § *editor & tooling*.
+	- **Retro: the card has no branch link.** At Miguel's request both cards went out on one branch, `S10-B3/story-f-defects`, so only the PR title names S10-B4.
+- [x] **S10-B3** · A reparent under a rotated, non-uniformly scaled parent is refused · P3 · 🟠 Moderate · 2-3h: #204 `6836c87`, **Nov 14**. A conversion that needs shear keeps the world position and takes the closest local rotation and scale, from a polar decomposition; a zero scale axis is still refused. ADR-021 carries the dated amendment, and [[Scene - Design]] § *Transform propagation* the mechanism. With S10-B4 it completes Story F.
+	- **Both open calls went the wide way:** `setWorld` and a `PreserveWorld` detach take the same rule as the reparent, because one function serves all three, and no bound limits how far the world rotation and scale move.
+	- **A threshold the card did not ask for:** the determinant of the column-normalised matrix must exceed 1e-5. A matrix flattened by a zero scale axis rounds to about 1e-7, not zero; the cost is that a real shear from a scale ratio near 1e5 is refused too.
+	- **Written and deleted before merge:** the first push failed diff coverage at 76%, because the approximation's per-step checks could never fire. They became one check on the result, the exact path's orthogonality and orientation checks went, and a test now reaches the check through a local position that overflows a float.
+	- **Retro:** Miguel handed Story F to Claude, which ran each card as a subagent (Opus for this one, Sonnet for S10-B4) and built `windows-debug` before the PR; CI then passed every leg. The PR has no review conversation, and its six *Decisions to accept or reverse* merged with none reversed. **Unverified:** no windowed drop under a sheared parent is recorded.
 - [x] **S10-T21** · Re-import keeps ids and reloads · P1 · 🟢 Deep · 4-6h: #203 `25c93a4`, **Nov 14**. *File → Re-import...* matches outputs to the old files by source key and keeps their ids, leaves matched materials alone, and reloads the rewritten ids behind live handles through `ResourceCache::reload`, then rebuilds the open scene's slots. It completes Story H.
 	- **The Stopped clause has nothing to stop yet:** `EditSession` gained `PlayState` with a `TODO(E11)`, and only tests change it, so the refusal cannot fire in the editor. The reload also destroys the old payload at once, because render holds none; the fence that [[Content Pipeline - Design]] § *Re-import* names is R1's.
 	- **Against [[Resources - Design]] as written:** a load task no longer writes its entry. Every load, a first load too, now carries its result in the completion and the owner installs it, which is what lets a failed reload keep the old payload. § *Loads on the job system, as built* now says so.

@@ -5,6 +5,10 @@
 - **Deciders:** Miguel (Lead Engineer)
 - **Task:** S6-T5
 - **Partial supersessions:** ADR-020 §1's next-tick hierarchy propagation and §3/§5's separate `TransformPropagation` schedule entry. Tick, barrier and access-order rules remain.
+- **Amended 2026-11-14, decision:** "If the conversion requires shear that local TRS cannot
+  represent, the edit fails without changing the local value or world cache" → the edit is
+  accepted with the closest local TRS, as Unity does. Trigger: S10-B3, after a drop under a
+  rotated, non-uniformly scaled parent moved nothing in the editor (S10-T1, Nov 1).
 
 ## Context
 
@@ -21,6 +25,13 @@ descendants before the setter returns. A world edit first converts the requested
 world TRS to local TRS using the current parent chain. If the conversion requires
 shear that local TRS cannot represent, the edit fails without changing the local
 value or world cache.
+
+> **Amended 2026-11-14 (S10-B3):** a conversion that needs shear is accepted. The entity keeps
+> its world position exactly, and its local rotation and scale are the closest a local TRS can
+> hold, so its world matrix picks up the parent's shear and its world rotation and scale move.
+> No bound limits how far they move. A zero scale axis is still refused, in the parent chain or
+> in the result, because no local scale can undo it. A world edit, a `PreserveWorld` reparent and
+> a `PreserveWorld` detach share the rule. [[Scene - Design]] holds the mechanism.
 
 Scene traverses the affected subtree parent-first. Each exact world matrix is
 computed from its parent's matrix and its local TRS. The world TRS cache remains
