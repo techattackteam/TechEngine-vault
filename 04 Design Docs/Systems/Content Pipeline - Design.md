@@ -27,15 +27,16 @@ Only the Linux debug tests ran, and the menu entries have not been tried in a wi
   and `apps/editor/src/edit/PlaceModelCommand.hpp`.
 - **S10-T21, reload and re-import:** `ResourceCache::reload`
   (`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`),
-  `apps/editor/src/assets/ReimportMatcher.hpp`, `ImportedFile.hpp` and
+  `apps/editor/src/assets/ReimportMatcher.hpp`, which also reads the old outputs, and
   `apps/editor/src/edit/ReimportCommand.hpp`.
 - **S10-T22, the texture file:** `engine/core/include/TechEngine/core/texture/Texture.hpp`.
 - **S10-T23, the material file:** `engine/core/include/TechEngine/core/material/Material.hpp`,
   written up in [[Renderer - Design]] § *The material file*.
 - **S10-T24, materials and textures at import:** `apps/editor/src/assets/MaterialImporter.hpp`,
-  `TextureImporter.hpp`, `DdsReader.hpp` and `MipBuilder.hpp`.
-- **S10-T25, the sky image:** `apps/editor/src/assets/ImageImporter.hpp`, `ImageDecoder.hpp`,
-  `Rgb9E5.hpp` and `apps/editor/src/edit/ImportImageCommand.hpp`.
+  `TextureImporter.hpp` (encoding and the mip chain) and `ImageDecoder.hpp` (DDS decoding).
+- **S10-T25, the sky image:** `apps/editor/src/assets/TextureImporter.hpp` (`importSky`,
+  `reimportSky` and the `RGB9E5` packing), `ImageDecoder.hpp` and
+  `apps/editor/src/edit/ImportSkyCommand.hpp`.
 
 The calls these cards took that no artifact had made are recorded in the *as built* subsections
 below. They were taken by the implementation, and they wait for Miguel's review in the pull
@@ -363,8 +364,8 @@ these calls, and they wait for Miguel's review:
 The renderer depends on this, so it is written down once, here.
 
 - **Texture rows are stored top row first, with no vertical flip.** No decoder is asked to flip:
-  stb_image keeps the file's order, `DdsReader` keeps the DDS order, and the mip builder and the
-  encoders keep the row order they are given. A sky image is stored the same way.
+  stb_image keeps the file's order, `ImageDecoder::decodeDds` keeps the DDS order, and the mip
+  builder and the encoders keep the row order they are given. A sky image is stored the same way.
 - **UV0 is stored as assimp gives it** (§ *The import's streams*), and assimp flips glTF's V.
   So V is 0 at the bottom of the picture for every format, while row 0 of the texture is the top.
 - **Import flips neither.** The R1 shader or upload must sample at `(u, 1 - v)`, or flip the rows
@@ -444,7 +445,7 @@ review:
 
 ### Texture inputs as built
 
-Also S10-T24 (in review), in `MaterialImporter.cpp`, `DdsReader.cpp` and `MipBuilder.cpp`:
+Also S10-T24 (in review), in `MaterialImporter.cpp`, `ImageDecoder.cpp` and `TextureImporter.cpp`:
 
 - **Base color falls back to the diffuse texture.** Occlusion is glTF's lightmap slot for a glTF
   source and assimp's ambient-occlusion slot for any other, because another format's lightmap is
@@ -457,9 +458,9 @@ Also S10-T24 (in review), in `MaterialImporter.cpp`, `DdsReader.cpp` and `MipBui
 - **An image path** is resolved against the source's folder by `MaterialImporter::imagePath`,
   with `.` and `..` followed and glTF's `%XX` escapes decoded. An absolute path, or one that
   climbs above the project's mount, is refused, and the texture is left out.
-- **A DDS file** is decoded by `DdsReader`: BC1, BC2, BC3, BC5 and BC7 from either header kind,
-  and 32-bit RGBA or BGRA, the largest level of the first image only. A side above 16384 pixels is
-  `ImageUnreadable`.
+- **A DDS file** is decoded by `ImageDecoder::decodeDds`: BC1, BC2, BC3, BC5 and BC7 from either
+  header kind, and 32-bit RGBA or BGRA, the largest level of the first image only. A side above
+  16384 pixels is `ImageUnreadable`.
   It converts no color, so an sRGB DDS format is read as stored, and a BC5 image has its blue
   rebuilt as a unit normal's z. Another format is `UnsupportedDdsFormat`, and a damaged file is
   `ImageUnreadable`.
@@ -501,26 +502,26 @@ light) is the renderer's ([[Renderer - Design]] § *Open questions*).
 
 ### The sky image as built
 
-Built by S10-T25 (in review), in `apps/editor/src/assets/ImageImporter.cpp`. The implementation
+Built by S10-T25 (in review), in `apps/editor/src/assets/TextureImporter.cpp`. The implementation
 took these calls, and they wait for Miguel's review:
 
 - **Only a `.hdr` file is imported.** Any other extension is `UnsupportedImageType`. A source
   outside `assets/common`, `assets/client` or `assets/server` is `SourceNotInAssets`, because the
-  record's side comes from that folder (`ImageImporter::sideOf`). An existing output is
+  record's side comes from that folder (`TextureImporter::sideOf`). An existing output is
   `ImportOutputExists`, and a file stb_image cannot read is `ImageUnreadable`.
 - **The sampler is repeat in U, clamp in V and linear** (`SKY_SAMPLER`), because a lat-long sky
   wraps around in longitude and ends at the poles.
 - **The image is decoded as float and packed per channel.** Alpha is dropped. A negative or NaN
-  channel becomes 0, and one above 65408 becomes 65408 (`Rgb9E5::pack`), the largest value
-  `RGB9E5` holds.
-- **The mips come from `MipBuilder::build`** on the float image, so a sky whose side is odd loses
-  a row or column at that level, as any texture does.
+  channel becomes 0, and one above 65408 becomes 65408 (`TextureImporter::packRgb9E5`), the
+  largest value `RGB9E5` holds.
+- **The mips come from `TextureImporter::buildMipChain`** on the float image, so a sky whose side
+  is odd loses a row or column at that level, as any texture does.
 - **The key is empty.** The import block holds only the source path and the default settings.
-- **Re-import rewrites the same file** under its id (`ImageImporter::reimportFile`). It returns
+- **Re-import rewrites the same file** under its id (`TextureImporter::reimportSky`). It returns
   the id as rewritten, with no new record. It refuses with `ReimportTargetMissing` when the output
   is missing or is not a texture.
 - **The menu entry is *Import image...*** (`PanelsManager::drawImportImagePopup`), through
-  `EditorApp::importImage` and `ImportImageCommand`, until the asset browser lands. Its dialog and
+  `EditorApp::importSky` and `ImportSkyCommand`, until the asset browser lands. Its dialog and
   menu entry have not been tried in a window.
 
 ## Re-import
@@ -557,8 +558,8 @@ review:
   index that both agree. The second gives an output the lowest remaining old index with its name.
   An empty name is matched only by the first pass, so it never takes a named file.
 - **`ModelImporter::reimportFile` reads the root asset's settings** and ignores the request's.
-  `ImportedFile.hpp` reads only each file's header, id and import block, and skips with a log line
-  any file that is not an imported one.
+  `listImportedFiles` in `ReimportMatcher.hpp` reads only each file's header, id and import block,
+  and skips with a log line any file that is not an imported one.
 - **The refusals are three `ProjectError` codes.** `ReimportTargetMissing` is a folder that does
   not exist, `ReimportRootMissing` is a folder with neither root asset, and `EditorNotStopped`
   stops the whole re-import. A stored scale that is not valid is still `InvalidImportScale`.
@@ -573,7 +574,7 @@ review:
   Play and Stop set it (`TODO(E11)` in `EditSession.hpp`), and the command checks it twice: when
   it starts and again before the reload.
 - **A `.hdr` path re-imports the sky** and ignores the mode. Any other path takes its side from
-  `ImageImporter::sideOf`. The *Re-import...* dialog has a merged-mesh checkbox
+  `TextureImporter::sideOf`. The *Re-import...* dialog has a merged-mesh checkbox
   (`PanelsManager::drawReimportPopup`).
 
 ### The reload as built
