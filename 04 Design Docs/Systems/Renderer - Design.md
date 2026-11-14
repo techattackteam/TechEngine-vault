@@ -60,9 +60,9 @@ the render thread that draws packets through a small device.
 | Units | Photometric light values, and a fixed exposure on the camera until R2. | ADR-029 §6 |
 | What the standard material samples | Base color, a packed occlusion, roughness and metallic map, a normal and emissive. Wrap and filter live on the texture asset. | ADR-029 §7 |
 | Editing a material | Each edit is an undo step, and the file is written on Save. The asset edit path itself is not designed. | Miguel, 2026-11-09; [[Backlog]] § *editor & tooling* |
-| The material file | A `.tematerial` is `MATERIAL_KIND` version 1: the id, the import block, the surface, the shading model, the alpha state, then each factor beside its texture, in glTF's terms. | S10-T23, 2026-11-13; § *The material file* |
-| The material buffer | One 96-byte `std430` record per material: the factors, the cutoff, the shading model and four bindless handles. Alpha mode and sidedness pick the bucket, so they stay out of the record. | S10-T23, 2026-11-13; § *The material buffer* |
-| A slot with a null material | It draws the engine's default material, record 0: opaque, lit, single-sided, white, roughness 1, metallic 0 and no textures. A material whose load failed draws it too. | S10-T23, 2026-11-13; § *The material buffer* |
+| The material file | A `.tematerial` is `MATERIAL_KIND` version 1: the id, the import block, the surface, the shading model, the alpha state, then each factor beside its texture, in glTF's terms. | S10-T23 (#203), 2026-11-13; § *The material file* |
+| The material buffer | One 96-byte `std430` record per material: the factors, the cutoff, the shading model and four bindless handles. Alpha mode and sidedness pick the bucket, so they stay out of the record. | S10-T23 (#203), 2026-11-13; § *The material buffer* |
+| A slot with a null material | It draws the engine's default material, record 0: opaque, lit, single-sided, white, roughness 1, metallic 0 and no textures. A material whose load failed draws it too. | S10-T23 (#203), 2026-11-13; § *The material buffer* |
 
 ## Design
 
@@ -144,7 +144,7 @@ flowchart LR
 
 ### The material file
 
-Built by S10-T23 in `engine/core/src/material/Material.cpp`. A `.tematerial` is `MATERIAL_KIND`
+Built by S10-T23 (#203) in `engine/core/src/material/Material.cpp`. A `.tematerial` is `MATERIAL_KIND`
 at version 1, a binary blob like the texture. In order:
 
 - **Its id, straight after the header**, for the asset index's 16-byte read.

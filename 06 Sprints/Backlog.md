@@ -496,7 +496,8 @@ groups are kept, because they show where future work will land.
 - #prio/low · **Import's untested paths**: no FBX fixture exists, so only glTF and OBJ are imported
   in tests, and the cleanup that removes a half-written import folder has no case, because
   nothing in `FileAccess` lets a test fail one write. Found at S10-T15 (#194) on Nov 9, 2026.
-  **Trigger:** S10-T19, which rewrites the import's mesh write.
+  **Trigger:** S10-T19, which rewrites the import's mesh write. **Fired Nov 11, still true after
+  #203 (Nov 14):** Story H added glTF, `.glb` and OBJ/MTL fixtures, and still no FBX one.
 - #prio/low · **Cancel an import**: closing the editor waits for every running import, so a large
   source holds the close until assimp returns ([[Content Pipeline - Design]] § *The import*).
   assimp's `ProgressHandler` can stop a read. Found at S10-T15 (#194) on Nov 9, 2026.
@@ -517,7 +518,14 @@ groups are kept, because they show where future work will land.
   arrives as about a hundred primitives, so placement gives the root children named
   `meshes[0]-0` and onwards. Naming each after its material would read better once import
   writes materials. Found at S10-T16 on Nov 10, 2026. **Trigger:** S10-T19, or the material
-  file card.
+  file card. **Fired Nov 14:** #203 writes materials at import, and the names are unchanged.
+- #prio/high · **Story H has not met a real asset or a window**: #203 (Nov 14) was tested on
+  fixtures only. *Import image...*, *Re-import...* and placing a `.temesh` have never been run by
+  hand, BC7's encode time is unmeasured, and Sponza was not re-imported, so its committed meshes
+  still name null materials and its images are not in the repo. Re-import Sponza with its images
+  through *Re-import...*, which also checks that the ids are kept. Found at the Story H close on
+  Nov 14, 2026. **Trigger:** before R1's first textured frame, which is the first code that
+  would show a wrong texture.
 
 - #prio/low · **The console repeats `Log.cpp`'s `localTime`**: `ConsolePanel.cpp` formats a
   record's local time with its own copy of the reentrant `localtime_s` / `localtime_r` helper,

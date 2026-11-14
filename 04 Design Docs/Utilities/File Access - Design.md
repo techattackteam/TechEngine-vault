@@ -253,7 +253,7 @@ than on `write()`.
 convention. Their semantics live in [[Project - Design]] § *The five mutating calls*, which is
 where M3's real writes shaped them.
 
-**Two calls hold against a concurrent caller** since Story H's review (2026-11-14, in review),
+**Two calls hold against a concurrent caller** since Story H's review (#203, 2026-11-14),
 because two import jobs can write the same output:
 
 - **`createDirectory`** creates the parents, then the last folder with

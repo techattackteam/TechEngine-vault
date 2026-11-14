@@ -35,6 +35,45 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
+### D11: A flat `.hdr` cut short after its header imports as a black sky
+
+A Radiance file whose pixel data is missing or cut short, and stored flat rather than
+run-length encoded, decodes without an error: stb_image fills the missing pixels with zeros
+and returns the image. *Import image...* then writes a valid `RGB9E5` texture that is partly
+or wholly black. Logged in #203's description, not fixed.
+
+**Silent because the file is valid.** Every check after the decode passes, the texture loads,
+and nothing in the editor draws a sky until R1.
+
+`apps/editor/src/assets/ImageDecoder.cpp:70-74` at `25c93a4b`.
+
+**Fix:** not decided. The decoder could compare the bytes a flat image needs against the bytes
+after the header before calling stb_image.
+
+**Trigger:** R1's sky card, the first code that draws the image, or the next change to
+`ImageDecoder`.
+
+### D10: Two spellings of one source re-import at the same time
+
+`ReimportCommand` refuses a second re-import of a source that has one running, because two
+jobs would give one new output two ids. It compares the source path as typed, so
+`assets/client/Kit.gltf` and another spelling of the same file, or `Kit.gltf` and `Kit.fbx`
+importing into one `Kit/` folder, are both let through. If the finishing command cannot be
+submitted, the path also stays in the list until the editor restarts. Logged in #203's
+description, not fixed.
+
+**Silent because both jobs succeed.** Neither job sees the other's ids, so a new output can
+end up with two ids, and nothing reports it.
+
+`apps/editor/src/edit/ReimportCommand.cpp:34-39` at `25c93a4b`; the list is
+`EditorApp::m_reimportsInFlight` (`apps/editor/src/EditorApp.hpp:51`).
+
+**Fix:** not decided. The key could be the output folder, resolved to one form, instead of the
+typed source path.
+
+**Trigger:** the asset browser's import or re-import, which stops paths from being typed, or
+any second caller of `ReimportCommand`.
+
 ### D9: An editor destroyed during an import races the import's log lines
 
 `EditorApp::~EditorApp()` waits for running imports, but the destructor has already rewritten

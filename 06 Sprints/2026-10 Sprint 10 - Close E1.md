@@ -407,7 +407,7 @@ follows S10-T22.
   the baked bitangent; a quantized fixture is refused. Follows S10-T15 and S10-T17.
   Closed Nov 11: #201 `c99bf04`. It also fixed D8, split the import into `ModelImporter` and
   `MeshImporter`, and imported Sponza again with the streams.
-- [ ] **S10-T20** · Import as one merged mesh · P1 · 🟢 Deep · 4-6h ·
+- [x] **S10-T20** · Import as one merged mesh · P1 · 🟢 Deep · 4-6h ·
   done: import in merged mode writes the root `.temesh` from the model walk
   ([[Content Pipeline - Design]] § *The merged mesh*): world transforms baked, triangles flipped
   under a negative determinant, tangents' `w` multiplied by its sign, one slot per source material
@@ -416,7 +416,8 @@ follows S10-T22.
   scaled −1 on X gives the mirrored half's triangles in reversed order; two materials give two
   slots in material-index order; a part without UV0 joins with zero UVs; placing it adds one
   entity whose slot list matches the mesh. Follows S10-T19 and S10-T16.
-- [ ] **S10-T21** · Re-import keeps ids and reloads · P1 · 🟢 Deep · 4-6h ·
+  Closed Nov 14: #203 `25c93a4`, with S10-T21 to S10-T25. A `.temesh` goes through *Place model...*.
+- [x] **S10-T21** · Re-import keeps ids and reloads · P1 · 🟢 Deep · 4-6h ·
   done: a *Re-import* menu entry with a typed path re-imports a source file into its folder while
   the editor is Stopped, and is refused otherwise ([[Content Pipeline - Design]] § *Re-import*).
   Outputs match old files by source key, name first, and keep their ids; matched materials are
@@ -428,8 +429,9 @@ follows S10-T22.
   new mesh gets a fresh id and a removed one's file stays; a handle held across a reload resolves
   to the new payload with the same generation; a reload that adds a dependency acquires it, and
   one that drops a dependency releases it. Follows S10-T18 and S10-T19. It may split at the cache's
-  reload.
-- [ ] **S10-T22** · The texture file · P1 · 🟠 Moderate · 2-3h ·
+  reload. Closed Nov 14: #203 `25c93a4`, unsplit. The Stopped refusal cannot fire until E11 sets
+  the play state (D10 is its in-flight guard).
+- [x] **S10-T22** · The texture file · P1 · 🟠 Moderate · 2-3h ·
   done: `core` gains `Texture` at `TEXTURE_KIND` version 1 ([[Content Pipeline - Design]] §
   *The texture file*): the id, the import block, the shape, the format, the size, the mip count,
   the sampler and the mips, with write and read. Its loader is registered in the editor and the
@@ -439,8 +441,8 @@ follows S10-T22.
   equal; a mip count that is not the full chain for the size, a mip whose byte count does not
   match its format and size, a shape other than 2D and an unknown format are each refused with
   `ReadError::Malformed`; the asset index lists a `.tetexture`. Follows S10-T14. Cut Nov 10 at
-  S10-D11.
-- [ ] **S10-T23** · The material file · P1 · 🟢 Deep · 4-6h ·
+  S10-D11. Closed Nov 14: #203 `25c93a4`.
+- [x] **S10-T23** · The material file · P1 · 🟢 Deep · 4-6h ·
   done: `core` gains `Material` and its `.tematerial` file
   ([[ADR-029 - Materials, surfaces and lobes]]): the id, the import block, the surface, the
   shading model, the alpha mode and its cutoff, the double-sided flag, and each factor beside its
@@ -452,8 +454,8 @@ follows S10-T22.
   textures reads back with null references and its factors; an unknown alpha mode or shading
   model is refused with `ReadError::Malformed`; the loader's dependencies hold the non-null
   textures and no null one; the asset index lists a `.tematerial`. Follows S10-T22. Cut Nov 10 at
-  S10-D11.
-- [ ] **S10-T24** · Import writes materials and textures · P1 · 🟢 Deep · 4-6h ·
+  S10-D11. Closed Nov 14: #203 `25c93a4`. The layouts and the null slot are in [[Renderer - Design]].
+- [x] **S10-T24** · Import writes materials and textures · P1 · 🟢 Deep · 4-6h ·
   done: S10-T15's import writes one `.tematerial` per source material into `Materials/`, and their
   textures into `Textures/` ([[Content Pipeline - Design]] § *Texture import*), and each v2 mesh
   slot names its material as the default. An unnamed material gets a stable name from its index,
@@ -465,8 +467,9 @@ follows S10-T22.
   written as BC7; each texture has its input's format and a full mip chain; the mip builder keeps a
   normal map's texels unit length at every level; each texture's source key names its path,
   purpose and sampler. Follows S10-T23 and S10-T19. It may split at the textures. Cut Nov 10 at
-  S10-D11.
-- [ ] **S10-T25** · Import the sky image · P1 · 🟠 Moderate · 2-3h ·
+  S10-D11. Closed Nov 14: #203 `25c93a4`, unsplit. Not run on Sponza, whose images are not in the
+  repo.
+- [x] **S10-T25** · Import the sky image · P1 · 🟠 Moderate · 2-3h ·
   done: an *Import image* menu entry with a typed path imports a `.hdr` file as a job into
   `<name>.tetexture` beside it, as `RGB9E5` with a full mip chain and an empty source key
   ([[Content Pipeline - Design]] § *The sky image*). Importing when that file already exists is
@@ -474,7 +477,8 @@ follows S10-T22.
   refused with an error code. Tests: a small `.hdr` fixture gives an `RGB9E5` texture of its size
   with a full mip chain, whose top level matches the source within `RGB9E5`'s precision; an
   existing output is refused; a `.png` path is refused. Follows S10-T22; whichever of S10-T24 and
-  this card lands first pins stb_image. Cut Nov 10 at S10-D11.
+  this card lands first pins stb_image. Cut Nov 10 at S10-D11. Closed Nov 14: #203 `25c93a4`.
+  Re-import landed with it, so an existing output is re-imported through *Re-import...*.
 
 ### Story I: Prepare Sprint 11 (standing)
 
@@ -521,7 +525,8 @@ follows S10-T22.
   material cards on Nov 10 (S10-D11, vault `9915e78`).
 - [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. Nov 6: #179, #181 and #188, one reversal in all (S10-T4's Run exports
-  first, #181 `78c48ab`).
+  first, #181 `78c48ab`). Nov 14: #203's eight decisions, built by Claude and Fable on Miguel's
+  Story H cards, accepted as merged at the close with no reversal.
 
 ## Capacity note
 
