@@ -77,6 +77,18 @@ Moved here from the [[Backlog]]'s *Test tiers and parallel ctest* entry, which w
   `:117`), not through the render thread.
 - **Coverage:** `cmake/coverage.cmake:94` runs the whole suite, so a tier that PRs skip leaves
   its code uncovered under the 85% gate.
+- **From S11-D1's spike (Nov 14), recorded in ADR-028 § *Consequences*:** on Linux, zink over
+  lavapipe runs the suite only if the window creates its context through EGL, which today's
+  `Window.cpp` does not; whether it does so always on Linux or only on CI is open. Under TSan
+  the 62 window cases all fail on races from Mesa and X, and Miguel chose not to suppress them
+  (Nov 14). Those 62 failures are the exact set of cases that open a window. Three of them are
+  tagged `[editor]` alone (the three named above), and two `[window]` cases open no window: the
+  `WindowError` category case and *GLFW grows and frees its blocks through the allocator Window
+  installs*. Windows' zink was left untried.
+  TSan also reported a lock-order inversion in `Client::stop()`, which holds `wakeMutex` across
+  `Window::terminate()` (`engine/client/src/Client.cpp:126-130`); its other side is an unnamed
+  Mesa frame, so it may be a reused address. The spike's workflow and probe are on the
+  `S11-D1/ci-gl-floor` branch.
 - **Measured on Oct 11 with Windows binaries:** a test body takes about 0 ms. A process start
   costs 49 ms in `windows` Debug and 553 ms in `windows-profile`, where Tracy calibrates for
   200 ms before `main`. Each `[window]` case costs about 450 ms in its own process, because the

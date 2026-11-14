@@ -4,6 +4,9 @@
 - **Date:** 2026-11 (Accepted 2026-11-06)
 - **Deciders:** Miguel (Lead Engineer), with AI as technical lead
 - **Task:** S10-D4 ([[2026-10 Sprint 10 - Close E1]] § *Story E*), R1's first renderer ADR.
+- **Amended 2026-11-14, correction:** § *Consequences* said nothing about CI, and now has a
+  *Cost* entry: no CI runner's default software GL meets §2's floor, and only zink over
+  lavapipe on Linux does. S11-D1's spike measured it ([[2026-11 Sprint 11 - First Frame]]).
 - **Amends:** [[ADR-005 - v2 tech stack & toolchain]] § *Graphics*, "Target **4.5 core with
   DSA**" (§2 below), recorded in its header.
 - **Partially supersedes:** [[ADR-006 - v2 core architecture & module layout]] §5's Renderer
@@ -147,6 +150,15 @@ issues GL's coarse memory barrier through the device. ADR-005's promotion trigge
   historically not.
 - **Cost:** RenderDoc cannot capture bindless GL frames, as Miguel found in v1, so GPU captures
   go through Nsight.
+- **Cost (added 2026-11-14, S11-D1):** CI's default software GL cannot meet §2. Measured on
+  Nov 14: llvmpipe gives 4.5 core on `ubuntu-latest` (ubuntu-26.04, Mesa 26.0.8) and 4.6 core
+  on `windows-2022` (Mesa 26.2.0), and neither has `ARB_bindless_texture`; Mesa's d3d12 driver
+  over WARP gives 4.2. Zink over lavapipe gives 4.6 core with bindless on Linux under Xvfb, with
+  `LIBGL_ALWAYS_SOFTWARE=1` and `GALLIUM_DRIVER=zink`, but only when GLFW creates the context
+  through EGL; through GLX it fails. With a 4.6 EGL window, `linux-debug` passed all 1273 tests
+  over zink. Under TSan, every window case reports races from Mesa's and X's uninstrumented
+  threads. On Windows, zink needs a Vulkan loader the runner lacks and was not tried with one.
+  Where each test runs is decided in ADR-008 (S11-D5).
 - **Cost:** a complete packet re-sends static instances every publish. For Sponza and Bistro
   that is small; for the E2b stress scene it is about 64 bytes per instance per publish.
 - **Revisit when:** E2b's stress scene measures packet building or its upload over budget. The
