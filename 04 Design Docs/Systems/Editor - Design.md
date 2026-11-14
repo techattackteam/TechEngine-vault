@@ -93,6 +93,7 @@ message. This note says how those messages are shaped.
 | The console filters by level and text | A *Show* dropdown lists each level with its count, and a search field takes the message. The channel filter waits until modules register channels. | 2026-11-03 (S10-D2); dropdown 2026-11-06 (S10-T12), § *The console panel* |
 | The console keeps 5,000 records | The oldest drop first. Clear empties it. | 2026-11-03 (S10-D2), § *The console* |
 | The Profiler panel shows recorded Play sessions | Each Play session is recorded, from Play to Stop, and saved as one file in the project. While Stopped the panel graphs the run the user selects. It is built with Play (E11), not in E1. | 2026-11-03 (S10-D3); ADR-013 §3 amended; § *The Profiler panel* |
+| The scene view's camera reads ImGui on main | The scene view panel moves a fly camera from ImGui's mouse and keys, so "No game input while Stopped" stands and nothing re-attaches the `InputBuffer`. The game view draws through the scene's main active camera. Both cameras are decided in [[Renderer - Design]] § *Decided*. | Miguel, 2026-11-14 (S10-D6) |
 
 ## Threads and channels
 
@@ -615,11 +616,6 @@ sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore`
 
 ## Open questions
 
-- **Presentation input while Stopped.** E2's scene view camera needs presentation input while
-  the `InputBuffer` is detached. Owner: T3.
-- **Which camera is the main active camera.** The game view draws through it, but no camera
-  component exists yet, and no artifact says how a scene marks one camera as active. Owner: E2's
-  camera work (R1).
 - **A second scene load in one process.** The [[Backlog]]'s "a scene load does not notice a
   reference that was already Failed" fires on the first reload. E1 never reloads.
 

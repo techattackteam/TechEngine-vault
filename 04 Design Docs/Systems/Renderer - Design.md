@@ -40,6 +40,9 @@ the render thread that draws packets through a small device.
 | The frame packet | Read from the `Scene` after ticks and after applied edits; pooled and moved by ownership, never copied. ADR-019 §3's delivery and interpolation stand. | ADR-028 §3 |
 | Views | A frame draws one packet into one or more views, each with a target and a camera. The runtime has the window; the editor has its scene view and game view. A hidden view is not drawn. Light clusters depend on the camera, so each view builds its own. | ADR-028 §3 |
 | The scene view's camera | It comes from main on ADR-019 §4's latest-value path, not from the packet, so it moves with no packet and no tick. The game view uses the scene's main active camera from the packet. | ADR-028 §3; [[Editor - Design]] § *The layout* |
+| The camera component | `Camera` in `core`, registered in both apps like `MeshRenderer`. Perspective only in E2: a vertical field of view, near and far planes, ADR-029 §6's fixed exposure and a `main` flag. Its view comes from the entity's world transform. Orthographic is added when something needs it. | Miguel, 2026-11-14 (S10-D6) |
+| The main active camera | The first entity in hierarchy order whose `Camera` has `main` set. The game view and the runtime draw through it. With none, the view clears to a colour and the app warns once. | Miguel, 2026-11-14 (S10-D6) |
+| How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main and moves a fly camera: right mouse button to look, WASD to move. The `InputBuffer` stays detached while Stopped. Orbit and focus on the selection stay T3's. | Miguel, 2026-11-14 (S10-D6); [[Editor - Design]] § *Decided* |
 | The renderer is not a scheduled System | It is the extraction hook plus the render-thread frame. | ADR-028 §3, against ADR-006 §5 |
 | Uploads cross in order | Mesh, texture and material uploads are never dropped. One GPU copy per resource handle. | ADR-028 §4 |
 | Render's fence | Simulation defers a free until render reports the upload done. A reload keeps its handle and sends a new upload. | ADR-028 §4; ADR-024 §6 |
@@ -223,9 +226,8 @@ Mechanism sections land as the build cards are cut. Known build work:
 - **How render matches an instance across two packets** to interpolate it, for example by
   entity in a stable order, and what it does with one that appears or vanishes between them.
   Owner: R1's packet card.
-- **How the editor's scene camera is driven** (orbit, fly, focus on the selection). Owner: T3's
-  viewport tools. Presentation input while Stopped and which camera is the main active camera
-  stay open in [[Editor - Design]] § *Open questions*.
+- **Orbit and focus on the selection** for the scene view's camera. The fly camera is decided
+  (§ *Decided*). Owner: T3's viewport tools.
 - **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.
   Owner: R1's first frame card.
 - **The lit model's terms.** [[Renderer - Materials Paper Report]] § *What S10-D7 still has to

@@ -201,10 +201,11 @@ an ADR. The Profiler half drops first.
   before Fri Nov 6**: S10-T2 is planned for Thu Nov 5 and changes the same inspector files, so if
   S10-T2 slips, Miguel moves this date with it. Closed Nov 6 by the lane: #188 `1ac607d`, merged
   with no decision reversed.
-- [ ] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h ·
+- [x] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h ·
   done: Miguel runs [[Editor - Brief]]'s five scenarios windowed, the runtime's log from the export
   folder names the edited entities, and the result is recorded. E1 is marked closed on the
-  [[Roadmap]]. Follows S10-T2 and S10-T3.
+  [[Roadmap]]. Follows S10-T2 and S10-T3. Closed Nov 14 with no PR, on Miguel's statement that he
+  ran the five scenarios during development rather than as one recorded run.
 - [ ] **S10-T9** · The base sweep's leftover · P3 · 🟡 Light · 1-2h ·
   done: the version anchors go (`baseVersion()`, `platformVersion()`, `coreVersion()`, `Base.hpp`,
   `Base.cpp` and `BaseTests.cpp`, whose glm case repeats `MathTests.cpp`). From the base sweep of
@@ -490,9 +491,158 @@ follows S10-T22.
   blocking them, the fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides
   nothing. **Not before Mon Nov 9**: a fire before that leaves it in To Do. Closed Nov 9 by the
   lane: [[2026-11-09 14-12 Auto Run]].
-- [ ] **S10-D6** · Prepare Sprint 11 · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S10-D6** · Prepare Sprint 11 · P1 · 🟠 Moderate · 2-3h ·
   done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Runs in
-  week 2, Tue Nov 10 to Fri Nov 13, after S10-P2's brief.
+  week 2, Tue Nov 10 to Fri Nov 13, after S10-P2's brief. Closed Nov 14, a day late: the cut is
+  below.
+
+#### Sprint 11's cut
+
+Drafts for `/sprint-plan`, which gives them `S11-` IDs and fits them to capacity. Cut by S10-D6
+on Nov 14, one day after its window, with Miguel's picks.
+
+- **Proposed goal:** E2's first frame. Sponza, imported with its textures, is drawn through a
+  camera in the runtime's window, on the new device, with base color only. The editor's scene
+  view shows the same frame and is the first part to drop. This is the first of about three
+  sprints for E2; the sun, the sky, the lit pass and the finished image follow.
+- **First Design card:** card 1, CI's GL floor. Cards 3 and 4 raise the GL check, so they wait
+  for it. No showcase card: E2 does not end this sprint.
+- **Decided in this prep:** the camera component, the main active camera and the scene view's
+  fly camera ([[Renderer - Design]] § *Decided*, [[Editor - Design]] § *Decided*). They answered
+  two open questions in [[Editor - Design]].
+- **Carry-over, not drafts:** both open 🟡 cards move to the lane (Miguel, Nov 14). S10-T7
+  closed on Nov 14 instead, so E1 is done.
+  - **S10-T9 goes as 🤖 Auto.** It passes all four questions of the gate: it removes the version
+    anchors in `engine/base`, `engine/platform` and `engine/core` (`Base.hpp`, `Platform.hpp`,
+    `Core.hpp` and their `.cpp`, `BaseTests.cpp`), which no R1 card touches, and `ctest`
+    proves it.
+  - **S10-D5 goes as 🤖 Claude, by Miguel's exception to the gate.** A `/triage` is a product
+    decision, which § *The 🤖 Claude gate* keeps for Miguel. He chose to hand this one over. The
+    lane records its call in the [[Capability Map]] with the date and "decided by the lane", and
+    lists it under *Needs you* in its run report, because a vault card has no PR to review it in.
+    Miguel reverses it there if he disagrees. It is due before E2's showcase, so it is off this
+    sprint's critical path.
+- **Fired [[Backlog]] entries:** card 1 (CI's software GL), card 2 (Story H has not met a real
+  asset), card 15 (the runtime logs every entity), card 16 (a split mesh's child names) and
+  card 17 (the README). *Test tiers and parallel ctest* rides with card 1 if its label path wins.
+- **[[Known Issues]]:** D9, D10 and D11 neither block nor touch these cards. D11 rides along
+  only if card 2 changes `ImageDecoder`.
+- **Lane:** enabled, but the routine still owes the Nov 9 prompt paste
+  ([[Autonomous Lane - Routine Prompt]] § *Routine configuration*). Paste it before a 🤖 Claude
+  card runs.
+- **Rough count:** Miguel 6 🟢, 3 🟠 and 1 🟡; 🤖 Claude 2 candidates plus S10-D5; 🤖 Auto 5
+  with S10-T9. That is at the Rhythm table's limit of 6-7 🟢 before any carry-over, so
+  `/sprint-plan` should expect to drop cards 11 and 12, then card 13.
+
+##### What E2 still lacks, for Sprint 12 and after
+
+The inputs check that this prep ran against E2's showcase sentence ([[Roadmap]], E2). None of
+these has a card yet, and each needs a decision before it can have one:
+
+- **The sun.** No light component exists in code, and [[Renderer - Design]] has no *Decided* row
+  for one.
+- **Material edits in the inspector** (a Must in [[Renderer - Brief]]): the asset edit path is
+  not designed ([[Backlog]] § *editor & tooling*, `#prio/high`).
+- **The asset browser** (a Must in [[Content Pipeline - Brief]]): no design. Card 13 takes it if
+  a slot is left.
+- **Sky lighting, anti-aliasing and the lit model's terms:** open in [[Renderer - Design]] §
+  *Open questions*.
+- **Bistro:** never imported, and FBX has no fixture.
+- **The showcase:** no outline exists, and S10-D5 is still open.
+
+##### Day 1
+
+1. **D · CI's GL floor** · P1 · 🟠 Moderate · 2-3h · done: a spike branch shows whether zink
+   over lavapipe gives CI a GL 4.6 context with `ARB_bindless_texture`, on the Linux legs and on
+   Windows' Mesa. ADR-028 gets a dated amendment that says how CI runs the window and render
+   tests: through zink, or under a ctest label that CI skips and Miguel runs locally. The seven
+   test files that open a window through the render thread are listed in it. It edits `ci.yml`,
+   so it is attended, and each spike push costs CI minutes. If the label path wins, the fired
+   *test tiers* entry is done in the same PR. *From a fired Backlog entry.*
+2. **T · Story H meets a real asset** · P1 · 🟠 Moderate · 2-3h · done: Sponza's images are in
+   `projects/dev` with a licence file beside them, and *Re-import...* rewrites Sponza with every
+   id kept and each mesh slot naming a material. *Import image...* runs on a real `.hdr`, and a
+   merged `.temesh` is placed by hand. The PR states BC7's encode time for Sponza. Each defect
+   found is fixed there or carded. *From a fired Backlog entry.*
+
+##### Story: R1's first frame (Miguel)
+
+Cut against [[Renderer - Design]] § *Decided*. Each card writes its own mechanism section into
+that note. Order: 3 follows 1; 4 follows 3; 5 follows 4 and 6; 7 follows 4; 8 and 9 follow 7;
+10 follows 5, 8 and 9.
+
+3. **T · GL 4.6 and bindless at startup** · P1 · 🟡 Light · 1-2h · done: glad2 is regenerated
+   with `--api gl:core=4.6` and `ARB_bindless_texture` (`cmake/deps.cmake:244-246`), and the
+   startup check (`engine/client/src/render/RenderThread.cpp:93`) logs which requirement failed
+   (§ *Build notes*).
+4. **T · The device** · P1 · 🟢 Deep · 4-6h · done: a device in `client` with typed handles
+   for buffers, textures, pipelines and render targets, pipelines bound whole and explicit
+   render passes (ADR-028 §1). M4's triangle draws through it, `FrameRenderer` makes no GL call,
+   and `Buffer` and `VertexArray` fold into it. Storage buffers are in; compute dispatch waits
+   for the light clusters. The device's surface is settled at `/card-start`.
+5. **T · Frame packets replace the snapshot** · P1 · 🟢 Deep · 4-6h · done: the extraction hook
+   reads the `Scene` into a pooled packet after ticks and after applied edits, and render moves
+   it instead of copying (ADR-028 §3; the copies are listed in § *References*). The pool holds
+   four packets. A packet carries each `MeshRenderer`'s world transform, mesh and slot materials,
+   and the main active camera. Tests: simulation never waits with four packets; an edit in the
+   Stopped editor produces a packet. How render matches an instance across two packets is this
+   card's open question.
+6. **T · The camera component** · P1 · 🤖 Claude candidate · 2-3h · done: `Camera` in `core`
+   with the fields in § *Decided*, registered in both apps, shown by the inspector, and one
+   `core` function that returns the main active camera. Tests: the first `main` camera in
+   hierarchy order wins; a scene with none returns nothing, and the caller warns once. It stops
+   at that function, so it stays off card 5's files.
+7. **T · Ordered uploads and render's fence** · P1 · 🟢 Deep · 4-6h · done: mesh, texture and
+   material uploads cross to render in order and are never dropped; render reports each upload
+   done, and simulation defers a free until then (ADR-028 §4). A reload keeps its handle and
+   sends a new upload, which replaces S10-T21's immediate destroy. Render drops a GPU copy by
+   the rule in § *Decided*.
+8. **T · Shared geometry buffers** · P1 · 🟢 Deep · 4-6h · done: § *Geometry buffers* as
+   written: the three buffers with immutable storage, the free-list allocator, a second block
+   when one fills, and defaults for a stream a mesh lacks. Tests, headless on the allocator: a
+   freed range is reused, a mesh never moves, and a full block adds another.
+9. **T · The material buffer and bindless textures** · P1 · 🟢 Deep · 4-6h · done: textures
+   upload in their file's format with their mips and sampler, and each material writes its
+   96-byte record with bindless handles (§ *The material buffer*). Record 0 is written at
+   startup. This card decides which way a texture is sampled (§ *Open questions*).
+10. **T · The first frame** · P1 · 🟢 Deep · 4-6h · done: one forward pass draws the packet with
+    CPU-written multi-draws, one per draw bucket, and shades base color times its factor, with
+    cut-outs discarded. The runtime shows Sponza through the scene's main camera. Miguel's
+    windowed check and a capture are the proof. The mirrored-instance question is this card's;
+    anti-aliasing is not in it.
+
+##### Story: the scene view draws (drops first)
+
+Cut against [[Renderer - Design]] § *Decided*, rows *The scene view is a render target*, *Views*
+and *How the scene view's camera is driven*.
+
+11. **T · The scene view is a render target** · P2 · 🟠 Moderate · 2-3h · done: the editor draws
+    the frame into a texture that the scene view shows, sized to the panel, and the game view
+    does the same through the main active camera. A hidden view is not drawn. Follows 10.
+12. **T · The scene view's fly camera** · P2 · 🤖 Claude candidate · 2-3h · done: the camera's
+    state and its update from mouse and key deltas live in `edit/` with tests; `SceneViewPanel`
+    feeds it from ImGui while the right mouse button is held, and it reaches render on ADR-019
+    §4's latest-value path. The PR ends with "needs Miguel's visual check". Follows 11.
+
+##### Design, Process and the lane
+
+13. **D · Design the asset browser** · P2 · 🟠 Moderate · 2-3h · done:
+    [[Content Pipeline - Design]] decides what the list-only browser shows and how it imports,
+    re-imports and places, and whether deleting an asset is weighed now (its [[Backlog]] entry
+    fires with this card). It cuts the build cards for Sprint 12. Drops after cards 11 and 12.
+14. **P · The inputs check in `/sprint-prep`** · P2 · 🤖 Auto · done: step 3 of
+    `.claude/commands/sprint-prep.md` and [[Planning Workflow - Artifact Gate]] § *Where plans
+    come from* gain one check: list everything the goal's showcase sentence consumes, and mark
+    each built, carded, decided or undecided, before the goal is proposed. The table above is
+    its first run. Driver: Sprint 10 found the resources missing only after planning.
+15. **T · The runtime logs entities at Debug** · P3 · 🤖 Auto · done: `RuntimeApp::logSceneTree`
+    writes its per-entity lines with `TE_LOGGER_DEBUG` and keeps one `INFO` summary line. After
+    card 6, which also edits `RuntimeApp.cpp`. *From a fired Backlog entry.*
+16. **T · A split mesh's children are named after their material** · P3 · 🤖 Auto · done: a
+    placed model's children of one split mesh take their material's name, with `_1`, `_2` on a
+    repeat, and a test places a two-primitive fixture. After card 2. *From a fired Backlog entry.*
+17. **P · A README at the repo root** · P3 · 🤖 Auto · done: what the engine is, how to clone
+    the vault, and the three preset commands. *From a fired Backlog entry.*
 
 ## 🤖 Lanes
 
@@ -517,8 +667,8 @@ follows S10-T22.
 - [x] The hierarchy and inspector edit several entities at once, with tests for the set, the
   topmost rule and the per-entity records (S10-T1, S10-T2). Nov 1, `9afda8d`, #178; Nov 3, `a6c832f`,
   #182.
-- [ ] E1's internal demo ran its five scenarios, and E1 is marked closed on the [[Roadmap]]
-  (S10-T7).
+- [x] E1's internal demo ran its five scenarios, and E1 is marked closed on the [[Roadmap]]
+  (S10-T7). Nov 14, no PR: Miguel's statement that he ran them during development.
 - [x] The frame and device seam ADR and the materials ADR are Accepted and indexed by
   `Renderer - Design` (S10-D4, S10-D7). ADR-028 on Nov 6, vault `22f1514` (S10-D4); ADR-029 on
   Nov 10, vault `9a69f70` (S10-D7).

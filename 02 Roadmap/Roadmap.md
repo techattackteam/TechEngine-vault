@@ -6,7 +6,7 @@ system must support is in the [[Capability Map]], derived from the [[Reference G
 
 **Where we are:** the foundation chain (M0 to M6) is done; M6 closed on Oct 31 with Miguel's
 windowed run ([[2026-10 Sprint 09 - Close M6]]). Phase 1 has opened with E1: Sprint 09 built its
-panels, and [[2026-10 Sprint 10 - Close E1]] closes it. Its goals run from E1 to E13, with E2 split
+panels, and [[2026-10 Sprint 10 - Close E1]] closed it on Nov 14 (S10-T7). E2 is next. Its goals run from E1 to E13, with E2 split
 in two, about a month each, each ending in a demo and most in a showcase video ([[Channel]],
 [[Principles]] P4). Phase 2 is the game itself, TechAttack.
 
@@ -20,8 +20,8 @@ must exist before the goal's first ADR.
 
 | Goal | The showcase shows | Needs | Alongside | Map |
 |---|---|---|---|---|
-| **E1 · Editor and export** 🔨 now | (internal demo, no video, 2026-10-25) Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
-| **E2 · First renderer** | Imported glTF reference models with physically based materials, lit by a sun and a sky image, with a finished image, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** · T4 import | T3 viewport tools | Renderer, content pipeline |
+| **E1 · Editor and export** ✅ Nov 14 | (internal demo, no video, 2026-10-25) Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
+| **E2 · First renderer** 🔨 next | Imported glTF reference models with physically based materials, lit by a sun and a sky image, with a finished image, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** · T4 import | T3 viewport tools | Renderer, content pipeline |
 | **E2b · Many lights, many objects** | Hundreds of local lights at night, and a stress scene of hundreds of thousands of copies of the reference models. Split from E2 on 2026-10-31 | R1's local lights and instanced drawing | The million cubes, a Should ([[Renderer - Brief]]) | Renderer |
 | **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | T8 editor workflow | Renderer |
 | **E4 · Fog and god rays** | Volumetric fog and light shafts | R4 | The terrain brief and ADR | Renderer |

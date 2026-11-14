@@ -10,9 +10,9 @@
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
 | **Sprint** | [[2026-10 Sprint 10 - Close E1]] *(Oct 31 - Nov 13)*, planned Oct 31. Sprint 09 closed all 30 cards a week early, to line up with Miguel's day-job sprints ([[2026-10-31 Sprint 09 Retrospective]]). |
 | **Sprint goal** | Close E1: the editor exports from its File menu into a folder that holds the runtime beside its packs, the runtime started from there logs the edited scene, and the hierarchy and inspector edit several entities at once. Alongside, R1's two ADRs and the design of TEMesh, TEModel and the glTF loader, so that E2 can build from Sprint 11. |
-| **Current focus** | Story H (#203) and Story F (#204) both closed on Nov 14, so R1 has content to draw, a reparent under a sheared parent keeps its world position, and a missing startup scene no longer leaves the editor unable to save. Sprint 10 ended Fri Nov 13 with E1's internal demo (S10-T7), S10-T9, S10-D5 and `/sprint-prep` (S10-D6) still open, so the Nov 14-15 boundary's `/sprint-plan` needs S10-D6's draft first. Hubs: [[Editor - Design]], [[Renderer - Design]], [[Content Pipeline - Design]]. |
+| **Current focus** | E1 closed on Nov 14 (S10-T7), so Sprint 10 ends with only S10-T9 and S10-D5 open, both moving to Sprint 11. S10-D6 closed the same day with Sprint 11's cut around E2's first frame, so the Nov 14-15 boundary's `/sprint-plan` fits it next. Hubs: [[Renderer - Design]], [[Content Pipeline - Design]], [[Editor - Design]]. |
 | **Top blocker** | None on this sprint's cards. For Sprint 11: CI's software GL cannot run R1's GL floor ([[Backlog]] § *client*), and the asset edit path that a material inspector needs is not designed ([[Backlog]] § *editor & tooling*). The routine runs the Oct 23 prompt at 09:07 and 14:07 Lisbon on weekdays ([[Autonomous Lane - Routine Prompt]]). |
-| **Next milestone** | **E1 · Editor and export** closes in Sprint 10 with an internal demo (S10-T7), not a video ([[Principles]] P4). Then **E2 · First renderer**; R1's two ADRs are Accepted ([[Roadmap]]). |
+| **Next milestone** | **E2 · First renderer**, over about three sprints; R1's two ADRs are Accepted and its content files are built ([[Roadmap]]). E1 closed on Nov 14 with an internal demo, not a video ([[Principles]] P4). |
 | **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one goal a month (E1 to E13, with E2 split in two, [[Capability Map]]), most goals ending in a showcase; the engine's first release ships when its contents are done, without waiting for TechAttack. Phase 2 builds TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23, revised at `/product-review` on 2026-10-31. |
 | **Reconciled against** | engine `e59d77c` (2026-11-06) |
 
@@ -77,9 +77,8 @@ first, then plan*). `/sprint-prep` runs as a standing Design card in **week 2, T
 Friday**, and drafts the next sprint; a 🤖 Auto prep brief feeds it from the Monday. The
 boundary's `/sprint-plan` then only runs the retro and fits the draft.
 
-→ **Next ceremony:** S10-D6 runs `/sprint-prep` on **Fri Nov 13** (its window is Tue Nov 10 to
-Fri Nov 13), then `/sprint-plan` for the Sprint 10 boundary runs on **Nov 14-15**; if that
-weekend is lost, it falls back to Mon Nov 16. *(Sprint 10's weekly review ran on Fri Nov 6,
+→ **Next ceremony:** `/sprint-plan` for the Sprint 10 boundary runs on **Nov 14-15**, from
+S10-D6's cut (closed Nov 14); if that weekend is lost, it falls back to Mon Nov 16. *(Sprint 10's weekly review ran on Fri Nov 6,
 because Nov 7-8 is a race weekend.)*
 *(Sprint 09's boundary ran Sat Oct 31, a week ahead of its published Nov 7-8, to line up with
 Miguel's day-job sprints. See [[2026-10-31 Sprint 09 Retrospective]].)*
@@ -149,7 +148,7 @@ Build order from here: the [[Roadmap]] ladder: **chain M0-M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005-008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop, [[2026-08 Sprint 02 - Base Foundation]] | ✅ goal met (Jul 30); sprint closed Aug 2 |
-| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the Phase 1 goals, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9) · ✅ **M6 done** (Oct 31); 🔨 **E1**: panels built in Sprint 09, Sprint 10 closes it |
+| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the Phase 1 goals, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9) · ✅ **M6 done** (Oct 31) · ✅ **E1 done** (Nov 14); 🔨 **E2** next |
 
 _Tasks → [[Sprint Board]]._
 

@@ -23,7 +23,6 @@ kanban-plugin: board
 
 ## Story D: E1's loose ends
 
-- [ ] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h: the Editor brief's five scenarios run windowed, the exported runtime's log names the edited entities, and E1 is closed on the [[Roadmap]]. Follows S10-T2 and S10-T3.
 - [ ] **S10-T9** · The base sweep's leftover · P3 · 🟡 Light · 1-2h: the version-anchor stubs go. The shared log-capture guard moved to S10-T10. Follows S10-T10.
 
 
@@ -46,7 +45,6 @@ kanban-plugin: board
 
 ## Story I: Prepare Sprint 11
 
-- [ ] **S10-D6** · Prepare Sprint 11 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 11's goal and draft cut into the Sprint 10 note. Tue Nov 10 to Fri Nov 13, after S10-P2.
 
 
 ## 🔨 In Progress
@@ -59,6 +57,14 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 10
 
+- [x] **S10-D6** · Prepare Sprint 11 · P1 · 🟠 Moderate · 2-3h: vault, **Nov 14**. *Sprint 11's cut* in the Sprint 10 note proposes E2's first frame (Sponza through a camera in the runtime, base color only) as the first of about three sprints for E2, with 17 drafts and CI's GL floor as the day-1 Design card.
+	- **Ran a day after its window**, on the boundary Saturday, so the two halves of planning met on one weekend.
+	- **The prep brief was five days stale** (S10-P2, Nov 9): it still listed S10-D7 and most of T4 as open. The cut was checked against the board and the notes instead.
+	- **An inputs check found what the rung view hid:** CI cannot run GL 4.6 with bindless, no camera or light component exists, and the asset browser and asset edit path are undesigned. The camera, the main active camera and the scene view's fly camera were decided in session ([[Renderer - Design]] § *Decided*). Card 14 adds the check to `/sprint-prep`, after Sprint 10 found its resources missing only after planning (Miguel's retro note).
+	- **Miguel's calls:** S10-T7 closed on his statement, S10-T9 goes to the lane as 🤖 Auto, and S10-D5 goes as 🤖 Claude by his exception to the gate, though a `/triage` is a product decision.
+- [x] **S10-T7** · E1's internal demo · P1 · 🟡 Light · 1-2h: no PR, **Nov 14**. E1 is closed on the [[Roadmap]]. Miguel's statement at the close: he ran [[Editor - Brief]]'s five scenarios windowed during development, across Sprint 10's cards. Completes E1.
+	- **The demo never ran as one recorded run**, so "the result is recorded" is met only by this entry. The windowed checks the board records are Export logging the scene (#179), multi-select (#182) and the console (#189). His statement covers the ones the board lists as unverified: Run (#181), the Local and World toggle (#188) and the `AssetRef` pick (#190).
+	- **Retro:** a demo card whose evidence is "Miguel ran it" earns no slot of its own when the build cards' windowed checks already cover it. The next goal's demo can be a recorded run inside its last build card instead.
 - [x] **S10-B4** · A startup scene that no file holds leaves the editor stuck · P3 · 🟠 Moderate · 2-3h: #204 `6836c87`, **Nov 14**. When `project.toml` names a scene the asset index does not know, the startup load logs it and adopts or creates `Startup.tescene`; a named file that does not load still opens empty and is never overwritten. With S10-B3 it completes Story F.
 	- **"No asset source holds it" was decided before the load,** as the index not knowing the id (`LooseSource::find` gives `Unknown`), so a scene indexed on the server side counts as held and is not replaced.
 	- **Logged, not fixed, both now reached from more manifests:** an adopted `Startup.tescene` is not loaded, so that launch still cannot save; and an unindexed `Startup.tescene` on disk now stops the editor through `requireNewAssetPath`'s check. Both are in the [[Backlog]] § *editor & tooling*.
