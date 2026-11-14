@@ -56,7 +56,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h: a spike shows whether zink over lavapipe gives CI GL 4.6 with bindless on each OS, and ADR-028's amendment records the answer. Unblocks S11-D5.
 
 
 ## 👀 Review / Demo
@@ -65,6 +64,10 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h: vault `8446176`, **Nov 14**. No CI runner's default software GL meets ADR-028 §2, and only zink over lavapipe on Linux does, through an EGL context; recorded as a correction in [[ADR-028 - Render device seam and frame packets]] § *Consequences*. Unblocks S11-D5.
+	- **Split at its `/card-start`:** how CI runs the window tests became the new S11-D5, which S11-T2 now follows, so this card kept only the spike and the amendment.
+	- **The card's premise was stale.** `ubuntu-latest` is now ubuntu-26.04 with Mesa 26.0.8, not S10-P2's Ubuntu 24.04 and Mesa 25.2.8, and Windows' llvmpipe already gives 4.6; bindless is what every software path lacks. *Retro:* a measurement copied into a card goes stale when the runner image moves.
+	- **Left open by Miguel's call, for S11-D5:** Windows' zink, which needs a Vulkan loader, and TSan's races from Mesa's threads, which he chose not to suppress. The spike's workflow and probe stay on the unmerged `S11-D1/ci-gl-floor` branch, after five runs and about 15 runner minutes.
 
 
 

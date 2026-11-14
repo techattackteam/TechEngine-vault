@@ -33,7 +33,7 @@ Sprint 12 and after must decide: the sun, material edits, the asset browser, sky
 
 ### Story A: Day 1 (Miguel)
 
-- [ ] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h ·
   done: a spike branch shows whether zink over lavapipe gives CI a GL 4.6 core context with
   `ARB_bindless_texture`, on the Linux legs (TSan included) and on Windows' Mesa. ADR-028 gets a
   dated amendment to § *Consequences* that records the answer for each OS. Known so far, from
@@ -235,7 +235,8 @@ and *How the scene view's camera is driven*.
 - [ ] The runtime shows Sponza, textured with base color, through the scene's main camera, on the
   device, with Miguel's windowed check and a capture (S11-T9).
 - [ ] ADR-028's amendment records whether zink gives CI the GL floor (S11-D1), and CI runs each
-  test tier where ADR-008's amendment says (S11-D5).
+  test tier where ADR-008's amendment says (S11-D5). S11-D1's half is done: vault `8446176`,
+  Nov 14.
 - [ ] Sponza was re-imported with its images through *Re-import...*, and its ids were kept
   (S11-T1).
 - [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are

@@ -204,8 +204,12 @@ indexes through `gl_DrawID`. It holds only what the shader reads:
 Mechanism sections land as the build cards are cut. Known build work:
 
 - **glad2** is regenerated with `--api gl:core=4.6` and `ARB_bindless_texture`
-  (`cmake/deps.cmake:167`), and the startup check (`RenderThread.cpp:93`) names both
-  requirements when one fails.
+  (`cmake/deps.cmake:244-246`), the window requests a 4.6 core context
+  (`engine/platform/src/window/Window.cpp:58-59`, Miguel, Nov 14), and the startup check
+  (`RenderThread.cpp:93`) names both requirements when one fails.
+- **CI's software GL cannot meet the floor**, and only zink over lavapipe on Linux does,
+  through an EGL context (ADR-028 § *Consequences*, S11-D1). Where the window tests run, and
+  whether the window uses EGL always on Linux or only on CI, is S11-D5's.
 - **The packet pool** needs four packets for simulation never to wait: one being filled, one
   in the slot, two in render's history.
 - **GPU captures** go through Nsight, since RenderDoc cannot capture bindless GL (Miguel, v1).
