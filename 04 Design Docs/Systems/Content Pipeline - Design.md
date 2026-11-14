@@ -159,8 +159,9 @@ calls came from the card, not the design above.
   record whose id is taken.
 - **Refusals** are `ProjectError` codes: `SourceUnreadable`, `SourceHasNoMeshes` (a model with no
   triangle mesh places nothing visible), `ImportFolderExists`, and since S10-T19
-  `SourceCompressed` and `InvalidImportScale`. A failed import leaves no folder behind. The
-  codes added since by S10-T21, S10-T24 and S10-T25 (in review) are named where they are used:
+  `SourceCompressed` and `InvalidImportScale`. A failed import leaves no folder behind. Of two
+  imports of one source at once, only one creates the folder (`FileAccess::createDirectory`); the
+  other gets `ImportFolderExists` and removes nothing. The codes added since by S10-T21, S10-T24 and S10-T25 (in review) are named where they are used:
   § *Re-import as built*, § *Texture inputs as built* and § *The sky image as built*.
 - **Every triangle mesh is written**, even one that no node uses. Points and lines are skipped.
 - **Mesh file names** keep ASCII letters, digits, space, `.`, `_` and `-`. A clash, compared
@@ -508,7 +509,9 @@ took these calls, and they wait for Miguel's review:
 - **Only a `.hdr` file is imported.** Any other extension is `UnsupportedImageType`. A source
   outside `assets/common`, `assets/client` or `assets/server` is `SourceNotInAssets`, because the
   record's side comes from that folder (`TextureImporter::sideOf`). An existing output is
-  `ImportOutputExists`, and a file stb_image cannot read is `ImageUnreadable`.
+  `ImportOutputExists`, and a file stb_image cannot read is `ImageUnreadable`. The output is
+  written with `FileAccess::createFile`, so of two imports at once one gets `ImportOutputExists`
+  and registers no record.
 - **The sampler is repeat in U, clamp in V and linear** (`SKY_SAMPLER`), because a lat-long sky
   wraps around in longitude and ends at the poles.
 - **The image is decoded as float and packed per channel.** Alpha is dropped. A negative or NaN
@@ -560,9 +563,13 @@ review:
 - **`ModelImporter::reimportFile` reads the root asset's settings** and ignores the request's.
   `listImportedFiles` in `ReimportMatcher.hpp` reads only each file's header, id and import block,
   and skips with a log line any file that is not an imported one.
-- **The refusals are three `ProjectError` codes.** `ReimportTargetMissing` is a folder that does
+- **The refusals are four `ProjectError` codes.** `ReimportTargetMissing` is a folder that does
   not exist, `ReimportRootMissing` is a folder with neither root asset, and `EditorNotStopped`
   stops the whole re-import. A stored scale that is not valid is still `InvalidImportScale`.
+- **A second re-import of a source is refused while one runs**, as `ReimportInFlight`, because
+  the two would give one new output two ids. `EditorApp::m_reimportsInFlight` lives on the
+  simulation thread, and the job's last command takes the source out again:
+  `ReloadImportedAssetsCommand` on success, `FinishReimportCommand` on failure.
 - **The result splits in two.** `ModelImportResult::records` holds only files with a new id,
   and `rewritten` holds the ids that were written again. A matched material is in neither.
 - **A new output avoids the names already in the folder** (`ExistingFolder::taken*Names`), so it
