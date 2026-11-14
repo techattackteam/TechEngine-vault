@@ -60,6 +60,9 @@ the render thread that draws packets through a small device.
 | Units | Photometric light values, and a fixed exposure on the camera until R2. | ADR-029 §6 |
 | What the standard material samples | Base color, a packed occlusion, roughness and metallic map, a normal and emissive. Wrap and filter live on the texture asset. | ADR-029 §7 |
 | Editing a material | Each edit is an undo step, and the file is written on Save. The asset edit path itself is not designed. | Miguel, 2026-11-09; [[Backlog]] § *editor & tooling* |
+| The material file | A `.tematerial` is `MATERIAL_KIND` version 1: the id, the import block, the surface, the shading model, the alpha state, then each factor beside its texture, in glTF's terms. | S10-T23 (#203), 2026-11-13; § *The material file* |
+| The material buffer | One 96-byte `std430` record per material: the factors, the cutoff, the shading model and four bindless handles. Alpha mode and sidedness pick the bucket, so they stay out of the record. | S10-T23 (#203), 2026-11-13; § *The material buffer* |
+| A slot with a null material | It draws the engine's default material, record 0: opaque, lit, single-sided, white, roughness 1, metallic 0 and no textures. A material whose load failed draws it too. | S10-T23 (#203), 2026-11-13; § *The material buffer* |
 
 ## Design
 
@@ -130,13 +133,68 @@ flowchart LR
   grouped by program, then by bucket.
 - **The material buffer** holds one record per material, with the same layout for every
   material of one surface: the values, then a bindless handle per texture. An edit rewrites one
-  record through ADR-028 §4's ordered channel. The exact layout is open (§ *Open questions*).
+  record through ADR-028 §4's ordered channel. The standard surface's record is in § *The
+  material buffer*.
 - **An empty texture input** uses its factor alone.
 - **Adding a layer later** (clear coat, sheen): new inputs that default to zero, new record
   fields, one lobe, and a version step of the material file.
 - **A variant per layer set** stays possible behind the same files. If the layer tests measure
   too slow, the engine can compile a program for materials that leave a layer at zero. Unity,
   Unreal and Godot work this way from the start.
+
+### The material file
+
+Built by S10-T23 (#203) in `engine/core/src/material/Material.cpp`. A `.tematerial` is `MATERIAL_KIND`
+at version 1, a binary blob like the texture. In order:
+
+- **Its id, straight after the header**, for the asset index's 16-byte read.
+- **The import block**, with the default settings.
+- **The surface**, a `u8` that is always `Standard` in E2. A developer's surface is a new value.
+- **The shading model** (`u8`: lit or unlit), **the alpha mode** (`u8`: opaque, cut-out or
+  blended), **the cutoff** (`f32`, 0.5 by default) and **the double-sided flag** (`u8`).
+- **Base color:** a `float4` factor, then its texture id.
+- **Occlusion, roughness and metallic:** three `f32` factors (occlusion strength, roughness,
+  metallic), then the packed texture's id, with occlusion in red, roughness in green and metallic
+  in blue.
+- **Normal:** an `f32` scale, then its texture id.
+- **Emissive:** a `float3` factor, then its texture id.
+
+A texture id of 0 is an empty input. The factors and their defaults are glTF's, so S10-T24 copies
+a source material field by field: white base color, roughness and metallic 1, occlusion strength
+and normal scale 1, emissive 0.
+
+- **Read refuses** an unknown surface, shading model or alpha mode, a double-sided byte other
+  than 0 or 1, and bytes after the emissive texture, each as `Malformed`. The factors are not
+  range-checked.
+- **The loader lists each non-null texture** in input order, once per input that names it, as the
+  mesh's loader does with its default materials.
+- **A layer later** (clear coat, sheen) appends its factors and textures and steps the version.
+
+### The material buffer
+
+The standard surface's record, one per material, in a `std430` storage buffer that each draw
+indexes through `gl_DrawID`. It holds only what the shader reads:
+
+| Offset | Field | Type |
+|---|---|---|
+| 0 | Base color factor | `vec4` |
+| 16 | Emissive factor | `vec3` |
+| 28 | Alpha cutoff | `float` |
+| 32 | Occlusion strength, roughness, metallic, normal scale | 4 × `float` |
+| 48 | Base color, packed ORM, normal and emissive handles | 4 × `uvec2` |
+| 80 | Shading model, 0 lit or 1 unlit | `uint` |
+| 84 | Padding to the record's 16-byte alignment | 3 × `uint` |
+
+- **Handles are `uvec2`**, turned into a `sampler2D` in the shader, so the shader needs no 64-bit
+  integer extension. A zero handle is an empty input, and the shader uses the factor alone.
+- **Not in the record:** the alpha mode and the double-sided flag pick the draw bucket (ADR-029
+  §4), and the surface picks the program.
+- **The shading model is a value**, so an unlit material shares its bucket's multi-draw and the
+  branch is uniform across each draw.
+- **Record 0 is the engine's default material**, written by render at startup and never freed.
+  A slot whose material is null or failed to load draws with it. It is visible and neutral, so a
+  mesh imported before S10-T24 still shows; a missing material does not hide a mesh, and nothing
+  flags it as an error.
 
 ### Build notes
 
@@ -170,17 +228,18 @@ Mechanism sections land as the build cards are cut. Known build work:
   stay open in [[Editor - Design]] § *Open questions*.
 - **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.
   Owner: R1's first frame card.
-- **The material buffer's exact layout,** and the material file's. Owner: S10-T23.
 - **The lit model's terms.** [[Renderer - Materials Paper Report]] § *What S10-D7 still has to
   decide* lists them, and ADR-029 leaves them here because they change no file. The leans, none
   of them decided: Lambert diffuse, the height-correlated Smith visibility term, energy
   compensation from the start because it shares the split sum's table, and a fixed 4%
   reflectance as glTF has. Owner: R1's lit pass card.
+- **Which way a texture is sampled.** Import stores texture rows top row first with no flip,
+  and stores UV0 as assimp gives it, so the shader or the upload must sample at `(u, 1 - v)` or
+  flip the rows. The sky image follows the same rule ([[Content Pipeline - Design]] § *Texture
+  rows and V*). Owner: R1's first frame card.
 - **How the sky image becomes lighting:** the filtered levels for rough reflections and the
   diffuse light, built at load or at import. The file is one 2D `RGB9E5` image with ordinary mips
   ([[Content Pipeline - Design]] § *The sky image*). Owner: R1's sky card.
-- **What a slot with a null material draws.** Import writes null defaults until the material
-  file exists ([[Content Pipeline - Design]] § *The mesh file*). Owner: S10-T23.
 - **How a developer's surface declares its values,** and how a Script sets one on a single
   entity. Owner: the surface shader card, alongside E11.
 - **Whether developers may write lobes.** The seam is internal. Owner: a `/triage`.

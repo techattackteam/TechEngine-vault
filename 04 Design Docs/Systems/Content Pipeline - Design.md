@@ -9,7 +9,7 @@ import, placement)
 **Status:** the model is designed (2026-11-06, S10-D9) against engine `a67c4d4`. TEMesh v2,
 materials per slot, the merged mesh and re-import are designed (2026-11-09, S10-D10) against
 `ac594e4`, from [[Content Pipeline - Mesh Import Report]]. Textures are designed (2026-11-10,
-S10-D11) against `ccece28`; no texture code exists. assimp is in
+S10-D11) against `ccece28`. assimp is in
 the editor's build with only its glTF, FBX and OBJ importers (S10-T13, `cmake/deps.cmake`). The
 model file and the import block are built, with write and read (S10-T14,
 `engine/core/include/TechEngine/core/model/Model.hpp` and
@@ -17,7 +17,30 @@ model file and the import block are built, with write and read (S10-T14,
 `apps/editor/src/assets/ModelImporter.hpp`). The placement is built (S10-T16,
 `apps/editor/src/edit/PlaceModelCommand.hpp`). TEMesh v2's file is built, with write and read
 (S10-T17, `engine/core/include/TechEngine/core/mesh/Mesh.hpp`). Import writes the vertex streams
-(S10-T19, `apps/editor/src/assets/MeshImporter.hpp`). Re-import is not built.
+(S10-T19, `apps/editor/src/assets/MeshImporter.hpp`).
+
+Six more cards are built, merged together in #203 (`25c93a4`, 2026-11-14). CI passed every leg,
+but no menu entry has been tried in a window and no real asset has been imported through them:
+
+- **S10-T20, the merged mesh:** `apps/editor/src/assets/ModelImporter.hpp`, `MeshImporter.hpp`
+  and `apps/editor/src/edit/PlaceModelCommand.hpp`.
+- **S10-T21, reload and re-import:** `ResourceCache::reload`
+  (`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`),
+  `apps/editor/src/assets/ReimportMatcher.hpp`, which also reads the old outputs, and
+  `apps/editor/src/edit/ReimportCommand.hpp`.
+- **S10-T22, the texture file:** `engine/core/include/TechEngine/core/texture/Texture.hpp`.
+- **S10-T23, the material file:** `engine/core/include/TechEngine/core/material/Material.hpp`,
+  written up in [[Renderer - Design]] § *The material file*.
+- **S10-T24, materials and textures at import:** `apps/editor/src/assets/MaterialImporter.hpp`,
+  `TextureImporter.hpp` (encoding and the mip chain) and `ImageDecoder.hpp` (DDS decoding).
+- **S10-T25, the sky image:** `apps/editor/src/assets/TextureImporter.hpp` (`importSky`,
+  `reimportSky` and the `RGB9E5` packing), `ImageDecoder.hpp` and
+  `apps/editor/src/edit/ImportSkyCommand.hpp`.
+
+The calls these cards took that no artifact had made are recorded in the *as built* subsections
+below. The implementation took them, and #203 merged them with no review conversation. Miguel
+accepted them as merged on 2026-11-14, with no reversal.
+
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
 [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9 (amended 2026-11-09) ·
 [[ADR-026 - Reference fields and scene-held acquires]] §2 §3 ·
@@ -28,7 +51,7 @@ model file and the import block are built, with write and read (S10-T14,
 ## Purpose
 
 Import reads a source file once, in the editor, and writes the engine's own files: a model,
-its meshes, and later its materials and textures. Those files are already in runtime form, so
+its meshes, its materials and its textures. Those files are already in runtime form, so
 the export packs them as they are (ADR-025 §6) and the runtime never links assimp. A model
 placed in a scene is a copy of the model's entities, with no link back to the model file.
 
@@ -50,10 +73,10 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | One bad mesh refuses the whole model | A mesh that is not in the index, is not a mesh, is a server asset or fails to load leaves the scene with no new entity. A mesh that loaded before the refusal stays a dependency of the scene until the scene is released. | Miguel, 2026-11-10 (S10-T16) |
 | The root is copied as stored | Placement adds no offset: the root keeps the transform the model stores for it. | Miguel, 2026-11-10 (S10-T16) |
 | Placement waits for its meshes | It runs the cache's loading phase on the simulation thread, as an asset field set does. Loading over several frames waits for a measured stall ([[Backlog]] § *editor & tooling*). | S10-T16 (#196), 2026-11-10 |
-| Materials are created once | A re-import never overwrites a material file that already exists. | [[Content Pipeline - Brief]] § *Decided* |
+| Materials are created once | A re-import never overwrites a material file that already exists. Built by `keepExistingIds` in `ModelImporter.cpp` (S10-T21, #203). | [[Content Pipeline - Brief]] § *Decided* |
 | Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/Sponza.gltf`, skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
-| Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path. Re-import goes through a *Re-import* menu entry with a typed path, like placement. | S10-D10, 2026-11-09 |
-| UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. S10-T24's texture rows and R1's shader must agree with this. | Miguel, 2026-11-11 (S10-T19); § *The import's streams* |
+| Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path (`STARTUP_IMPORT_MODE`). Re-import goes through a *Re-import* menu entry with a typed path and a merged-mesh checkbox, like placement. | S10-D10, 2026-11-09; S10-T21 (#203) |
+| UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. Texture rows are stored top row first with no flip, so the renderer must sample at `(u, 1 - v)`: see § *Texture rows and V*. | Miguel, 2026-11-11 (S10-T19); § *The import's streams*; S10-T24 (#203) |
 | The import's stream calls | Flat normals when a file has none, no tangents without UV0, the `extensionsUsed` scanner, the scale refusal and the two importer classes. | Miguel, 2026-11-11 (S10-T19, #201); § *The import's streams* |
 | TEMesh v2's own calls | Stream counts, unknown stream bits, empty slots and the loader's duplicates. | S10-T17 (#198), 2026-11-10; § *The mesh file* |
 | TEMesh v2 is one mesh with slots | One vertex set, one index list, and one slot per source material: a name, a range of whole triangles and a default material. A model's mesh has one slot; a merged mesh has one per source material. | S10-D10, 2026-11-09; § *The mesh file* |
@@ -63,12 +86,12 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Materials per slot | A `MeshRenderer` holds one material per mesh slot, no more and no fewer, each stored with its slot's name. Placement, and picking a mesh in the inspector, copy the mesh's defaults through the same rebuild that runs when a scene opens, over the entities they touch. After that the list is the entity's own. | Miguel, 2026-11-09; the rebuild 2026-11-10 (S10-T18); § *Materials per slot* |
 | Slots match by name | When a mesh's slots change, a renderer's list is rebuilt in the mesh's order by slot name: a kept name keeps its material, a new slot takes the default, and a slot that is gone is dropped and logged. | Miguel, 2026-11-09; § *Materials per slot* |
 | A slot list is walked, not bulk-copied | `Writer`, `Reader`, `ReferenceVisitor` and `FieldVisitor` visit a vector of references element by element. This refines [[Resources - Design]]'s Oct 24 row, whose point was that no live handle is bulk-copied. | Miguel, 2026-11-09 |
-| The material type before S10-T23 | `MeshRenderer.hpp` forward-declares `Material`, and S10-T23 defines it. Until then no loader exists, so the inspector's picker lists no materials, and the slot card's tests stop at the scene's reference walk instead of loading a material. | Miguel, 2026-11-10 (S10-T18) |
+| The material type | S10-T23 (#203) defines `Material`, and `MeshRenderer.hpp` still only forward-declares it, so a slot holds an `AssetRef<Material>` without including the type. Both apps register the material loader, and the slot card's tests now load a real material. | Miguel, 2026-11-10 (S10-T18); S10-T23 (#203) |
 | Slots under multi-select | The inspector shows slot rows only when every selected renderer has the same slot names in the same order. Otherwise it shows one read-only line saying that the materials differ. A row count that differs is flagged on the component's row, because each row's own mixed flag compares only the rows that both entities have. | Miguel, 2026-11-10 (S10-T18); § *Materials per slot* |
 | The engine merges, not assimp | A merged mesh comes from the model walk: each node's world transform is baked into its meshes, triangles are flipped where the determinant is negative, and meshes are joined by material. `aiProcess_PreTransformVertices` is not used. | S10-D10, 2026-11-09; § *The merged mesh* |
-| Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
+| Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. The sky and re-import add their own refusals (§ *The sky image as built*, § *Re-import as built*). | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
 | Re-import keeps every id | Outputs are matched to their old files by source key. Old files with no match are left in place and logged. | S10-D10, 2026-11-09; § *Re-import* |
-| Re-import reloads at once | Only while the editor is Stopped. | ADR-024 §9 (amended 2026-11-09); § *Re-import* |
+| Re-import reloads at once | Only while the editor is Stopped. Built as `ResourceCache::reload` and `ReloadImportedAssetsCommand` (S10-T21, #203). | ADR-024 §9 (amended 2026-11-09); § *Re-import* |
 | The texture file | A `.tetexture` holds one 2D image in its GPU format, with every mip, its wrap and its filter. No ADR: a wrong format costs a version bump and a re-import. | S10-D11, 2026-11-10; § *The texture file* |
 | A file per image, purpose and sampler | An image shared by many materials for one purpose is written once. Used for two purposes or with two samplers, it is written twice. | S10-D11, 2026-11-10; § *Texture import* |
 | A format per purpose | Base color and emissive are BC7 sRGB, the packed ORM is BC7 linear, a normal map is BC5, and the sky is uncompressed `RGB9E5`. | S10-D11, 2026-11-10; § *Texture import* |
@@ -135,7 +158,10 @@ calls came from the card, not the design above.
   record whose id is taken.
 - **Refusals** are `ProjectError` codes: `SourceUnreadable`, `SourceHasNoMeshes` (a model with no
   triangle mesh places nothing visible), `ImportFolderExists`, and since S10-T19
-  `SourceCompressed` and `InvalidImportScale`. A failed import leaves no folder behind.
+  `SourceCompressed` and `InvalidImportScale`. A failed import leaves no folder behind. Of two
+  imports of one source at once, only one creates the folder (`FileAccess::createDirectory`); the
+  other gets `ImportFolderExists` and removes nothing. The codes added since by S10-T21, S10-T24 and S10-T25 (#203) are named where they are used:
+  § *Re-import as built*, § *Texture inputs as built* and § *The sky image as built*.
 - **Every triangle mesh is written**, even one that no node uses. Points and lines are skipped.
 - **Mesh file names** keep ASCII letters, digits, space, `.`, `_` and `-`. A clash, compared
   without case because Windows treats `Part_A` and `part_a` as one file, gets `_1`, `_2`.
@@ -173,8 +199,8 @@ Built by S10-T19 (#201). Miguel took these calls at the card's start, on Nov 11:
 - **MikkTSpace runs after the bake**, then `meshopt_generateVertexRemapMulti` welds the corners
   again, merging two only when all four streams match bit for bit.
 - **The scale is refused** unless it is a finite number above zero, so the model's bake is always a
-  rotation and a positive uniform scale: no winding or `w` flips there. S10-T20's merged bake still
-  needs the determinant rule below.
+  rotation and a positive uniform scale: no winding or `w` flips there. The merged bake applies the
+  determinant rule below (§ *The merged mesh as built*).
 - **The extension check** is a small scanner, not a JSON parser, because the editor links none. It
   reads the `extensionsUsed` key, in a `.glb`'s JSON chunk too, and refuses `KHR_mesh_quantization`,
   `EXT_meshopt_compression` (what gltfpack writes) and `KHR_meshopt_compression`. It reads the whole
@@ -201,8 +227,9 @@ TEMesh v2 is `MESH_KIND` at version 2. The reader refuses version 1, so
   triangles. A slot with no source name is named `Slot <material index>`.
 
 The loader lists each non-null default material as a dependency, so a slot that no renderer
-entry covers still draws (§ *Materials per slot*). Until the material file exists (after S10-D7),
-import writes null defaults.
+entry covers still draws (§ *Materials per slot*). Since S10-T24 (#203) import writes each
+slot's default as the id of the material it wrote for that source material. The id is null only
+where the mesh's material index names no source material.
 
 **Tangents and a baked transform.** For a baked matrix `M`, normals take the inverse transpose,
 tangents take `M`, and `w` is multiplied by the sign of `det(M)`, because a mirror flips the
@@ -218,7 +245,9 @@ Built by S10-T17 (#198), in `engine/core/src/mesh/Mesh.cpp`. These calls came fr
 - **An unknown stream bit is refused** as `Malformed`, because a reader cannot know its size.
 - **A slot with no indices is accepted.** The rule is only that the slots tile the indices in
   order, in whole triangles.
-- **A default material is a `ResourceId`** until the material type exists (S10-T23).
+- **A default material is a `ResourceId`**, and it stays one now that the material type exists
+  (S10-T23, #203). `MeshSlot` keeps the bare id, and the loader lists it as a dependency
+  (`engine/core/src/mesh/Mesh.cpp:183`).
 - **The loader lists a material once per slot** that names it, without removing duplicates. The
   cache counts references, so a duplicate costs one more count.
 - **The committed version 1 meshes were rewritten in place**, with their ids kept, because
@@ -234,7 +263,7 @@ Built by S10-T17 (#198), in `engine/core/src/mesh/Mesh.cpp`. These calls came fr
 - **Filled from the mesh.** Placement copies each mesh's default materials, so placement loads
   the meshes first. Picking another mesh in the inspector does the same.
 - **Rebuilt by name** when the editor opens a scene, once its meshes are ready, and over the open
-  scene after a re-import (S10-T21). The rebuild is not an undo step.
+  scene after a re-import (S10-T21, #203). The rebuild is not an undo step.
 - **A slot with no entry draws with the mesh's default.** That covers a scene nobody opened since
   a re-import and then exported, which still holds its old list.
 - **Editing a slot** in the inspector is an ordinary `AssetRef` edit (ADR-026 §4).
@@ -266,6 +295,29 @@ path never fixes winding under a negative scale ([[Content Pipeline - Mesh Impor
 - **Output:** `Sponza/Sponza.temesh` as the root asset, beside `Materials/`, with no `.temodel`.
   It is placed as one entity: `Name`, `Transform` and `MeshRenderer`.
 
+### The merged mesh as built
+
+Built by S10-T20 (#203). The implementation took these calls:
+
+- **The walk is its own function.** `ModelImporter::readMergedParts` visits the nodes in the same
+  order as `buildNodes`, so both modes see the meshes in one order. A mesh that no node uses is
+  left out, because it has no world matrix. A model import still writes it.
+- **The bake lives in `MeshImporter::read(source, world, out)`.** A negative determinant swaps
+  each triangle's second and third corner. Normals take the cofactor matrix
+  (`MeshImporter::normalMatrix`), which is also right for a matrix that flattens an axis, and
+  tangents take the matrix itself, with `w` multiplied by the determinant's sign.
+- **MikkTSpace runs once per part, before the join.** Two parts never share a vertex, so the
+  merge needs no second welding pass.
+- **A stream exists when any part has it** (`ModelImporter::joinParts`). A part without it takes
+  the default: normal `(0, 1, 0)`, UV0 `(0, 0)`, tangent `(1, 0, 0, 1)`.
+- **Parts are stable-sorted by material index** (`joinParts`), so the parts of one material
+  keep their walk order. A material that no part uses gets no slot and no material file.
+- **Two slots with one name get `_1`, `_2`** (`uniqueSlotName`), because a renderer's list is
+  rebuilt by slot name and a clash would hand both slots one material.
+- **Placing a mesh reuses placement.** `PlaceModelCommand::wrapMesh` turns a `.temesh` path into
+  a model of one root node named after the file, with the default transform, so *Place model*
+  takes either kind of path.
+
 ## The texture file
 
 A `.tetexture` is `TEXTURE_KIND`, a binary blob like the mesh. In order:
@@ -287,10 +339,44 @@ A `.tetexture` is `TEXTURE_KIND`, a binary blob like the mesh. In order:
 The purpose (base color, normal and so on) is stored only in the source key, because the format
 already says everything the renderer needs.
 
+### The texture file as built
+
+Built by S10-T22 (#203), in `engine/core/src/texture/Texture.cpp`. The implementation took these calls:
+
+- **The mip count is written as a field**, after the size and before the sampler, and read
+  refuses a count that is not `Texture::mipCount` for the size. So a file can never hold a
+  partial chain.
+- **Each mip's byte count must equal `Texture::mipByteSize`**, or read refuses the file as
+  `Malformed`. A count larger than the bytes left is `Truncated`. Bytes after the last mip are
+  `Malformed`.
+- **Read refuses** an unknown shape, format, wrap or filter value, and a width or height of 0,
+  each as `Malformed`.
+- **`mipByteSize` returns `UINT64_MAX` when the size overflows 64 bits**, which no stored count
+  can equal, so a huge size is refused without a special case.
+- **A texture has no dependencies.** Its loader clears the list, and both apps register it
+  (`apps/editor/src/EditorApp.cpp`, `apps/runtime/src/RuntimeApp.cpp`). The editor's asset index
+  learns the kind in `apps/editor/src/assets/AssetIndex.cpp`.
+
+## Texture rows and V
+
+The renderer depends on this, so it is written down once, here.
+
+- **Texture rows are stored top row first, with no vertical flip.** No decoder is asked to flip:
+  stb_image keeps the file's order, `ImageDecoder::decodeDds` keeps the DDS order, and the mip
+  builder and the encoders keep the row order they are given. A sky image is stored the same way.
+- **UV0 is stored as assimp gives it** (§ *The import's streams*), and assimp flips glTF's V.
+  So V is 0 at the bottom of the picture for every format, while row 0 of the texture is the top.
+- **Import flips neither.** The R1 shader or upload must sample at `(u, 1 - v)`, or flip the rows
+  as it uploads. A texture that draws upside down means this was missed.
+- **The sky has the same rule.** Its first row is the top of the picture.
+
+[[Renderer - Design]] § *Open questions* carries the matching entry, owned by R1.
+
 ## Texture import
 
 Import writes a model's textures into `Textures/` while it walks the materials, because a
-texture's format follows the input that samples it.
+texture's format follows the input that samples it. Rows are stored top row first, so read
+§ *Texture rows and V* before sampling one.
 
 | Input | Format | Mips |
 |---|---|---|
@@ -303,7 +389,7 @@ texture's format follows the input that samples it.
   texture is made from it. When they differ, import builds one image: red from occlusion, green
   and blue from metallic-roughness, after scaling the smaller image up to the larger one's size.
   A missing image's channels are 1, so the material's factor applies alone.
-- **Decoding.** stb_image reads PNG, JPEG, TGA and HDR from a file or from memory. A DDS is read
+- **Decoding.** stb_image reads PNG, JPEG, TGA and HDR, from memory only. A DDS is read
   by import's own small reader, and its blocks are decoded with bcdec. Every image is then encoded
   again, so a DDS is compressed twice and loses a little quality.
 - **Embedded images.** assimp keeps them in `aiScene::mTextures`, and `GetEmbeddedTexture` finds
@@ -321,7 +407,81 @@ texture's format follows the input that samples it.
 **Known costs.** Cut-outs thin out in distant mips (Sponza's plants), because keeping the alpha
 coverage needs the material's cutoff; that waits for a measured need. BC7 encoding at good
 quality is slow, and no speed is measured ([[Content Pipeline - Mesh Import Report]] §6), so the
-first Bistro import gives the brief's import time its number.
+first Bistro import gives the brief's import time its number. S10-T24 (#203) encodes at
+bc7enc's lowest search level, which trades quality for speed (§ *Encoding as built*).
+
+### Materials and textures as built
+
+Built by S10-T24 (#203). The implementation took these calls:
+
+- **The material file** itself is [[Renderer - Design]] § *The material file* (S10-T23, in
+  review). The asset index and the runtime learned the kind in `AssetIndex.cpp` and
+  `RuntimeApp.cpp`, and the editor registers the loader in `EditorApp.cpp`.
+- **Planning is separate from writing.** `MaterialImporter::plan` turns the scene's materials
+  into a `MaterialPlan` of material and texture outputs. `ModelImporter::assignOutputs` then
+  gives each a path and an id, a re-import swaps in the old ones (`keepExistingIds`), and
+  `MaterialImporter::write` writes every texture and then every material.
+- **Only a used material gets a file.** A material is planned when a written mesh, or a merged
+  part, names it. A model import still writes every triangle mesh.
+- **A texture that cannot be read is left out.** The import logs it, and the inputs that named
+  it stay empty, so the material is still written. A `Textures/` folder that this call made and
+  filled with nothing is removed again (`ModelImporter::writeMaterials`).
+- **The root asset is written last**, after its materials and meshes, so a folder that holds a
+  model or a merged mesh holds every file it names. A failed first import removes its folder.
+- **A file name is the image's stem and the purpose**, such as `wall_normal`. A material with no
+  name is `Material <index>` and an unnamed embedded image is `Texture <index>`, both made
+  unique without regard to case. This is the fix v1's pointer-address names were owed (§ *Porting
+  v1's import*): the key's name stays empty and its index is the material's index.
+- **Material values come from `MaterialImporter::readValues`.** A value the source lacks keeps the
+  file's default, except metallic, which is 0, because a source with no metallic factor is not
+  glTF. Base color falls back to the diffuse color and its opacity. The emissive factor is
+  multiplied by the emissive intensity. Cut-out and blended come from glTF's alpha mode only.
+- **The records come back in a fixed order.** A model import lists the model, the meshes, the
+  textures and the materials. A merged import lists the mesh first, then the textures and the
+  materials.
+
+### Texture inputs as built
+
+Also S10-T24 (#203), in `MaterialImporter.cpp`, `ImageDecoder.cpp` and `TextureImporter.cpp`:
+
+- **Base color falls back to the diffuse texture.** Occlusion is glTF's lightmap slot for a glTF
+  source and assimp's ambient-occlusion slot for any other, because another format's lightmap is
+  baked lighting.
+- **The ORM is packed only from glTF's shared image.** Separate grey metalness and roughness
+  images from another format are logged and not imported. When occlusion and metallic-roughness
+  use two samplers, the packed texture takes the metallic-roughness one and the import logs it.
+- **The sampler** takes its wraps from the source's mapping modes, with decal read as clamp. The
+  filter is nearest only when glTF's magnify filter says nearest. The minify filter is ignored.
+- **An image path** is resolved against the source's folder by `MaterialImporter::imagePath`,
+  with `.` and `..` followed and glTF's `%XX` escapes decoded. An absolute path, or one that
+  climbs above the project's mount, is refused, and the texture is left out.
+- **A DDS file** is decoded by `ImageDecoder::decodeDds`: BC1, BC2, BC3, BC5 and BC7 from either
+  header kind, and 32-bit RGBA or BGRA, the largest level of the first image only. A side above
+  16384 pixels is `ImageUnreadable`.
+  It converts no color, so an sRGB DDS format is read as stored, and a BC5 image has its blue
+  rebuilt as a unit normal's z. Another format is `UnsupportedDdsFormat`, and a damaged file is
+  `ImageUnreadable`.
+- **An embedded image with raw pixels** is logged as `UnsupportedImageType`, and the texture is
+  left out. A Radiance image used as a model texture is tone-mapped to 8 bits
+  by stb_image, which is no use as a sky.
+- **The mip builder** halves each side and averages 2×2 texels. An odd side loses its last row or
+  column, and a normal map is normalized again at every level (a zero vector becomes `(0, 0, 1)`).
+
+### Encoding as built
+
+Also S10-T24 (#203), in `apps/editor/src/assets/TextureImporter.cpp`:
+
+- **The top level is encoded from the source's own bytes.** Only the levels below it go through
+  linear float and back, so the largest level never takes that round trip's rounding.
+- **BC7 uses bc7enc's lowest search level** (`BC7_UBER_LEVEL`) with all 16 partitions, and the
+  packed ORM uses linear weights. A level smaller than a block repeats its edge texels.
+- **Both encoders fill global tables on first use**, so `TextureImporter::encode` guards them
+  with `std::call_once`.
+- **Packing scales both images bilinearly** to the larger width and the larger height, and a
+  missing image's channels are 255 (`TextureImporter::packOcclusionRoughnessMetallic`).
+- **The new libraries are pinned in `cmake/deps.cmake`.** stb is compiled with only its PNG, JPEG,
+  TGA and HDR decoders and no file input. bcdec is header-only. Only `bc7enc.cpp` and `rgbcx.cpp`
+  of bc7enc_rdo are built, as `TechEngineBc7Enc`, so no ispc is involved.
 
 ## The sky image
 
@@ -336,6 +496,31 @@ memory asks for it, with no version bump.
 
 How the image becomes the sky's lighting (filtered levels for rough reflections, and the diffuse
 light) is the renderer's ([[Renderer - Design]] § *Open questions*).
+
+### The sky image as built
+
+Built by S10-T25 (#203), in `apps/editor/src/assets/TextureImporter.cpp`. The implementation took these calls:
+
+- **Only a `.hdr` file is imported.** Any other extension is `UnsupportedImageType`. A source
+  outside `assets/common`, `assets/client` or `assets/server` is `SourceNotInAssets`, because the
+  record's side comes from that folder (`TextureImporter::sideOf`). An existing output is
+  `ImportOutputExists`, and a file stb_image cannot read is `ImageUnreadable`. The output is
+  written with `FileAccess::createFile`, so of two imports at once one gets `ImportOutputExists`
+  and registers no record.
+- **The sampler is repeat in U, clamp in V and linear** (`SKY_SAMPLER`), because a lat-long sky
+  wraps around in longitude and ends at the poles.
+- **The image is decoded as float and packed per channel.** Alpha is dropped. A negative or NaN
+  channel becomes 0, and one above 65408 becomes 65408 (`TextureImporter::packRgb9E5`), the
+  largest value `RGB9E5` holds.
+- **The mips come from `TextureImporter::buildMipChain`** on the float image, so a sky whose side
+  is odd loses a row or column at that level, as any texture does.
+- **The key is empty.** The import block holds only the source path and the default settings.
+- **Re-import rewrites the same file** under its id (`TextureImporter::reimportSky`). It returns
+  the id as rewritten, with no new record. It refuses with `ReimportTargetMissing` when the output
+  is missing or is not a texture.
+- **The menu entry is *Import image...*** (`PanelsManager::drawImportImagePopup`), through
+  `EditorApp::importSky` and `ImportSkyCommand`, until the asset browser lands. Its dialog and
+  menu entry have not been tried in a window.
 
 ## Re-import
 
@@ -353,18 +538,70 @@ By hand only ([[Content Pipeline - Brief]]), and refused unless the editor is St
 4. **Settings** come from the root asset's import block. Importing the other way switches the
    root asset between `.temodel` and `.temesh` in the same folder; the old root stays and is
    logged, and `Materials/` keeps its edits.
-5. **Reload.** The job sends one reload command naming the rewritten ids that are loaded. The
-   simulation thread runs it as a loading phase: each payload is replaced behind its handle, new
-   dependencies are acquired before the old ones are released, and render gets a new upload under
-   its fence (ADR-028 §4). The slot rebuild then runs over the open scene.
+5. **Reload.** The job sends one reload command naming every rewritten id. The simulation thread
+   runs it as a loading phase through `ResourceCache::reload`: each loaded payload is replaced
+   behind its handle, new dependencies are acquired before the old ones are released, and render
+   gets a new upload under its fence (ADR-028 §4). The slot rebuild then runs over the open
+   scene.
 
-`ResourceCache` has no reload today
-(`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`), so the re-import card adds one.
+`ResourceCache::reload` is built (S10-T21, #203;
+`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`).
+
+### Re-import as built
+
+Built by S10-T21 (#203). The implementation took these calls:
+
+- **`ReimportMatcher::match` runs two passes** over all outputs. The first pairs a name and an
+  index that both agree. The second gives an output the lowest remaining old index with its name.
+  An empty name is matched only by the first pass, so it never takes a named file.
+- **`ModelImporter::reimportFile` reads the root asset's settings** and ignores the request's.
+  `listImportedFiles` in `ReimportMatcher.hpp` reads only each file's header, id and import block,
+  and skips with a log line any file that is not an imported one.
+- **The refusals are four `ProjectError` codes.** `ReimportTargetMissing` is a folder that does
+  not exist, `ReimportRootMissing` is a folder with neither root asset, and `EditorNotStopped`
+  stops the whole re-import. A stored scale that is not valid is still `InvalidImportScale`.
+- **A second re-import of a source is refused while one runs**, as `ReimportInFlight`, because
+  the two would give one new output two ids. `EditorApp::m_reimportsInFlight` lives on the
+  simulation thread, and the job's last command takes the source out again:
+  `ReloadImportedAssetsCommand` on success, `FinishReimportCommand` on failure. The key is the
+  typed source path, so two spellings of one source are not caught (D10 in [[Known Issues]]).
+- **The result splits in two.** `ModelImportResult::records` holds only files with a new id,
+  and `rewritten` holds the ids that were written again. A matched material is in neither.
+- **A new output avoids the names already in the folder** (`ExistingFolder::taken*Names`), so it
+  never overwrites an old file that matched nothing. Such an old file is logged
+  (`ModelImporter::finishReimport`).
+- **`ReloadImportedAssetsCommand` indexes the new records first**, so the reload's loaders find
+  the new materials and textures. It then reloads, and then rebuilds the slots if a scene is open.
+- **The Stopped check cannot fail yet.** `EditSession::getPlayState` is always Stopped until
+  Play and Stop set it (`TODO(E11)` in `EditSession.hpp`), and the command checks it twice: when
+  it starts and again before the reload.
+- **A `.hdr` path re-imports the sky** and ignores the mode. Any other path takes its side from
+  `TextureImporter::sideOf`. The *Re-import...* dialog has a merged-mesh checkbox
+  (`PanelsManager::drawReimportPopup`).
+
+### The reload as built
+
+Also S10-T21 (#203), in `engine/core/src/resources/ResourceCache.cpp`:
+
+- **Only a Ready or Failed entry that is not loading is reloaded.** Any other id is skipped
+  without an error, so the caller can pass every rewritten id.
+- **A failed reload keeps the old payload** and the old dependencies, logs a warning, and
+  returns the first error. A file whose type changed is refused as `BadMagic`.
+- **A reloaded entry keeps only its loader's dependencies.** One added with `addDependency` is
+  released, as the header says.
+- **Load results travel in the completion.** A task no longer writes its entry, and the owner
+  installs the payload when it drains (`publishCompletion`). That also changes a first load, and
+  is what lets a failed reload leave the entry alone.
+- **The old payload is destroyed at once**, because nothing on render holds one yet. Step 5's
+  upload under render's fence is R1's to add.
 
 ## Open questions
 
-- **The material file** that import writes into `Materials/`. Owner: S10-T23, then S10-T24 for
-  the walk that writes the materials and their textures.
+- **Which way a texture is sampled.** Rows are stored top row first and UV0 keeps assimp's V, so
+  the renderer samples at `(u, 1 - v)` (§ *Texture rows and V*). Owner: R1, listed in
+  [[Renderer - Design]] § *Open questions*.
+- **The material file** is decided: [[Renderer - Design]] § *The material file*, built by S10-T23
+  and written by S10-T24's walk (both #203, § *Materials and textures as built*).
 - **A mirrored instance in a model:** a placed node with a negative determinant needs its front
   face flipped. Owner: R1, in [[Renderer - Design]] § *Open questions*.
 
@@ -376,11 +613,12 @@ v1's model import worked, and this design follows its shape: a folder per import
 (#194), with v1's Euler rotations, name-matched meshes, surviving points and lines, and
 frame-bound import fixed on the way ([[v1 Code Audit]] F14). S10-T19 took nothing from v1's
 streams: its `aiProcess_CalcTangentSpace` and `aiProcess_GenSmoothNormals` are what the design
-rejects, and it wrote zero UVs where TEMesh v2 writes no stream. One fix is still owed:
+rejects, and it wrote zero UVs where TEMesh v2 writes no stream. The last fix owed is done:
 
-- **An unnamed material is named after its pointer address**, which changes on every run, so a
-  re-import could never find it. Owner: S10-T24. Leave v1's `MeshLoader.cpp` alone: it is the
-  atlas merge below.
+- **An unnamed material was named after its pointer address**, which changes on every run, so a
+  re-import could never find it. S10-T24 (#203) fixed it: the file is `Material <index>` and
+  the key is the index alone (§ *Materials and textures as built*). Leave v1's `MeshLoader.cpp`
+  alone: it is the atlas merge below.
 
 ## References
 

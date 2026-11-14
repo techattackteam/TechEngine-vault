@@ -70,7 +70,7 @@ built or run.
 | Replicated components carry a `ResourceId`, never a handle. | ADR-024 §7, ADR-007 §2 |
 | A scene is an entry with an id, streamed into the live `Scene`; no parsed copy is cached. | ADR-024 §8 (amended Oct 24) |
 | Scene components are framed by stable tag and byte length. Per-type versions land with T1's scene save. | ADR-024 §8 |
-| A reload swaps data behind a live handle in a loading phase, acquiring new dependencies before releasing old ones. It lands with re-import, while the editor is Stopped; reload on a file change and eviction (explicit release only) still wait. | ADR-024 §9 (amended Nov 9); [[Content Pipeline - Design]] § *Re-import* |
+| A reload swaps data behind a live handle in a loading phase, acquiring new dependencies before releasing old ones. Built as `ResourceCache::reload(ids)` (S10-T21, #203), used by re-import while the editor is Stopped; reload on a file change and eviction (explicit release only) still wait. | ADR-024 §9 (amended Nov 9); [[Content Pipeline - Design]] § *The reload as built* |
 | The cache is `ResourceCache`, owned by `App`; one instance holds every type behind its type tag. | ADR-024 §1 (amended Oct 18); § *The cache as built* |
 | A reference cycle is invalid content: the loading phase rejects the edge that closes one. | Miguel, Oct 18; § *The cache as built* |
 | A loading phase is two non-blocking halves, submit and drain, looped until nothing is pending or loading. A failure does not stop it; the phase returns the first error drained. | Miguel, Oct 18; § *Loads on the job system, as built* |
@@ -278,6 +278,14 @@ S9-T1 (#154, 2026-10-24) added two owner-only calls, settled at its `/card-start
   it returns `false` for any entry that is not Ready. It exists because `resolve` returns a const
   payload, and the scene load must free its bytes while the entry stays held.
 
+### The reload as built
+
+S10-T21 (#203) added `reload(ids)`, an owner-only call that runs as a loading phase. It
+reads each loaded id again and replaces its payload behind the live handle, so the slot, the
+generation and the acquire count stay. New dependencies are acquired before the old ones are
+released, and a failed reload keeps the old payload. The calls it took are in
+[[Content Pipeline - Design]] § *The reload as built*.
+
 ### Loads on the job system, as built
 
 **As built** (S8-T11, #142, 2026-10-18). The cache takes the `App`'s `JobSystem` at
@@ -294,10 +302,11 @@ these at `/card-start`:
   error on its own entry (`getError`), and the phase returns the first error it drained. A
   holder whose dependency fails to load stays Ready; a holder that names an unknown dependency
   id, or one that closes a cycle, fails itself.
-- **A task touches only its own entry and the completion queue.** It writes the payload, the
-  type tag and the error, then pushes a completion holding the slot and the dependency ids. It
-  never looks an entry up through the slot store, because the owner grows that store while
-  tasks run. The owner publishes the entry only when it drains the completion.
+- **A task touches only the completion queue.** It pushes a completion holding the slot, the
+  payload, the type tag, the error and the dependency ids, and the owner installs all of it into
+  the entry when it drains. It never looks an entry up through the slot store, because the owner
+  grows that store while tasks run. Until S10-T21 (#203) a task wrote its own entry; the change
+  is what lets a failed reload keep the old payload.
 - **A free never waits.** `drainFrees` keeps an entry that is still loading, or that was
   acquired again, in the pending-free list for a later drain.
 - **Shutdown runs after the app's own.** `SimulationThread` calls `ResourceCache::shutdown()`

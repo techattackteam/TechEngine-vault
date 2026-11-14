@@ -253,6 +253,17 @@ than on `write()`.
 convention. Their semantics live in [[Project - Design]] § *The five mutating calls*, which is
 where M3's real writes shaped them.
 
+**Two calls hold against a concurrent caller** since Story H's review (#203, 2026-11-14),
+because two import jobs can write the same output:
+
+- **`createDirectory`** creates the parents, then the last folder with
+  `std::filesystem::create_directory`. Of several callers creating one directory at once, exactly
+  one succeeds and the rest get `AlreadyExists`.
+- **`createFile`** writes a file that must not exist yet. The bytes go to a temporary with a
+  random name, which a hard link puts in place, so an existing target is refused with
+  `AlreadyExists` and never replaced, and the file appears whole. A volume without hard links,
+  such as FAT32 or exFAT, would fail it with `IoError`; neither has been tried, nor Windows.
+
 ### Resolution
 
 Both paths start by splitting `alias://rel` into an alias and a relative path. They differ
