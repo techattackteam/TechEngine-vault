@@ -365,8 +365,8 @@ diff, and no leg waits for `diff coverage` any more
 | #147, gate removed, still cold | 9.9 min | 0% | 283-345 s |
 | #148, first push after `master` saved them | **4.9 min** | 99.76% (one changed file) | 9-18 s |
 
-On #148 the critical path is `win ASan`'s **test** step (203 s), not a build. That is the next
-lever, in [[Backlog]] → *Test tiers and parallel ctest*.
+On #148 the critical path is `win ASan`'s **test** step (203 s), not a build. That lever is
+S11-D5's, the testing regime ([[2026-11 Sprint 11 - First Frame]]).
 
 **Storage:** `cache-prune` keeps one entry per family on `master`, so four families add four
 entries. Checked at #149's merge (Oct 20): the prune deleted 9 stale entries, `master` held

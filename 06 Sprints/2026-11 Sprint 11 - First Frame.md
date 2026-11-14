@@ -21,8 +21,8 @@ Sprint 12 and after must decide: the sun, material edits, the asset browser, sky
 - Every R1 card is cut against [[Renderer - Design]] § *Decided*, under
   [[ADR-028 - Render device seam and frame packets]] and
   [[ADR-029 - Materials, surfaces and lobes]]. Each card writes its own mechanism section there.
-- **First Design card:** S11-D1, CI's GL floor, on day 1. S11-T2 and S11-T3 raise the GL check,
-  so they wait for it.
+- **First Design cards:** S11-D1, CI's GL floor, then S11-D5, the testing regime, on day 1.
+  S11-T2 and S11-T3 raise the GL check, so they wait for both.
 - **Briefs:** [[Renderer - Brief]] and [[Content Pipeline - Brief]] exist, so no `/brief` is owed.
 - **Showcase:** none this sprint, because E2 does not end here. E2 has no outline yet; `/showcase
   E2` is owed before the sprint that ends it, and S11-D2 feeds it.
@@ -34,15 +34,27 @@ Sprint 12 and after must decide: the sun, material edits, the asset browser, sky
 ### Story A: Day 1 (Miguel)
 
 - [ ] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h ·
-  done: a spike branch shows whether zink over lavapipe gives CI a GL 4.6 context with
-  `ARB_bindless_texture`, on the Linux legs and on Windows' Mesa. ADR-028 gets a dated amendment
-  that says how CI runs the window and render tests: through zink, or under a ctest label that CI
-  skips and Miguel runs locally. The seven test files that open a window through the render
-  thread are listed in it. Known so far, from S10-P2 ([[2026-11-09 14-12 Auto Run]]): both legs
-  draw with Mesa's `llvmpipe` (`.github/workflows/ci.yml:158`, `:211-212`), which on Mesa 25.2.8
-  gives GL 4.5 core and no bindless, and zink would not start under Xvfb in the lane's sandbox.
-  It edits `ci.yml`, so it is attended, and each spike push costs CI minutes. If the label path
-  wins, the [[Backlog]]'s *Test tiers and parallel ctest* entry is done in the same PR.
+  done: a spike branch shows whether zink over lavapipe gives CI a GL 4.6 core context with
+  `ARB_bindless_texture`, on the Linux legs (TSan included) and on Windows' Mesa. ADR-028 gets a
+  dated amendment to § *Consequences* that records the answer for each OS. Known so far, from
+  S10-P2 ([[2026-11-09 14-12 Auto Run]]): every leg draws with Mesa's `llvmpipe`
+  (`.github/workflows/ci.yml:158`, `:211-212`), which on Mesa 25.2.8 gives GL 4.5 core and no
+  bindless, and zink would not start under Xvfb in the lane's sandbox. The spike probes first
+  with a throwaway workflow that builds nothing, then dispatches `ci.yml` once on the branch,
+  because a change to `ci.yml` never runs `ci.yml` (`.github/workflows/ci.yml:28-36`). Each
+  spike push costs CI minutes, so batch them. The branch is never merged, so the card lands as
+  vault commits. How CI runs the window tests is S11-D5's.
+- [ ] **S11-D5** · The testing regime · P1 · 🟢 Deep · 4-6h ·
+  done: every current test case is sorted by what it really is (unit, integration, a real-disk
+  OS test, stress, or another type the audit finds), and the cases whose tags say otherwise are
+  listed. How Unreal, Unity and Godot tier their tests is the baseline. ADR-008 gets a dated
+  amendment to §6 and §9 that decides which tiers exist, how a case joins one, where each tier
+  runs (every PR, a scheduled run, on demand, or only locally) and who reads a run that no PR
+  shows. A weekly run that the weekly review reads is one proposal, not the answer. The
+  amendment also decides what the diff coverage gate does with code that only a skipped tier
+  covers. Its PR wires the decision: the tags, the CTest labels, the legs in `ci.yml` and any new
+  workflow, with zink wherever S11-D1 found that it works. It must merge before S11-T2. Follows
+  S11-D1. Added on Nov 14 at S11-D1's `/card-start`; its inputs are in § *S11-D5's inputs*.
 - [ ] **S11-T1** · Story H meets a real asset · P1 · 🟠 Moderate · 2-3h ·
   done: Sponza's images are in `projects/dev` with a licence file beside them, and
   *Re-import...* rewrites Sponza with every id kept and each mesh slot naming a material.
@@ -50,14 +62,48 @@ Sprint 12 and after must decide: the sun, material edits, the asset browser, sky
   states BC7's encode time for Sponza. Each defect found is fixed there or carded. This is the
   first windowed run of anything in #203.
 
+### S11-D5's inputs
+
+Moved here from the [[Backlog]]'s *Test tiers and parallel ctest* entry, which was cut on Nov 14.
+
+- **Decided by Miguel:** the real-disk tests (`[files]`, `[fileaccess]`, `[mounttable]` and the
+  rest that use `ScratchDirectory`) are an OS tier, not unit (S8-D3, Oct 2026). The repository
+  will go private, so the plan must hold under a minute budget. The window's context request
+  rises to 4.6 with S11-T2 (Nov 14), so every case that opens a window needs the GL floor.
+- **Tags today:** `[window]` is not the set of cases that open a window. Three `EditorAppTests`
+  cases open one under `[editor]` alone, because `bootstrap()` opens a window, and
+  `engine/platform/tests/window/WindowErrorTests.cpp:12` is tagged `[window]` and opens nothing.
+  `FrameRendererTests` loads GL itself (`engine/client/tests/render/FrameRendererTests.cpp:72`,
+  `:117`), not through the render thread.
+- **Coverage:** `cmake/coverage.cmake:94` runs the whole suite, so a tier that PRs skip leaves
+  its code uncovered under the 85% gate.
+- **Measured on Oct 11 with Windows binaries:** a test body takes about 0 ms. A process start
+  costs 49 ms in `windows` Debug and 553 ms in `windows-profile`, where Tracy calibrates for
+  200 ms before `main`. Each `[window]` case costs about 450 ms in its own process, because the
+  first context loads the driver; the 13 cases take 1.6 s in one process and 3.5 s apart. The
+  two `... does not depend on recursion depth` cases take 6 s each in Debug, because
+  `setParent`'s cycle check makes a 4096-deep chain quadratic.
+- **On CI:** `win ASan`'s test step was 173 s for 621 cases on run 38367963268 (Oct 13), against
+  13-45 s on every other leg: about 89 s of process starts, 61 s of window and GL cases and 21 s
+  for the two recursion-depth cases. It took between 4 min 7 s and 5 min 46 s on each of six
+  `master` runs on Nov 5-6. No test preset sets `execution.jobs`, so `ctest` runs one case at a
+  time on 4-core runners. Every `ScratchDirectory` name is unique today (checked by grep only).
+- **Proposed at S8-D3, not decided:** tiers are Catch2 tags turned into CTest labels
+  (`catch_discover_tests(... ADD_TAGS_AS_LABELS)`, which the pinned Catch2 supports); legs
+  exclude by label, so a forgotten tag runs more rather than less; every case keeps its own
+  process, so the `TE_ENSURE` entry in the [[Backlog]] needs no reset hook; test presets set
+  `execution.jobs`; and `[stress]` leaves the sanitizer legs. Functional, visual and perf tiers
+  get a shape and a trigger, not wiring.
+
 ### Story B: R1's first frame (Miguel writes, Claude pairs)
 
-Order: S11-T2 follows S11-D1; S11-T3 follows S11-T2; S11-T4 follows S11-T3 and S11-T5; S11-T6
+Order: S11-T2 follows S11-D5, which follows S11-D1 (Story A); S11-T3 follows S11-T2; S11-T4 follows S11-T3 and S11-T5; S11-T6
 follows S11-T3; S11-T7 and S11-T8 follow S11-T6; S11-T9 follows S11-T4, S11-T7 and S11-T8.
 
 - [ ] **S11-T2** · GL 4.6 and bindless at startup · P1 · 🟡 Light · 1-2h ·
   done: glad2 is regenerated with `--api gl:core=4.6` and `ARB_bindless_texture`
-  (`cmake/deps.cmake:244-246`), and the startup check
+  (`cmake/deps.cmake:244-246`), the window requests a 4.6 core context
+  (`engine/platform/src/window/Window.cpp:58-59`, Miguel, Nov 14), and the startup check
   (`engine/client/src/render/RenderThread.cpp:93`) logs which requirement failed
   ([[Renderer - Design]] § *Build notes*).
 - [ ] **S11-T3** · The device · P1 · 🟢 Deep · 4-6h ·
@@ -176,8 +222,8 @@ and *How the scene view's camera is driven*.
 
 - [ ] The runtime shows Sponza, textured with base color, through the scene's main camera, on the
   device, with Miguel's windowed check and a capture (S11-T9).
-- [ ] CI runs or skips the window and render tests by a rule that ADR-028's amendment records
-  (S11-D1).
+- [ ] ADR-028's amendment records whether zink gives CI the GL floor (S11-D1), and CI runs each
+  test tier where ADR-008's amendment says (S11-D5).
 - [ ] Sponza was re-imported with its images through *Re-import...*, and its ids were kept
   (S11-T1).
 - [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
@@ -186,7 +232,8 @@ and *How the scene view's camera is driven*.
 
 ## Capacity note
 
-Miguel's cards: 6 🟢, 5 🟠 (with S11-D4) and 1 🟡, about 9 slots. He chose to commit all of them.
+Miguel's cards: 7 🟢, 5 🟠 (with S11-D4) and 1 🟡, about 10 slots. He chose to commit all of them.
+S11-D5 was added on Nov 14 at S11-D1's `/card-start`, and it is the seventh 🟢.
 
 - **The sprint's work days are Nov 14 to Nov 24.** Sat Nov 14 is a deep day after planning. Mon
   Nov 16 and Thu Nov 19 are evenings. Fri Nov 20 (a day off work), Sat Nov 21 and Sun Nov 22 are
@@ -196,9 +243,11 @@ Miguel's cards: 6 🟢, 5 🟠 (with S11-D4) and 1 🟡, about 9 slots. He chose
   because 🟠 cards take half a full day.
 - **Drop order:** S11-T10 and S11-T11, then S11-D3. S11-T9 does not drop; if it slips, it opens
   Sprint 12.
-- **Suggested order:** Nov 14, S11-D1, S11-T2 and S11-T1. Nov 16, S11-T3. Nov 19, S11-T6. Nov
-  20, S11-T4 and S11-T7. Nov 21, S11-T8 and S11-T9. Nov 22, Story C and S11-D3, or rest. Nov 23,
-  slack. Nov 24, S11-D4.
+- **Suggested order:** Nov 14, S11-D1 and S11-D5. Nov 16, S11-T2 and S11-T1. Nov 19, S11-T3.
+  Nov 20, S11-T6 and S11-T4. Nov 21, S11-T7 and S11-T8. Nov 22, S11-T9. Nov 23, Story C and
+  S11-D3, or slack. Nov 24, S11-D4.
+- **S11-D5 costs the free day.** The R1 chain now fills all three days of Nov 20-22, so the
+  Rhythm table's free day among them comes back only by dropping Story C and S11-D3.
 - **S11-T4 needs the lane's S11-T5 merged first**, so that PR is reviewed by Thu Nov 19.
 - **Lane review has one 🟡 evening, Tue Nov 17.** Tue Nov 24 belongs to S11-D4, so PRs opened
   after Nov 17 are reviewed inside the Nov 20-22 block.

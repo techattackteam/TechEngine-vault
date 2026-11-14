@@ -566,8 +566,8 @@ groups are kept, because they show where future work will land.
   [[Renderer - Brief]]'s Should of a million cubes moving on a grid at 60 fps (v1 reached 20)
   exercises one whole frame: a System over the ECS, the task graph's executor, transform
   propagation, the snapshot to the render thread, and instanced drawing. Kept as a repeatable
-  scene with its frame time recorded, it is a candidate first case for the perf tier in *Test
-  tiers and parallel ctest* below. One System that moves every cube is one node on one level,
+  scene with its frame time recorded, it is a candidate first case for a perf tier, which S11-D5
+  decides ([[2026-11 Sprint 11 - First Frame]]). One System that moves every cube is one node on one level,
   so P1's parallel executor alone does not speed it up. **Trigger:** R1's first card that
   draws instanced meshes.
 - #prio/low · **Log lines that mention an entity print its name**: Miguel's ask, Oct 26, 2026.
@@ -624,41 +624,6 @@ groups are kept, because they show where future work will land.
   like a flake. Options are a test-only reset hook on the report-once static, or a rule that a
   fire count is asserted at exactly one case per site. **Trigger:** the next card that adds a
   `TE_ENSURE` case, or the first developer confused by a green `ctest` and a red exe.
-- #prio/medium · **Test tiers and parallel ctest**: S8-D3 started as this decision and was
-  rescoped on Oct 19 to the PR wall-time fix, because builds, not tests, set that time. Still
-  open: which tiers exist, how a case is tagged into one, where each runs, and whether any tier
-  shares a process. Already answered by Miguel at S8-D3's `/card-start`: the real-disk tests
-  (`[files]`, `[fileaccess]`, `[mounttable]` and the rest that use `ScratchDirectory`) are the
-  OS tier, not unit; and the repository is public now but will go private, so the plan must
-  hold under a minute budget. Proposed and not decided: tiers are Catch2 tags turned into CTest
-  labels (`catch_discover_tests(... ADD_TAGS_AS_LABELS)`, which the pinned Catch2 supports),
-  legs exclude by label so a forgotten tag runs more rather than less, every case keeps its own
-  process (so the `TE_ENSURE` entry above needs no reset hook), test presets set
-  `execution.jobs`, and `[stress]` leaves the sanitizer legs. Functional, visual and perf get a
-  shape and a trigger, not wiring. Evidence, measured Oct 11, 2026, with existing Windows
-  binaries:
-  - A test body takes about 0 ms. A process start costs 49 ms in `windows` Debug and 553 ms in
-    `windows-profile`, where Tracy sleeps 200 ms to calibrate its timer before `main`.
-  - Each `[window]` case costs about 450 ms in its own process, because the first OpenGL context
-    loads the driver. The 13 cases take 1.6 s in one process and 3.5 s in separate processes.
-  - The two `... does not depend on recursion depth` cases (`HierarchyTests`, `TransformTests`)
-    take 6 s each in Debug. They build a 4096-deep chain top-down, and `setParent`'s cycle check
-    makes that quadratic.
-  - On CI (run 38367963268, Oct 13, 2026), `win ASan`'s test step is 173 s for 621 cases,
-    against 13-45 s on every other leg: about 89 s of process startup, 61 s of window and GL
-    cases and 21 s for the two recursion-depth cases. Its cap is `timeout-minutes: 5`.
-  - No test preset sets `execution.jobs`, so `ctest` runs one case at a time on 4-core runners.
-    Every `ScratchDirectory` name is unique today (checked by grep only), which parallel runs
-    need.
-  - Three `EditorAppTests` cases are tagged only `[editor]` (project mounts, asset index, the
-    `assets/client` overlay), but `bootstrap()` opens a window, so a split by tag would leave
-    them in the unit tier.
-
-  **Trigger:** the repository goes private, or `win ASan`'s test step passes 4 minutes.
-  **Fired Nov 6:** the step took between 4 min 7 s and 5 min 46 s on each of the last six
-  `master` runs (Nov 5-6, `db72fe6` to `e59d77c`), and 5 min 41 s on run 42282140339 for
-  `e59d77c`. The step has no timeout of its own, so the job's 20 minutes is the only cap.
-
 - #prio/low · **`delete_branch_on_merge` is off**: [[ADR-009 - Branching strategy & merge rules]]
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a

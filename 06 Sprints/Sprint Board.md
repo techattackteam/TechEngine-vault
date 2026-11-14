@@ -11,13 +11,13 @@ kanban-plugin: board
 
 ## Story A: Day 1
 
-- [ ] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h: a spike shows whether zink over lavapipe gives CI GL 4.6 with bindless, and ADR-028's amendment says how CI runs the window and render tests. Unblocks S11-T2.
+- [ ] **S11-D5** · The testing regime · P1 · 🟢 Deep · 4-6h: every test case sorted by its real type against how Unreal, Unity and Godot tier theirs; ADR-008's amendment decides the tiers and where each runs, and its PR wires them. Follows S11-D1; must merge before S11-T2.
 - [ ] **S11-T1** · Story H meets a real asset · P1 · 🟠 Moderate · 2-3h: Sponza is re-imported with its images and ids kept, a real `.hdr` is imported, a merged `.temesh` is placed by hand, and the PR states BC7's encode time.
 
 
 ## Story B: R1's first frame
 
-- [ ] **S11-T2** · GL 4.6 and bindless at startup · P1 · 🟡 Light · 1-2h: glad2 is regenerated for 4.6 and `ARB_bindless_texture`, and the startup check logs which requirement failed. Follows S11-D1.
+- [ ] **S11-T2** · GL 4.6 and bindless at startup · P1 · 🟡 Light · 1-2h: glad2 is regenerated for 4.6 and `ARB_bindless_texture`, and the window asks for a 4.6 context, and the startup check logs which requirement failed. Follows S11-D5.
 - [ ] **S11-T3** · The device · P1 · 🟢 Deep · 4-6h: typed handles, pipelines bound whole and explicit render passes; M4's triangle draws through it. Follows S11-T2.
 - [ ] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h: `Camera` in `core`, registered in both apps, shown by the inspector, and one function that returns the main active camera.
 - [ ] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h: the extraction hook fills a pooled packet after ticks and edits, and render moves it. Follows S11-T3 and S11-T5.
@@ -56,6 +56,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h: a spike shows whether zink over lavapipe gives CI GL 4.6 with bindless on each OS, and ADR-028's amendment records the answer. Unblocks S11-D5.
 
 
 ## 👀 Review / Demo
@@ -63,6 +64,7 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 11
+
 
 
 
