@@ -75,6 +75,31 @@
   plus `clientapp/`, the static lib both client executables link". It is built with
   `techengine_module()`, so its target is `TechEngineClientapp`. S8-T19 (#151);
   [[ADR-006 - v2 core architecture & module layout]]'s Oct 24 entry.
+- **Amended 2026-11-14, decision:** §6 and §9 gain test tiers. Old: every case ran on every
+  leg, and §6 said only that rendering is not unit-tested. New: a case declares the environment
+  it needs with a tier tag, which becomes a CTest label. No tag is pure; `[os]` is a real disk
+  or a real process; `[stress]` is a long case; `[gpu]` draws or loads GL. Legs exclude by label
+  and never include, so a missing tag runs more. `[stress]` leaves the three sanitizer legs.
+  `[gpu]` runs on the Linux legs other than TSan and on `diff coverage`, over zink with lavapipe,
+  and on Linux the window always creates its context through EGL. **No Windows leg runs
+  `[gpu]`**: Windows runs it locally only, and ASan never sees it, which is Godot's trade taken
+  on purpose. TSan runs no `[gpu]` case, so it needs no suppressions for Mesa. The coverage leg
+  runs every tier, so the gate scores no code that only a skipped tier covers. Nothing is
+  scheduled. Visual, performance and functional tiers get a shape and a trigger, not wiring.
+  Every test preset sets `execution.jobs` to 4, where no preset set it and `ctest` ran one case
+  at a time, and each `ScratchDirectory` folder carries its process's id, so two cases running
+  at once never share one. Why: only zink on Linux meets [[ADR-028 - Render device seam and frame packets]] §2's GL floor
+  on CI, and under TSan zink's window cases fail on Mesa's and X's threads, which Miguel chose
+  not to suppress (S11-D1, Nov 14). The baseline against Unreal, Unity and Godot, the audit of
+  every case and the mechanism are in [[B3 - Build & Testing Notes]] § *Test tiers*.
+  **Reversal trigger:** a Windows runner gets a GL 4.6 context with `ARB_bindless_texture`,
+  through zink with a Vulkan loader or a self-hosted GPU runner. Then `[gpu]` joins the Windows
+  legs. S11-D5.
+- **Amended 2026-11-14, correction:** two facts this ADR stated are false. (1) §6's top-level
+  `tests/integration/` exe was never built, and `tests/` holds only `support/`. Cross-module
+  cases live in the app test exes, which link every module. (2) §9 says TSan ships with a
+  checked-in suppressions file. None exists; the leg's only workaround is `LP_NUM_THREADS=0`
+  (`.github/workflows/ci.yml:466-468`). S11-D5.
 
 ## Context
 
@@ -288,6 +313,10 @@ Executes ADR-006's "per-module Catch2 targets, not core-only."
   off or relaxed, discovery) to keep them boilerplate-free.
 - **Rendering is not unit-tested**: demo scenes + captures (ADR-005/CLAUDE.md). The
   `tests` surface is deterministic core (ECS, math, serialization, resources).
+  > **Amended 2026-11-14:** every case carries a tier tag for the environment it needs, and the
+  > cases that draw or load GL form a `[gpu]` tier that CI runs on Linux only. Rendering output
+  > is still verified by demo scenes and captures until the visual tier is wired. The
+  > `tests/integration/` exe above was never built (correction). See the header.
 
 ### 7. SDK smoke: the F11 acid test, automated
 
@@ -339,6 +368,9 @@ merge. (ADR-005 chose GitHub Actions.)
     A number, not a feeling.
   - **TSan false positives can block a clean merge:** TSan ships **required but with a
     checked-in suppressions file**; promote to zero-tolerance once it's proven stable.
+  > **Amended 2026-11-14:** each leg excludes the tiers it cannot run. TSan and every Windows
+  > leg exclude `[gpu]`, and the three sanitizer legs exclude `[stress]`. No suppressions file
+  > exists (correction). See the header.
   > **Amended 2026-08-27:** the "in parallel" rationale opening this bullet no longer holds.
   > The legs are chained behind `format` and `coverage`. See the header.
   > **Amended 2026-10-19:** it holds again: the legs wait only for `format`, and the sanitizers

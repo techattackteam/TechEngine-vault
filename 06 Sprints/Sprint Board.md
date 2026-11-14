@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: Day 1
 
-- [ ] **S11-D5** · The testing regime · P1 · 🟢 Deep · 4-6h: every test case sorted by its real type against how Unreal, Unity and Godot tier theirs; ADR-008's amendment decides the tiers and where each runs, and its PR wires them. Follows S11-D1; must merge before S11-T2.
 - [ ] **S11-T1** · Story H meets a real asset · P1 · 🟠 Moderate · 2-3h: Sponza is re-imported with its images and ids kept, a real `.hdr` is imported, a merged `.temesh` is placed by hand, and the PR states BC7's encode time.
 
 
@@ -63,6 +62,12 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-D5** · The testing regime · P1 · 🟢 Deep · 4-6h: #205 (`f932dd21`), **Nov 14**. Godot's split: a case's tier tag names the environment it needs, legs exclude by label, and `[gpu]` runs on Linux only, over zink ([[ADR-008 - v2 build & testing baseline]]'s Nov 14 amendments; audit in [[B3 - Build & Testing Notes]] § *Test tiers*). Unblocks S11-T2; Story A still has S11-T1.
+	- **No Windows leg runs `[gpu]`, by Miguel's call.** The Windows zink spike had never run: LunarG's `latest` loader URL returned Not Found. He chose Godot's Linux-only rule over another spike.
+	- **`[gpu]` holds all 62 window cases until two [[Backlog]] entries shrink it to 7**: a null render device (*client*) and the window asking for its renderer's GL version (*platform*). Meanwhile TSan reaches no editor case, which [[Known Issues]] D9 now says.
+	- **Parallel `ctest` came in mid-card**, from S8-D3's inputs: four jobs per preset and a per-process `ScratchDirectory`. `win ASan`'s test step went from about 203 s (#148) to 68 s on the first run.
+	- *Retro:* the first run failed both plain Windows legs. Two cases shared a fixed file under parallel `ctest`: a stderr capture the audit had judged single-use, and `logs/techengine.log`, which every `App::run()` writes. Linux allows the shared file, so only Windows showed it; the shared log itself is [[Known Issues]] D12. *Retro:* the branch was first cut from S11-D1's spike branch; `/card-start`'s gate caught it.
 
 - [x] **S11-D1** · CI's GL floor · P1 · 🟠 Moderate · 2-3h: vault `8446176`, **Nov 14**. No CI runner's default software GL meets ADR-028 §2, and only zink over lavapipe on Linux does, through an EGL context; recorded as a correction in [[ADR-028 - Render device seam and frame packets]] § *Consequences*. Unblocks S11-D5.
 	- **Split at its `/card-start`:** how CI runs the window tests became the new S11-D5, which S11-T2 now follows, so this card kept only the spike and the amendment.

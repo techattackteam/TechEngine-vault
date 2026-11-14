@@ -267,9 +267,10 @@ it was mis-scoped: stop, do not improvise, and say so in the report so it can be
 
 STEP 6: IF IT CHANGED CODE, PROVE IT.
   cmake --preset linux-debug && cmake --build --preset linux-debug
-  LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug
+  LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug -LE '^gpu$'
 Note there is NO preset called plain "linux" on this leg; each config has its own.
 The sandbox has no display, so the window tests fail without xvfb-run, as CI runs them.
+The [gpu] cases need zink, which does not start in this sandbox, so CI runs them and you do not.
 A red build or a failing test means NO PR. Report what broke and stop there.
 You may build here. This is the carve-out in CLAUDE.md's "Miguel compiles" rule, and it
 applies only to this unattended lane and only to the Linux presets.
@@ -373,6 +374,9 @@ thing this lane can produce.
 - **Step 6 runs `ctest` under `xvfb-run`** (2026-10-19). Without a display the window cases
   fail on GLFW error 65550. Every fire since 2026-09-27 already ran it that way; the prompt
   now says so.
+- **Step 6 excludes `[gpu]`** (2026-11-14, S11-D5). Those cases need zink, which would not
+  start in the lane's sandbox (S10-P2), so after S11-T2 raises the GL floor they would turn
+  every run red. CI's Linux legs run them ([[B3 - Build & Testing Notes]] § *Test tiers*).
 - **Step 7 re-sends the PR body** (2026-10-19). The harness adds the footer itself, so a clean
   body cannot prevent it. Fires had re-sent it unprompted since #114, and #144 kept the footer
   because nothing wrote the step down.

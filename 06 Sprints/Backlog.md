@@ -68,6 +68,13 @@ groups are kept, because they show where future work will land.
 
 ## platform
 
+- #prio/medium · **The window asks for the GL version its renderer needs**: the window sets one
+  context hint for every window it opens (`engine/platform/src/window/Window.cpp:58-59`), which
+  S11-T2 raises to 4.6 core. So eight window cases that use no GL
+  (`engine/platform/tests/window/WindowTests.cpp`, listed in [[B3 - Build & Testing Notes]]
+  § *Test tiers*) need the renderer's floor and stay `[gpu]`. Asked for less, they would run on
+  Windows' llvmpipe and under TSan, as they do today. **Trigger:** S11-T2 merges.
+
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
   [[ADR-014 - Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
@@ -340,6 +347,15 @@ groups are kept, because they show where future work will land.
 
 ## client
 
+- #prio/high · **A null render device, so the app tests stop needing a driver**: 47 of the 62
+  `[gpu]` cases open a window only because the client cannot start without a GL context. 39
+  are app lifecycle cases in `apps/editor/tests/EditorAppTests.cpp` and
+  `apps/runtime/tests/RuntimeAppTests.cpp`, where `bootstrap()` opens a window, and 8 are render
+  thread and client lifecycle cases. Until they leave `[gpu]`, no Windows leg, no TSan run and
+  no lane run reaches them ([[B3 - Build & Testing Notes]] § *Test tiers*, S11-D5). Godot's mock
+  rendering server and Unreal's NullRHI are the prior art, and
+  [[ADR-028 - Render device seam and frame packets]] has a device seam but no null device. Its
+  shape is a design decision, so it starts as a Design card. **Trigger:** S11-D5 merges.
 - #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
   purpose, so `ClientApp`'s failure handling has no test. That covers the stop it requests from
   the render thread, the stop in `mainThreadUpdate()` when `failed()` is set, and the throw in

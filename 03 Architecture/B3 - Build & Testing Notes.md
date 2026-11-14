@@ -365,8 +365,8 @@ diff, and no leg waits for `diff coverage` any more
 | #147, gate removed, still cold | 9.9 min | 0% | 283-345 s |
 | #148, first push after `master` saved them | **4.9 min** | 99.76% (one changed file) | 9-18 s |
 
-On #148 the critical path is `win ASan`'s **test** step (203 s), not a build. That lever is
-S11-D5's, the testing regime ([[2026-11 Sprint 11 - First Frame]]).
+On #148 the critical path is `win ASan`'s **test** step (203 s), not a build. S11-D5 took
+`[stress]` off that leg (§ *Test tiers*).
 
 **Storage:** `cache-prune` keeps one entry per family on `master`, so four families add four
 entries. Checked at #149's merge (Oct 20): the prune deleted 9 stale entries, `master` held
@@ -639,6 +639,162 @@ reverse it live in [[Math - Design]] § *Formatters ship with the types*.
 **The bigger number in these tables is `<chrono>`, not `<format>`.** It costs ~1200 ms and
 73k preprocessed lines per TU on MSVC, and `Log.hpp` carries it into everything that logs.
 That is on [[Backlog]], not carded.
+
+## Test tiers (S11-D5, 2026-11-14)
+
+Decided in [[ADR-008 - v2 build & testing baseline]]'s amendment of Nov 14. The ADR holds the
+decision; this section holds the baseline, the audit and the mechanism.
+
+### How Unreal, Unity and Godot tier their tests
+
+| Engine | Tiers | How a test says what it needs | Real rendering in CI |
+|---|---|---|---|
+| Godot | One doctest suite. Tags such as `[SceneTree]`, `[Editor]` and `[Audio]` pick a mock environment, and `[Stress]` marks long cases. | The tag. `[SceneTree]` gets a mock rendering server. | One project test, on one Linux sanitizer job, with `mesa-vulkan-drivers` installed. None on Windows. |
+| Unreal | Low-Level Tests (Catch2, per module, no engine needed), Automation tests (Smoke, Unit, Feature, Content Stress, Screenshot Comparison), and Gauntlet for whole sessions. | Flags on the test. A Smoke test should finish within about one second. | Screenshot comparison against a ground-truth image, bucketed by platform, RHI and shader model. |
+| Unity | EditMode, PlayMode and Player tests, with NUnit categories. Graphics and performance tests are separate packages. | `[UnityPlatform]` on the test, and `-testCategory` with `!` to exclude. | Reference images per colour space, platform and graphics API. |
+
+**TechEngine takes Godot's split.** A test declares the environment it needs, and the default
+tier needs none. Only the cases that really draw or load GL touch a driver, and CI runs them on
+Linux only. Godot's facts come from its `linux_builds.yml`, `windows_builds.yml` and unit testing
+page, read on Nov 14. The pages read did not define Unreal's `EAutomationTestFlags` filters, and
+they did not say whether Unity's graphics jobs run per PR or nightly.
+
+### The audit: what each case really is
+
+Generated on Nov 14 from every `TEST_CASE` at engine `6836c87` (1271 cases), then spot-checked by
+hand. The times come from S11-D1's spike, where `linux-debug` ran its 1273 tests over zink in
+27.5 s (job 132474737119 is TSan, job 132474737141 is Debug).
+
+| Type | Cases | How it was found | Time in `linux-debug` |
+|---|---|---|---|
+| Opens a window and needs GL: `[gpu]` | 62 | Exactly the 62 cases that failed under TSan in the spike | 9.2 s |
+| Real disk or a real process: `[os]` | 277 | The case or its fixture uses `ScratchDirectory`, a file stream, or `[process]` | 2.8 s |
+| Stress: `[stress]` | 2 | The two `... does not depend on recursion depth` cases | 8.5 s |
+| Pure, with no tier tag | 930 | Everything else | 7.8 s |
+
+A case carries every tier tag its needs earn: 39 of the 62 `[gpu]` cases also touch the disk, so
+316 cases carry `[os]`.
+Two more types turned up, and neither gets a tier:
+
+- **Concurrency:** 181 cases start threads, 159 of them in the pure tier. They are why TSan
+  matters, and they stay on it.
+- **Timing-dependent:** 23 cases wait on the clock (`sleep_for`, `wait_for`, `steady_clock`).
+  They are the first suspects when a sanitizer's slowdown makes a case flaky. 13 are pure, 7
+  are `[gpu]` and 3 are `[os]`.
+
+**Integration is not a type here.** ADR-008 §6 planned a top-level `tests/integration/` exe, and
+it was never built: `tests/` holds only `support/`. Cross-module cases live in the app test exes,
+which link every module. The six `[integration]` cases are three `[os]`, two `[gpu]` and one pure.
+
+### Cases whose tags say otherwise
+
+- **Three cases open a window under `[editor]` alone**, because `bootstrap()` opens one:
+  `apps/editor/tests/EditorAppTests.cpp:220`, `:234` and `:847`.
+- **Two `[window]` cases open no window**, so they are pure:
+  `engine/platform/tests/window/WindowErrorTests.cpp:12` and
+  `engine/platform/tests/window/WindowTests.cpp:97`.
+- **The `[files]` family is not the disk tier.** 20 cases tagged `[files]`, `[mounttable]`,
+  `[fileerror]` or `[virtualpath]` are pure: both in `FileErrorTests.cpp`, ten in
+  `MountTableTests.cpp` and all eight in `VirtualPathTests.cpp`. And 200 disk cases carry no
+  `[files]`-family tag at all, most of them in `apps/editor`. A subsystem tag cannot stand in
+  for a tier, which is why the tier is a tag of its own.
+
+### Where each tier runs
+
+Legs **exclude** by label (`ctest -LE`) and never include, so a case that misses its tag runs
+more rather than less, and fails loudly on a leg with no driver. The test presets exclude
+nothing. A plain local `ctest` runs every tier, which is how Windows runs `[gpu]`: locally, on
+Miguel's GPU.
+
+| Leg | Pure | `[os]` | `[stress]` | `[gpu]` |
+|---|---|---|---|---|
+| `win-msvc Debug`, `win-msvc Release` | yes | yes | yes | no |
+| `win ASan` | yes | yes | no | no |
+| `linux-clang Debug`, `linux-clang Release` | yes | yes | yes | yes, over zink |
+| `linux UBSan` | yes | yes | no | yes, over zink |
+| `linux TSan` | yes | yes | no | no |
+| `diff coverage` | yes | yes | yes | yes, over zink |
+| The unattended lane | yes | yes | yes | no, because zink does not start in its sandbox (S10-P2) |
+
+Every tier runs on every PR and nothing is scheduled, so no run exists that a PR does not
+show, and none needs a reader. `[stress]` leaving the sanitizer legs takes about 21 s off
+`win ASan`'s test step, which was the PR's critical path (§ *Four legs start every PR cold*).
+
+### Mechanism, for S11-D5's PR
+
+- **Labels:** `ADD_TAGS_AS_LABELS` goes on both `catch_discover_tests` calls,
+  `cmake/techengine_test.cmake:43` and `cmake/techengine_app.cmake:77`. The second one registers
+  the `apps/` cases, which hold 39 of the 62 `[gpu]` cases.
+- **Zink**, as the spike ran it on the `S11-D1/ci-gl-floor` branch: `mesa-vulkan-drivers` in the
+  apt list, then `LIBGL_ALWAYS_SOFTWARE=1`, `GALLIUM_DRIVER=zink` and `VK_DRIVER_FILES` set to
+  lavapipe's ICD, `/usr/share/vulkan/icd.d/lvp_icd.json`.
+- **EGL always on Linux**, not only on CI, so what CI tests is what ships. The spike's change is
+  `GLFW_CONTEXT_CREATION_API` set to `GLFW_EGL_CONTEXT_API` under `__linux__`.
+- **The coverage gate needs no filter.** The leg runs every tier, so no code the gate scores is
+  covered only by a skipped tier. `cmake/coverage.cmake:94` runs a bare `ctest`, and its CI step
+  needs only the zink environment beside `xvfb-run`. Windows-only code stays outside the gate,
+  as it always was, because no Linux leg compiles it.
+- **TSan's `LP_NUM_THREADS=0`** (`.github/workflows/ci.yml:466-468`) guards nothing while TSan
+  runs no `[gpu]` case, but it stays. Today's window cases pass under TSan over llvmpipe with it;
+  only zink is what TSan cannot run. The eight window-only cases below will need it again.
+- **The lane's prompt** changes its `ctest` line to exclude `[gpu]`
+  ([[Autonomous Lane - Routine Prompt]] step 6).
+
+### Parallel `ctest`
+
+Every test preset sets `execution.jobs` to 4. Before, no preset set it, so `ctest` ran one case
+at a time on 4-core runners. Each case is already its own process, so parallel runs share no
+in-process state. On Oct 13, about 89 of `win ASan`'s 173 s test step was process starts, which
+is the work that overlaps best.
+
+- **Scratch folders:** `ScratchDirectory` deletes its folder when it is created
+  (`tests/support/include/TechEngine/testing/ScratchDirectory.hpp:10-11`). Two cases with one
+  name would delete each other's files, and only when they overlap. Names are unique today, but
+  only because nobody reused one, so the folder name now carries the process id. That also keeps
+  two presets run at once on one machine apart.
+- **Fixed paths outside `ScratchDirectory`:** the first parallel run (#205) failed on Windows
+  twice. Two log cases shared one stderr file in the temp folder
+  (`engine/base/tests/diagnostics/LogTests.cpp`), and every `App::run()` writes
+  `logs/techengine.log` into the working directory, which ctest shares between an exe's cases,
+  so the diagnostics case could not delete it. Both now work in their own scratch folder. Linux
+  allows the shared file, so only Windows showed it.
+- **Coverage stays serial.** The coverage target runs a bare `ctest` (`cmake/coverage.cmake:94`),
+  which no test preset reaches, so its cases still run one at a time. Its profiles are named
+  `%m.profraw` (`:93`), and with `%m` LLVM merges concurrent processes of one binary, so making
+  it parallel later should be safe. That comes from LLVM's documented behaviour, not from a run.
+- **Load:** the 23 timing-dependent cases (§ *The audit*) are the first to watch for flakes,
+  and llvmpipe and lavapipe start worker threads in every GL process. If `[gpu]` cases slow down
+  or flake, they run in a second, serial `ctest -L gpu` call.
+- **Private runners:** a private repository's standard runner has about 2 vCPU and 8 GB, against
+  4 and 16 for a public one, by third-party sources read on Nov 14. The gain roughly halves, and
+  four sanitizer processes have half the memory.
+- **Measured by S11-D5's PR:** `win ASan`'s test step before and after.
+
+### The interim, and how `[gpu]` shrinks
+
+`[gpu]` is meant to hold only the cases that draw or load GL. At the merge it holds all 62 cases
+that open a window, because nothing lets the client start without one. Two [[Backlog]] entries
+shrink it:
+
+| Group | Cases | Leaves `[gpu]` through |
+|---|---|---|
+| App lifecycle: `EditorAppTests.cpp` (37) and `RuntimeAppTests.cpp` (2) | 39 | A null render device (*client*) |
+| Render thread lifecycle and ImGui hook order: `RenderThreadTests.cpp:64`, `:78`, `:92`, `:120`, `:141` | 5 | The same null device |
+| Client lifecycle: `ClientTests.cpp:42`, `:58`, `:82` | 3 | The same null device |
+| Window only, no GL: `WindowTests.cpp:36`, `:51`, `:162`, `:236`, `:291`, `:328`, `:357`, `:398` | 8 | The window asking for the renderer's GL version (*platform*) |
+| Driver contract: `RenderThreadTests.cpp:34`, `ClientTests.cpp:25`, `WindowTests.cpp:19`, `:109`, `:129`, `FrameRendererTests.cpp:48`, `:93` | 7 | Nothing, because these really need a driver |
+
+The grouping reads the case names, not their bodies, so the seam's own card checks it. Until
+the null device lands, no Windows leg, no TSan run and no lane run reaches any of the 62. That
+includes every editor case that bootstraps, which matters for [[Known Issues]] D9.
+
+### Shapes for the tiers that are not wired
+
+| Tier | Shape | Trigger |
+|---|---|---|
+| Visual | Render a fixed scene offscreen, read it back and compare it with a reference image per driver, within a tolerance: zink over lavapipe on CI, Miguel's GPU locally. `FrameRendererTests.cpp:93` already reads pixels back and checks them by hand. | R1's first card that draws a lit frame |
+| Performance | A repeatable scene with its frame time recorded. The million cubes entry in the [[Backlog]] (*etc*) is the first candidate. | That entry's own trigger, R1's first instanced draw |
+| Functional | The runtime opens a scene, runs a fixed number of frames and exits, and the exit code and the log are checked, as Unreal's Gauntlet does. | None yet: the runtime takes no arguments today |
 
 ## Scaffold checklist
 

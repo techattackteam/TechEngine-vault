@@ -35,6 +35,24 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
+### D12: Two processes in one working directory share one session log
+
+`initLogging()` opens `logs/techengine.log`, a path relative to the working directory, and
+truncates it (`engine/base/src/diagnostics/Log.cpp:28`, `:257` at `f932dd21`). A second process
+started in the same directory truncates the first one's log and then writes into it beside it.
+Found when parallel `ctest` turned it into a Windows failure (#205): every `App::run()` case of
+one test exe writes that file at once, and only the diagnostics case, now in its own folder,
+checks its contents.
+
+**Silent because** nothing reads the session log except a person after something went wrong,
+which is when a clobbered log costs the most.
+
+**Fix:** not decided. A per-process or per-role file name is one option.
+
+**Trigger:** any change that starts a second engine process, the editor's *File, Run* included,
+or a card that reads the session log back. Whether *File, Run* already starts the runtime in the
+editor's working directory was not checked.
+
 ### D11: A flat `.hdr` cut short after its header imports as a black sky
 
 A Radiance file whose pixel data is missing or cut short, and stored flat rather than
@@ -91,6 +109,10 @@ new entry point. Outside TSan it is undefined behaviour with no symptom.
 
 **Fix:** not decided. The job could stop logging through the app before the app dies, or the
 editor's imports could be owned by a member destroyed before the app's virtual calls end.
+
+**TSan is the only detector, and it is off for editor tests for now.** From S11-D5's merge until
+the null render device lands ([[Backlog]], *client*), a test that bootstraps an editor is `[gpu]`,
+and TSan does not run `[gpu]`. A new test that reaches this race would go unreported.
 
 **Trigger:** the next change to how `EditorApp` starts or stops imports (the asset browser's
 import, or cancelling an import in the [[Backlog]]), or any test that destroys an editor

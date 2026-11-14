@@ -43,7 +43,8 @@ This table is the summary. Every row that needed an argument has one in *Design*
 | **The snapshot's visual contents are M4's, not R1's** | Clear colour plus a draw flag. R1 replaces it with the frame packet ([[ADR-028 - Render device seam and frame packets]] §3, Nov 6), which is not built yet. | ADR-015 §2; ADR-028 §3 |
 | **Framebuffer dimensions** | Main seeds pixel dimensions and publishes framebuffer callback updates; both writer and render-thread snapshot reader use the same mutex. | S5-T8, #77 |
 | **Triangle resources** | Private `Buffer` and `VertexArray` wrappers use GL 4.5 DSA; `FrameRenderer` owns vertex/index buffers, VAO and checked shader startup. Cleanup precedes context release. | S5-T8, #77 |
-| **CI opens a real window** | Linux uses Xvfb and Mesa llvmpipe; Windows uses pinned Mesa DLLs beside the binaries. | See *How CI proves this*, verified 2026-09-06 |
+| **CI opens a real window** | Linux uses Xvfb, with zink over lavapipe on every leg but TSan. Windows uses pinned Mesa DLLs beside the binaries, but since Nov 14 no Windows leg runs a case tagged `[gpu]`, so it opens no window there. | See *How CI proves this*, verified 2026-09-06; [[ADR-008 - v2 build & testing baseline]]'s Nov 14 amendment, S11-D5 (#205) |
+| **On Linux the context is created through EGL** | Always, not only on CI: zink creates no context over GLX, and it is the only software driver that meets the renderer's GL floor. `Window::initialize()` sets `GLFW_CONTEXT_CREATION_API` under `__linux__`. | S11-D1's spike; S11-D5 (#205) |
 | **No `IWindow` interface** | One implementation, and no carded work needs a second. Same reasoning as [[File Access - Design]] § *Why there is no interface*. | 2026-08-30 |
 
 ## The seam
@@ -94,7 +95,7 @@ namespace TechEngine {
     class Window {                       // platform. Owns the GLFWwindow*.
     public:
         // --- main thread only (GLFW pins these) ---
-        static std::error_code initialize(); // glfwInit + the 4.5 core hints
+        static std::error_code initialize(); // glfwInit + the 4.5 core hints, EGL on Linux
         static void  terminate();        // after every window closes
         std::error_code open(int width, int height, std::string_view title);
         void         pollEvents();

@@ -208,8 +208,9 @@ Mechanism sections land as the build cards are cut. Known build work:
   (`engine/platform/src/window/Window.cpp:58-59`, Miguel, Nov 14), and the startup check
   (`RenderThread.cpp:93`) names both requirements when one fails.
 - **CI's software GL cannot meet the floor**, and only zink over lavapipe on Linux does,
-  through an EGL context (ADR-028 § *Consequences*, S11-D1). Where the window tests run, and
-  whether the window uses EGL always on Linux or only on CI, is S11-D5's.
+  through an EGL context (ADR-028 § *Consequences*, S11-D1). On Linux the window uses EGL
+  always, not only on CI, and the cases that draw or load GL are a `[gpu]` tier that CI runs on
+  Linux only ([[ADR-008 - v2 build & testing baseline]]'s Nov 14 amendment, S11-D5).
 - **The packet pool** needs four packets for simulation never to wait: one being filled, one
   in the slot, two in render's history.
 - **GPU captures** go through Nsight, since RenderDoc cannot capture bindless GL (Miguel, v1).

@@ -44,7 +44,7 @@ Sprint 12 and after must decide: the sun, material edits, the asset browser, sky
   because a change to `ci.yml` never runs `ci.yml` (`.github/workflows/ci.yml:28-36`). Each
   spike push costs CI minutes, so batch them. The branch is never merged, so the card lands as
   vault commits. How CI runs the window tests is S11-D5's.
-- [ ] **S11-D5** · The testing regime · P1 · 🟢 Deep · 4-6h ·
+- [x] **S11-D5** · The testing regime · P1 · 🟢 Deep · 4-6h ·
   done: every current test case is sorted by what it really is (unit, integration, a real-disk
   OS test, stress, or another type the audit finds), and the cases whose tags say otherwise are
   listed. How Unreal, Unity and Godot tier their tests is the baseline. ADR-008 gets a dated
@@ -234,9 +234,9 @@ and *How the scene view's camera is driven*.
 
 - [ ] The runtime shows Sponza, textured with base color, through the scene's main camera, on the
   device, with Miguel's windowed check and a capture (S11-T9).
-- [ ] ADR-028's amendment records whether zink gives CI the GL floor (S11-D1), and CI runs each
-  test tier where ADR-008's amendment says (S11-D5). S11-D1's half is done: vault `8446176`,
-  Nov 14.
+- [x] ADR-028's amendment records whether zink gives CI the GL floor (S11-D1), and CI runs each
+  test tier where ADR-008's amendment says (S11-D5). S11-D1's half: vault `8446176`, Nov 14.
+  S11-D5's half: #205 (`f932dd21`), Nov 14, with every required check green on its final run.
 - [ ] Sponza was re-imported with its images through *Re-import...*, and its ids were kept
   (S11-T1).
 - [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
