@@ -49,9 +49,13 @@ which is when a clobbered log costs the most.
 
 **Fix:** not decided. A per-process or per-role file name is one option.
 
-**Trigger:** any change that starts a second engine process, the editor's *File, Run* included,
-or a card that reads the session log back. Whether *File, Run* already starts the runtime in the
-editor's working directory was not checked.
+**Not reached by *File, Run* today** (checked Nov 14): it starts the exported runtime in
+`<editor executable folder>/<project name>/` (`apps/editor/src/EditorApp.cpp:100`, `:400`,
+`apps/editor/src/main.cpp`), which is not the editor's working directory in any normal launch,
+and it stays disabled until that runtime exits. Two editors launched from one folder do reach it.
+
+**Trigger:** any change that starts a second engine process or moves the runtime's working
+directory, or a card that reads the session log back.
 
 ### D11: A flat `.hdr` cut short after its header imports as a black sky
 
