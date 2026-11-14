@@ -8,13 +8,13 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q4 (Oct-Dec): [[2026-Q4]] |
-| **Sprint** | [[2026-10 Sprint 10 - Close E1]] *(Oct 31 - Nov 13)*, planned Oct 31. Sprint 09 closed all 30 cards a week early, to line up with Miguel's day-job sprints ([[2026-10-31 Sprint 09 Retrospective]]). |
-| **Sprint goal** | Close E1: the editor exports from its File menu into a folder that holds the runtime beside its packs, the runtime started from there logs the edited scene, and the hierarchy and inspector edit several entities at once. Alongside, R1's two ADRs and the design of TEMesh, TEModel and the glTF loader, so that E2 can build from Sprint 11. |
-| **Current focus** | E1 closed on Nov 14 (S10-T7), so Sprint 10 ends with only S10-T9 and S10-D5 open, both moving to Sprint 11. S10-D6 closed the same day with Sprint 11's cut around E2's first frame, so the Nov 14-15 boundary's `/sprint-plan` fits it next. Hubs: [[Renderer - Design]], [[Content Pipeline - Design]], [[Editor - Design]]. |
-| **Top blocker** | None on this sprint's cards. For Sprint 11: CI's software GL cannot run R1's GL floor ([[Backlog]] § *client*), and the asset edit path that a material inspector needs is not designed ([[Backlog]] § *editor & tooling*). The routine runs the Oct 23 prompt at 09:07 and 14:07 Lisbon on weekdays ([[Autonomous Lane - Routine Prompt]]). |
-| **Next milestone** | **E2 · First renderer**, over about three sprints; R1's two ADRs are Accepted and its content files are built ([[Roadmap]]). E1 closed on Nov 14 with an internal demo, not a video ([[Principles]] P4). |
+| **Sprint** | [[2026-11 Sprint 11 - First Frame]] *(Nov 14 - Nov 27)*, planned Nov 14. Sprint 10 closed 41 of 43 cards, E1 among them ([[2026-11-14 Sprint 10 Retrospective]]). |
+| **Sprint goal** | E2's first frame: Sponza, imported with its textures, is drawn through a camera in the runtime's window, on the new device, with base color only. The editor's scene view shows the same frame and is the first part to drop. |
+| **Current focus** | Day 1 is S11-D1 (CI's GL floor) and S11-T1 (Story H meets a real asset); then R1's cards from S11-T2 to S11-T9, which Miguel writes with Claude pairing. Work days end on Nov 24. Hubs: [[Renderer - Design]], [[Content Pipeline - Design]]. |
+| **Top blocker** | CI's software GL cannot run R1's GL floor, so S11-D1 comes before any card that raises the GL check. The routine owes a prompt paste before Mon Nov 16, and left no report on Fri Nov 13 ([[Autonomous Lane - Routine Prompt]]). For Sprint 12: the asset edit path that a material inspector needs is not designed ([[Backlog]] § *editor & tooling*). |
+| **Next milestone** | **E2 · First renderer**, over about three sprints, of which Sprint 11 is the first ([[Roadmap]]). No showcase outline exists yet; `/showcase E2` is owed before the sprint that ends it. |
 | **Direction** | An engine company, shown on YouTube ([[Vision]]). Phase 1 builds the engine one goal a month (E1 to E13, with E2 split in two, [[Capability Map]]), most goals ending in a showcase; the engine's first release ships when its contents are done, without waiting for TechAttack. Phase 2 builds TechAttack ([[Reference Game]], [[Channel]]). Decided 2026-10-23, revised at `/product-review` on 2026-10-31. |
-| **Reconciled against** | engine `e59d77c` (2026-11-06) |
+| **Reconciled against** | engine `6836c87` (2026-11-14) |
 
 **Reading that stamp** ([[ADR-012 - Vault repository split]] §6): the vault is its own repo,
 so its HEAD and the engine's move independently and a design note can describe code that has
@@ -22,19 +22,21 @@ moved on. The stamp is the last engine commit a drift check **actually ran again
 by `/weekly-review` or `/sprint-plan` only as that check's output, never as a formality.
 
 ```bash
-git log --oneline e59d77c..origin/master
+git log --oneline 6836c87..origin/master
 ```
 
 **Anything it lists is unreviewed against the vault** → treat design notes as *suspect* and say
 so when grounding an answer (`CLAUDE.md` § *How to work here*, rule 2). Distance is a signal, not
 proof: it cannot tell you *which* note drifted, only that nobody has looked.
 
-**Latest check: Nov 6, 2026**, against fetched `origin/master` at `e59d77c`, covering the 15
-engine commits since `4ba9f60` (#178 to #192). It checked the systems those commits touched, not
-every note. Each touched note had been edited after its commit, and its claims were read against
-the code. `tools/check-vault-citations.py` ran at both shas with the same excludes and found no
-new break. One fix: [[Resources - Design]]'s scene read now names the shared `visitReferences`
-walk from #184. No hub drift. Details in [[2026-11-06 Weekly Review]].
+**Latest check: Nov 14, 2026**, against fetched `origin/master` at `6836c87`, covering the 12
+engine commits since `e59d77c` (#193 to #204). The lane's freshness checks covered #193 to #201
+as they merged; this check read the notes that #203 and #204 touch against the code, not every
+note. `tools/check-vault-citations.py` ran at `c99bf04` and at `6836c87` with the same excludes
+and found no new break. One fix: [[Resources - Design]] § *Handles, counts and the load
+lifecycle* still said a load task writes its entry. No hub drift in the Scene and Resources rows; the Renderer and Content
+Pipeline rows were not read against ADR-028 and ADR-029. Details in
+[[2026-11-14 Sprint 10 Retrospective]].
 
 **Latest full reconciliation: Oct 10, 2026**, against fetched `origin/master` at `82d7a11c`,
 covering the 63 engine commits since `01ed7a30`. Every Systems design note was read against
@@ -77,9 +79,9 @@ first, then plan*). `/sprint-prep` runs as a standing Design card in **week 2, T
 Friday**, and drafts the next sprint; a 🤖 Auto prep brief feeds it from the Monday. The
 boundary's `/sprint-plan` then only runs the retro and fits the draft.
 
-→ **Next ceremony:** `/sprint-plan` for the Sprint 10 boundary runs on **Nov 14-15**, from
-S10-D6's cut (closed Nov 14); if that weekend is lost, it falls back to Mon Nov 16. *(Sprint 10's weekly review ran on Fri Nov 6,
-because Nov 7-8 is a race weekend.)*
+→ **Next ceremony:** `/weekly-review` on the **Nov 21-22** weekend. `/sprint-prep` (S11-D4) runs
+on **Tue Nov 24**, its only free day. `/sprint-plan` for the Sprint 11 boundary is due on **Nov
+28-29**, a vacation weekend, so it falls back to Mon Nov 30 if that weekend is lost.
 *(Sprint 09's boundary ran Sat Oct 31, a week ahead of its published Nov 7-8, to line up with
 Miguel's day-job sprints. See [[2026-10-31 Sprint 09 Retrospective]].)*
 *(Sprint 04's boundary ran Sun Aug 30, a week ahead of its published Sep 5-6, because the sprint
@@ -148,7 +150,7 @@ Build order from here: the [[Roadmap]] ladder: **chain M0-M6, then lanes**.
 | 2 | **Plan v2 + set up AI** | Foundation ADRs 005-008 · AI agents + ceremony loop | ✅ done |
 | 3 | **Ground** | Git flow · build scaffold green on CI · `master` ruleset Active | ✅ done (Jul 24) |
 | 4 | **Base foundation** | Logger · Assert · Clock · headless fixed-timestep loop, [[2026-08 Sprint 02 - Base Foundation]] | ✅ goal met (Jul 30); sprint closed Aug 2 |
-| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the Phase 1 goals, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9) · ✅ **M6 done** (Oct 31) · ✅ **E1 done** (Nov 14); 🔨 **E2** next |
+| 5 | **Climb the ladder** | Chain M1-M6 (enablers · concurrency + serialization · project + testbed · window · Scene & scheduling · content), then the Phase 1 goals, [[Roadmap]] | ✅ **M1 done** (Aug 20) · ✅ **M2 done** (Aug 30) → ✅ **M3 editor testbed + M4 complete** · ✅ **M5 done** (Oct 9) · ✅ **M6 done** (Oct 31) · ✅ **E1 done** (Nov 14); 🔨 **E2** in progress since Sprint 11 |
 
 _Tasks → [[Sprint Board]]._
 
@@ -212,16 +214,15 @@ Recently locked. Full set in [[ADR Index]]:
   [[ADR Index]] § *Amending an Accepted ADR*. The gate is how much argument the change needs,
   not whether a decision moved; the headline decision in a title is never amendable.
 
-## Health check (2026-11-06)
+## Health check (2026-11-14)
 
-- **Delivery:** week 1 of Sprint 10 closed 13 of Miguel's cards and every lane card due so far,
-  with no lane PR left open. 14 cards remain. Four come first in week 2, and the boundary moves
-  whatever is still open.
-- **Evidence:** Miguel's windowed checks passed for Export (#179) and the console (#189). E1's
-  five scenarios have not run together yet; that is S10-T7.
-- **Sustainability:** the pace is now measured, and it is high. It came from the rest days: Sun
-  Nov 1 and Wed Nov 4 were worked, and Fri Nov 6 closed five cards. Nov 7-8 is a race weekend.
-- **CI:** `win ASan`'s test step now takes 4-6 minutes, and it is billed at twice the Linux
-  rate. The test-tiers entry in the [[Backlog]] fired on Nov 6.
-- **Artifact health:** reconciled against `e59d77c` on Nov 6, a check of the systems week 1
-  touched. The last full reconciliation was Oct 10.
+- **Delivery:** Sprint 10 closed 41 of 43 cards. E1 is closed, R1's two ADRs are Accepted, and
+  Story H shipped in full, a sprint ahead of its plan.
+- **Evidence:** thin at the end. #203 and #204 were built on Linux, passed CI and merged with no
+  review conversation and no windowed run. S11-T1 is the first run of that code on a real asset.
+- **Sustainability:** Miguel reports "fine, but stretched". Sprint 11 packs its work into Nov 14
+  to Nov 24, with three full days in a row on Nov 20-22, then karting and a vacation.
+- **CI:** `win ASan`'s test step takes 4-6 minutes at twice the Linux rate. S11-D1's spike pushes
+  spend minutes too, so batch them.
+- **Artifact health:** reconciled against `6836c87` on Nov 14, a check of the systems Sprint 10's
+  second week touched. The last full reconciliation was Oct 10.

@@ -340,15 +340,6 @@ groups are kept, because they show where future work will land.
 
 ## client
 
-- #prio/high · **CI's software GL cannot run R1's GL floor**: ADR-028 §2 requires GL 4.6 and
-  `ARB_bindless_texture` with no fallback. Both CI legs draw with Mesa's `llvmpipe`
-  (`.github/workflows/ci.yml:158`, `:211-212`), and on Mesa 25.2.8 it gives at most GL 4.5 core
-  and no bindless (measured with `glxinfo` on Nov 9). The render thread starts only when its GL
-  check passes (`engine/client/src/render/RenderThread.cpp:93`), so raising that check fails the
-  window and render tests on every leg. Zink over lavapipe would not start under Xvfb in the
-  lane's sandbox, so it is unproven. ADR-028 § *Consequences* does not mention CI. Found by S10-P2
-  ([[2026-11-09 14-12 Auto Run]]). **Trigger:** R1's first card that raises the GL check, or
-  S10-D6's cut of R1.
 - #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
   purpose, so `ClientApp`'s failure handling has no test. That covers the stop it requests from
   the render thread, the stop in `mainThreadUpdate()` when `failed()` is set, and the throw in
@@ -374,12 +365,6 @@ groups are kept, because they show where future work will land.
   same gap. What survives between editor sessions (Scene contents, event streams, system
   state) is load-bearing and likely needs an ADR. Found at the ownership review, Sep 27.
   **Trigger:** the project-contribution entry above, or the first editor Play and Stop.
-
-- #prio/low · **The runtime logs every loaded entity at `INFO`**: after the startup load,
-  `RuntimeApp::logSceneTree` writes one `INFO` line per entity (S8-T9, #139). That is useful
-  while nothing draws entities, but a real scene would flood the log. Drop the lines to
-  `TE_LOGGER_DEBUG` or keep only the summary line. **Trigger:** the first scene with more than a
-  handful of entities, or the first card that draws them.
 
 ## net
 
@@ -528,18 +513,6 @@ groups are kept, because they show where future work will land.
   over several frames needs a decision on a placement that is still waiting when the scene is
   saved, cleared or replaced. Found at S10-T16 on Nov 10, 2026. **Trigger:** a measured stall,
   or R1 if render then waits on the simulation thread.
-- #prio/low · **Child entities of a split mesh have assimp's names**: Sponza's one unnamed mesh
-  arrives as about a hundred primitives, so placement gives the root children named
-  `meshes[0]-0` and onwards. Naming each after its material would read better once import
-  writes materials. Found at S10-T16 on Nov 10, 2026. **Trigger:** S10-T19, or the material
-  file card. **Fired Nov 14:** #203 writes materials at import, and the names are unchanged.
-- #prio/high · **Story H has not met a real asset or a window**: #203 (Nov 14) was tested on
-  fixtures only. *Import image...*, *Re-import...* and placing a `.temesh` have never been run by
-  hand, BC7's encode time is unmeasured, and Sponza was not re-imported, so its committed meshes
-  still name null materials and its images are not in the repo. Re-import Sponza with its images
-  through *Re-import...*, which also checks that the ids are kept. Found at the Story H close on
-  Nov 14, 2026. **Trigger:** before R1's first textured frame, which is the first code that
-  would show a wrong texture.
 
 - #prio/low · **The console repeats `Log.cpp`'s `localTime`**: `ConsolePanel.cpp` formats a
   record's local time with its own copy of the reentrant `localtime_s` / `localtime_r` helper,
@@ -719,8 +692,6 @@ groups are kept, because they show where future work will land.
   (`ma_allocation_callbacks`) remain under [[ADR-013 - Profiler (Tracy-backed instrumentation)]]
   §7. GLFW's hook shipped in S7-T2 (#121); each new hook needs its own pool constant
   ([[Profiler - Design]] § *Memory pools*). **Trigger:** the first init of Jolt or miniaudio.
-- #prio/low · **README at repo root** (public-facing). **Trigger:** T2, the first build that
-  runs outside the editor.
 - #prio/xlow · **Command `/catch-up`**: session re-entry after a multi-day gap. **Trigger:**
   the first session that opens with "where was I".
 - #prio/low · **A comma in a test name stops the IDE from rerunning that test**: Catch2 reads a

@@ -217,9 +217,10 @@ stateDiagram-v2
 ```
 
 A request on the simulation thread finds or creates the entry and adds one to its count. An
-unknown id fails at once. A new entry gets a `JobSystem` task that reads and decodes into that
-entry's own payload slot, then pushes a completion naming the ids it depends on; the
-completion queue's lock is the only lock a load task takes. The owner drains completions
+unknown id fails at once. A new entry gets a `JobSystem` task that reads and decodes, then
+pushes a completion that carries the payload and the ids it depends on (since #203 a task no
+longer writes its entry; § *Loads on the job system, as built*); the completion queue's lock
+is the only lock a load task takes. The owner drains completions
 during the loading phase: it publishes ready entries and requests dependencies as the next
 round, until nothing is pending. `release` takes one off the count, and an entry at zero joins
 a pending-free list drained in the next loading phase, or at the barrier's resource step once

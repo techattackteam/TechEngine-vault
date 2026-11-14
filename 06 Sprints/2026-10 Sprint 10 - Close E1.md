@@ -206,7 +206,8 @@ an ADR. The Profiler half drops first.
   folder names the edited entities, and the result is recorded. E1 is marked closed on the
   [[Roadmap]]. Follows S10-T2 and S10-T3. Closed Nov 14 with no PR, on Miguel's statement that he
   ran the five scenarios during development rather than as one recorded run.
-- [ ] **S10-T9** · The base sweep's leftover · P3 · 🟡 Light · 1-2h ·
+- [ ] **S10-T9** · The base sweep's leftover · P3 · 🟡 Light · 1-2h · **moved to Sprint 11 as
+  S11-T14 (🤖 Auto) on Nov 14** ·
   done: the version anchors go (`baseVersion()`, `platformVersion()`, `coreVersion()`, `Base.hpp`,
   `Base.cpp` and `BaseTests.cpp`, whose glm case repeats `MathTests.cpp`). From the base sweep of
   Oct 29. Its second leftover, one log-capture guard in `te_test_support` for the seven copies
@@ -288,7 +289,8 @@ an ADR. The Profiler half drops first.
 
 ### Story G: Product follow-up
 
-- [ ] **S10-D5** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h ·
+- [ ] **S10-D5** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h · **moved to
+  Sprint 11 as S11-D2 (🤖 Claude) on Nov 14** ·
   done: `/triage` weighs what the engine must provide to record a cinematic showcase, such as
   camera paths and capture at a fixed frame rate, and the [[Capability Map]] records the result.
   Due before E2's showcase ([[Channel]] § *How a video fits the plan*).
@@ -709,6 +711,34 @@ and Story H's build. At two cards per session that is about ten sessions, agains
 
 <!-- Keep this section while the sprint is active. Fill it at the end. -->
 
-- Link what shipped and the demo or artifact that proves it.
+Closed Nov 14 with 41 of 43 cards done; S10-B1 was folded into S10-T10. E1 is closed, R1's two
+ADRs are Accepted, and the content pipeline imports models, meshes, materials and textures. Each
+card's entry, with what it taught, was on [[Sprint Board]] until this boundary and lives in git
+history (vault `bedbb0a`).
 
-Retrospective: [[07 Journal]]
+- **Story A, multi-select:** S10-T1 (#178), S10-T2 (#182), S10-T8 the `AssetRef` picker (#190).
+- **Story B, export and Run · 🤖 Claude:** S10-D1 [[Resources - Design]] § *The export command*,
+  S10-T3 (#179), S10-T4 (#181).
+- **Story C, the console:** S10-D2 and S10-D3 in [[Editor - Design]], S10-T10 log sinks as
+  objects (#183, D5 deleted), S10-T11 the console's sink (#187, D7 deleted), S10-T12 the panel
+  (#189). The Profiler panel's build waits for E11.
+- **Story D, E1's loose ends:** S10-T5 coverage leaves out `ui/` (#180), S10-T6 Local and World
+  (#188, 🤖 Claude), S10-T7 E1's internal demo (no PR).
+- **Story E, R1's two ADRs:** S10-P1 [[Renderer - Seam Paper Report]], S10-D4
+  [[ADR-028 - Render device seam and frame packets]], S10-P3 [[Renderer - Materials Paper Report]],
+  S10-D7 [[ADR-029 - Materials, surfaces and lobes]].
+- **Story F, defects:** S10-B2 roots keep their order (#197), S10-B3 the shear approximation and
+  S10-B4 the missing startup scene (#204).
+- **Story H, meshes and models:** S10-D8 [[Content Pipeline - Brief]]; S10-D9, S10-D10 and
+  S10-D11 in [[Content Pipeline - Design]]; S10-P4 [[Content Pipeline - Mesh Import Report]];
+  S10-T13 assimp (#192), S10-T14 the model file (#193), S10-T15 import (#194), S10-T16 placement
+  (#196), S10-T17 TEMesh v2 (#198), S10-T18 materials per slot (#199), S10-T19 import writes v2
+  (#201), S10-T20 to S10-T25 the merged mesh, textures, materials, the sky image and re-import
+  (#203).
+- **Story I, prepare Sprint 11:** S10-P2 [[2026-11-09 14-12 Auto Run]], S10-D6 § *Sprint 11's cut*.
+- **Demo:** none recorded as one run. Export logging the scene (#179), multi-select (#182) and
+  the console (#189) had Miguel's windowed checks; S10-T7 closed on his statement for the rest.
+  Nothing from #203 or #204 has run in a window; S11-T1 owns that.
+- **Moved to Sprint 11:** S10-T9 as S11-T14 and S10-D5 as S11-D2.
+
+Retrospective: [[2026-11-14 Sprint 10 Retrospective]]
