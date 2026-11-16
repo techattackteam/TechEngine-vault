@@ -356,6 +356,14 @@ queries refresh matches when stale. Growing an existing archetype needs no remat
 the spans are reacquired. Retained queries point to their storage owner, so storage is
 non-copyable and non-movable and must outlive them.
 
+**A `const Scene` runs read-only queries** (Miguel, 2026-11-16, S11-T4). `query<Write<>,
+Read<...>>()` has a `const` overload, so code that holds a `const Scene&`, such as frame
+extraction and the camera lookup, iterates components instead of walking the hierarchy. A
+`Write<>` query stores a `const QuerySource*`: the source has a `const` `queryColumn`, and the
+iteration depth is a mutable atomic behind `const` begin and end calls. A query that names a
+type the registry never registered still fires a check, so a caller that cannot know asks
+`Scene::isRegistered` first, as `countMainCameras` does for a registry without `Camera`.
+
 Structural mutation is prohibited while any query or `eachEntity` callback is active.
 Iteration depth is atomic so disjoint queries may run concurrently; the task graph remains
 responsible for preventing conflicting component access. ADR-020 places queued structural

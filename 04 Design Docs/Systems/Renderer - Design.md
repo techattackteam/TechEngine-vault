@@ -9,8 +9,9 @@
 (the extraction hook) · `core` (mesh and material types)
 **Kind:** system
 **Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`; materials designed on
-2026-11-10 (S10-D7) against `ac594e4`. The device is built (S11-T3, #207); the frame still
-draws only M4's triangle (`engine/client/src/render/FrameRenderer.cpp`).
+2026-11-10 (S10-D7) against `ac594e4`. The device is built (S11-T3, #207), and so are the frame
+packets (S11-T4, #210); the frame still draws only M4's triangle
+(`engine/client/src/render/FrameRenderer.cpp`).
 **ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
 [[ADR-029 - Materials, surfaces and lobes]] ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -38,10 +39,17 @@ the render thread that draws packets through a small device.
 | OpenGL 4.6 | The floor rises from 4.5. | ADR-028 §2 |
 | Bindless textures are required | `ARB_bindless_texture`, with no fallback. Texture handles live in a material buffer that each draw indexes through `gl_DrawID`. | ADR-028 §2 |
 | The frame packet | Read from the `Scene` after ticks and after applied edits; pooled and moved by ownership, never copied. ADR-019 §3's delivery and interpolation stand. | ADR-028 §3 |
+| The extraction hook | `App::publishFrame(scene, simulation)` runs after a tick batch, after each applied batch of edits, and once after the startup load. `ClientApp` fills the packet through `FrameExtraction::extractFramePacket` in `client`. | Miguel, 2026-11-16 (S11-T4); § *The frame packet* |
+| A packet at the same tick | Each packet carries a rising sequence. On the current timeline and tick, a newer sequence replaces the current packet and keeps the previous one; an older or equal one is dropped. | Miguel, 2026-11-16 (S11-T4); § *Packet delivery* |
+| Matching instances across two packets | By `Entity`, generation included. An instance that appears draws at its current world, and one that vanishes is not drawn. From E2 render interpolates instance worlds and the camera on the CPU every frame. | Miguel, 2026-11-16 (S11-T4); § *Packet delivery* |
+| The packet pool | Four packets, moved by `unique_ptr` and never destroyed. The render thread owns the pool. An empty pool is misuse and fires a check. | Miguel, 2026-11-16 (S11-T4); § *Packet delivery* |
+| Handing a packet to the history | The mailbox runs the history's acquire while it holds its own lock, so render never holds a third packet. | Miguel, 2026-11-16 (S11-T4); § *Packet delivery* |
 | Views | A frame draws one packet into one or more views, each with a target and a camera. The runtime has the window; the editor has its scene view and game view. A hidden view is not drawn. Light clusters depend on the camera, so each view builds its own. | ADR-028 §3 |
 | The scene view's camera | It comes from main on ADR-019 §4's latest-value path, not from the packet, so it moves with no packet and no tick. The game view uses the scene's main active camera from the packet. | ADR-028 §3; [[Editor - Design]] § *The layout* |
 | The camera component | `Camera` in `core`, registered in both apps like `MeshRenderer`. Perspective only in E2: a vertical field of view, near and far planes, ADR-029 §6's fixed exposure and a `main` flag. Its view comes from the entity's world transform. Orthographic is added when something needs it. | Miguel, 2026-11-14 (S10-D6) |
-| The main active camera | The first entity in hierarchy order whose `Camera` has `main` set. The game view and the runtime draw through it. With none, the view clears to a colour and the app warns once. | Miguel, 2026-11-14 (S10-D6) |
+| The main active camera | A scene has at most one `Camera` with `main` set, and the game view and the runtime draw through it. With none, the view clears to a colour and the app warns once. | Miguel, 2026-11-14 (S10-D6); one at a time, Miguel, 2026-11-16 |
+| How one main camera is kept | A `core` function sets a camera as main and clears `main` on every other `Camera`. Every caller goes through it: the editor's commands now, scripts from E11, so the runtime holds the rule too. A `Camera` added to a scene that already has a main camera is added with `main` off; the first camera in a scene is still main by default. Ticking `main` on several selected cameras at once is refused with a warning. Each camera it clears is part of the same edit, so one undo restores them all. | Miguel, 2026-11-16 |
+| A scene with two main cameras | An old file, a hand edit or a merge can still bring two. Loading warns once, and the first in hierarchy order wins. The file stays as it is until the user fixes it and saves. | Miguel, 2026-11-16 |
 | How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main and moves a fly camera: right mouse button to look, WASD to move. The `InputBuffer` stays detached while Stopped. Orbit and focus on the selection stay T3's. | Miguel, 2026-11-14 (S10-D6); [[Editor - Design]] § *Decided* |
 | The device's surface | One handle type per kind, each an index and a generation. The vertex layout lives inside the pipeline. An empty target is the window. A bad description returns an error code; misuse fires a check. | Miguel, 2026-11-15 (S11-T3); § *The device* |
 | The renderer is not a scheduled System | It is the extraction hook plus the render-thread frame. | ADR-028 §3, against ADR-006 §5 |
@@ -113,6 +121,93 @@ Its surface was settled at the card's `/card-start` (Miguel, 2026-11-15).
   refused today as `InvalidRenderDescription`.
 - **The window's depth clear** runs whether or not the window has a depth buffer; without one,
   GL ignores it.
+
+### The frame packet
+
+Built by S11-T4 (#210, `4d0b8e0`, Nov 16). A packet is everything render needs from the `Scene` for one frame, with
+handles and values only, never a pointer into the `Scene`
+(`engine/client/include/TechEngine/client/render/FramePacket.hpp`).
+
+| Field | Holds |
+|---|---|
+| Timing | The tick, its time, the fixed step and the timeline, as the snapshot carried them. |
+| Sequence | A number that rises on every publish, so render can order packets that share a tick. |
+| Input | The held input at the publish. |
+| Instances | One per `MeshRenderer`: its `Entity`, its world matrix, its mesh handle, and a range of slots in the packet's material list. |
+| Materials | One handle per slot, in slot order. A null handle is a slot with no material. |
+| Camera | Whether the scene has a main active camera, and if so its settings and world matrix. |
+
+- **Why it moves instead of being copied.** The snapshot was copied about four times per frame.
+  A packet holds 64 bytes of matrix per instance, which is about 64 MB in E2b's stress scene.
+- **Why it is published after edits and after the startup load.** A Stopped editor never ticks,
+  so a packet sent only after ticks would never show an edit or the loaded scene.
+- **Its vectors keep their capacity.** Extraction clears them without shrinking, and packets are
+  never destroyed, so a warm frame allocates nothing.
+
+### Packet delivery
+
+Where each packet lives, and which thread moves it:
+
+```mermaid
+flowchart TB
+    subgraph Sim["Simulation thread"]
+        P["Publish point<br/>after ticks, after edits,<br/>after the startup load"]
+        F["Filling<br/>extractFramePacket<br/>reads the Scene"]
+    end
+    subgraph Shared["Shared, each behind its own lock"]
+        Pool[("Pool<br/>four packets")]
+        Slot["Mailbox slot<br/>latest wins"]
+    end
+    subgraph Render["Render thread"]
+        H["History<br/>previous and current"]
+        V["FrameView<br/>interpolated worlds"]
+        R["FrameRenderer<br/>draws"]
+    end
+    P --> F
+    Pool -->|"acquire"| F
+    F -->|"publish, moved"| Slot
+    Slot -->|"unread packet replaced"| Pool
+    Slot -->|"deliverTo, under the slot's lock"| H
+    H -->|"dropped or rejected"| Pool
+    H -->|"prepareFrame"| V
+    V --> R
+```
+
+- **Four packets are enough:** one being filled, one in the slot and two in the history.
+- **Render must never hold a third.** If render took the packet out of the slot and only then gave
+  it to the history, it would hold three for a moment. Simulation could then publish into the
+  empty slot and acquire from an empty pool. So the mailbox runs the history's acquire under its
+  own lock, and simulation's publish waits on that lock for a few pointer moves at most.
+- **The history's rules.** A new timeline replaces both entries. On the current timeline, a newer
+  tick moves the current packet to previous, and a newer sequence at the same tick replaces the
+  current packet in place. Anything older is dropped. Every packet it lets go returns to the pool.
+
+### Packet delivery: the call order
+
+```mermaid
+sequenceDiagram
+    participant S as Simulation thread
+    participant Pool as Pool
+    participant M as Mailbox slot
+    participant R as Render thread
+    S->>Pool: acquire()
+    Pool-->>S: a free packet
+    S->>S: fill timing, sequence and input, then extract the Scene
+    S->>M: publish(packet)
+    M-->>Pool: release the unread packet, if there was one
+    loop every render frame
+        R->>M: deliverTo(history)
+        Note over M,R: the slot's lock is held while the history acquires
+        M->>R: the packet moves into the history
+        R-->>Pool: release the oldest or a rejected packet
+        R->>R: prepareFrame matches by Entity and interpolates
+        R->>R: draw the FrameView
+    end
+```
+
+- **The frame view is render's own.** `prepareFrame` fills a reused `FrameView` with one world
+  per instance of the current packet, in the same order, and points it at that packet. The next
+  acquire can free the packet, so the view is good for one frame only.
 
 ### Geometry buffers
 
@@ -243,12 +338,14 @@ Mechanism sections land as the build cards are cut. Known build work:
   `engine/core/include/TechEngine/core/camera/Camera.hpp`. The field of view is in degrees, the
   exposure is EV100 (the frame is scaled by `1 / (1.2 * 2^EV100)`, default 0), `main` defaults
   to true, and near and far default to 0.1 and 1000. `findMainCamera` takes the caller's
-  warn-once flag and clears it when it finds a camera, so each view keeps its own flag. It walks
-  the tree through `getChildren`, which allocates per node, until `Scene` has a tree-order walk
-  ([[Backlog]] § *core*). These were the lane's calls, listed in #208; Miguel merged it with
-  none reversed.
-- **The packet pool** needs four packets for simulation never to wait: one being filled, one
-  in the slot, two in render's history.
+  warn-once flag and clears it when it finds a camera, so each view keeps its own flag. These
+  were the lane's calls, listed in #208; Miguel merged it with none reversed.
+- **One main camera per scene** (S11-T4, #210). `Camera::findMainCamera`, `setMainCamera` and
+  `countMainCameras` are static members of `Camera`
+  (`engine/core/src/camera/Camera.cpp`). The lookup counts main cameras with a const query
+  and walks the tree through `getChildren` only when two or more tie, so a normal scene never
+  walks. The inspector's `main` tick and the add-component command go through them
+  (`apps/editor/src/edit/InspectorCommands.cpp`), and `SceneAsset::read` warns on two.
 - **GPU captures** go through Nsight, since RenderDoc cannot capture bindless GL (Miguel, v1).
 - **The light clusters follow v1's two dispatches:** one builds each cluster's bounds, one
   assigns lights. v1 ran both every frame and read the light count from the live `Scene`
@@ -262,11 +359,14 @@ Mechanism sections land as the build cards are cut. Known build work:
   front face flipped, and the front face is pipeline state, so one multi-draw cannot hold both.
   The lean is a second multi-draw for mirrored instances. A merged mesh has none, because import
   flips its triangles. Owner: R1's first frame card.
-- **Where instance transforms are interpolated:** on the CPU per frame, or on the GPU from both
-  packets' buffers. Owner: E2b, measured against the stress scene.
-- **How render matches an instance across two packets** to interpolate it, for example by
-  entity in a stable order, and what it does with one that appears or vanishes between them.
-  Owner: R1's packet card.
+- **Whether instance interpolation moves to the GPU.** From E2 the CPU interpolates every
+  instance each frame (§ *Decided*). The GPU could do it from both packets' buffers instead.
+  Owner: E2b, measured against the stress scene.
+- **How a world matrix is interpolated.** S11-T4 shipped a column-wise lerp of the matrix
+  (`engine/client/src/render/PacketHistory.cpp`), which is exact for a translation but shrinks
+  a mesh partway through a rotation. A slerp needs the packet to carry position, rotation and
+  scale beside the matrix. The camera's field of view and planes follow the current packet, as
+  shipped. Owner: the first card that shows something rotating, or E2b.
 - **Orbit and focus on the selection** for the scene view's camera. The fly camera is decided
   (§ *Decided*). Owner: T3's viewport tools.
 - **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.

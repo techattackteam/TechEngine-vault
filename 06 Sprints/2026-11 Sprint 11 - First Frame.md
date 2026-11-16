@@ -124,13 +124,21 @@ follows S11-T3; S11-T7 and S11-T8 follow S11-T6; S11-T9 follows S11-T4, S11-T7 a
   through it, `FrameRenderer` makes no GL call, and `Buffer` and `VertexArray` fold into it.
   Storage buffers are in; compute dispatch waits for the light clusters. The device's surface is
   settled at `/card-start`. #207 (`d09c6f98`), Nov 16.
-- [ ] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h ·
+- [x] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h ·
   done: the extraction hook reads the `Scene` into a pooled packet after ticks and after applied
   edits, and render moves it instead of copying (ADR-028 §3; the copies are listed in
   [[Renderer - Design]] § *References*). The pool holds four packets. A packet carries each
   `MeshRenderer`'s world transform, mesh and slot materials, and the main active camera. Tests:
   simulation never waits with four packets; an edit in the Stopped editor produces a packet. How
   render matches an instance across two packets is this card's open question.
+  **Grown at `/card-start` (Nov 16, Miguel's call):** a scene keeps one main camera, by the rows
+  *The main active camera*, *How one main camera is kept* and *A scene with two main cameras* in
+  [[Renderer - Design]] § *Decided*. Tests: setting a camera main clears every other one; an
+  added `Camera` starts with `main` off when the scene has one; ticking `main` on several
+  selected cameras is refused; a load with two warns once and the first in hierarchy order wins.
+  **Also grown (Nov 16):** a `const Scene` runs read-only queries ([[Scene - Design]] § *Queries
+  and invalidation*), so extraction and the camera lookup stop walking the hierarchy.
+  #210 (`4d0b8e0`), Nov 16.
 - [x] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h ·
   done: `Camera` in `core` with the fields in [[Renderer - Design]] § *Decided*, registered in
   both apps, shown by the inspector, and one `core` function that returns the main active camera.
@@ -188,7 +196,7 @@ and *How the scene view's camera is driven*.
 
 ### Story E: The lane's small cards · 🤖 Auto
 
-- [ ] **S11-P1** · The inputs check in `/sprint-prep` · P2 · 🤖 Auto ·
+- [x] **S11-P1** · The inputs check in `/sprint-prep` · P2 · 🤖 Auto ·
   done: step 3 of `.claude/commands/sprint-prep.md` and [[Planning Workflow - Artifact Gate]] §
   *Where plans come from* gain one check: list everything the goal's showcase sentence consumes,
   and mark each built, carded, decided or undecided, before the goal is proposed. S10-D6's
@@ -205,6 +213,17 @@ and *How the scene view's camera is driven*.
   repeats `MathTests.cpp`. `ctest` proves it. Was S10-T9.
 - [ ] **S11-P2** · A README at the repo root · P3 · 🤖 Auto ·
   done: what the engine is, how to clone the vault, and the three preset commands.
+- [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto ·
+  done: the PR lists every walk over `getRoots` and `getChildren` outside `Scene`, by file and
+  line. Each walk whose result does not depend on hierarchy order becomes a component query; each
+  one that does stays, with its reason (the outliner, sibling order, row order on disk, a tree
+  print). The known candidate is the whole-scene `rebuildMaterialSlots`
+  (`apps/editor/src/edit/MaterialSlotRebuild.cpp:54`), which gathers every entity only to rebuild
+  each `MeshRenderer`'s slots. It stays off S11-T4's files (`Camera.cpp`, `SceneAsset.cpp`,
+  `FrameExtraction.cpp`) and S11-T12's (`RuntimeApp.cpp`), and only lists the walks there. A walk
+  that holds a `const Scene&` needs S11-T4's const query, which is not on `master` yet, so it is
+  listed for after that merge. `ctest` proves nothing else changed. The walks that keep their
+  order belong to the [[Backlog]]'s *`Scene` has no tree-order walk* entry. Added Nov 16.
 
 ### Story F: Prepare Sprint 12 (standing)
 
@@ -222,10 +241,10 @@ and *How the scene view's camera is driven*.
 - 🤖 Claude features: S11-T5 (the camera), S11-T11 (the fly camera, after S11-T10) and S11-D2
   (vault only). Both build cards are built to Miguel's design in [[Renderer - Design]] §
   *Decided*.
-- 🤖 Auto cards: S11-P1, S11-T12, S11-T13, S11-T14 and S11-P2.
+- 🤖 Auto cards: S11-P1, S11-T12, S11-T13, S11-T14, S11-P2 and S11-T15 (added Nov 16).
 - Standing prep: S11-P3 (not before Mon Nov 23) and S11-D4 (Tue Nov 24).
-- PR load: seven PR-producing lane cards over two weeks (two 🤖 Claude, five 🤖 Auto), under the
-  limit of about five a week. S11-D2 and S11-P3 are free. Review costs about 2.5h.
+- PR load: eight PR-producing lane cards over two weeks (two 🤖 Claude, six 🤖 Auto), under the
+  limit of about five a week. S11-D2 and S11-P3 are free. Review costs about 2.75h.
 - **The routine owes a prompt paste** ([[Autonomous Lane - Routine Prompt]] § *Routine
   configuration*): the sweep's outward look-for and step 5's narrowed 🤖 Claude paragraph. Paste
   it before Mon Nov 16, when the lane can first take S11-T5. Fri Nov 13 left no run report;

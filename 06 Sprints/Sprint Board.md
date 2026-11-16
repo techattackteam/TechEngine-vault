@@ -16,7 +16,6 @@ kanban-plugin: board
 
 ## Story B: R1's first frame
 
-- [ ] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h: the extraction hook fills a pooled packet after ticks and edits, and render moves it. Follows S11-T3 and S11-T5.
 - [ ] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h: uploads cross to render in order, and simulation defers a free until render reports the upload done. Follows S11-T3.
 - [ ] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h: three immutable buffers with a free-list allocator and a second block when one fills. Follows S11-T6.
 - [ ] **S11-T8** · The material buffer and bindless textures · P1 · 🟢 Deep · 4-6h: textures upload in their file's format, and each material writes its 96-byte record. Follows S11-T6.
@@ -41,6 +40,7 @@ kanban-plugin: board
 - [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: with `_1`, `_2` on a repeat, and a two-primitive fixture test. After S11-T1.
 - [ ] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto: the version-anchor stubs go from `base`, `platform` and `core`. Was S10-T9.
 - [ ] **S11-P2** · A README at the repo root · P3 · 🤖 Auto: what the engine is, how to clone the vault, and the three preset commands.
+- [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto: every `getRoots`/`getChildren` walk is listed; the ones that need no hierarchy order become queries, the rest keep their reason. Off S11-T4's and S11-T12's files. Added Nov 16.
 
 
 ## Story F: Prepare Sprint 12
@@ -52,14 +52,19 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
-
 ## 👀 Review / Demo
 
-- [ ] **S11-P1** · The inputs check in `/sprint-prep` · P2 · 🤖 Auto: **PR #209**, branch `S11-P1/inputs-check`, opened by the lane on Nov 16. The command's half is in the PR; the artifact gate's paragraph in § *Where plans come from* is already on the vault's master. Miguel reviews and merges #209; no decision is owed.
 
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h: #210 (`4d0b8e0`), **Nov 16**. Simulation fills a pooled packet after ticks, after edits and after the startup load, and render matches instances by `Entity` and interpolates them on the CPU ([[Renderer - Design]] § *The frame packet*, § *Packet delivery*). Unblocks S11-T9 with S11-T7 and S11-T8; Story B goes on.
+	- **`/card-start` found two holes the card did not name:** the history dropped every packet whose tick did not advance, so a Stopped editor showed only its first edit, and four packets run out if render takes one before the history lets one go. A per-publish sequence and a hand-over under the mailbox's lock close them.
+	- **The card grew three times on Nov 16, by Miguel's call:** one main camera per scene (core functions, two editor commands, a warning on load), a read-only query on a `const Scene` with `Scene::isRegistered` ([[Scene - Design]] § *Queries and invalidation*), and the walks it leaves for S11-T15. The camera functions became static members of `Camera`, which opened the *Grouping functions no instance owns* row in `CONVENTIONS.md`.
+	- **Two `/card-review` passes fixed everything before the merge**, so no [[Known Issues]] row: an unlocked `release` that failed both threaded pool tests, a `findMainCamera` that dropped the hierarchy-order tie-break, a `setMainCamera` that cleared the main camera before refusing, and two Tracy zones in one block that would break `windows-profile`.
+	- *Retro:* 4-6h became 57 files across `core`, `client`, `app` and the editor, and the PR has no description or review conversation, so this entry comes from the session. `m_vsync` now starts `false` (`RenderThread.hpp`), which no card asked for and nothing records. CI's `linux-clang Release` failed once on GLFW error 65550 in an untouched window case and passed on re-run: the first `[gpu]` flake since parallel `ctest` ([[B3 - Build & Testing Notes]] § *Load*).
+- [x] **S11-P1** · The inputs check in `/sprint-prep` · P2 · 🤖 Auto: #209 (`87a67c8`), **Nov 16**. Step 3 of `/sprint-prep` now lists what the goal's showcase sentence consumes before the goal is proposed; the vault half landed earlier in [[Planning Workflow - Artifact Gate]] § *Where plans come from*. Nothing surprised. Its first real run is S11-D4 on Nov 24.
+	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body and the diff alone. The card's half-in-the-vault, half-in-a-PR shape worked, but it means the vault described the check before the merge did.
 - [x] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h: #208 (`4e05985`), **Nov 16**. `Camera` and `findMainCamera` in `core`, registered in both apps, with the inspector drawing it through the generic rows ([[Renderer - Design]] § *Build notes*). Unblocks S11-T4, and S11-T12 can now take `RuntimeApp.cpp`.
 	- **All seven *Decisions I took* stood**: Miguel merged it about 80 minutes after it opened, with none reversed. Zero reversals for the retro's count.
 	- **It is the sixth hand-written walk over `getChildren`**, which fires the trigger on the *`Scene` has no tree-order walk* entry in the [[Backlog]] (*core*), and S11-T4 will call it once per packet.
