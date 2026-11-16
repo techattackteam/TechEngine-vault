@@ -73,7 +73,8 @@ groups are kept, because they show where future work will land.
   S11-T2 raises to 4.6 core. So eight window cases that use no GL
   (`engine/platform/tests/window/WindowTests.cpp`, listed in [[B3 - Build & Testing Notes]]
   § *Test tiers*) need the renderer's floor and stay `[gpu]`. Asked for less, they would run on
-  Windows' llvmpipe and under TSan, as they do today. **Trigger:** S11-T2 merges.
+  Windows' llvmpipe and under TSan, as they do today. **Trigger:** S11-T2 merges. **Fired by
+  S11-T2 (#206, Nov 14).**
 
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
@@ -578,6 +579,12 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/low · **glad2's generator command in `cmake/deps.cmake` is stale**: S11-T2 (#206)
+  regenerated glad with `--api gl:core=4.6 --extensions GL_ARB_bindless_texture`, but the
+  comment at `cmake/deps.cmake:246` still gives the 4.5 command with no extensions. The next
+  regeneration from that comment would drop the floor and bindless. The header records the real
+  command (`external/glad/include/glad/gl.h`). A one-line fix, a 🤖 Auto candidate. Found at
+  S11-T2's close on Nov 14, 2026.
 - #prio/medium · **The million cubes as an end-to-end benchmark**: Miguel's ask, Oct 30, 2026.
   [[Renderer - Brief]]'s Should of a million cubes moving on a grid at 60 fps (v1 reached 20)
   exercises one whole frame: a System over the ECS, the task graph's executor, transform

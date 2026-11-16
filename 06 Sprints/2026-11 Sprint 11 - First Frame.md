@@ -112,18 +112,18 @@ Moved here from the [[Backlog]]'s *Test tiers and parallel ctest* entry, which w
 Order: S11-T2 follows S11-D5, which follows S11-D1 (Story A); S11-T3 follows S11-T2; S11-T4 follows S11-T3 and S11-T5; S11-T6
 follows S11-T3; S11-T7 and S11-T8 follow S11-T6; S11-T9 follows S11-T4, S11-T7 and S11-T8.
 
-- [ ] **S11-T2** · GL 4.6 and bindless at startup · P1 · 🟡 Light · 1-2h ·
+- [x] **S11-T2** · GL 4.6 and bindless at startup · P1 · 🟡 Light · 1-2h ·
   done: glad2 is regenerated with `--api gl:core=4.6` and `ARB_bindless_texture`
   (`cmake/deps.cmake:244-246`), the window requests a 4.6 core context
   (`engine/platform/src/window/Window.cpp:58-59`, Miguel, Nov 14), and the startup check
   (`engine/client/src/render/RenderThread.cpp:93`) logs which requirement failed
-  ([[Renderer - Design]] § *Build notes*).
-- [ ] **S11-T3** · The device · P1 · 🟢 Deep · 4-6h ·
+  ([[Renderer - Design]] § *Build notes*). #206 (`60707037`), Nov 14.
+- [x] **S11-T3** · The device · P1 · 🟢 Deep · 4-6h ·
   done: a device in `client` with typed handles for buffers, textures, pipelines and render
   targets, pipelines bound whole and explicit render passes (ADR-028 §1). M4's triangle draws
   through it, `FrameRenderer` makes no GL call, and `Buffer` and `VertexArray` fold into it.
   Storage buffers are in; compute dispatch waits for the light clusters. The device's surface is
-  settled at `/card-start`.
+  settled at `/card-start`. #207 (`d09c6f98`), Nov 16.
 - [ ] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h ·
   done: the extraction hook reads the `Scene` into a pooled packet after ticks and after applied
   edits, and render moves it instead of copying (ADR-028 §3; the copies are listed in

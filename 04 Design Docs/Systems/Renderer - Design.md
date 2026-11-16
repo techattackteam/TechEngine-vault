@@ -9,8 +9,8 @@
 (the extraction hook) · `core` (mesh and material types)
 **Kind:** system
 **Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`; materials designed on
-2026-11-10 (S10-D7) against `ac594e4`. Nothing is built
-beyond M4's triangle (`engine/client/src/render/FrameRenderer.cpp`).
+2026-11-10 (S10-D7) against `ac594e4`. The device is built (S11-T3, #207); the frame still
+draws only M4's triangle (`engine/client/src/render/FrameRenderer.cpp`).
 **ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
 [[ADR-029 - Materials, surfaces and lobes]] ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -43,6 +43,7 @@ the render thread that draws packets through a small device.
 | The camera component | `Camera` in `core`, registered in both apps like `MeshRenderer`. Perspective only in E2: a vertical field of view, near and far planes, ADR-029 §6's fixed exposure and a `main` flag. Its view comes from the entity's world transform. Orthographic is added when something needs it. | Miguel, 2026-11-14 (S10-D6) |
 | The main active camera | The first entity in hierarchy order whose `Camera` has `main` set. The game view and the runtime draw through it. With none, the view clears to a colour and the app warns once. | Miguel, 2026-11-14 (S10-D6) |
 | How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main and moves a fly camera: right mouse button to look, WASD to move. The `InputBuffer` stays detached while Stopped. Orbit and focus on the selection stay T3's. | Miguel, 2026-11-14 (S10-D6); [[Editor - Design]] § *Decided* |
+| The device's surface | One handle type per kind, each an index and a generation. The vertex layout lives inside the pipeline. An empty target is the window. A bad description returns an error code; misuse fires a check. | Miguel, 2026-11-15 (S11-T3); § *The device* |
 | The renderer is not a scheduled System | It is the extraction hook plus the render-thread frame. | ADR-028 §3, against ADR-006 §5 |
 | Uploads cross in order | Mesh, texture and material uploads are never dropped. One GPU copy per resource handle. | ADR-028 §4 |
 | Render's fence | Simulation defers a free until render reports the upload done. A reload keeps its handle and sends a new upload. | ADR-028 §4; ADR-024 §6 |
@@ -88,6 +89,30 @@ flowchart LR
     H --> F --> D
     G --> D
 ```
+
+### The device
+
+Built by S11-T3 (#207) in `engine/client/src/render/device/`. Only the render thread calls it.
+Its surface was settled at the card's `/card-start` (Miguel, 2026-11-15).
+
+| Part | As built |
+|---|---|
+| Handles | One type per kind: buffer, texture, program, pipeline and render target. Each is an index and a generation, kept in a table per kind (`render/device/RenderSlots.hpp`). Destroying a slot raises its generation, so an old handle stops resolving; a slot at the generation limit is retired. |
+| Data | One folder per kind holds its description, its enums and the record the device keeps. Every GL call is in `RenderDevice.cpp`. |
+| Buffers | Immutable storage. A Static buffer takes all its data at creation; only a Dynamic one accepts `updateBuffer`. |
+| Textures | `Rgba8`, `Rgba16F` and `Depth32F`, with no pixel upload until S11-T8. `readTexture` reads level 0, and `Rgba16F` comes back as 32-bit floats. |
+| Pipelines | The program, the vertex layout with its strides, topology, cull, front face, depth and blend. `bindPipeline` applies all of it every time, and forgets the bound index buffer, because that lives in the pipeline's vertex array. |
+| Render targets | One colour texture and an optional depth texture, which the target does not own. |
+| Passes | An empty target is the window. The extent sets the viewport and the scissor, so a clear covers the extent only, and the scissor test is off again when the pass ends. Each pass starts with nothing bound. |
+| Failures | A description the device cannot build returns a `ClientError` and creates nothing. Misuse, such as a stale handle, a draw outside a pass or a pass larger than its target, fires one `TE_CHECK` and returns before any GL call. |
+
+- **Not built yet:** samplers and bindless handles (S11-T8), multi-draws and per-frame uniform
+  buffers (S11-T9), and compute dispatch (the light clusters). Store actions are accepted and
+  ignored, so `DontCare` does not invalidate anything yet.
+- **A target needs a colour texture.** A depth-only target, which E3's shadow maps need, is
+  refused today as `InvalidRenderDescription`.
+- **The window's depth clear** runs whether or not the window has a depth buffer; without one,
+  GL ignores it.
 
 ### Geometry buffers
 
@@ -203,10 +228,13 @@ indexes through `gl_DrawID`. It holds only what the shader reads:
 
 Mechanism sections land as the build cards are cut. Known build work:
 
-- **glad2** is regenerated with `--api gl:core=4.6` and `ARB_bindless_texture`
-  (`cmake/deps.cmake:244-246`), the window requests a 4.6 core context
-  (`engine/platform/src/window/Window.cpp:58-59`, Miguel, Nov 14), and the startup check
-  (`RenderThread.cpp:93`) names both requirements when one fails.
+- **The GL floor is enforced at startup** (S11-T2, #206). glad2 loads 4.6 core with
+  `GL_ARB_bindless_texture` (`external/glad/include/glad/gl.h` records the command), and the
+  window requests a 4.6 core context (`engine/platform/src/window/Window.cpp:59-60`). The render
+  thread starts only if `meetsGlRequirements` passes
+  (`engine/client/src/render/RenderThread.cpp:94-99`). It takes what glad loaded as a
+  `GlSupport` value and logs one error per missing requirement, so it is tested headless
+  (`engine/client/tests/render/GlRequirementsTests.cpp`).
 - **CI's software GL cannot meet the floor**, and only zink over lavapipe on Linux does,
   through an EGL context (ADR-028 § *Consequences*, S11-D1). On Linux the window uses EGL
   always, not only on CI, and the cases that draw or load GL are a `[gpu]` tier that CI runs on
