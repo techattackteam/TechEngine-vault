@@ -239,6 +239,14 @@ Mechanism sections land as the build cards are cut. Known build work:
   through an EGL context (ADR-028 § *Consequences*, S11-D1). On Linux the window uses EGL
   always, not only on CI, and the cases that draw or load GL are a `[gpu]` tier that CI runs on
   Linux only ([[ADR-008 - v2 build & testing baseline]]'s Nov 14 amendment, S11-D5).
+- **The camera component** (S11-T5, #208, under review). `Camera` lives in
+  `engine/core/include/TechEngine/core/camera/Camera.hpp`. The field of view is in degrees, the
+  exposure is EV100 (the frame is scaled by `1 / (1.2 * 2^EV100)`, default 0), `main` defaults
+  to true, and near and far default to 0.1 and 1000. `findMainCamera` takes the caller's
+  warn-once flag and clears it when it finds a camera, so each view keeps its own flag. It walks
+  the tree through `getChildren`, which allocates per node, until `Scene` has a tree-order walk
+  ([[Backlog]] § *core*). These are the lane's calls, listed in #208 for Miguel to accept or
+  reverse.
 - **The packet pool** needs four packets for simulation never to wait: one being filled, one
   in the slot, two in render's history.
 - **GPU captures** go through Nsight, since RenderDoc cannot capture bindless GL (Miguel, v1).

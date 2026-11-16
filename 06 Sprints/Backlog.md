@@ -343,7 +343,9 @@ groups are kept, because they show where future work will land.
   the roots are a sibling list too, so the walk can start at the first root and allocate
   nothing; S10-B2 left the walk out on purpose. S10-T18 (#199, Nov 10) added a fifth, breadth-first:
   the whole-scene `rebuildMaterialSlots` (`apps/editor/src/edit/MaterialSlotRebuild.cpp:54`), so
-  the first trigger has fired. **Trigger:** a sixth hand-written walk, the next card that changes
+  the first trigger has fired. S11-T5 (#208, Nov 16) added the sixth, depth-first and stopping
+  at the first match: `findMainCamera` (`engine/core/src/camera/Camera.cpp`), which S11-T4 calls
+  once per packet. **Trigger:** a sixth hand-written walk, the next card that changes
   one of the five, or Miguel scheduling it now.
 
 ## client

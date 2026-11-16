@@ -16,7 +16,6 @@ kanban-plugin: board
 
 ## Story B: R1's first frame
 
-- [ ] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h: `Camera` in `core`, registered in both apps, shown by the inspector, and one function that returns the main active camera.
 - [ ] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h: the extraction hook fills a pooled packet after ticks and edits, and render moves it. Follows S11-T3 and S11-T5.
 - [ ] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h: uploads cross to render in order, and simulation defers a free until render reports the upload done. Follows S11-T3.
 - [ ] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h: three immutable buffers with a free-list allocator and a second block when one fills. Follows S11-T6.
@@ -57,6 +56,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h: **PR #208**, branch `S11-T5/camera-component`, opened by the lane on Nov 16. Green on `linux-debug` with `[gpu]` excluded. Miguel reviews it and accepts or reverses its seven *Decisions I took* (degrees, EV100 exposure, `main` on by default, the caller's warn-once flag among them) by Thu Nov 19, because S11-T4 follows it.
 
 
 ## ✅ Done: Sprint 11
