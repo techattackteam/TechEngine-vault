@@ -24,6 +24,13 @@ So pick deliberately, with both readers in mind.
 first unfinished one on the [[Roadmap]]'s goal ladder, and what its systems must support is in
 the [[Capability Map]] and each system's capability brief. Everything below starts from there.
 
+**List the goal's inputs before proposing it** (added 2026-11-16, S11-P1). `/sprint-prep` lists
+everything the goal's showcase sentence in the [[Roadmap]] consumes, and marks each input
+**built**, **carded**, **decided** or **undecided**, before it proposes the goal. Sprint 10 found
+TEMesh, materials and textures missing only after planning, and all three were cut mid-sprint
+([[2026-11-14 Sprint 10 Retrospective]]). The first run is [[2026-10 Sprint 10 - Close E1]] §
+*What E2 still lacks*.
+
 **Start from design notes; refine the [[Backlog]] after the other sources.**
 
 The note is the entry point at planning. An ADR is opened only when a decision's *rationale*

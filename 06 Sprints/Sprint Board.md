@@ -37,7 +37,6 @@ kanban-plugin: board
 
 ## Story E: The lane's small cards
 
-- [ ] **S11-P1** · The inputs check in `/sprint-prep` · P2 · 🤖 Auto: the command and the artifact gate list what the goal's showcase sentence consumes before a goal is proposed.
 - [ ] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto: per-entity lines at Debug and one `INFO` summary. After S11-T5.
 - [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: with `_1`, `_2` on a repeat, and a two-primitive fixture test. After S11-T1.
 - [ ] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto: the version-anchor stubs go from `base`, `platform` and `core`. Was S10-T9.
@@ -56,11 +55,15 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h: **PR #208**, branch `S11-T5/camera-component`, opened by the lane on Nov 16. Green on `linux-debug` with `[gpu]` excluded. Miguel reviews it and accepts or reverses its seven *Decisions I took* (degrees, EV100 exposure, `main` on by default, the caller's warn-once flag among them) by Thu Nov 19, because S11-T4 follows it.
+- [ ] **S11-P1** · The inputs check in `/sprint-prep` · P2 · 🤖 Auto: **PR #209**, branch `S11-P1/inputs-check`, opened by the lane on Nov 16. The command's half is in the PR; the artifact gate's paragraph in § *Where plans come from* is already on the vault's master. Miguel reviews and merges #209; no decision is owed.
 
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h: #208 (`4e05985`), **Nov 16**. `Camera` and `findMainCamera` in `core`, registered in both apps, with the inspector drawing it through the generic rows ([[Renderer - Design]] § *Build notes*). Unblocks S11-T4, and S11-T12 can now take `RuntimeApp.cpp`.
+	- **All seven *Decisions I took* stood**: Miguel merged it about 80 minutes after it opened, with none reversed. Zero reversals for the retro's count.
+	- **It is the sixth hand-written walk over `getChildren`**, which fires the trigger on the *`Scene` has no tree-order walk* entry in the [[Backlog]] (*core*), and S11-T4 will call it once per packet.
+	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body and the diff alone; nothing records what was weighed in review. No value checks yet (a near plane above zero), so S11-T4's or S11-T9's projection is where a bad value first shows.
 - [x] **S11-T3** · The device · P1 · 🟢 Deep · 4-6h: #207 (`d09c6f98`), **Nov 16**. `RenderDevice` in `client` owns every GL object behind generational handles, and `FrameRenderer` draws M4's triangle through it with no GL call of its own ([[Renderer - Design]] § *The device*). Unblocks S11-T6, and S11-T4 once S11-T5 lands; Story B goes on.
 	- **The card left the surface to `/card-start`, which settled four forks with Miguel:** handles as an index and a generation, the vertex layout inside the pipeline, an empty target for the window, and error codes for bad descriptions but checks for misuse. The card's handle list also differed from ADR-028 §1's object list: programs got their own handle, the vertex layout folded into the pipeline, and samplers wait for S11-T8.
 	- **The layout changed mid-card by Miguel's call:** one folder per object kind under `render/device/`, holding data only, while every GL call stays in `RenderDevice.cpp`.

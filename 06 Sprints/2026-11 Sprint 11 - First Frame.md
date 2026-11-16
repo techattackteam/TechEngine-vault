@@ -131,11 +131,12 @@ follows S11-T3; S11-T7 and S11-T8 follow S11-T6; S11-T9 follows S11-T4, S11-T7 a
   `MeshRenderer`'s world transform, mesh and slot materials, and the main active camera. Tests:
   simulation never waits with four packets; an edit in the Stopped editor produces a packet. How
   render matches an instance across two packets is this card's open question.
-- [ ] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h ·
+- [x] **S11-T5** · The camera component · P1 · 🤖 Claude · 2-3h ·
   done: `Camera` in `core` with the fields in [[Renderer - Design]] § *Decided*, registered in
   both apps, shown by the inspector, and one `core` function that returns the main active camera.
   Tests: the first `main` camera in hierarchy order wins; a scene with none returns nothing, and
   the caller warns once. It stops at that function, so it stays off S11-T4's files.
+  #208 (`4e05985`), Nov 16.
 - [ ] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h ·
   done: mesh, texture and material uploads cross to render in order and are never dropped; render
   reports each upload done, and simulation defers a free until then (ADR-028 §4). A reload keeps
@@ -240,7 +241,7 @@ and *How the scene view's camera is driven*.
 - [ ] Sponza was re-imported with its images through *Re-import...*, and its ids were kept
   (S11-T1).
 - [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
-  counted for the retro.
+  counted for the retro. S11-T5's seven: merged with none reversed, #208 (`4e05985`), Nov 16.
 - [ ] Sprint 12's draft cut is in this note (S11-D4).
 
 ## Capacity note
