@@ -149,6 +149,12 @@ groups are kept, because they show where future work will land.
 
 ## core
 
+- #prio/low · **`core` links toml++ that none of its files use**: `Core.cpp` was the only file in
+  `core` that included `toml++`, and S11-T14 (#212) deletes it, so `engine/core/CMakeLists.txt`'s
+  `LIBS_PRIVATE tomlplusplus::tomlplusplus` becomes a dead dependency. The editor links its own
+  copy (`apps/editor/CMakeLists.txt:93`). Drop the line once nothing in `core` parses TOML. Found
+  by the lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]). **Trigger:** #212 merges.
+
 - #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
   `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
   `fromWorldToLocal`, `setLocal`, `setWorld`, and since S9-T17 `addComponentRaw` and
