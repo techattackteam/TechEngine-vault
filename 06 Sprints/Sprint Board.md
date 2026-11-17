@@ -36,7 +36,6 @@ kanban-plugin: board
 
 ## Story E: The lane's small cards
 
-- [ ] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto: per-entity lines at Debug and one `INFO` summary. After S11-T5.
 - [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: with `_1`, `_2` on a repeat, and a two-primitive fixture test. After S11-T1.
 - [ ] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto: the version-anchor stubs go from `base`, `platform` and `core`. Was S10-T9.
 - [ ] **S11-P2** · A README at the repo root · P3 · 🤖 Auto: what the engine is, how to clone the vault, and the three preset commands.
@@ -54,6 +53,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto: per-entity lines at Debug and one `INFO` summary. PR #211, branch `S11-T12/runtime-debug-log`, opened Nov 17 by the lane. Two runtime log tests now gate their per-entity checks on the compile-time log floor, because Debug is compiled out on Release.
 
 
 ## ✅ Done: Sprint 11
