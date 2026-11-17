@@ -30,7 +30,7 @@ kanban-plugin: board
 
 ## Story D: Design and product
 
-- [ ] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🤖 Claude · 1-2h: `/triage` of camera paths, fixed-rate capture and the rest, recorded in the [[Capability Map]] as decided by the lane. Was S10-D5.
+- [ ] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h: `/triage` of camera paths, fixed-rate capture and the rest, recorded in the [[Capability Map]]. Was S10-D5. Retagged from 🤖 Claude on Nov 17, because the lane runs no Design card.
 - [ ] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h: [[Content Pipeline - Design]] decides the list-only browser and cuts its build cards for Sprint 12. Drops after Story C.
 
 
@@ -52,11 +52,17 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto: the version-anchor stubs go from `base`, `platform` and `core`. Was S10-T9. PR #212, branch `S11-T14/version-anchors`, opened Nov 17 by the lane. `Platform.hpp` stays, because it also declares `executablePath()`; only `platformVersion()` left it.
-- [ ] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto: per-entity lines at Debug and one `INFO` summary. PR #211, branch `S11-T12/runtime-debug-log`, opened Nov 17 by the lane. Two runtime log tests now gate their per-entity checks on the compile-time log floor, because Debug is compiled out on Release.
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto: #212 (`6e0c12f`), **Nov 17**. `baseVersion()`, `platformVersion()` and `coreVersion()` are gone with their files and `BaseTests.cpp`, which ends S10-T9.
+	- **The `done:` clause was wrong about `Platform.hpp`.** The header also declares `executablePath()`, which both apps' `main.cpp`, `EditorApp.cpp` and its own tests include, so it stays with only `platformVersion()` removed. Renaming it after its `.cpp` is in the [[Backlog]] (*platform*).
+	- **The merge left two loose ends**, both in the [[Backlog]]: `core` now links toml++ that none of its files use (*core*, trigger fired), and `CONVENTIONS.md` § *Headers* still gives `base/Base.hpp` as its example of a module's own header (*etc*).
+	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body, the diff and [[2026-11-17 14-10 Auto Run]]. A card that deletes a header should say what else the header declares; the lane's grounding caught it, the card's cut did not.
+- [x] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto: #211 (`63f2fb3`), **Nov 17**. `RuntimeApp::logSceneTree` writes its entity and mesh lines at Debug, under the one INFO summary. Frees `RuntimeApp.cpp` for S11-T15's sweep.
+	- **The clause hid a test change.** Debug is compiled out on Release, so the two runtime log tests that read per-entity lines now gate those checks on `TE_LOG_ACTIVE_LEVEL`, as `TaskGraphTests.cpp` already did. The lane's first local Release run failed the mesh-id check, which is how it found the second test.
+	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body, the diff and [[2026-11-17 09-08 Auto Run]].
 
 - [x] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h: #210 (`4d0b8e0`), **Nov 16**. Simulation fills a pooled packet after ticks, after edits and after the startup load, and render matches instances by `Entity` and interpolates them on the CPU ([[Renderer - Design]] § *The frame packet*, § *Packet delivery*). Unblocks S11-T9 with S11-T7 and S11-T8; Story B goes on.
 	- **`/card-start` found two holes the card did not name:** the history dropped every packet whose tick did not advance, so a Stopped editor showed only its first edit, and four packets run out if render takes one before the history lets one go. A per-publish sequence and a hand-over under the mailbox's lock close them.

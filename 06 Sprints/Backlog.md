@@ -68,6 +68,14 @@ groups are kept, because they show where future work will land.
 
 ## platform
 
+- #prio/low · **`Platform.hpp` declares only `executablePath()`**: S11-T14 (#212) removed
+  `platformVersion()`, so the header's name no longer says what it holds, and its `.cpp` is
+  `engine/platform/src/ExecutablePath.cpp`. A rename to `ExecutablePath.hpp` touches five
+  includers: `ExecutablePath.cpp`, its tests, both apps' `main.cpp` and `EditorApp.cpp`. Where the
+  header lives is Miguel's call, and it decides the `CONVENTIONS.md` example in *etc*. Found by the
+  lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]). **Trigger:** the next card that adds a
+  declaration to `platform`'s root, or a 🤖 Auto slot once the name is chosen.
+
 - #prio/medium · **The window asks for the GL version its renderer needs**: the window sets one
   context hint for every window it opens (`engine/platform/src/window/Window.cpp:58-59`), which
   S11-T2 raises to 4.6 core. So eight window cases that use no GL
@@ -153,7 +161,8 @@ groups are kept, because they show where future work will land.
   `core` that included `toml++`, and S11-T14 (#212) deletes it, so `engine/core/CMakeLists.txt`'s
   `LIBS_PRIVATE tomlplusplus::tomlplusplus` becomes a dead dependency. The editor links its own
   copy (`apps/editor/CMakeLists.txt:93`). Drop the line once nothing in `core` parses TOML. Found
-  by the lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]). **Trigger:** #212 merges.
+  by the lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]). **Trigger:** #212 merges. **Fired by
+  S11-T14 (#212, Nov 17).** A one-line fix, a 🤖 Auto candidate.
 
 - #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
   `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
@@ -588,6 +597,11 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/low · **`CONVENTIONS.md` § *Headers* cites a deleted file**: its example of "the module's
+  own header stays at the root" is `base/Base.hpp`, which S11-T14 (#212) deleted. Pick another
+  example or drop the clause; `platform/Platform.hpp` would serve only if the *platform* rename
+  above keeps it at the root. Found by the lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]).
+  **Trigger:** the *platform* rename is decided, or the next edit to § *Headers*.
 - #prio/low · **glad2's generator command in `cmake/deps.cmake` is stale**: S11-T2 (#206)
   regenerated glad with `--api gl:core=4.6 --extensions GL_ARB_bindless_texture`, but the
   comment at `cmake/deps.cmake:246` still gives the 4.5 command with no extensions. The next

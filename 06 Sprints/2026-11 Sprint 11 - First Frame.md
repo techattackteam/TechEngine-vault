@@ -183,12 +183,12 @@ and *How the scene view's camera is driven*.
 
 ### Story D: Design and product
 
-- [ ] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🤖 Claude · 1-2h ·
+- [ ] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h ·
   done: `/triage` weighs what the engine must provide to record a cinematic showcase, such as
   camera paths and capture at a fixed frame rate, and the [[Capability Map]] records the result
-  with the date and "decided by the lane". The run report lists it under *Needs you*, because a
-  vault card has no PR to review it in. Was S10-D5; 🤖 Claude by Miguel's exception to the gate
-  (Nov 14), since a `/triage` is a product decision. Due before E2's showcase.
+  with the date. Was S10-D5. Due before E2's showcase. **Retagged 🟡 Light on Nov 17** from
+  🤖 Claude, so Miguel runs it in an attended session: the routine prompt never runs a Design card,
+  and three fires in a row left it in To Do ([[2026-11-16 14-12 Auto Run]]).
 - [ ] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h ·
   done: [[Content Pipeline - Design]] decides what the list-only browser shows and how it
   imports, re-imports and places, and whether deleting an asset is weighed now (its [[Backlog]]
@@ -201,13 +201,13 @@ and *How the scene view's camera is driven*.
   *Where plans come from* gain one check: list everything the goal's showcase sentence consumes,
   and mark each built, carded, decided or undecided, before the goal is proposed. S10-D6's
   § *What E2 still lacks* is its first run.
-- [ ] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto ·
+- [x] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto ·
   done: `RuntimeApp::logSceneTree` writes its per-entity lines with `TE_LOGGER_DEBUG` and keeps
   one `INFO` summary line. After S11-T5, which also edits `RuntimeApp.cpp`.
 - [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto ·
   done: a placed model's children of one split mesh take their material's name, with `_1`, `_2`
   on a repeat, and a test places a two-primitive fixture. After S11-T1.
-- [ ] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto ·
+- [x] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto ·
   done: the version anchors go: `baseVersion()`, `platformVersion()` and `coreVersion()` with
   `Base.hpp`, `Platform.hpp`, `Core.hpp` and their `.cpp`, and `BaseTests.cpp`, whose glm case
   repeats `MathTests.cpp`. `ctest` proves it. Was S10-T9.
@@ -238,17 +238,15 @@ and *How the scene view's camera is driven*.
 
 ## 🤖 Lanes
 
-- 🤖 Claude features: S11-T5 (the camera), S11-T11 (the fly camera, after S11-T10) and S11-D2
-  (vault only). Both build cards are built to Miguel's design in [[Renderer - Design]] §
-  *Decided*.
+- 🤖 Claude features: S11-T5 (the camera) and S11-T11 (the fly camera, after S11-T10). Both are
+  built to Miguel's design in [[Renderer - Design]] § *Decided*. S11-D2 left the lane on Nov 17
+  as a 🟡 Light card.
 - 🤖 Auto cards: S11-P1, S11-T12, S11-T13, S11-T14, S11-P2 and S11-T15 (added Nov 16).
 - Standing prep: S11-P3 (not before Mon Nov 23) and S11-D4 (Tue Nov 24).
 - PR load: eight PR-producing lane cards over two weeks (two 🤖 Claude, six 🤖 Auto), under the
-  limit of about five a week. S11-D2 and S11-P3 are free. Review costs about 2.75h.
-- **The routine owes a prompt paste** ([[Autonomous Lane - Routine Prompt]] § *Routine
-  configuration*): the sweep's outward look-for and step 5's narrowed 🤖 Claude paragraph. Paste
-  it before Mon Nov 16, when the lane can first take S11-T5. Fri Nov 13 left no run report;
-  check the routine's run list at the same time.
+  limit of about five a week. S11-P3 is free. Review costs about 2.75h.
+- **The prompt paste is done** ([[Autonomous Lane - Routine Prompt]] § *Routine configuration*):
+  the Nov 17 09:08 fire ran step 6 with `-LE '^gpu$'` ([[2026-11-17 09-08 Auto Run]]).
 
 ## Definition of Done
 
@@ -265,7 +263,7 @@ and *How the scene view's camera is driven*.
 
 ## Capacity note
 
-Miguel's cards: 7 🟢, 5 🟠 (with S11-D4) and 1 🟡, about 10 slots. He chose to commit all of them.
+Miguel's cards: 7 🟢, 5 🟠 (with S11-D4) and 2 🟡 (S11-D2 joined on Nov 17), about 10 slots. He chose to commit all of them.
 S11-D5 was added on Nov 14 at S11-D1's `/card-start`, and it is the seventh 🟢.
 
 - **The sprint's work days are Nov 14 to Nov 24.** Sat Nov 14 is a deep day after planning. Mon
