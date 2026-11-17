@@ -111,6 +111,7 @@ Moved here from the [[Backlog]]'s *Test tiers and parallel ctest* entry, which w
 
 Order: S11-T2 follows S11-D5, which follows S11-D1 (Story A); S11-T3 follows S11-T2; S11-T4 follows S11-T3 and S11-T5; S11-T6
 follows S11-T3; S11-T7 and S11-T8 follow S11-T6; S11-T9 follows S11-T4, S11-T7 and S11-T8.
+S11-T16 follows S11-T6, and no card waits for it.
 
 - [x] **S11-T2** · GL 4.6 and bindless at startup · P1 · 🟡 Light · 1-2h ·
   done: glad2 is regenerated with `--api gl:core=4.6` and `ARB_bindless_texture`
@@ -145,11 +146,23 @@ follows S11-T3; S11-T7 and S11-T8 follow S11-T6; S11-T9 follows S11-T4, S11-T7 a
   Tests: the first `main` camera in hierarchy order wins; a scene with none returns nothing, and
   the caller warns once. It stops at that function, so it stays off S11-T4's files.
   #208 (`4e05985`), Nov 16.
-- [ ] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h ·
-  done: mesh, texture and material uploads cross to render in order and are never dropped; render
-  reports each upload done, and simulation defers a free until then (ADR-028 §4). A reload keeps
-  its handle and sends a new upload, which replaces S10-T21's immediate destroy. Render drops a
-  GPU copy by the rule in [[Renderer - Design]] § *Decided*.
+- [x] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h ·
+  done: [[Renderer - Design]] § *Uploads and the fence* as written. Mesh, texture and material
+  uploads cross to render in order and are never dropped, each naming its dependencies by slot.
+  Render runs each type's handler, which stays empty for S11-T7 and S11-T8, and reports the
+  upload done; simulation defers a free until then (ADR-028 §4). A reload keeps its handle and
+  sends a new upload, and its old payload waits for its own upload, which replaces S10-T21's
+  immediate destroy. Tests, headless: a free and a reload's old payload wait for the done
+  report, uploads and releases arrive in order, and an empty packet pool holds no upload back.
+  **Split at `/card-start` (Nov 17, Miguel's call):** dropping a GPU copy moved to S11-T16.
+  #213 (`8f2a444`), Nov 17. The empty-pool clause has no headless test; only the call order in
+  `ClientApp::publishFrame` holds it ([[Backlog]] § *client*).
+- [ ] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h ·
+  done: render drops a copy on a release request, and a reload's old copy, by *The GPU copy's
+  lifetime* in [[Renderer - Design]] § *Decided*, with a device fence for the frames that drew
+  it. Its `/card-start` settles § *Open questions*' *How render drops a copy safely*. Until it
+  lands, a re-import after S11-T7 leaks the mesh's old range, and S11-T7's `/card-close` files
+  that in [[Known Issues]]. Added Nov 17 at S11-T6's `/card-start`.
 - [ ] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h ·
   done: [[Renderer - Design]] § *Geometry buffers* as written: the three buffers with immutable
   storage, the free-list allocator, a second block when one fills, and defaults for a stream a
@@ -263,8 +276,9 @@ and *How the scene view's camera is driven*.
 
 ## Capacity note
 
-Miguel's cards: 7 🟢, 5 🟠 (with S11-D4) and 2 🟡 (S11-D2 joined on Nov 17), about 10 slots. He chose to commit all of them.
-S11-D5 was added on Nov 14 at S11-D1's `/card-start`, and it is the seventh 🟢.
+Miguel's cards: 7 🟢, 6 🟠 (with S11-D4 and S11-T16) and 2 🟡 (S11-D2 joined on Nov 17), about 10.5 slots. He chose to commit all of them.
+S11-D5 was added on Nov 14 at S11-D1's `/card-start`, and it is the seventh 🟢. S11-T16 was split
+out of S11-T6 on Nov 17, at its `/card-start`.
 
 - **The sprint's work days are Nov 14 to Nov 24.** Sat Nov 14 is a deep day after planning. Mon
   Nov 16 and Thu Nov 19 are evenings. Fri Nov 20 (a day off work), Sat Nov 21 and Sun Nov 22 are
@@ -272,11 +286,11 @@ S11-D5 was added on Nov 14 at S11-D1's `/card-start`, and it is the seventh 🟢
 - **That is about 10-12 🟢 slots if all three days of Nov 20-22 are worked**, and 8-9 if one of
   them is kept free, which the Rhythm table's guardrail asks for. The plan fits either way only
   because 🟠 cards take half a full day.
-- **Drop order:** S11-T10 and S11-T11, then S11-D3. S11-T9 does not drop; if it slips, it opens
-  Sprint 12.
+- **Drop order:** S11-T10 and S11-T11, then S11-D3, then S11-T16. S11-T9 does not drop; if it
+  slips, it opens Sprint 12, and so does S11-T16 if it drops.
 - **Suggested order:** Nov 14, S11-D1 and S11-D5. Nov 16, S11-T2 and S11-T1. Nov 19, S11-T3.
-  Nov 20, S11-T6 and S11-T4. Nov 21, S11-T7 and S11-T8. Nov 22, S11-T9. Nov 23, Story C and
-  S11-D3, or slack. Nov 24, S11-D4.
+  Nov 20, S11-T6 and S11-T4. Nov 21, S11-T7 and S11-T8. Nov 22, S11-T9. Nov 23, S11-T16, Story C
+  and S11-D3, or slack. Nov 24, S11-D4.
 - **S11-D5 costs the free day.** The R1 chain now fills all three days of Nov 20-22, so the
   Rhythm table's free day among them comes back only by dropping Story C and S11-D3.
 - **S11-T4 needs the lane's S11-T5 merged first**, so that PR is reviewed by Thu Nov 19.

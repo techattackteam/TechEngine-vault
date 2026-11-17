@@ -381,6 +381,11 @@ groups are kept, because they show where future work will land.
   `shutdown()` (`apps/clientapp/src/ClientApp.cpp:16-18`, `:52-54`, `:67-69`, S8-T19, #151).
   They were untested before the move too. **Trigger:** the next change to how `Client` reports
   a render failure, or to `ClientApp`'s handling of it.
+- #prio/low · **No test shows that an empty packet pool holds no upload back**: S11-T6's
+  `done:` asked for one, but no clientapp test exe exists, so only the call order in
+  `ClientApp::publishFrame` holds it (`exchangeUploads()` runs before `acquirePacket()`, #213).
+  A headless `ClientApp` case needs a client that starts without a GL context. **Trigger:** the
+  null render device above lands, or the next change to `publishFrame`'s order.
 
 ## app
 

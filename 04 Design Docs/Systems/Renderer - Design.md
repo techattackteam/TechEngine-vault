@@ -56,6 +56,11 @@ the render thread that draws packets through a small device.
 | Uploads cross in order | Mesh, texture and material uploads are never dropped. One GPU copy per resource handle. | ADR-028 §4 |
 | Render's fence | Simulation defers a free until render reports the upload done. A reload keeps its handle and sends a new upload. | ADR-028 §4; ADR-024 §6 |
 | The GPU copy's lifetime | Render drops a copy on a release request, once no packet in its history names the handle and the GPU has finished the frames that drew it. | ADR-028 §4 |
+| How uploads leave the cache | The cache records an upload when an entry of a marked type turns Ready and a release when one is freed, in one ordered list. `ClientApp` sends that list at each publish point, before the packet. | Miguel, 2026-11-17 (S11-T6); § *Uploads and the fence* |
+| Render finds resources by handle only | An upload's dependencies travel as the slots its loader named. The upload also carries the entry's `ResourceId`, as a label for render's log lines only; render never looks anything up by an id. | Miguel, 2026-11-17 (S11-T6); § *Uploads: order, reads and shutdown* |
+| A replaced payload waits for its upload | A reload's old payload is destroyed only once render reports that payload's upload done. | ADR-024 §6; Miguel, 2026-11-17 (S11-T6) |
+| Deferred frees retry at each publish point | Render's finished uploads, each a slot and a token, unpin their payloads, and the cache drains frees, before the outbox is sent. | Miguel, 2026-11-17 (S11-T6); § *Uploads and the fence* |
+| Dropping a copy is its own card | S11-T6 builds the queue, the pins and the done reports, and leaves each type's handler empty for S11-T7 and S11-T8. Render keeps every copy until shutdown, and S11-T16 adds the drop. | Miguel, 2026-11-17 |
 | E2's frame | Depth pre-pass, light clusters built and filled in compute as in v1, one forward lit pass with CPU-written multi-draws, sky, final image. | ADR-028 §5 |
 | Compute from E2 | The device dispatches compute and binds storage buffers. A pass that writes in compute issues GL's coarse memory barrier through the device; per-resource barriers stay out. | ADR-028 §5 §6 |
 | Shared geometry buffers | Static meshes share one set: a position buffer, an attribute buffer and a 32-bit index buffer. A new vertex layout gets its own set. A mesh never moves once placed. | ADR-028 §5; § *Geometry buffers* |
@@ -209,6 +214,67 @@ sequenceDiagram
   per instance of the current packet, in the same order, and points it at that packet. The next
   acquire can free the packet, so the view is good for one frame only.
 
+### Uploads and the fence
+
+Designed at S11-T6's `/card-start` (Miguel, 2026-11-17). How render drops a copy is S11-T16's
+(§ *Open questions*).
+
+```mermaid
+flowchart LR
+    subgraph Sim["Simulation thread"]
+        C["ResourceCache<br/>outbox, pins, retired payloads"]
+        P["Publish point<br/>ClientApp"]
+    end
+    subgraph Shared["Shared, each behind its own lock"]
+        Q["Upload queue<br/>never drops"]
+        D["Done reports"]
+    end
+    subgraph Render["Render thread"]
+        H["Handler per type"]
+        T["Copies by handle"]
+    end
+    C -->|"take the outbox"| P
+    P -->|"uploads and releases, in order"| Q
+    Q --> H --> T
+    H -->|"slot and token"| D
+    D -->|"finished uploads"| P
+    P -->|"unpin, then drain frees"| C
+```
+
+| Part | How it works |
+|---|---|
+| Marked types | The client apps mark `Mesh`, `Texture` and `Material` for upload beside their loaders, before registration closes. A server marks none, so its cache records nothing and no free ever waits. |
+| An upload | Recorded when an entry of a marked type turns Ready, on a first load or a reload. It carries the handle, the type tag, a pointer to the payload, the slots of the dependencies its loader named (in the loader's order), a rising token, and the entry's `ResourceId` as a log label. A failed or absent entry sends none. |
+| A release | Recorded when a Ready entry of a marked type is freed, in the same list as the uploads, so a handle's release never passes its upload. An entry that never turned Ready sends none, even one that holds a payload because its dependencies failed. |
+| The pin | An upload pins the payload it points at until render reports that upload's slot and token. The cache finds the entry by the slot, so it never searches for a token. `drainFrees` defers an entry whose payload is pinned, as it already defers one that is still loading. |
+| A reload | The new payload goes in at once and sends its own upload. A pinned old payload moves to a retired list under its token and is destroyed when that token comes back; an unpinned one is destroyed at once, as before. ADR-024 §6 counts the replacement as a free. |
+| The publish point | `ClientApp` hands render's finished uploads to the cache, drains frees, then sends the outbox, all before it acquires a packet. A publish point follows a loading phase or a tick batch, so this keeps ADR-024 §3's rule on when memory is freed. |
+| Render | After `deliverTo`, it takes every queued record in order. An upload runs its type's handler, then reports its slot and token; a release is recorded. The handlers are S11-T7's (meshes) and S11-T8's (textures and materials), and until S11-T16 every copy lives until shutdown. |
+
+### Uploads: order, reads and shutdown
+
+- **Done means the CPU finished reading the payload**, not that the GPU finished with the copy.
+  GL's buffer and texture upload calls copy client memory before they return, so a handler
+  reports as soon as it returns. A mapped or asynchronous upload would have to report later.
+- **Render drains the queue after `deliverTo`, never before.** Simulation queues an upload before
+  it publishes the packet that names the handle, so any packet render holds has its uploads
+  queued already. Draining first leaves a gap in which a packet arrives naming a handle that
+  render has not seen.
+- **No upload waits on a packet.** The publish point sends the outbox before it acquires a
+  packet, so an empty pool (`apps/clientapp/src/ClientApp.cpp:56`) never holds an upload back.
+- **An id is a label, never a key.** A payload names its dependencies by `ResourceId`
+  (`MeshSlot::defaultMaterial`, and a `Material`'s `AssetRef<Texture>` fields, whose handles
+  nothing fills in a cached payload). Render keys its copies by handle and finds a dependency
+  only through the upload's slots, matched by position in the loader's order. It keeps the
+  upload's id beside each copy so that a release, which arrives after the payload may be gone,
+  can still name the asset in a log line.
+- **Shutdown.** The simulation shuts the cache down while render still runs
+  (`engine/app/src/SimulationThread.cpp:249`, `:256`); render stops later, in `App::shutdown`.
+  Pinned payloads stay valid only because `ClientApp::m_client` is destroyed before
+  `App::m_resources`. Records still queued when render stops are discarded.
+- **A render thread that failed never reports**, so its pinned entries are never freed. The app
+  is stopping by then, so nothing is lost.
+
 ### Geometry buffers
 
 | Buffer | Holds |
@@ -355,6 +421,16 @@ Mechanism sections land as the build cards are cut. Known build work:
 
 ## Open questions
 
+- **How render drops a copy safely,** for a release and for a reload's old copy. Three checks
+  are owed: no packet in the history names the handle, no live copy names it as a dependency (a
+  texture under its material, a default material under its mesh, since `freeEntry` releases a
+  holder and its dependencies in the same drain), and the GPU finished the frames that drew it.
+  The lean for the last check is a `glFenceSync` per frame, polled with a zero timeout, rather
+  than a fixed frame count. Owner: S11-T16.
+- **Whether the outbox sends dependencies first.** A first load publishes a material before its
+  textures, because dependencies load in the next round. The lean is no sorting: render rewrites
+  a material's record when a texture it names arrives, which a reload of one texture needs
+  anyway. Owner: S11-T8.
 - **A mirrored instance.** An entity whose world matrix has a negative determinant needs its
   front face flipped, and the front face is pipeline state, so one multi-draw cannot hold both.
   The lean is a second multi-draw for mirrored instances. A merged mesh has none, because import

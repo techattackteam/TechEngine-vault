@@ -35,6 +35,24 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
+### D13: A dependency added after an upload never reaches render
+
+An upload carries the dependency slots its entry held when it turned Ready
+(`engine/core/src/resources/ResourceCache.cpp:490` at `8f2a444`). `addDependency` appends to the
+entry's list later (`:142`) and records no new upload, so render's copy keeps the old list. Found
+by S11-T6's `/card-review` (#213).
+
+**Not reached today** (checked Nov 17): every caller adds to the scene's handle
+(`SceneAsset.cpp`, `MaterialSlotRebuild.cpp`, `PlaceModelCommand.cpp`, `InspectorCommands.cpp`),
+and a scene is not a marked type.
+
+**Silent because** a material's handler finds its textures through those slots (S11-T8), so a
+texture added this way would simply not be bound, and the material would draw without it.
+
+**Fix:** not decided. `addDependency` on a marked type could record a fresh upload, or refuse.
+
+**Trigger:** the first `addDependency` call whose holder is a `Mesh`, `Texture` or `Material`.
+
 ### D12: Two processes in one working directory share one session log
 
 `initLogging()` opens `logs/techengine.log`, a path relative to the working directory, and

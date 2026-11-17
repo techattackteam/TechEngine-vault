@@ -16,7 +16,7 @@ there to answer one.
 | `sources` | both repos, engine first: `TechEngine`, then `TechEngine-vault` |
 | `model` | Opus 5.5 (`claude-opus-5-5`), read off the routine on 2026-09-26. The lane's risk is judgment on bug fixes, not throughput. |
 | `cron_expression` | `CRON_TZ=Europe/Lisbon 7 9,14 * * 1-5`: **09:07 and 14:07 Lisbon time, weekdays**, set on 2026-10-25. The routine had stored the Oct 23 expression `7 9,14 * * 1-5` as `CRON_TZ=Europe/Lisbon 7 10,15 * * 1-5`, an hour later than intended, so read the stored value back after every schedule change. Cut from four fires on **2026-08-31**. Minimum interval is one hour. Minute 7 rather than 0 keeps it off the mark every scheduler in the world piles onto. **Weekdays only, deliberately**: the weekend is Miguel's own dev time and a run pushing to vault `master` mid-session would collide with him. |
-| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27. Read off the routine on 2026-10-25: next fire Mon Oct 26 09:07 Lisbon. The prompt below, with the 🤖 Claude steps from S8-P11, was pasted into the routine on Oct 23 after #153 merged. **Owes a paste:** the sweep's outward look-for, added on 2026-11-01, and step 5's 🤖 Claude paragraph, narrowed on 2026-11-09 so the lane never designs a whole feature. |
+| Status | **Enabled.** Paused from the Sep 4 fires to Sep 26, running again since Sep 27. Read off the routine on 2026-10-25: next fire Mon Oct 26 09:07 Lisbon. The prompt below, with the 🤖 Claude steps from S8-P11, was pasted into the routine on Oct 23 after #153 merged. **Owes a paste:** the sweep's outward look-for, added on 2026-11-01, and step 5's 🤖 Claude paragraph, narrowed on 2026-11-09 so the lane never designs a whole feature. Also owed: the sweep's bolt-on look-for and step 5's self-review for bolt-ons, added on 2026-11-17. |
 | **Why two and not four** | **Claude's weekly usage limit**, not the CI budget. Four fires a weekday spent enough of the weekly allowance to compete with Miguel's own attended sessions, which are the lane's whole point. See [[Autonomous Lane - Design]] § *Cost model*. |
 | **DST** | **No change owed.** The `CRON_TZ=Europe/Lisbon` prefix keeps the fires at 09:07 and 14:07 local through both clock changes. In UTC they move: 09:07 and 14:07 in winter, 08:07 and 13:07 in summer, and both pairs stay on the right side of step 4's 12:00 UTC split. Not yet seen across a change: check the first fire after **2027-03-28**. |
 | `mcp_connections` | **none.** Pass `clear_mcp_connections: true`; the server attaches Google Drive and Claude Code Remote by default and the lane needs neither. |
@@ -202,6 +202,10 @@ Also look outward: logic this module writes by hand over a lower module's API, w
 should offer instead (for example, a caller that walks Scene's tree through getChildren).
 Search engine/ and apps/ for the other copies before you file it. This kind is NEVER fixable
 in the sweep, because the helper belongs to the lower module and would be a new public symbol.
+Also look for bolt-ons: the four smells in CONVENTIONS.md § "Changing code: adapt the owner,
+never bolt on" (a parallel structure, a compensating call, a lookup the data cannot answer, a
+second copy of machinery). A bolt-on is NEVER fixable in the sweep either, because undoing one
+reshapes the code that owns the job. File it with the owner's file:line beside the bolt-on's.
 Style and formatting are not findings: .clang-format, .clang-tidy and /te-review own those.
 A symbol is NOT dead if a design note, an open card or a TODO(<card ID>) names it: that is a
 seam built ahead of its consumer. Read docs/06 Sprints/Backlog.md first and never file twice.
@@ -264,6 +268,11 @@ prep brief or a report either.
 If a card turns out to need a decision its gate does not allow, a Windows leg, a demo
 capture, a visual check the gate does not allow yet, or any change under .github/workflows/,
 it was mis-scoped: stop, do not improvise, and say so in the report so it can be re-planned.
+BEFORE STEP 6, REVIEW YOUR OWN DIFF FOR BOLT-ONS. Read .claude/commands/card-review.md's
+bullet "The shape of the change" and apply it to everything you wrote, a sweep included. Fix
+each smell by changing the code that owns the job, not by adding beside it. One you cannot fix
+without a decision stops the card like any other decision. The PR body lists the existing
+lines you rewrote or deleted; a behaviour change with an empty list must say why.
 
 STEP 6: IF IT CHANGED CODE, PROVE IT.
   cmake --preset linux-debug && cmake --build --preset linux-debug
@@ -396,3 +405,8 @@ thing this lane can produce.
   after its PR merged, S5-P3 sat there needing a call, and four fires in a row reported an
   empty lane while refusing both. The columns are now the lane's state, and Review / Demo is
   the honest home for "this needs Miguel".
+- **Step 5 reviews the lane's own diff for bolt-ons** (2026-11-17). S11-T6's attended scaffold
+  added a parallel list, a compensating call and a lookup its inputs could not answer, and the
+  build would have passed with all three. Nothing red catches that shape, so the lane checks it
+  against `CONVENTIONS.md` § *Changing code* before it builds, and the sweep files it in
+  Miguel's code.

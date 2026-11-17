@@ -16,10 +16,10 @@ kanban-plugin: board
 
 ## Story B: R1's first frame
 
-- [ ] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h: uploads cross to render in order, and simulation defers a free until render reports the upload done. Follows S11-T3.
 - [ ] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h: three immutable buffers with a free-list allocator and a second block when one fills. Follows S11-T6.
 - [ ] **S11-T8** · The material buffer and bindless textures · P1 · 🟢 Deep · 4-6h: textures upload in their file's format, and each material writes its 96-byte record. Follows S11-T6.
 - [ ] **S11-T9** · The first frame · P1 · 🟢 Deep · 4-6h: one forward pass draws Sponza with base color through the main camera in the runtime; Miguel's windowed check and a capture prove it. Follows S11-T4, S11-T7 and S11-T8.
+- [ ] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h: render drops a copy once no packet or live copy names it and a device fence shows the GPU finished with it. Follows S11-T6.
 
 
 ## Story C: The scene view draws (drops first)
@@ -50,11 +50,19 @@ kanban-plugin: board
 ## 🔨 In Progress
 
 
+
 ## 👀 Review / Demo
 
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h: #213 (`8f2a444`), **Nov 17**. The cache records uploads and releases for marked types in one ordered list, `ClientApp` exchanges them with render at each publish point, and a free or a reload's old payload waits for its upload's slot and token ([[Renderer - Design]] § *Uploads and the fence*). Unblocks S11-T7, S11-T8 and S11-T16; Story B goes on.
+	- **Split at `/card-start` by Miguel's call:** dropping a GPU copy became S11-T16, and the forks (pull at publish, retry at each publish point, dependencies by slot with the id as a log label only, retire until done) were settled there.
+	- **Written and then removed before the merge:** the first scaffold kept a separate list of uploaded types and reported a token alone, which made the cache search for it. Miguel's review folded the flag into the type record and made the report a slot and a token, and that review became the *adapt the owner, never bolt on* rule, which rides in this PR in `CONVENTIONS.md` and three review skills.
+	- **`/card-review` found five defects, all fixed before the merge:** `drainFrees` tested `state == Pending` instead of the pin, which also failed two older slot-reuse tests; `exchangeUploads` never touched the cache; the channel copied records and never emptied the sender's list; and a cache entry that failed on its dependencies sent a release. One gap is logged: an added dependency never reaches render ([[Known Issues]] D13).
+	- **The clause "an empty packet pool holds no upload back" has no headless test.** No clientapp test exe exists, so only the call order in `publishFrame` holds it ([[Backlog]] § *client*).
+	- *Retro:* CI's Release leg failed the "marking a type for upload is rejected" test every run, and it was first read as flaky. `TE_ASSERT` is compiled out in Release, so a test that expects an assert to fire needs `TE_CHECK` in the code. The PR has no description or review conversation, so this entry comes from the session.
 
 - [x] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto: #212 (`6e0c12f`), **Nov 17**. `baseVersion()`, `platformVersion()` and `coreVersion()` are gone with their files and `BaseTests.cpp`, which ends S10-T9.
 	- **The `done:` clause was wrong about `Platform.hpp`.** The header also declares `executablePath()`, which both apps' `main.cpp`, `EditorApp.cpp` and its own tests include, so it stays with only `platformVersion()` removed. Renaming it after its `.cpp` is in the [[Backlog]] (*platform*).
@@ -63,7 +71,6 @@ kanban-plugin: board
 - [x] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto: #211 (`63f2fb3`), **Nov 17**. `RuntimeApp::logSceneTree` writes its entity and mesh lines at Debug, under the one INFO summary. Frees `RuntimeApp.cpp` for S11-T15's sweep.
 	- **The clause hid a test change.** Debug is compiled out on Release, so the two runtime log tests that read per-entity lines now gate those checks on `TE_LOG_ACTIVE_LEVEL`, as `TaskGraphTests.cpp` already did. The lane's first local Release run failed the mesh-id check, which is how it found the second test.
 	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body, the diff and [[2026-11-17 09-08 Auto Run]].
-
 - [x] **S11-T4** · Frame packets replace the snapshot · P1 · 🟢 Deep · 4-6h: #210 (`4d0b8e0`), **Nov 16**. Simulation fills a pooled packet after ticks, after edits and after the startup load, and render matches instances by `Entity` and interpolates them on the CPU ([[Renderer - Design]] § *The frame packet*, § *Packet delivery*). Unblocks S11-T9 with S11-T7 and S11-T8; Story B goes on.
 	- **`/card-start` found two holes the card did not name:** the history dropped every packet whose tick did not advance, so a Stopped editor showed only its first edit, and four packets run out if render takes one before the history lets one go. A per-publish sequence and a hand-over under the mailbox's lock close them.
 	- **The card grew three times on Nov 16, by Miguel's call:** one main camera per scene (core functions, two editor commands, a warning on load), a read-only query on a `const Scene` with `Scene::isRegistered` ([[Scene - Design]] § *Queries and invalidation*), and the walks it leaves for S11-T15. The camera functions became static members of `Camera`, which opened the *Grouping functions no instance owns* row in `CONVENTIONS.md`.
