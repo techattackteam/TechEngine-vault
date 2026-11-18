@@ -224,7 +224,7 @@ and *How the scene view's camera is driven*.
   done: the version anchors go: `baseVersion()`, `platformVersion()` and `coreVersion()` with
   `Base.hpp`, `Platform.hpp`, `Core.hpp` and their `.cpp`, and `BaseTests.cpp`, whose glm case
   repeats `MathTests.cpp`. `ctest` proves it. Was S10-T9.
-- [ ] **S11-P2** · A README at the repo root · P3 · 🤖 Auto ·
+- [x] **S11-P2** · A README at the repo root · P3 · 🤖 Auto ·
   done: what the engine is, how to clone the vault, and the three preset commands.
 - [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto ·
   done: the PR lists every walk over `getRoots` and `getChildren` outside `Scene`, by file and

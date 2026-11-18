@@ -360,8 +360,10 @@ groups are kept, because they show where future work will land.
   the whole-scene `rebuildMaterialSlots` (`apps/editor/src/edit/MaterialSlotRebuild.cpp:54`), so
   the first trigger has fired. S11-T5 (#208, Nov 16) added the sixth, depth-first and stopping
   at the first match: `findMainCamera` (`engine/core/src/camera/Camera.cpp`). Since S11-T4 (#210,
-  Nov 16) it walks only when two cameras are main, and S11-T15 turns the walks that need no order
-  into queries. **Trigger:** a sixth hand-written walk, the next card that changes
+  Nov 16) it walks only when two cameras are main. S11-T15 (#215, Nov 18) made
+  `rebuildMaterialSlots` a `MeshRenderer` query, so five walks are left, all ordered; its PR lists
+  them with current lines (`EditSession.cpp:101`, `RuntimeApp.cpp:101`, `SceneAsset.cpp:36` and
+  `:295`, `Camera.cpp:14`). **Trigger:** a sixth hand-written walk, the next card that changes
   one of the five, or Miguel scheduling it now.
 
 ## client

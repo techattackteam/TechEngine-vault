@@ -37,7 +37,6 @@ kanban-plugin: board
 ## Story E: The lane's small cards
 
 - [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: with `_1`, `_2` on a repeat, and a two-primitive fixture test. After S11-T1.
-- [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto: every `getRoots`/`getChildren` walk is listed; the ones that need no hierarchy order become queries, the rest keep their reason. Off S11-T4's and S11-T12's files. Added Nov 16.
 
 
 ## Story F: Prepare Sprint 12
@@ -52,11 +51,13 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S11-P2** · A README at the repo root · P3 · 🤖 Auto: #214, branch `S11-P2/readme`, opened Nov 18. Docs only, so no CI build runs.
+- [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto: #215, branch `S11-T15/scene-walk-queries`, opened Nov 18. Only `rebuildMaterialSlots` became a query; the PR lists the other walks and why each keeps its order.
 
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-P2** · A README at the repo root · P3 · 🤖 Auto: #214 (`cb34121`), **Nov 18**. A root `README.md` says what the engine is, how to clone the vault into `docs/`, and gives the preset commands for Windows and Linux. Nothing surprised; it describes the engine in technical terms only, leaving the roadmap and plans to the private vault.
+	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body and the diff alone. It merged about 40 minutes after it opened.
 - [x] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h: #213 (`8f2a444`), **Nov 17**. The cache records uploads and releases for marked types in one ordered list, `ClientApp` exchanges them with render at each publish point, and a free or a reload's old payload waits for its upload's slot and token ([[Renderer - Design]] § *Uploads and the fence*). Unblocks S11-T7, S11-T8 and S11-T16; Story B goes on.
 	- **Split at `/card-start` by Miguel's call:** dropping a GPU copy became S11-T16, and the forks (pull at publish, retry at each publish point, dependencies by slot with the id as a log label only, retire until done) were settled there.
 	- **Written and then removed before the merge:** the first scaffold kept a separate list of uploaded types and reported a token alone, which made the cache search for it. Miguel's review folded the flag into the type record and made the report a slot and a token, and that review became the *adapt the owner, never bolt on* rule, which rides in this PR in `CONVENTIONS.md` and three review skills.
