@@ -37,7 +37,6 @@ kanban-plugin: board
 ## Story E: The lane's small cards
 
 - [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: with `_1`, `_2` on a repeat, and a two-primitive fixture test. After S11-T1.
-- [ ] **S11-P2** · A README at the repo root · P3 · 🤖 Auto: what the engine is, how to clone the vault, and the three preset commands.
 - [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto: every `getRoots`/`getChildren` walk is listed; the ones that need no hierarchy order become queries, the rest keep their reason. Off S11-T4's and S11-T12's files. Added Nov 16.
 
 
@@ -53,6 +52,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S11-P2** · A README at the repo root · P3 · 🤖 Auto: #214, branch `S11-P2/readme`, opened Nov 18. Docs only, so no CI build runs.
 
 
 ## ✅ Done: Sprint 11
