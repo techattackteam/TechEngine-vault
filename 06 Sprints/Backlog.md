@@ -389,6 +389,13 @@ groups are kept, because they show where future work will land.
   `ClientApp::publishFrame` holds it (`exchangeUploads()` runs before `acquirePacket()`, #213).
   A headless `ClientApp` case needs a client that starts without a GL context. **Trigger:** the
   null render device above lands, or the next change to `publishFrame`'s order.
+- #prio/low · **No test reads back what `GeometryBuffers::place` writes**: S11-T7's tests are
+  headless, so none checks the three `updateBuffer` writes, their offsets or the interleaved
+  record on the GPU (#217). A `[gpu]` case would need `runOnContext`, which is `static` in
+  `engine/client/tests/render/device/RenderDeviceTests.cpp`, so it first moves to
+  `tests/support`, and the device has no `readBuffer` yet. S11-T9's frame is the first proof
+  until then. **Trigger:** a wrong-looking mesh in S11-T9's frame, or the next card that needs a
+  GL context in a client test.
 
 ## app
 

@@ -35,6 +35,22 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
+### D14: A mesh reload never returns its old geometry range
+
+A reload sends a new upload for the same slot, and `GpuCopies::apply` replaces the copy
+(`engine/client/src/render/GpuCopies.cpp:29` at `5ed5875`). The old copy's `GeometryRange` goes
+with it, and nothing calls `GeometryBuffers::free`, so the range stays taken. Logged at S11-T7's
+close (#217), as planned when S11-T16 was split out of S11-T6.
+
+**Silent because** nothing fails: each re-import of a mesh takes a new range, and when a block
+fills, a new 64 MB block is added. The old range would hold a mesh that no packet names.
+
+**Fix:** S11-T16 drops a copy on a release and a reload's old copy, and frees its range then.
+The replaced copy must survive `insert_or_assign` long enough for that.
+
+**Trigger:** S11-T16, or the first editor session that re-imports meshes often enough for a
+second block to show up.
+
 ### D13: A dependency added after an upload never reaches render
 
 An upload carries the dependency slots its entry held when it turned Ready

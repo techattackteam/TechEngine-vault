@@ -163,16 +163,26 @@ S11-T16 follows S11-T6, and no card waits for it.
   it. Its `/card-start` settles § *Open questions*' *How render drops a copy safely*. Until it
   lands, a re-import after S11-T7 leaks the mesh's old range, and S11-T7's `/card-close` files
   that in [[Known Issues]]. Added Nov 17 at S11-T6's `/card-start`.
-- [ ] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h ·
+- [x] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h ·
   done: [[Renderer - Design]] § *Geometry buffers* as written: the three buffers with immutable
   storage, the free-list allocator, a second block when one fills, and defaults for a stream a
   mesh lacks. Tests, headless on the allocator: a freed range is reused, a mesh never moves, and
-  a full block adds another.
+  a full block adds another. #217 (`5ed5875`), Nov 19.
 - [ ] **S11-T8** · The material buffer and bindless textures · P1 · 🟢 Deep · 4-6h ·
   done: textures upload in their file's format with their mips and sampler, and each material
   writes its 96-byte record with bindless handles ([[Renderer - Design]] § *The material
   buffer*). Record 0 is written at startup. This card decides which way a texture is sampled
   (§ *Open questions*).
+  **Parked code (Nov 19):** Miguel drafted `uploadTexture`, `uploadMaterial` and the device's
+  texture upload and bindless calls on S11-T7's branch, and they were stashed there as
+  *S11-T8: texture and material upload handlers, parked Nov 19 from S11-T7's branch*. The stash
+  exists only on Miguel's Windows machine. `/card-start` cuts this card's branch from
+  `origin/master` after S11-T7 merges, finds the entry in `git stash list`, runs
+  `git stash apply` on it, and resolves `GpuCopies` against S11-T7's merged version. A review on
+  Nov 19 found that the draft keeps one buffer per material instead of the shared one, matches
+  textures to inputs without skipping the empty ones, and makes a bindless handle resident once
+  per material. It also left two things undecided: the material buffer's capacity and what
+  happens when it fills, and rewriting a material's record when its texture arrives after it.
 - [ ] **S11-T9** · The first frame · P1 · 🟢 Deep · 4-6h ·
   done: one forward pass draws the packet with CPU-written multi-draws, one per draw bucket, and
   shades base color times its factor, with cut-outs discarded. The runtime shows Sponza through

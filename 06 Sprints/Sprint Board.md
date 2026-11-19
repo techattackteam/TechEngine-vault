@@ -16,7 +16,6 @@ kanban-plugin: board
 
 ## Story B: R1's first frame
 
-- [ ] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h: three immutable buffers with a free-list allocator and a second block when one fills. Follows S11-T6.
 - [ ] **S11-T8** · The material buffer and bindless textures · P1 · 🟢 Deep · 4-6h: textures upload in their file's format, and each material writes its 96-byte record. Follows S11-T6.
 - [ ] **S11-T9** · The first frame · P1 · 🟢 Deep · 4-6h: one forward pass draws Sponza with base color through the main camera in the runtime; Miguel's windowed check and a capture prove it. Follows S11-T4, S11-T7 and S11-T8.
 - [ ] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h: render drops a copy once no packet or live copy names it and a device fence shows the GPU finished with it. Follows S11-T6.
@@ -55,6 +54,12 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T7** · Shared geometry buffers · P1 · 🟢 Deep · 4-6h: #217 (`5ed5875`), **Nov 19**. `GpuCopies` owns `GeometryBuffers`: blocks of three `Dynamic` buffers with best-fit free lists that merge, and a mesh's copy keeps its range ([[Renderer - Design]] § *Geometry buffers as built*). Unblocks S11-T9 with S11-T8; Story B goes on.
+	- **`/card-start` found three things no artifact decided, settled by Miguel:** the block size (1M vertices, 4M indices), an exact block for an oversize mesh, and best-fit with merging; all three are a *Decided* row now. The note's "immutable storage" also has to be `Dynamic`, because a `Static` buffer refuses `updateBuffer`.
+	- **Written and then removed before the merge:** a separate `GeometryFreeList` class and files, folded into private members of `GeometryBuffers`; and a "no indices" error in `place`, which became an empty range like "no positions", since `Mesh::read` accepts both.
+	- **`/card-review` found six defects, all fixed before the merge**, among them `takeFromRange` never moving a range's offset forward (the cause of four failing tests), an oversize block sized to the larger dimension instead of exactly, and a double free merged silently instead of firing a check. One gap is logged: a reload never returns the old range ([[Known Issues]] D14).
+	- *Retro:* diff coverage first failed at 84% against the 85% gate; dead code in `place` and four headless tests fixed it. S11-T8's handlers were drafted on this branch and stashed (S11-T8's card says where). The PR has no description or review conversation, so this entry comes from the session. No test runs the GL writes; S11-T9's frame is their first proof.
+
 - [x] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto: #215 (`76eaec0`), **Nov 19**. The whole-scene `rebuildMaterialSlots` gathers its renderers with a `MeshRenderer` query; every other walk keeps hierarchy order, and the PR lists each with its reason. The five ordered walks left are the [[Backlog]]'s *`Scene` has no tree-order walk* entry (*core*). Completes Story E's sweep; S11-T13 still waits on S11-T1.
 	- **The query needed an `isRegistered` guard the card did not name**, because a query on an unregistered type fails `getDenseId`'s check where the walk found nothing. It matches `findMainCamera`'s.
 	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body and the diff alone. It merged about 20 hours after it opened, with no change.
@@ -66,7 +71,6 @@ kanban-plugin: board
 	- **`/card-review` found five defects, all fixed before the merge:** `drainFrees` tested `state == Pending` instead of the pin, which also failed two older slot-reuse tests; `exchangeUploads` never touched the cache; the channel copied records and never emptied the sender's list; and a cache entry that failed on its dependencies sent a release. One gap is logged: an added dependency never reaches render ([[Known Issues]] D13).
 	- **The clause "an empty packet pool holds no upload back" has no headless test.** No clientapp test exe exists, so only the call order in `publishFrame` holds it ([[Backlog]] § *client*).
 	- *Retro:* CI's Release leg failed the "marking a type for upload is rejected" test every run, and it was first read as flaky. `TE_ASSERT` is compiled out in Release, so a test that expects an assert to fire needs `TE_CHECK` in the code. The PR has no description or review conversation, so this entry comes from the session.
-
 - [x] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto: #212 (`6e0c12f`), **Nov 17**. `baseVersion()`, `platformVersion()` and `coreVersion()` are gone with their files and `BaseTests.cpp`, which ends S10-T9.
 	- **The `done:` clause was wrong about `Platform.hpp`.** The header also declares `executablePath()`, which both apps' `main.cpp`, `EditorApp.cpp` and its own tests include, so it stays with only `platformVersion()` removed. Renaming it after its `.cpp` is in the [[Backlog]] (*platform*).
 	- **The merge left two loose ends**, both in the [[Backlog]]: `core` now links toml++ that none of its files use (*core*, trigger fired), and `CONVENTIONS.md` § *Headers* still gives `base/Base.hpp` as its example of a module's own header (*etc*).

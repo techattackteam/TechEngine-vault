@@ -10,7 +10,8 @@
 **Kind:** system
 **Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`; materials designed on
 2026-11-10 (S10-D7) against `ac594e4`. The device is built (S11-T3, #207), and so are the frame
-packets (S11-T4, #210); the frame still draws only M4's triangle
+packets (S11-T4, #210), the ordered uploads (S11-T6, #213) and the geometry buffers (S11-T7,
+#217); the frame still draws only M4's triangle
 (`engine/client/src/render/FrameRenderer.cpp`).
 **ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
 [[ADR-029 - Materials, surfaces and lobes]] ·
@@ -64,6 +65,7 @@ the render thread that draws packets through a small device.
 | E2's frame | Depth pre-pass, light clusters built and filled in compute as in v1, one forward lit pass with CPU-written multi-draws, sky, final image. | ADR-028 §5 |
 | Compute from E2 | The device dispatches compute and binds storage buffers. A pass that writes in compute issues GL's coarse memory barrier through the device; per-resource barriers stay out. | ADR-028 §5 §6 |
 | Shared geometry buffers | Static meshes share one set: a position buffer, an attribute buffer and a 32-bit index buffer. A new vertex layout gets its own set. A mesh never moves once placed. | ADR-028 §5; § *Geometry buffers* |
+| Geometry blocks and their fit | A block holds 1M vertices and 4M indices. A mesh that cannot fit an empty block gets a block sized exactly to it. Free ranges are taken best-fit, the lowest offset on a tie, and a freed range merges with each free range it touches. | Miguel, 2026-11-19 (S11-T7); § *Geometry buffers: placing a mesh* |
 | Who owns the mesh | This note owns the GPU streams and attributes; `Content Pipeline - Design` (S10-D9) owns the file. | ADR-028 §5 |
 | The vertex attributes | A normal (`float3`), a tangent (`float4`, `w` the bitangent's sign) and UV0 (`float2`), unpacked until measured. A stream a mesh lacks is filled with defaults at upload. Indices are 32-bit only. | S10-D10, 2026-11-09; ADR-028 §5; [[Content Pipeline - Design]] § *The mesh file* |
 | A slot with no material entry | It draws with the mesh's default material. | S10-D10, 2026-11-09; [[Content Pipeline - Design]] § *Materials per slot* |
@@ -304,6 +306,104 @@ One vertex array binds the two vertex buffers to two bindings.
   §3's packets cannot allow.
 - **Not in this set:** geometry the CPU rewrites each frame (debug lines, UI) gets its own
   streaming buffer, so it never fragments the static set.
+
+### Geometry buffers as built
+
+Built by S11-T7 (#217, `5ed5875`) in `engine/client/src/render/GeometryBuffers.cpp`. The block size, the
+oversize rule and the fit are Miguel's (2026-11-19).
+
+```mermaid
+flowchart TB
+    RT["RenderThread::threadMain"] --> GC["GpuCopies<br/>one copy per slot"]
+    GC --> GB["GeometryBuffers"]
+    GC --> CP["A mesh's GpuCopy<br/>holds its GeometryRange"]
+    GB --> B0["Block 0, created at startup"]
+    GB --> B1["Block 1, added when no block fits"]
+    B0 --> P["Position buffer<br/>12 bytes per vertex"]
+    B0 --> A["Attribute buffer<br/>36 bytes per vertex"]
+    B0 --> I["Index buffer<br/>4 bytes per index"]
+    B0 --> FL["Two free lists<br/>vertices and indices"]
+    CP -.->|"block, baseVertex, firstIndex"| B0
+```
+
+| Part | As built |
+|---|---|
+| Ownership | `GpuCopies` owns `GeometryBuffers`. `RenderThread::threadMain` initializes it after the GL check, and shuts it down before the device. |
+| A block | Three `Dynamic` buffers, which are immutable storage with `GL_DYNAMIC_STORAGE_BIT`, because a `Static` buffer refuses `updateBuffer`. Beside them, two free lists: one counted in vertices and one in indices. |
+| Its size | `GEOMETRY_BLOCK_CAPACITY` is 1M vertices and 4M indices, so 12, 36 and 16 MB. Block 0's buffers are created by `initialize`; a later block's are created when its first mesh lands. |
+| A range | `GeometryRange` holds the block, `baseVertex`, `firstIndex` and the two counts. The mesh's `GpuCopy` keeps it, because the payload is gone once the upload reports done. |
+| The attribute record | `GeometryAttributes` puts the normal at byte 0, the tangent at 12 and UV0 at 28. A stream the mesh lacks takes import's defaults: normal (0, 1, 0), tangent (1, 0, 0, 1), UV0 (0, 0). |
+| An empty mesh | A mesh with no positions or no indices gets an empty range, with no error and no GL call. Import never writes one, but `Mesh::read` accepts both, and it is a valid file with nothing to draw. |
+
+- **Not built yet:** nothing frees a range until S11-T16 drops a mesh's copy. Until then a
+  reload replaces the copy in `GpuCopies::apply`, and the old range is never returned
+  ([[Known Issues]] D14). The copy keeps no slot ranges either: the payload is gone once the
+  upload reports done, so S11-T9 copies each slot's `firstIndex` and `indexCount` in
+  `uploadMesh`.
+- **Tested headless only** (`engine/client/tests/render/GeometryBuffersTests.cpp`). No test runs
+  the GL writes; S11-T9's frame is their first proof.
+
+### Geometry buffers: one block's layout
+
+An example block with two meshes and one freed hole between them:
+
+```mermaid
+flowchart LR
+    subgraph V["Position and attribute buffers, counted in vertices"]
+        direction LR
+        VA["Mesh A<br/>0 to 99"] --- VH["Free<br/>100 to 149"] --- VB["Mesh B<br/>150 to 399"] --- VT["Free<br/>400 to the end"]
+    end
+    subgraph X["Index buffer, counted in indices"]
+        direction LR
+        XA["Mesh A<br/>0 to 299"] --- XH["Free<br/>300 to 449"] --- XB["Mesh B<br/>450 to 1199"] --- XT["Free<br/>1200 to the end"]
+    end
+```
+
+- **One vertex number, two buffers.** Vertex 150 is mesh B's first vertex in both vertex
+  buffers, so B draws with `baseVertex` 150 and `firstIndex` 450.
+- **Indices are not rewritten.** A mesh's indices stay relative to its own first vertex, and
+  `baseVertex` adds the offset at draw time.
+- **Each free list is sorted by offset.** The list above holds `{100, 50}` and `{400, rest}`
+  for vertices. A freed range merges with the free range before it, the one after it, both or
+  neither, and only where the two touch exactly.
+- **Misuse fires a check and changes nothing:** a freed range that overlaps a free one (a
+  double free), a block that does not exist, or a take from a range too small. Freeing an
+  empty range does nothing.
+
+### Geometry buffers: placing a mesh
+
+```mermaid
+flowchart TD
+    U["GpuCopies::uploadMesh"] --> E{"Any positions<br/>and any indices?"}
+    E -->|"no"| Z["Empty range, no GL call"]
+    E -->|"yes"| S["Search the blocks in order"]
+    S --> F{"A best fit for the vertices<br/>and the indices, in one block?"}
+    F -->|"yes"| T["Take from both free lists"]
+    F -->|"no block has both"| O{"Would it fit an<br/>empty default block?"}
+    O -->|"yes"| N["Add a default block"]
+    O -->|"no"| X["Add a block sized<br/>exactly to the mesh"]
+    N --> T
+    X --> T
+    T --> C{"Does the block<br/>have its buffers?"}
+    C -->|"no"| CB["Create them; on failure,<br/>free the range and fail"]
+    C -->|"yes"| W["Write positions, interleaved<br/>attributes and indices"]
+    CB --> W
+```
+
+- **Best-fit.** The smallest free range that holds the count, with the lowest offset on a tie.
+  Both lists are searched before anything is taken, so a block where only the vertices fit
+  changes nothing.
+- **One block per mesh.** A mesh's vertices and indices sit in the same block, because each
+  block draws with its own multi-draw.
+- **An oversize block is exact.** A mesh too big for an empty default block gets a block of
+  exactly its vertices and indices. Taking the larger of the default and the mesh in each
+  dimension would fill one dimension and strand the other's space, up to 16 MB of indices.
+- **Why best-fit and not first-fit.** Sponza's meshes differ in size by 100x or more, and
+  best-fit keeps large holes whole for a large re-import. It costs a full scan instead of
+  first-fit's early exit, which is nothing at tens of holes per block. Johnstone and Wilson
+  (ISMM 1998) found address-ordered first-fit and best-fit about equally low in fragmentation.
+  From memory and unchecked, Unreal's GPU Scene uses a first-fit span allocator that merges.
+  The merge matters more than the fit, and neither is measured here.
 
 ### Materials
 
