@@ -162,7 +162,8 @@ groups are kept, because they show where future work will land.
   `LIBS_PRIVATE tomlplusplus::tomlplusplus` becomes a dead dependency. The editor links its own
   copy (`apps/editor/CMakeLists.txt:93`). Drop the line once nothing in `core` parses TOML. Found
   by the lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]). **Trigger:** #212 merges. **Fired by
-  S11-T14 (#212, Nov 17).** A one-line fix, a 🤖 Auto candidate.
+  S11-T14 (#212, Nov 17).** A one-line fix, a 🤖 Auto candidate. **Dropped in #216** (the core
+  sweep, Nov 19, open); delete this entry when it merges.
 
 - #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
   `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
@@ -261,15 +262,17 @@ groups are kept, because they show where future work will land.
   iteration without changing whole-system graph semantics. **Trigger:** profiling after the
   parallel executor shows one system node dominates a tick.
 
-- #prio/medium · **Code sweep leftovers: core**: Found by the code sweep on Nov 4, 2026
-  ([[2026-11-04 14-12 Auto Run]]), and carried from Oct 20 ([[2026-10-20 15-09 Auto Run]]).
+- #prio/medium · **Code sweep leftovers: core**: Found by the code sweep on Nov 19, 2026
+  ([[2026-11-19 14-10 Auto Run]]), and carried from Nov 4 ([[2026-11-04 14-12 Auto Run]]) and
+  Oct 20 ([[2026-10-20 15-09 Auto Run]]).
   The `engine/app` sweep on Nov 6 added the built-in registration line ([[2026-11-06 14-07 Auto Run]]).
-  #149 and #184 fixed what needed no decision; these need a decision, a new header or a new
-  public symbol, or cost about as much as they save. The Oct 20 line numbers were not re-checked on Nov 4.
-  - `Scene::unparent` (`engine/core/src/scene/Scene.cpp:417-455`) repeats `setParent`'s
-    old-link validation and unlink (`:301-317`, `:356-368`). One private member would serve
-    both, about 20 lines, but `setParent` validates the destination between the two halves,
-    so the split is a choice. S8-T3 grew both copies with the last-child link.
+  #149, #184 and #216 fixed what needed no decision; these need a decision, a new header or a new
+  public symbol, or cost about as much as they save. Only the `Scene.cpp` and `ResourceCache.cpp`
+  line numbers were re-checked on Nov 19.
+  - The four asset types open `read` with the same steps: `readHeader`, the id, an `ok()` check
+    and `ImportBlock::read` (`engine/core/src/mesh/Mesh.cpp:68`, `material/Material.cpp:46`,
+    `texture/Texture.cpp:72`, `model/Model.cpp:49`), and `write` with the same three. One helper
+    beside `ImportBlock` is a new public symbol, about 30 lines.
   - `ArchetypeStorage`'s typed `addComponent<T>` and `removeComponent<T>`
     (`engine/core/src/scene/ArchetypeStorage.hpp:56-90`) exist only for tests and repeat the
     type-erased path; `ComponentStorage<T>::set` (`ComponentStorage.hpp:101`) goes with them.
@@ -279,8 +282,8 @@ groups are kept, because they show where future work will land.
     #149 gave `componentRaw` removes about 8 lines.
   - `ArchetypeStorage::addEdge` and `removeEdge` (`engine/core/src/scene/ArchetypeStorage.cpp:203-225`)
     differ only in the transition map and the signature edit. About 8 lines.
-  - `Scene::fromWorldToLocal` (`Scene.cpp:183-187`) and `setParent(…, ReparentMode)`
-    (`:403-409`) repeat the determinant check and the inverse-and-decompose. About 5 lines.
+  - `Scene::fromWorldToLocal` (`Scene.cpp:251-255`) and `setParent(…, ReparentMode)`
+    (`:344-350`) repeat the determinant check and the inverse-and-decompose. About 5 lines.
   - `ArchetypeStorage::eachEntity` (`ArchetypeStorage.hpp:129-141`) hand-writes what
     `Query`'s `IterationGuard` (`Query.hpp:66`) does. Sharing it puts a new `internal::` symbol
     in a public header. About 6 lines.
@@ -305,9 +308,9 @@ groups are kept, because they show where future work will land.
     `engine/core/tests/assets/PackSourceTests.cpp:58`), `viewOf` and `bytesOf`, and `patch<T>`
     (`PackTests.cpp:123`, `BootRecordTests.cpp:105`). One test header, about 30 lines.
   - **Possible hang:** `ResourceCache::runLoadingPhase` loops while any pending entry is still
-    `loading` (`engine/core/src/resources/ResourceCache.cpp:284-292`). If `JobSystem::submit`
+    `loading` (`engine/core/src/resources/ResourceCache.cpp:373-396`). If `JobSystem::submit`
     refuses a batch after shutdown (`engine/core/src/jobs/JobSystem.cpp:66`), `submitLoads` has
-    already marked its entries `loading` (`ResourceCache.cpp:178`) and keeps no batch, so the loop
+    already marked its entries `loading` (`ResourceCache.cpp:200`) and keeps no batch, so the loop
     never ends. Looping until `m_pendingLoads` is empty removes about 8 lines, but leaves those
     entries Pending, which is a decision. Found by reading, not by a test.
   - `SceneCommandBuffer::Payload` (`engine/core/include/TechEngine/core/scene/SceneCommandBuffer.hpp:37`)
@@ -323,7 +326,7 @@ groups are kept, because they show where future work will land.
   - `SerialExecutor` rebuilds every input notification for each node, in three loops
     (`engine/core/src/systems/SerialExecutor.cpp:129-147`). One per-Tick list and one loop, about 8 lines.
   - `Scene::validateRead` and `validateWrite` differ only in `reads`/`writes` and the message
-    (`engine/core/src/scene/Scene.cpp:584-598`). Merging them needs a flag argument at five call
+    (`engine/core/src/scene/Scene.cpp:619-633`). Merging them needs a flag argument at five call
     sites, about 6 lines.
   - `Writer::write(std::string_view)` (`Writer.cpp:59`) repeats `writeSpan<char>`, and
     `Reader::read(std::string&)` (`Reader.cpp:91`) repeats `readSpan`. About 14 lines; the
@@ -331,12 +334,13 @@ groups are kept, because they show where future work will land.
   - `PackWriter::add` scans for duplicates and `write` copies and sorts (`PackWriter.cpp:17`, `:32`).
     Inserting at `lower_bound` removes both, about 9 lines.
   - `ResourceCache::freeEntry` repeats the null and `acquires` check its only caller just made
-    (`ResourceCache.cpp:319`). About 4 lines.
+    (`ResourceCache.cpp:455`). About 4 lines.
   - `Schedule::getEntryByType` returns its map by value (`Schedule.hpp:66`), and
     `checkedEntry` bounds-checks twice (`Schedule.cpp:78-79`). `JobSystem`'s worker lambda names a
     `stopToken` it never uses (`JobSystem.cpp:31`), which warns on every build. About 2 lines.
-  - Test setup: the in-memory `AssetSource` and cache harness is copied in `MeshTests.cpp:66`,
-    `SceneAssetTests.cpp:358` and `ResourceCacheTests.cpp:217` (a new test header, about 40 lines).
+  - Test setup: the in-memory `AssetSource` and cache harness is copied five times, in
+    `MeshTests.cpp:102`, `MaterialTests.cpp:116`, `TextureTests.cpp:102`, `SceneAssetTests.cpp:359`
+    and `ResourceCacheTests.cpp:217` (a new test header, about 80 lines).
     `BootRecordTests.cpp:111`'s `requireSameRecord` is repeated by hand in `PackTests.cpp:312`
     (a defaulted `operator==` on the boot record types, about 28 lines).
   - Test setup inside one file: `ArchetypeTests`, `ArchetypeStorageTests` and `QueryTests` repeat

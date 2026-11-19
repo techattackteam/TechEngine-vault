@@ -226,7 +226,7 @@ and *How the scene view's camera is driven*.
   repeats `MathTests.cpp`. `ctest` proves it. Was S10-T9.
 - [x] **S11-P2** · A README at the repo root · P3 · 🤖 Auto ·
   done: what the engine is, how to clone the vault, and the three preset commands.
-- [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto ·
+- [x] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto ·
   done: the PR lists every walk over `getRoots` and `getChildren` outside `Scene`, by file and
   line. Each walk whose result does not depend on hierarchy order becomes a component query; each
   one that does stays, with its reason (the outliner, sibling order, row order on disk, a tree

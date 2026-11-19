@@ -51,11 +51,13 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto: #215, branch `S11-T15/scene-walk-queries`, opened Nov 18. Only `rebuildMaterialSlots` became a query; the PR lists the other walks and why each keeps its order.
 
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T15** · Queries replace the whole-scene walks · P3 · 🤖 Auto: #215 (`76eaec0`), **Nov 19**. The whole-scene `rebuildMaterialSlots` gathers its renderers with a `MeshRenderer` query; every other walk keeps hierarchy order, and the PR lists each with its reason. The five ordered walks left are the [[Backlog]]'s *`Scene` has no tree-order walk* entry (*core*). Completes Story E's sweep; S11-T13 still waits on S11-T1.
+	- **The query needed an `isRegistered` guard the card did not name**, because a query on an unregistered type fails `getDenseId`'s check where the walk found nothing. It matches `findMainCamera`'s.
+	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body and the diff alone. It merged about 20 hours after it opened, with no change.
 - [x] **S11-P2** · A README at the repo root · P3 · 🤖 Auto: #214 (`cb34121`), **Nov 18**. A root `README.md` says what the engine is, how to clone the vault into `docs/`, and gives the preset commands for Windows and Linux. Nothing surprised; it describes the engine in technical terms only, leaving the roadmap and plans to the private vault.
 	- *Retro:* the PR has no review conversation, so this entry comes from the card, the PR body and the diff alone. It merged about 40 minutes after it opened.
 - [x] **S11-T6** · Ordered uploads and render's fence · P1 · 🟢 Deep · 4-6h: #213 (`8f2a444`), **Nov 17**. The cache records uploads and releases for marked types in one ordered list, `ClientApp` exchanges them with render at each publish point, and a free or a reload's old payload waits for its upload's slot and token ([[Renderer - Design]] § *Uploads and the fence*). Unblocks S11-T7, S11-T8 and S11-T16; Story B goes on.
