@@ -266,13 +266,10 @@ groups are kept, because they show where future work will land.
   ([[2026-11-19 14-10 Auto Run]]), and carried from Nov 4 ([[2026-11-04 14-12 Auto Run]]) and
   Oct 20 ([[2026-10-20 15-09 Auto Run]]).
   The `engine/app` sweep on Nov 6 added the built-in registration line ([[2026-11-06 14-07 Auto Run]]).
-  #149, #184 and #216 fixed what needed no decision; these need a decision, a new header or a new
+  #149, #184 and #216 fixed what needed no decision (#216 also took the asset prologue and the
+  shared test source, by Miguel's call on Nov 19); these need a decision, a new header or a new
   public symbol, or cost about as much as they save. Only the `Scene.cpp` and `ResourceCache.cpp`
   line numbers were re-checked on Nov 19.
-  - The four asset types open `read` with the same steps: `readHeader`, the id, an `ok()` check
-    and `ImportBlock::read` (`engine/core/src/mesh/Mesh.cpp:68`, `material/Material.cpp:46`,
-    `texture/Texture.cpp:72`, `model/Model.cpp:49`), and `write` with the same three. One helper
-    beside `ImportBlock` is a new public symbol, about 30 lines.
   - `ArchetypeStorage`'s typed `addComponent<T>` and `removeComponent<T>`
     (`engine/core/src/scene/ArchetypeStorage.hpp:56-90`) exist only for tests and repeat the
     type-erased path; `ComponentStorage<T>::set` (`ComponentStorage.hpp:101`) goes with them.
@@ -338,10 +335,10 @@ groups are kept, because they show where future work will land.
   - `Schedule::getEntryByType` returns its map by value (`Schedule.hpp:66`), and
     `checkedEntry` bounds-checks twice (`Schedule.cpp:78-79`). `JobSystem`'s worker lambda names a
     `stopToken` it never uses (`JobSystem.cpp:31`), which warns on every build. About 2 lines.
-  - Test setup: the in-memory `AssetSource` and cache harness is copied five times, in
-    `MeshTests.cpp:102`, `MaterialTests.cpp:116`, `TextureTests.cpp:102`, `SceneAssetTests.cpp:359`
-    and `ResourceCacheTests.cpp:217` (a new test header, about 80 lines).
-    `BootRecordTests.cpp:111`'s `requireSameRecord` is repeated by hand in `PackTests.cpp:312`
+  - Test setup: each cache harness (`MeshTests`, `MaterialTests`, `TextureTests`, `SceneAssetTests`)
+    still builds its own `JobSystem`, cache and loader registration around the shared
+    `MemoryAssetSource` that #216 added, and `ResourceCacheTests.cpp:217`'s `CacheSource` stays its
+    own. `BootRecordTests.cpp:111`'s `requireSameRecord` is repeated by hand in `PackTests.cpp:312`
     (a defaulted `operator==` on the boot record types, about 28 lines).
   - Test setup inside one file: `ArchetypeTests`, `ArchetypeStorageTests` and `QueryTests` repeat
     the registry and `ArchetypeStorage` setup in about 27 cases (a fixture per file, 60-80 lines;
