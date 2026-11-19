@@ -615,6 +615,35 @@ groups are kept, because they show where future work will land.
   regeneration from that comment would drop the floor and bindless. The header records the real
   command (`external/glad/include/glad/gl.h`). A one-line fix, a 🤖 Auto candidate. Found at
   S11-T2's close on Nov 14, 2026.
+- #prio/medium · **Six design notes still describe the snapshot path that S11-T4 replaced**:
+  #210 removed `SnapshotMailbox`, `SnapshotHistory` and `RenderSnapshot` and renamed
+  `publishSnapshot` to `publishFrame`, but only [[Renderer - Design]] was updated at its close.
+  These passages still describe the old path as current:
+  - [[Game Loop - Frame Flow]]: the frame-flow diagram (lines 65-90), the channel table's
+    *Simulation to render* row (line 238) and the transfer list (line 145).
+  - [[Simulation Thread - Design]] § *Render handoff and pacing* (line 152) and the lifecycle
+    table's `publishSnapshot(simulation)` row (line 235).
+  - [[Editor - Design]]: the Decided row *Edits publish through their own hook* (line 74), whose
+    reason is now false, since `PacketHistory` keeps a same-tick packet with a newer sequence
+    (`engine/client/src/render/PacketHistory.cpp:33`); and § *Commands and the idle simulation*
+    (line 209), which says a non-ticking App skips publication, while the loop now calls
+    `publishFrame` after `publishEdits` (`engine/app/src/SimulationThread.cpp:218-222`).
+  - [[Project - Design]] (line 263) and [[Window - Design]]'s Decided rows *Frame handoff at M4*
+    and *The snapshot's visual contents are M4's* (the second says the frame packet is not built).
+  - [[Renderer - Design]] § *References* (line 475) cites the two deleted files as current.
+  The fix is a rewrite to the packet path that [[Renderer - Design]] § *The frame packet* already
+  describes, plus a dated line in each Decided row that changes. Found by the lane's freshness
+  check on Nov 19 ([[2026-11-19 09-08 Auto Run]]). **Trigger:** the Nov 21-22 `/weekly-review`'s
+  drift check.
+- #prio/low · **[[Window - Design]] still describes GL 4.5 and M4's triangle wrappers**: #206 moved
+  the context to 4.6 core (`engine/platform/src/window/Window.cpp:59-60`) and glad to
+  `GL_ARB_bindless_texture`, and #207 replaced the private `Buffer` and `VertexArray` wrappers with
+  `RenderDevice`. The Decided rows *glad2 is generated, committed, and never fetched* and
+  *Triangle resources*, § *glad2: generation and vendoring* (lines 143-149), the ownership row at
+  line 85 and the `initialize()` comment at line 98 still say 4.5, no extensions, or the old
+  wrappers. The `cmake/deps.cmake:246` entry above is the code half of the same drift. Found by
+  the lane's freshness check on Nov 19 ([[2026-11-19 09-08 Auto Run]]). **Trigger:** the Nov 21-22
+  `/weekly-review`'s drift check, or the `cmake/deps.cmake` fix, whichever comes first.
 - #prio/medium · **The million cubes as an end-to-end benchmark**: Miguel's ask, Oct 30, 2026.
   [[Renderer - Brief]]'s Should of a million cubes moving on a grid at 60 fps (v1 reached 20)
   exercises one whole frame: a System over the ECS, the task graph's executor, transform
