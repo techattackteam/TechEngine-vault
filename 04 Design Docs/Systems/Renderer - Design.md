@@ -52,10 +52,10 @@ the render thread that draws packets through a small device.
 | The main active camera | A scene has at most one `Camera` with `main` set, and the game view and the runtime draw through it. With none, the view clears to a colour and the app warns once. | Miguel, 2026-11-14 (S10-D6); one at a time, Miguel, 2026-11-16 |
 | How one main camera is kept | A `core` function sets a camera as main and clears `main` on every other `Camera`. Every caller goes through it: the editor's commands now, scripts from E11, so the runtime holds the rule too. A `Camera` added to a scene that already has a main camera is added with `main` off; the first camera in a scene is still main by default. Ticking `main` on several selected cameras at once is refused with a warning. Each camera it clears is part of the same edit, so one undo restores them all. | Miguel, 2026-11-16 |
 | A scene with two main cameras | An old file, a hand edit or a merge can still bring two. Loading warns once, and the first in hierarchy order wins. The file stays as it is until the user fixes it and saves. | Miguel, 2026-11-16 |
-| How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main and moves a fly camera: right mouse button to look, WASD to move. The `InputBuffer` stays detached while Stopped. Orbit and focus on the selection stay T3's. | Miguel, 2026-11-14 (S10-D6); [[Editor - Design]] § *Decided* |
+| How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main and moves a fly camera: right mouse button to look, WASD to move. F flies the camera to the selected entity, and the speed follows the distance to it. The `InputBuffer` stays detached while Stopped. Orbit stays T3's. | Miguel, 2026-11-14 (S10-D6); focus and the speed, Miguel, 2026-11-20 (S11-T11); [[Editor - Design]] § *Decided* |
 | How main declares the views | A latest-value slot on `Client`. Each ImGui frame, main writes one record per view: its id, its size, whether it is visible, and its camera, either the packet's main camera or a pose main sends. Render reads the slot each frame and creates, resizes or skips each view's target. A client with no record draws one view, the window, through the main camera, so the runtime writes nothing. | Miguel, 2026-11-20 (S11-T10); ADR-028 §3 |
 | How ImGui names a view's texture | Main passes a fixed token per view to `ImGui::Image`. On the render thread, the ImGui hook swaps each token for the view's current GL texture name in the draw-data snapshot, just before it draws. GL names never leave render, and a draw replayed after a resize still finds the live texture. | Miguel, 2026-11-20 (S11-T10) |
-| The scene view's camera before the fly camera | Main sends a fixed default pose through the view slot, so the scene view draws in a scene with no camera. S11-T11 replaces the fixed pose with the fly camera's. | Miguel, 2026-11-20 (S11-T10) |
+| The scene view's own pose | Main sends the fly camera's pose through the view slot, so the scene view draws in a scene with no camera. The camera starts at the old fixed pose. | Miguel, 2026-11-20 (S11-T10); built by S11-T11 |
 | The device's surface | One handle type per kind, each an index and a generation. The vertex layout lives inside the pipeline. An empty target is the window. A bad description returns an error code; misuse fires a check. | Miguel, 2026-11-15 (S11-T3); § *The device* |
 | The renderer is not a scheduled System | It is the extraction hook plus the render-thread frame. | ADR-028 §3, against ADR-006 §5 |
 | Uploads cross in order | Mesh, texture and material uploads are never dropped. One GPU copy per resource handle. | ADR-028 §4 |
@@ -550,7 +550,7 @@ flowchart LR
 ### The editor's views as built
 
 Built by S11-T10 (#221), by the *Decided* rows from *How main declares the views* to *The scene
-view's camera before the fly camera*.
+view's own pose*.
 
 ```mermaid
 flowchart LR
@@ -575,6 +575,29 @@ flowchart LR
   snapshot again when main publishes nothing new.
 - **The image's V runs 1 to 0** (`ViewPanel::onDraw`), because a GL target's first row is its
   bottom. The panels push zero window padding through `Panel::addStyleVar`, as v1 did.
+
+### The scene view's fly camera as built
+
+Built by S11-T11 (#222, in review on Nov 20), by the row *How the scene view's camera is
+driven*. `FlyCamera` (`apps/editor/src/edit/FlyCamera.hpp`) takes a plain input record and never
+touches ImGui. `SceneViewPanel::updateCamera` fills that record on main, and `describeCamera`
+sends the pose through the view slot. These are the lane's calls, listed in #222 for Miguel to
+accept or reverse:
+
+- **Controls.** Pressing the right mouse button on the view starts a look, which lasts until the
+  button is released. While it lasts, WASD moves, Q and E move along the world's up, Shift
+  triples the speed, and each wheel step scales it by 1.2. F focuses when the view is hovered or
+  focused and no text field takes input.
+- **Speed.** It is 1 m/s per metre of distance to the selected entity, with the distance clamped
+  to 1 to 2000 m. With no selection, it uses 5 m.
+- **Smoothing.** Exponential damping, so it does not depend on the frame rate: a sharpness of
+  10/s for the velocity and 30/s for the look. One update is clamped to 0.1 s.
+- **Focus.** The camera turns to face the target from where it is, and eases there over 0.4 s,
+  the short way round in yaw. It stops at 2.5 times the entity's largest world-scale axis, and
+  never closer than 1.5 m ([[Backlog]] § *editor & tooling* has the bounds gap). Moving or
+  looking cancels it.
+- **The cursor** is hidden and put back where the drag started each frame
+  (`ImGui::TeleportMousePos`). GLFW cannot do that on Wayland.
 
 ### Build notes
 
@@ -626,8 +649,8 @@ Mechanism sections land as the build cards are cut. Known build work:
   a mesh partway through a rotation. A slerp needs the packet to carry position, rotation and
   scale beside the matrix. The camera's field of view and planes follow the current packet, as
   shipped. Owner: the first card that shows something rotating, or E2b.
-- **Orbit and focus on the selection** for the scene view's camera. The fly camera is decided
-  (§ *Decided*). Owner: T3's viewport tools.
+- **Orbit around the selection** for the scene view's camera. The fly camera and its focus are
+  decided (§ *Decided*). Owner: T3's viewport tools.
 - **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.
   Owner: none since S11-T9 left it out (Nov 20); the next R1 cut assigns it.
 - **The lit model's terms.** [[Renderer - Materials Paper Report]] § *What S10-D7 still has to

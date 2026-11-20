@@ -20,7 +20,6 @@ kanban-plugin: board
 
 ## Story C: The editor's views draw (drops first)
 
-- [ ] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h: the camera's state and update live in `edit/` with tests, fed from ImGui while the right mouse button is held. Follows S11-T10.
 
 
 ## Story D: Design and product
@@ -46,6 +45,9 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h: #222, opened **Nov 20**, **needs Miguel's visual check**. `FlyCamera` in `edit/` with 22 headless tests, fed from ImGui while the right mouse button is held, and its pose goes out through the view slot ([[Renderer - Design]] § *The scene view's fly camera as built*). Built and tested on `windows-debug` only, so CI's Linux legs are its first Linux build.
+	- **Grown in the session (Nov 20, Miguel's call):** F flies to the selected entity, and the speed follows the distance to it. Focus had been left to T3 by the *Decided* row *How the scene view's camera is driven*, which is updated. Orbit stays T3's.
+
 
 
 ## ✅ Done: Sprint 11
@@ -55,7 +57,6 @@ kanban-plugin: board
 	- **Not as scaffolded:** a padding enum on `Panel` was replaced by v1's per-panel style vars (`Panel::addStyleVar`), at Miguel's call.
 	- **`/card-review` found four things, all fixed before the merge:** `ViewTargets::update` stopped at the first view that failed, the lock style in `ViewSlot`, and 13 comments deleted from `EditorSnapshot.hpp` outside the card, which were restored. Diff coverage then failed at 84%; a stub that fails the framebuffer check covers the failure paths.
 	- *Retro:* with every test green, the editor showed only the clear colour. `endRenderPass` left the last view's framebuffer bound, so ImGui drew into a view's texture; no test drew through the hook. A pass now ends on the window, and the hook test reads the binding. No capture of the working editor views was shared in the session, and the PR has no description or review conversation, so this entry comes from the session.
-
 - [x] **S11-T9** · The first frame · P1 · 🟢 Deep · 4-6h: #220 (`ecb28c2`), **Nov 20**. One forward pass draws each packet with CPU-written indirect multi-draws, one batch per bucket and geometry block, and shades base color times its factor with cut-outs discarded ([[Renderer - Design]] § *The forward pass as built*). The exported runtime shows Sponza textured through the scene's main camera (Miguel's windowed check and screenshot). Unblocks S11-T10; Story B goes on with S11-T16.
 	- **`/card-start` found four calls no artifact made, settled by Miguel:** draws find their data through `gl_BaseInstance` instead of ADR-028 §2's `gl_DrawID`, a mirrored instance draws in a twin pipeline, the shader encodes sRGB, and blended draws go last, unsorted ([[Backlog]] § *client*). The camera follows v1's axes. All five are *Decided* rows. #220 carried no vault change, so ADR-028 §2's amendment for `gl_BaseInstance` was written after the merge, dated Nov 20.
 	- **The material is part of a command's key**, because a bindless handle must be the same for every instance of one command. v1 grouped by mesh only and relied on NVIDIA tolerating it.

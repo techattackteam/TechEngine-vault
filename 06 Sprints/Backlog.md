@@ -468,6 +468,11 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/low · **The scene view's focus frames by scale, not by size**: meshes carry no bounds, so
+  F flies to 2.5 times the selected entity's largest world-scale axis, and never closer than
+  1.5 m (`apps/editor/src/edit/FlyCamera.hpp`, S11-T11, #222, Nov 20). A large model at scale 1,
+  such as Sponza's root, frames from inside it. Framing the subtree's world bounds fixes it.
+  **Trigger:** the first card that gives meshes bounds, such as culling or picking.
 - #prio/low · **The startup import starts silently**: `EditorApp::importStartupModel` starts the
   job with no log line, and the root asset is written last, so for the minutes BC7 encoding takes
   in a Debug build, *Place model* reports the model as "not in the asset index". Found by S11-T1

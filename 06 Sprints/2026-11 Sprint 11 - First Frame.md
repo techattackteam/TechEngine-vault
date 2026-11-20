@@ -207,6 +207,8 @@ and *How the scene view's camera is driven*.
   Since S11-T10 (#221), that path is the view slot: the pose replaces the fixed one in
   `SceneViewPanel::describeCamera`.
   Follows S11-T10.
+  **Grown in the session (Nov 20, Miguel's call):** F flies to the selected entity, and the speed
+  follows the distance to it. #222, opened Nov 20, needs Miguel's visual check.
 
 ### Story D: Design and product
 
