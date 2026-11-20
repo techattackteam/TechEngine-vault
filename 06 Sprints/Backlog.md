@@ -340,6 +340,13 @@ groups are kept, because they show where future work will land.
     `MemoryAssetSource` that #216 added, and `ResourceCacheTests.cpp:217`'s `CacheSource` stays its
     own. `BootRecordTests.cpp:111`'s `requireSameRecord` is repeated by hand in `PackTests.cpp:312`
     (a defaulted `operator==` on the boot record types, about 28 lines).
+  - Appending a child as the last one is written as
+    `setParent(child, parent, scene.getChildren(parent).size())`, which builds the child vector
+    only to count it: `apps/editor/src/edit/PlaceModelCommand.cpp:164`,
+    `engine/core/tests/camera/CameraTests.cpp:36` and
+    `engine/client/tests/render/FrameExtractionTests.cpp:56`. An append position on `setParent`, or
+    a child count, is a new public symbol. About 3 lines, and one allocation per call. Found by the
+    `engine/client` sweep on Nov 20.
   - Test setup inside one file: `ArchetypeTests`, `ArchetypeStorageTests` and `QueryTests` repeat
     the registry and `ArchetypeStorage` setup in about 27 cases (a fixture per file, 60-80 lines;
     the local components differ per case). `DedicatedThreadTests` repeats its gated entry lambda six
@@ -396,6 +403,24 @@ groups are kept, because they show where future work will land.
   `tests/support`, and the device has no `readBuffer` yet. S11-T9's frame is the first proof
   until then. **Trigger:** a wrong-looking mesh in S11-T9's frame, or the next card that needs a
   GL context in a client test.
+- #prio/medium · **Code sweep leftovers: client**: Found by the code sweep on Nov 20, 2026
+  ([[2026-11-20 14-10 Auto Run]]). #218 fixed what needed no decision. These need a new test
+  header, a change to the device's surface, or a `[gpu]` case the lane cannot run.
+  - Three test files stamp a packet's tick, time, fixed step and timeline by hand:
+    `stamp` (`engine/client/tests/render/FramePacketPoolTests.cpp:25`) and two `packetAt`
+    (`PacketMailboxTests.cpp:23`, `PacketHistoryTests.cpp:27`). One test header, about 12 lines.
+  - `runOnContext` (`engine/client/tests/render/device/RenderDeviceTests.cpp:100`) is written
+    out inline twice more in `FrameRendererTests.cpp:83` and `:134`, and both files carry the
+    same link-failure shader pair (`RenderDeviceTests.cpp:321`, `FrameRendererTests.cpp:39`).
+    The *No test reads back what `GeometryBuffers::place` writes* entry above already moves it
+    to `tests/support`. About 20 lines.
+  - All nine `RenderDeviceTests` cases open the same window in four lines. A local fixture, as
+    `RenderThreadTests` has, saves about 25 lines. They are `[gpu]` cases, so the lane cannot run
+    the change.
+  - `FrameRenderer::shutdown` (`engine/client/src/render/FrameRenderer.cpp:78-93`) and
+    `GeometryBuffers::destroyBlockBuffers` repeat "destroy if valid, then reset the handle" for
+    each handle. A device call that takes the handle by reference and resets it would serve
+    both; it changes the device's surface. About 10 lines.
 
 ## app
 
