@@ -652,6 +652,11 @@ groups are kept, because they show where future work will land.
   wrappers. The `cmake/deps.cmake:246` entry above is the code half of the same drift. Found by
   the lane's freshness check on Nov 19 ([[2026-11-19 09-08 Auto Run]]). **Trigger:** the Nov 21-22
   `/weekly-review`'s drift check, or the `cmake/deps.cmake` fix, whichever comes first.
+- #prio/low · **[[Content Pipeline - Design]] cites a shifted line in `Mesh.cpp`**: the row *A
+  default material is a `ResourceId`* (line 250) cites `engine/core/src/mesh/Mesh.cpp:183` for the
+  loader listing a slot's material as a dependency. #216's shared asset prologue shortened the file
+  to 180 lines, and the `push_back` is now at `:175`. Found by the lane's freshness check on Nov 20
+  ([[2026-11-20 09-08 Auto Run]]). **Trigger:** the Nov 21-22 `/weekly-review`'s drift check.
 - #prio/medium · **The million cubes as an end-to-end benchmark**: Miguel's ask, Oct 30, 2026.
   [[Renderer - Brief]]'s Should of a million cubes moving on a grid at 60 fps (v1 reached 20)
   exercises one whole frame: a System over the ECS, the task graph's executor, transform
