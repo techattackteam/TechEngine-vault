@@ -706,17 +706,22 @@ more rather than less, and fails loudly on a leg with no driver. The test preset
 nothing. A plain local `ctest` runs every tier, which is how Windows runs `[gpu]`: locally, on
 Miguel's GPU.
 
-| Leg | Pure | `[os]` | `[stress]` | `[gpu]` |
-|---|---|---|---|---|
-| `win-msvc Debug`, `win-msvc Release` | yes | yes | yes | no |
-| `win ASan` | yes | yes | no | no |
-| `linux-clang Debug`, `linux-clang Release` | yes | yes | yes | yes, over zink |
-| `linux UBSan` | yes | yes | no | yes, over zink |
-| `linux TSan` | yes | yes | no | no |
-| `diff coverage` | yes | yes | yes | yes, over zink |
-| The unattended lane | yes | yes | yes | no, because zink does not start in its sandbox (S10-P2) |
+| Leg | Pure | `[os]` | `[stress]` | `[gpu]` | `[lfs]` |
+|---|---|---|---|---|---|
+| `win-msvc Debug`, `win-msvc Release` | yes | yes | yes | no | no |
+| `win ASan` | yes | yes | no | no | no |
+| `linux-clang Debug`, `linux-clang Release` | yes | yes | yes | yes, over zink | no |
+| `linux UBSan` | yes | yes | no | yes, over zink | no |
+| `linux TSan` | yes | yes | no | no | no |
+| `diff coverage` | yes | yes | yes | yes, over zink | no, `cmake/coverage.cmake` excludes it |
+| The unattended lane | yes | yes | yes | no, because zink does not start in its sandbox (S10-P2) | no |
 
-Every tier runs on every PR and nothing is scheduled, so no run exists that a PR does not
+`[lfs]` (S11-T1, Nov 20) marks a case that reads Git LFS files from `projects/`. No checkout on
+CI or in the lane fetches LFS content, so those files are pointer files there, and the case runs
+only in Miguel's local `ctest`. Today it is one case: the dev-project export in
+`apps/editor/tests/project/ProjectTests.cpp`, whose scene reaches Sponza's textures.
+
+Every other tier runs on every PR and nothing is scheduled, so no run exists that a PR does not
 show, and none needs a reader. `[stress]` leaving the sanitizer legs takes about 21 s off
 `win ASan`'s test step, which was the PR's critical path (§ *Four legs start every PR cold*).
 

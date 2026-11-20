@@ -10,9 +10,9 @@
 **Kind:** system
 **Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`; materials designed on
 2026-11-10 (S10-D7) against `ac594e4`. The device is built (S11-T3, #207), and so are the frame
-packets (S11-T4, #210), the ordered uploads (S11-T6, #213) and the geometry buffers (S11-T7,
-#217); the frame still draws only M4's triangle
-(`engine/client/src/render/FrameRenderer.cpp`).
+packets (S11-T4, #210), the ordered uploads (S11-T6, #213), the geometry buffers (S11-T7,
+#217), the material buffer with bindless textures (S11-T8, #219) and the forward pass that draws
+the first frame (S11-T9, #220, `engine/client/src/render/FrameRenderer.cpp`).
 **ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
 [[ADR-029 - Materials, surfaces and lobes]] ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -38,7 +38,7 @@ the render thread that draws packets through a small device.
 | A small device, shaped for GL | Typed handles, pipeline objects bound whole, explicit render passes. Passes never call GL. It executes immediately; there is no recorded command stream. | ADR-028 §1 |
 | The scene view is a render target | The editor draws the same frame into a texture that ImGui shows. | ADR-028 §1; ADR-027 §1 |
 | OpenGL 4.6 | The floor rises from 4.5. | ADR-028 §2 |
-| Bindless textures are required | `ARB_bindless_texture`, with no fallback. Texture handles live in a material buffer that each draw indexes through `gl_DrawID`. | ADR-028 §2 |
+| Bindless textures are required | `ARB_bindless_texture`, with no fallback. Texture handles live in a material buffer that each drawn instance indexes through its draw record (row *How a draw finds its data*). | ADR-028 §2, amended 2026-11-20 |
 | The frame packet | Read from the `Scene` after ticks and after applied edits; pooled and moved by ownership, never copied. ADR-019 §3's delivery and interpolation stand. | ADR-028 §3 |
 | The extraction hook | `App::publishFrame(scene, simulation)` runs after a tick batch, after each applied batch of edits, and once after the startup load. `ClientApp` fills the packet through `FrameExtraction::extractFramePacket` in `client`. | Miguel, 2026-11-16 (S11-T4); § *The frame packet* |
 | A packet at the same tick | Each packet carries a rising sequence. On the current timeline and tick, a newer sequence replaces the current packet and keeps the previous one; an older or equal one is dropped. | Miguel, 2026-11-16 (S11-T4); § *Packet delivery* |
@@ -82,6 +82,15 @@ the render thread that draws packets through a small device.
 | The material file | A `.tematerial` is `MATERIAL_KIND` version 1: the id, the import block, the surface, the shading model, the alpha state, then each factor beside its texture, in glTF's terms. | S10-T23 (#203), 2026-11-13; § *The material file* |
 | The material buffer | One 96-byte `std430` record per material: the factors, the cutoff, the shading model and four bindless handles. Alpha mode and sidedness pick the bucket, so they stay out of the record. | S10-T23 (#203), 2026-11-13; § *The material buffer* |
 | A slot with a null material | It draws the engine's default material, record 0: opaque, lit, single-sided, white, roughness 1, metallic 0 and no textures. A material whose load failed draws it too. | S10-T23 (#203), 2026-11-13; § *The material buffer* |
+| The material buffer's size | It starts at 1024 records and doubles when full. A freed record is handed out again first, and a material reload keeps its record. | Miguel, 2026-11-20 (S11-T8, #219); § *The material buffer as built* |
+| A texture that arrives after its material | The outbox is not sorted. Render rewrites the record of every material that names the texture when it arrives, which also covers a texture reload. | Miguel, 2026-11-20 (S11-T8, #219); § *The material buffer as built* |
+| Which way V runs | Texture rows stay top first, and the geometry upload stores `1 - v` and negates the tangent's `w`, so the shader samples UV0 as it is. | Miguel, 2026-11-20 (S11-T8, #219); [[Content Pipeline - Design]] § *Texture rows and V* |
+| How a draw finds its data | Each drawn instance has an 8-byte record: the index of its world and its material record. A command's `baseInstance` points at its first record, so the shader reads `gl_BaseInstance + gl_InstanceID`. Worlds upload once per instance, and no buffer is rebound between multi-draws. v1 did the same (`engine/client/src/renderer/Renderer.cpp:278` at `v1-reference`). | Miguel, 2026-11-20 (S11-T9); ADR-028 §2, amended 2026-11-20 |
+| What one draw command holds | One mesh slot in one geometry block and one bucket, with one material, and its instances. The material stays in the key because a bindless handle must be the same for every instance of a command, or GL leaves the sample undefined. v1 grouped by mesh only and relied on NVIDIA tolerating it. | Miguel, 2026-11-20 (S11-T9); § *Materials* |
+| A mirrored instance | A world with a negative determinant draws in its bucket's twin, a pipeline whose front face is clockwise. A double-sided bucket has no twin, because it culls nothing. E2 therefore has nine pipelines: each of the three alpha modes as single-sided, mirrored and double-sided. | Miguel, 2026-11-20 (S11-T9) |
+| Where linear becomes sRGB | The forward pass's fragment shader encodes its output, until E2's final image pass takes the encode over. The window's framebuffer stays linear, so `platform` does not change. Until then, blending happens on encoded values. | Miguel, 2026-11-20 (S11-T9) |
+| How blended materials draw | Last, after opaque and cut-outs, with the depth test on, depth writes off and no sorting. Batches run bucket first across every geometry block, so no block's opaque draws follow another block's blended ones. Overlapping blended surfaces blend in the wrong order until a sort lands ([[Backlog]] § *client*). | Miguel, 2026-11-20 (S11-T9) |
+| The camera's axes and depth | As in v1: a camera looks down its local −Z, its view is the inverse of its world matrix, and its projection is `glm::perspective`, with GL's −1 to 1 depth range and `Less`. Reversed-Z waits for a float depth target. | Miguel, 2026-11-20 (S11-T9); v1's `Camera::updateViewMatrix` at `v1-reference` |
 
 ## Design
 
@@ -115,14 +124,14 @@ Its surface was settled at the card's `/card-start` (Miguel, 2026-11-15).
 | Handles | One type per kind: buffer, texture, program, pipeline and render target. Each is an index and a generation, kept in a table per kind (`render/device/RenderSlots.hpp`). Destroying a slot raises its generation, so an old handle stops resolving; a slot at the generation limit is retired. |
 | Data | One folder per kind holds its description, its enums and the record the device keeps. Every GL call is in `RenderDevice.cpp`. |
 | Buffers | Immutable storage. A Static buffer takes all its data at creation; only a Dynamic one accepts `updateBuffer`. |
-| Textures | `Rgba8`, `Rgba16F` and `Depth32F`, with no pixel upload until S11-T8. `readTexture` reads level 0, and `Rgba16F` comes back as 32-bit floats. |
+| Textures | `Rgba8`, `Rgba16F` and `Depth32F` for targets. The asset formats `Bc7Srgb`, `Bc7Unorm`, `Bc5Unorm` and `Rgb9E5` take their pixels level by level through `updateTexture` and cannot be a target's colour. Wrap and filter come from the description, and a texture with mips is sampled trilinear, or nearest-mipmap-nearest when its filter is `Nearest`. `makeTextureResident` makes one bindless handle, and only once. `readTexture` reads level 0 of a target format, and `Rgba16F` comes back as 32-bit floats. |
 | Pipelines | The program, the vertex layout with its strides, topology, cull, front face, depth and blend. `bindPipeline` applies all of it every time, and forgets the bound index buffer, because that lives in the pipeline's vertex array. |
 | Render targets | One colour texture and an optional depth texture, which the target does not own. |
 | Passes | An empty target is the window. The extent sets the viewport and the scissor, so a clear covers the extent only, and the scissor test is off again when the pass ends. Each pass starts with nothing bound. |
 | Failures | A description the device cannot build returns a `ClientError` and creates nothing. Misuse, such as a stale handle, a draw outside a pass or a pass larger than its target, fires one `TE_CHECK` and returns before any GL call. |
+| Multi-draws | `drawIndexedIndirect` reads its `IndexedIndirectCommand` records from a buffer, at a byte offset, and binds that buffer to `GL_DRAW_INDIRECT_BUFFER` itself, because with none bound GL reads the offset as a client pointer. `bindUniformBuffer` binds a range, as `bindStorageBuffer` does (S11-T9, #220). |
 
-- **Not built yet:** samplers and bindless handles (S11-T8), multi-draws and per-frame uniform
-  buffers (S11-T9), and compute dispatch (the light clusters). Store actions are accepted and
+- **Not built yet:** compute dispatch (the light clusters). Store actions are accepted and
   ignored, so `DontCare` does not invalidate anything yet.
 - **A target needs a colour texture.** A depth-only target, which E3's shadow maps need, is
   refused today as `InvalidRenderDescription`.
@@ -337,11 +346,10 @@ flowchart TB
 
 - **Not built yet:** nothing frees a range until S11-T16 drops a mesh's copy. Until then a
   reload replaces the copy in `GpuCopies::apply`, and the old range is never returned
-  ([[Known Issues]] D14). The copy keeps no slot ranges either: the payload is gone once the
-  upload reports done, so S11-T9 copies each slot's `firstIndex` and `indexCount` in
-  `uploadMesh`.
-- **Tested headless only** (`engine/client/tests/render/GeometryBuffersTests.cpp`). No test runs
-  the GL writes; S11-T9's frame is their first proof.
+  ([[Known Issues]] D14). The payload is gone once the upload reports done, so `uploadMesh`
+  copies each slot's index range and default material into the copy's `meshSlots` (S11-T9).
+- **The allocator is tested headless** (`engine/client/tests/render/GeometryBuffersTests.cpp`).
+  No test reads the GL writes back; S11-T9's frame (#220) drew Sponza from them.
 
 ### Geometry buffers: one block's layout
 
@@ -415,7 +423,7 @@ flowchart LR
     L["Lobes<br/>diffuse, specular"] --> P
     E["Engine source<br/>declarations, light loop"] --> P
     P --> B["One multi-draw<br/>per draw bucket"]
-    M["Material buffer<br/>one record per material"] -->|"gl_DrawID"| B
+    M["Material buffer<br/>one record per material"] -->|"draw record"| B
 ```
 
 - **A draw command** is one mesh slot with one material, and its instances. Commands are
@@ -461,8 +469,8 @@ and normal scale 1, emissive 0.
 
 ### The material buffer
 
-The standard surface's record, one per material, in a `std430` storage buffer that each draw
-indexes through `gl_DrawID`. It holds only what the shader reads:
+The standard surface's record, one per material, in a `std430` storage buffer that each drawn
+instance indexes through its draw record. It holds only what the shader reads:
 
 | Offset | Field | Type |
 |---|---|---|
@@ -484,6 +492,56 @@ indexes through `gl_DrawID`. It holds only what the shader reads:
   A slot whose material is null or failed to load draws with it. It is visible and neutral, so a
   mesh imported before S10-T24 still shows; a missing material does not hide a mesh, and nothing
   flags it as an error.
+
+### The material buffer as built
+
+Built by S11-T8 (#219) in `engine/client/src/render/MaterialBuffer.cpp`, owned by `GpuCopies`.
+The record is `GpuMaterial` in `render/device/material/Material.hpp`, where its base color
+factor is named `albedo`.
+
+- **A copy of every record stays on the CPU.** `allocate` grows only that copy. The next
+  `write` that finds the GPU buffer smaller replaces it with a `Dynamic` buffer holding every
+  record, so a frame binds the buffer it gets after its uploads, never one kept from before.
+- **Misuse fires a check and changes nothing:** freeing record 0, a record never handed out, or
+  a record already free.
+- **A material finds its textures through its dependency slots**, in input order, skipping the
+  inputs that name no texture. An input whose texture has not arrived stays zero until it does.
+- **A texture upload creates the texture, fills every level, makes it resident**, then rewrites
+  each material copy that names its slot. It scans every copy to find them; a map from texture
+  slot to material copies replaces the scan if a profile shows it.
+- **A material whose write failed draws record 0**, and the texture rewrite skips it, so record
+  0 is never overwritten.
+
+### The forward pass as built
+
+Built by S11-T9 (#220) in `engine/client/src/render/FrameRenderer.cpp` and `DrawList.cpp`. Its
+calls are the *Decided* rows from *How a draw finds its data* to *The camera's axes and depth*.
+
+```mermaid
+flowchart LR
+    V["FrameView<br/>packet and worlds"] --> C["collectDraws<br/>one DrawItem per mesh slot"]
+    G["GpuCopies<br/>mesh slots, material records"] --> C
+    C --> L["DrawList::build<br/>sort, group, batch"]
+    L --> S["Per-frame buffers<br/>uniforms, worlds, draw instances, commands"]
+    S --> D["Per batch: pipeline, block buffers,<br/>drawIndexedIndirect"]
+```
+
+- **A slot's material.** Inside the instance's material range it is the packet's. A null one, one
+  not uploaded yet, or one whose write failed draws record 0, opaque and single-sided. A slot past
+  the range takes the mesh slot's default.
+- **Commands.** `DrawList` sorts its items by bucket, block, index range and material. Equal
+  neighbours share a command, and each command's `baseInstance` is its first `DrawInstance` (a
+  world index and a material record). Batches run bucket first, so no block's opaque draws follow
+  another block's blended ones.
+- **Three programs from one source.** Forward, cut-out (`TE_ALPHA_CUTOUT`, which discards under
+  the cutoff) and blended (`TE_ALPHA_BLENDED`). Only the blended one writes the material's alpha;
+  the others write 1, as glTF's opaque and mask modes require. The nine pipelines pick from them.
+- **Per-frame buffers** are `Dynamic`, and grow to the larger of the data and twice their size. A
+  frame with no batch only clears, and a failed write skips that frame's draws with one error.
+- **The material buffer is bound with `getBufferSize()`**, the GPU buffer's size, because
+  `getCapacity()` counts CPU records, which can outgrow it.
+- **Tests.** `DrawListTests` run headless. `FrameRendererTests` draw a cube seen from inside, so
+  they pass whichever axis the camera looks along.
 
 ### Build notes
 
@@ -527,14 +585,6 @@ Mechanism sections land as the build cards are cut. Known build work:
   holder and its dependencies in the same drain), and the GPU finished the frames that drew it.
   The lean for the last check is a `glFenceSync` per frame, polled with a zero timeout, rather
   than a fixed frame count. Owner: S11-T16.
-- **Whether the outbox sends dependencies first.** A first load publishes a material before its
-  textures, because dependencies load in the next round. The lean is no sorting: render rewrites
-  a material's record when a texture it names arrives, which a reload of one texture needs
-  anyway. Owner: S11-T8.
-- **A mirrored instance.** An entity whose world matrix has a negative determinant needs its
-  front face flipped, and the front face is pipeline state, so one multi-draw cannot hold both.
-  The lean is a second multi-draw for mirrored instances. A merged mesh has none, because import
-  flips its triangles. Owner: R1's first frame card.
 - **Whether instance interpolation moves to the GPU.** From E2 the CPU interpolates every
   instance each frame (§ *Decided*). The GPU could do it from both packets' buffers instead.
   Owner: E2b, measured against the stress scene.
@@ -546,16 +596,12 @@ Mechanism sections land as the build cards are cut. Known build work:
 - **Orbit and focus on the selection** for the scene view's camera. The fly camera is decided
   (§ *Decided*). Owner: T3's viewport tools.
 - **The anti-aliasing method** for the brief's smooth edges. MSAA suits forward shading.
-  Owner: R1's first frame card.
+  Owner: none since S11-T9 left it out (Nov 20); the next R1 cut assigns it.
 - **The lit model's terms.** [[Renderer - Materials Paper Report]] § *What S10-D7 still has to
   decide* lists them, and ADR-029 leaves them here because they change no file. The leans, none
   of them decided: Lambert diffuse, the height-correlated Smith visibility term, energy
   compensation from the start because it shares the split sum's table, and a fixed 4%
   reflectance as glTF has. Owner: R1's lit pass card.
-- **Which way a texture is sampled.** Import stores texture rows top row first with no flip,
-  and stores UV0 as assimp gives it, so the shader or the upload must sample at `(u, 1 - v)` or
-  flip the rows. The sky image follows the same rule ([[Content Pipeline - Design]] § *Texture
-  rows and V*). Owner: R1's first frame card.
 - **How the sky image becomes lighting:** the filtered levels for rough reflections and the
   diffuse light, built at load or at import. The file is one 2D `RGB9E5` image with ordinary mips
   ([[Content Pipeline - Design]] § *The sky image*). Owner: R1's sky card.

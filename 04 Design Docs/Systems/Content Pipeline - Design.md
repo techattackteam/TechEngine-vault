@@ -19,8 +19,10 @@ model file and the import block are built, with write and read (S10-T14,
 (S10-T17, `engine/core/include/TechEngine/core/mesh/Mesh.hpp`). Import writes the vertex streams
 (S10-T19, `apps/editor/src/assets/MeshImporter.hpp`).
 
-Six more cards are built, merged together in #203 (`25c93a4`, 2026-11-14). CI passed every leg,
-but no menu entry has been tried in a window and no real asset has been imported through them:
+Six more cards are built, merged together in #203 (`25c93a4`, 2026-11-14). S11-T1 (#220,
+2026-11-20) gave them their first windowed run: Sponza imported with its 69 images, re-imported
+with its ids kept, placed as a model and as a merged mesh, and a real `.hdr` through *Import
+image...*:
 
 - **S10-T20, the merged mesh:** `apps/editor/src/assets/ModelImporter.hpp`, `MeshImporter.hpp`
   and `apps/editor/src/edit/PlaceModelCommand.hpp`.
@@ -74,9 +76,9 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | The root is copied as stored | Placement adds no offset: the root keeps the transform the model stores for it. | Miguel, 2026-11-10 (S10-T16) |
 | Placement waits for its meshes | It runs the cache's loading phase on the simulation thread, as an asset field set does. Loading over several frames waits for a measured stall ([[Backlog]] § *editor & tooling*). | S10-T16 (#196), 2026-11-10 |
 | Materials are created once | A re-import never overwrites a material file that already exists. Built by `keepExistingIds` in `ModelImporter.cpp` (S10-T21, #203). | [[Content Pipeline - Brief]] § *Decided* |
-| Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/Sponza.gltf`, skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
+| Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/glTF/Sponza.gltf` (moved from `assets/client/` by S11-T1, Nov 20, so the images sit in their own folder), skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
 | Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path (`STARTUP_IMPORT_MODE`). Re-import goes through a *Re-import* menu entry with a typed path and a merged-mesh checkbox, like placement. | S10-D10, 2026-11-09; S10-T21 (#203) |
-| UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. Texture rows are stored top row first with no flip, so the renderer must sample at `(u, 1 - v)`: see § *Texture rows and V*. | Miguel, 2026-11-11 (S10-T19); § *The import's streams*; S10-T24 (#203) |
+| UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. Texture rows are stored top row first with no flip, and the renderer's geometry upload stores `1 - v`: see § *Texture rows and V*. | Miguel, 2026-11-11 (S10-T19); § *The import's streams*; S10-T24 (#203) |
 | The import's stream calls | Flat normals when a file has none, no tangents without UV0, the `extensionsUsed` scanner, the scale refusal and the two importer classes. | Miguel, 2026-11-11 (S10-T19, #201); § *The import's streams* |
 | TEMesh v2's own calls | Stream counts, unknown stream bits, empty slots and the loader's duplicates. | S10-T17 (#198), 2026-11-10; § *The mesh file* |
 | TEMesh v2 is one mesh with slots | One vertex set, one index list, and one slot per source material: a name, a range of whole triangles and a default material. A model's mesh has one slot; a merged mesh has one per source material. | S10-D10, 2026-11-09; § *The mesh file* |
@@ -366,8 +368,9 @@ The renderer depends on this, so it is written down once, here.
   builder and the encoders keep the row order they are given. A sky image is stored the same way.
 - **UV0 is stored as assimp gives it** (§ *The import's streams*), and assimp flips glTF's V.
   So V is 0 at the bottom of the picture for every format, while row 0 of the texture is the top.
-- **Import flips neither.** The R1 shader or upload must sample at `(u, 1 - v)`, or flip the rows
-  as it uploads. A texture that draws upside down means this was missed.
+- **Import flips neither; the renderer's geometry upload stores `1 - v`** and negates the
+  tangent's `w` (S11-T8, #219), so a shader samples UV0 as it is. A texture that draws upside
+  down means a path skipped that upload.
 - **The sky has the same rule.** Its first row is the top of the picture.
 
 [[Renderer - Design]] § *Open questions* carries the matching entry, owned by R1.
@@ -602,8 +605,6 @@ Also S10-T21 (#203), in `engine/core/src/resources/ResourceCache.cpp`:
   [[Renderer - Design]] § *Open questions*.
 - **The material file** is decided: [[Renderer - Design]] § *The material file*, built by S10-T23
   and written by S10-T24's walk (both #203, § *Materials and textures as built*).
-- **A mirrored instance in a model:** a placed node with a negative determinant needs its front
-  face flipped. Owner: R1, in [[Renderer - Design]] § *Open questions*.
 
 ## Porting v1's import
 

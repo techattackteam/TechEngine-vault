@@ -35,21 +35,28 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
-### D14: A mesh reload never returns its old geometry range
+### D14: A reload never frees its old GPU copy
 
-A reload sends a new upload for the same slot, and `GpuCopies::apply` replaces the copy
-(`engine/client/src/render/GpuCopies.cpp:29` at `5ed5875`). The old copy's `GeometryRange` goes
-with it, and nothing calls `GeometryBuffers::free`, so the range stays taken. Logged at S11-T7's
-close (#217), as planned when S11-T16 was split out of S11-T6.
+A reload sends a new upload for the same slot, and `GpuCopies::apply` replaces the copy with
+`insert_or_assign` (`engine/client/src/render/GpuCopies.cpp:38` at `4af204b`). What the old copy
+held goes with it, and nothing frees it:
+
+- **A mesh's `GeometryRange`** stays taken, because nothing calls `GeometryBuffers::free`.
+  Logged at S11-T7's close (#217), as planned when S11-T16 was split out of S11-T6.
+- **A texture** stays allocated and its bindless handle stays resident, because
+  `GpuCopies::shutdown` only destroys the textures of the copies it still holds;
+  `RenderDevice::shutdown` frees it at exit. Added at S11-T8's close (#219).
 
 **Silent because** nothing fails: each re-import of a mesh takes a new range, and when a block
-fills, a new 64 MB block is added. The old range would hold a mesh that no packet names.
+fills, a new 64 MB block is added. Each re-import of a texture keeps one more texture in GPU
+memory. Neither is named by any packet or material.
 
-**Fix:** S11-T16 drops a copy on a release and a reload's old copy, and frees its range then.
-The replaced copy must survive `insert_or_assign` long enough for that.
+**Fix:** S11-T16 drops a copy on a release and a reload's old copy, and frees its range or
+destroys its texture then. The replaced copy must survive `insert_or_assign` long enough for
+that.
 
-**Trigger:** S11-T16, or the first editor session that re-imports meshes often enough for a
-second block to show up.
+**Trigger:** S11-T16, or the first editor session that re-imports meshes or textures often
+enough for a second geometry block or a GPU memory warning to show up.
 
 ### D13: A dependency added after an upload never reaches render
 

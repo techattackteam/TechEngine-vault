@@ -276,10 +276,12 @@ lines you rewrote or deleted; a behaviour change with an empty list must say why
 
 STEP 6: IF IT CHANGED CODE, PROVE IT.
   cmake --preset linux-debug && cmake --build --preset linux-debug
-  LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug -LE '^gpu$'
+  LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a ctest --preset linux-debug -LE '^(gpu|lfs)$'
 Note there is NO preset called plain "linux" on this leg; each config has its own.
 The sandbox has no display, so the window tests fail without xvfb-run, as CI runs them.
 The [gpu] cases need zink, which does not start in this sandbox, so CI runs them and you do not.
+The [lfs] cases read Git LFS files, which this checkout holds only as pointers, so nobody but
+Miguel runs them.
 A red build or a failing test means NO PR. Report what broke and stop there.
 You may build here. This is the carve-out in CLAUDE.md's "Miguel compiles" rule, and it
 applies only to this unattended lane and only to the Linux presets.

@@ -7,6 +7,18 @@
 - **Amended 2026-11-14, correction:** § *Consequences* said nothing about CI, and now has a
   *Cost* entry: no CI runner's default software GL meets §2's floor, and only zink over
   lavapipe on Linux does. S11-D1's spike measured it ([[2026-11 Sprint 11 - First Frame]]).
+- **Amended 2026-11-20, decision:** §2's delivery of material data. Old: "a material buffer,
+  which each draw finds through `gl_DrawID`". New: each drawn instance has a small record, its
+  world's index and its material record, read at `gl_BaseInstance + gl_InstanceID`, and each
+  command's `baseInstance` points at its first record. One multi-draw still covers many
+  materials, but one command holds one material, because a bindless handle must be the same for
+  every instance of a command. Why: `gl_DrawID` restarts at 0 in every multi-draw, so a buffer it
+  indexes must be rebound for each bucket at an offset aligned to
+  `GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT`; v1 already drew through `gl_BaseInstance`. The
+  4.6 floor stands, since `gl_BaseInstance` is core from 4.6 as well. [[ADR-029 - Materials,
+  surfaces and lobes]]'s *Context* quotes the old wording as history. The mechanism is
+  [[Renderer - Design]] § *The forward pass as built*. Miguel, at S11-T9's `/card-start`; built
+  in #220.
 - **Amends:** [[ADR-005 - v2 tech stack & toolchain]] § *Graphics*, "Target **4.5 core with
   DSA**" (§2 below), recorded in its header.
 - **Partially supersedes:** [[ADR-006 - v2 core architecture & module layout]] §5's Renderer
@@ -76,8 +88,13 @@ which requirement failed, as the 4.5 check does today. There is no fallback path
 
 Textures reach shaders as 64-bit handles stored in a material buffer, which each draw finds
 through `gl_DrawID`. So one multi-draw covers many materials, which is what makes few draws
-possible ([[Renderer - Seam Paper Report]] § *GPU-Driven Rendering Pipelines*). Per-frame and
-per-pass data stay on GL binding points. Bindless was v1's model too. ADR-005's trigger names
+possible ([[Renderer - Seam Paper Report]] § *GPU-Driven Rendering Pipelines*).
+
+> **Amended 2026-11-20:** each drawn instance finds its material record through
+> `gl_BaseInstance + gl_InstanceID`, not `gl_DrawID`, and one command holds one material. See
+> the header.
+
+Per-frame and per-pass data stay on GL binding points. Bindless was v1's model too. ADR-005's trigger names
 bindless as something GL "can't serve well"; with this extension GL serves it, so the trigger
 has not fired.
 

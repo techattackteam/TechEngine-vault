@@ -55,12 +55,15 @@ Sprint 12 and after must decide: the sun, material edits, the asset browser, sky
   covers. Its PR wires the decision: the tags, the CTest labels, the legs in `ci.yml` and any new
   workflow, with zink wherever S11-D1 found that it works. It must merge before S11-T2. Follows
   S11-D1. Added on Nov 14 at S11-D1's `/card-start`; its inputs are in § *S11-D5's inputs*.
-- [ ] **S11-T1** · Story H meets a real asset · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S11-T1** · Story H meets a real asset · P1 · 🟠 Moderate · 2-3h ·
   done: Sponza's images are in `projects/dev` with a licence file beside them, and
   *Re-import...* rewrites Sponza with every id kept and each mesh slot naming a material.
   *Import image...* runs on a real `.hdr`, and a merged `.temesh` is placed by hand. The PR
   states BC7's encode time for Sponza. Each defect found is fixed there or carded. This is the
   first windowed run of anything in #203.
+  #220 (`ecb28c2`), Nov 20, on S11-T9's branch by Miguel's exception. Sponza was imported
+  fresh into `assets/client/glTF/` and the id check ran as a re-import of that import. The PR
+  does not state BC7's encode time.
 
 ### S11-D5's inputs
 
@@ -168,26 +171,19 @@ S11-T16 follows S11-T6, and no card waits for it.
   storage, the free-list allocator, a second block when one fills, and defaults for a stream a
   mesh lacks. Tests, headless on the allocator: a freed range is reused, a mesh never moves, and
   a full block adds another. #217 (`5ed5875`), Nov 19.
-- [ ] **S11-T8** · The material buffer and bindless textures · P1 · 🟢 Deep · 4-6h ·
+- [x] **S11-T8** · The material buffer and bindless textures · P1 · 🟢 Deep · 4-6h ·
   done: textures upload in their file's format with their mips and sampler, and each material
   writes its 96-byte record with bindless handles ([[Renderer - Design]] § *The material
   buffer*). Record 0 is written at startup. This card decides which way a texture is sampled
-  (§ *Open questions*).
-  **Parked code (Nov 19):** Miguel drafted `uploadTexture`, `uploadMaterial` and the device's
-  texture upload and bindless calls on S11-T7's branch, and they were stashed there as
-  *S11-T8: texture and material upload handlers, parked Nov 19 from S11-T7's branch*. The stash
-  exists only on Miguel's Windows machine. `/card-start` cuts this card's branch from
-  `origin/master` after S11-T7 merges, finds the entry in `git stash list`, runs
-  `git stash apply` on it, and resolves `GpuCopies` against S11-T7's merged version. A review on
-  Nov 19 found that the draft keeps one buffer per material instead of the shared one, matches
-  textures to inputs without skipping the empty ones, and makes a bindless handle resident once
-  per material. It also left two things undecided: the material buffer's capacity and what
-  happens when it fills, and rewriting a material's record when its texture arrives after it.
-- [ ] **S11-T9** · The first frame · P1 · 🟢 Deep · 4-6h ·
+  (§ *Open questions*). #219 (`4af204b`), Nov 20: the geometry upload stores `1 - v`, and the
+  buffer's size and the late-texture rewrite are *Decided* rows in [[Renderer - Design]].
+- [x] **S11-T9** · The first frame · P1 · 🟢 Deep · 4-6h ·
   done: one forward pass draws the packet with CPU-written multi-draws, one per draw bucket, and
   shades base color times its factor, with cut-outs discarded. The runtime shows Sponza through
   the scene's main camera. Miguel's windowed check and a capture are the proof. The
   mirrored-instance question is this card's; anti-aliasing is not in it.
+  #220 (`ecb28c2`), Nov 20: a mirrored instance draws in its bucket's twin pipeline. ADR-028
+  §2 is amended the same day: `gl_BaseInstance` in place of `gl_DrawID`.
 
 ### Story C: The scene view draws (drops first)
 
@@ -273,13 +269,15 @@ and *How the scene view's camera is driven*.
 
 ## Definition of Done
 
-- [ ] The runtime shows Sponza, textured with base color, through the scene's main camera, on the
-  device, with Miguel's windowed check and a capture (S11-T9).
+- [x] The runtime shows Sponza, textured with base color, through the scene's main camera, on the
+  device, with Miguel's windowed check and a capture (S11-T9). #220 (`ecb28c2`), Nov 20: the
+  exported runtime's window, shared as a screenshot in the session and not stored in the vault.
 - [x] ADR-028's amendment records whether zink gives CI the GL floor (S11-D1), and CI runs each
   test tier where ADR-008's amendment says (S11-D5). S11-D1's half: vault `8446176`, Nov 14.
   S11-D5's half: #205 (`f932dd21`), Nov 14, with every required check green on its final run.
-- [ ] Sponza was re-imported with its images through *Re-import...*, and its ids were kept
-  (S11-T1).
+- [x] Sponza was re-imported with its images through *Re-import...*, and its ids were kept
+  (S11-T1). #220 (`ecb28c2`), Nov 20: the ids kept are those of a fresh import with the images,
+  which replaced the textureless Sponza.
 - [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. S11-T5's seven: merged with none reversed, #208 (`4e05985`), Nov 16.
 - [ ] Sprint 12's draft cut is in this note (S11-D4).

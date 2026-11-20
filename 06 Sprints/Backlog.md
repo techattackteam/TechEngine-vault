@@ -403,6 +403,13 @@ groups are kept, because they show where future work will land.
   `tests/support`, and the device has no `readBuffer` yet. S11-T9's frame is the first proof
   until then. **Trigger:** a wrong-looking mesh in S11-T9's frame, or the next card that needs a
   GL context in a client test.
+- #prio/medium · **Blended draws are not sorted**: S11-T9 draws the three blended buckets last,
+  in the order of its grouping key ([[Renderer - Design]] § *Decided*, *How blended materials
+  draw*). Overlapping transparent surfaces blend in the wrong order, and a re-import that moves a
+  mesh's range can change that order. A correct back-to-front order alternates the three blended
+  pipelines, so the sort also has to settle how it meets the bucket split; choosing that is a
+  Design card. **Trigger:** the first scene with overlapping blended surfaces, or the lit pass
+  card.
 - #prio/medium · **Code sweep leftovers: client**: Found by the code sweep on Nov 20, 2026
   ([[2026-11-20 14-10 Auto Run]]). #218 fixed what needed no decision. These need a new test
   header, a change to the device's surface, or a `[gpu]` case the lane cannot run.
@@ -461,6 +468,16 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/low · **The startup import starts silently**: `EditorApp::importStartupModel` starts the
+  job with no log line, and the root asset is written last, so for the minutes BC7 encoding takes
+  in a Debug build, *Place model* reports the model as "not in the asset index". Found by S11-T1
+  (#220, Nov 20). The asset browser replaces this import, so a log line at the start is the whole
+  fix. **Trigger:** the next card that touches the startup import, or the asset browser.
+- #prio/medium · **Sponza's import folder holds both root assets**: S11-T1 committed the merged
+  `glTF/Sponza/Sponza.temesh` beside `Sponza.temodel` (#220, Nov 20). § *Re-import* says the old
+  root stays and is logged, but no re-import has run on a folder with both, so which root's
+  settings it reads is untested. **Trigger:** the next re-import of Sponza, or the asset
+  browser's re-import.
 - #prio/medium · **An adopted `Startup.tescene` opens empty and cannot be saved**: when the
   startup load adopts an existing, indexed `Startup.tescene`, it points `project.toml` at it but
   does not load it, so that launch shows an empty scene and refuses every save; the next launch

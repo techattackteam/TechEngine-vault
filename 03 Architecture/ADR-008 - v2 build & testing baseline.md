@@ -100,6 +100,34 @@
   cases live in the app test exes, which link every module. (2) §9 says TSan ships with a
   checked-in suppressions file. None exists; the leg's only workaround is `LP_NUM_THREADS=0`
   (`.github/workflows/ci.yml:466-468`). S11-D5.
+- **Amended 2026-11-20, decision:** §1 gains a rule for binary project assets. Old: §1's tree has
+  no `/projects/` folder, and `.gitattributes` marks only `*.tescene` and `*.tepack` as binary, so
+  every asset went into plain git. New: images, sky sources and imported textures under
+  `projects/` (`*.jpg`, `*.png`, `*.hdr`, `*.tetexture`) are stored with Git LFS from their first
+  commit. The rule is scoped to `projects/`, so a test fixture image elsewhere never reaches CI as
+  a pointer file. Why: S11-T1 adds Sponza's 69 images and their BC7 textures, an estimated
+  150 MB, to a repository whose pack is 356 MB, and in plain git every re-import that changes a
+  texture would add another full copy to the history. The textures cannot be left out and rebuilt
+  on each machine, because every material file names its textures' ids. Moving files into LFS
+  later means rewriting the history. Costs: every machine needs `git-lfs` installed. CI's
+  `actions/checkout` fetches no LFS content, so CI sees pointer files, which the asset index skips
+  with a warning. No CI case reads a texture today: the dev-project export in
+  `apps/editor/tests/project/ProjectTests.cpp:569` packs only the references the scene holds
+  itself. A change that makes CI read a texture (a bake that follows dependencies, or a visual
+  tier) must check out LFS or switch to a fixture project. Baseline, from memory and unchecked:
+  Unity's guidance for Git projects is LFS for binary assets; Epic steers Unreal projects to
+  Perforce and keeps binaries out of its own GitHub repository; Godot's demo projects commit their
+  assets plainly. **Reversal trigger:** GitHub's LFS storage or bandwidth quota runs out, or CI
+  needs the real assets on every run. S11-T1.
+- **Amended 2026-11-20, decision:** §6 and §9 gain a fifth tier, `[lfs]`, for a case that reads
+  Git LFS files. Old: the four tiers of the 2026-11-14 entry, with the coverage leg running every
+  tier. New: no CI leg, no coverage run and no lane run executes `[lfs]`, because none of them
+  fetches LFS content; it runs only in a local `ctest`. Why: the export now follows each asset's
+  dependencies (S11-T1), so the dev-project export reaches Sponza's `.tetexture` files, which CI
+  sees as pointer files, and fetching them on every leg would spend the LFS bandwidth quota.
+  The coverage gate therefore scores no code that only an `[lfs]` case covers. Mechanism and the
+  leg table: [[B3 - Build & Testing Notes]] § *Where each tier runs*. **Reversal trigger:** the
+  same as the LFS entry above. S11-T1.
 
 ## Context
 
@@ -175,6 +203,9 @@ build artifact, not repo content, see §4 for the three cases.
 - **`cmake/` is the only place build logic lives**: module `CMakeLists.txt` files are
   declarative (list sources, name deps); anything with an `if()` or a loop goes in a
   `cmake/*.cmake` helper. This is the direct antidote to v1's per-target copy-paste.
+
+> **Amended 2026-11-20:** images, sky sources and imported textures under `projects/` are stored
+> with Git LFS. See the header.
 
 ### 2. CMake authoring: one thin `techengine_module()` helper
 
@@ -317,6 +348,8 @@ Executes ADR-006's "per-module Catch2 targets, not core-only."
   > cases that draw or load GL form a `[gpu]` tier that CI runs on Linux only. Rendering output
   > is still verified by demo scenes and captures until the visual tier is wired. The
   > `tests/integration/` exe above was never built (correction). See the header.
+  > **Amended 2026-11-20:** a fifth tier, `[lfs]`, reads Git LFS files and runs only locally.
+  > See the header.
 
 ### 7. SDK smoke: the F11 acid test, automated
 
@@ -371,6 +404,7 @@ merge. (ADR-005 chose GitHub Actions.)
   > **Amended 2026-11-14:** each leg excludes the tiers it cannot run. TSan and every Windows
   > leg exclude `[gpu]`, and the three sanitizer legs exclude `[stress]`. No suppressions file
   > exists (correction). See the header.
+  > **Amended 2026-11-20:** every leg and the coverage run also exclude `[lfs]`. See the header.
   > **Amended 2026-08-27:** the "in parallel" rationale opening this bullet no longer holds.
   > The legs are chained behind `format` and `coverage`. See the header.
   > **Amended 2026-10-19:** it holds again: the legs wait only for `format`, and the sanitizers

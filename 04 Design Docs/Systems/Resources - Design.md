@@ -102,7 +102,7 @@ built or run.
 | Writer and reader both in `core`, at M6; the bake driver stays in the editor. | ADR-025 §6 |
 | The runtime mounts `assets` beside its executable and follows the boot record. | ADR-025 §7 |
 | Shaders are client assets, under `assets/client/`. | Miguel, Oct 10; [[Project - Design]] |
-| The bake walks the startup scene's file and packs each asset it references. A reference the index does not know fails the export with `UnknownReference`; a reference on a side the target does not ship is listed in the boot record's sides, not packed. | Miguel, Oct 26 (S9-T7); § *Export and the runtime layout* |
+| The bake walks the startup scene's file and packs each asset it references, then each asset those name as dependencies, through the editor's registered loaders. A reference the index does not know fails the export with `UnknownReference`; a reference on a side the target does not ship is listed in the boot record's sides, not packed. | Miguel, Oct 26 (S9-T7); the dependency walk, Miguel, Nov 20 (S11-T1); § *Export and the runtime layout* |
 | The export is an editor function per **export target**, a `Role` value. It writes one target into `<folder>/<project name>/assets/`. File → Export sends the client target into the editor's executable folder, and a repeat export reuses the folder (S10-T3, two rows down). Until S10-T3 the startup load exported and numbered `<name>(1)`, `<name>(2)`. | Miguel, Oct 11, 12 and 15; § *Export targets* |
 | The export copies the runtime executable into the target's folder, beside its `assets/`, so the runtime reads `assets` beside itself as ADR-025 §7 says, and `main`'s `<exe dir>/Dev` stopgap goes. Nothing takes a path argument. What else the copy needs, and whether a repeat export reuses its folder, are the T2 export card's to decide. | Miguel, Oct 31 (S9-D5); § *Export targets* |
 | The copy is the runtime executable alone, taken from the editor's own folder. A repeat export **reuses** `<folder>/<project name>/` and replaces only the files the export owns. File → Export writes to the editor's executable folder, with no folder picker in E1. The Run button starts `<folder>/<project name>/runtime[.exe]`, so no "last export" is stored. | Lane, Nov 2 (S10-D1, under Miguel's Oct 31 hand-off above); § *The export command* |
@@ -602,8 +602,15 @@ earlier builds left are never read again; delete them by hand.
 **The bake as built** (S9-T7, #161, 2026-10-26). `exportTo` takes the editor's
 `ComponentRegistry`, reads the startup scene's file into a scratch `Scene`, and collects its ids
 with `SceneAsset::collectReferences`, the collector the scene load uses. It walks the file, not
-the live scene, so what is walked is what is packed. The walk is one level deep, because only
-scenes hold references. Every reached id goes into the boot record's sides. A scene that does
+the live scene, so what is walked is what is packed. Every reached id goes into the boot record's sides.
+
+**The dependency walk** (S11-T1, Nov 20). The walk was one level deep while only scenes held
+references. Once meshes named default materials and materials named textures, the runtime failed
+its startup load with `UnknownResource`, because those were never packed. `collectReachedAssets`
+now reads each reached file and asks `ResourceCache::listDependencies` for the ids its loader
+names, so the editor's own cache is the one table of loaders. It visits each id once, because
+assets share dependencies. It reads every reached file, including one on a side the target does
+not ship, and follows that file's dependencies too. A scene that does
 not parse fails the export with its read error, and a scene that references itself is packed
 once. Every failure comes before the project folder is chosen.
 
