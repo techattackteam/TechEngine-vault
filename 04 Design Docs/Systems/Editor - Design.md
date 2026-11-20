@@ -77,7 +77,7 @@ message. This note says how those messages are shaped.
 | Hierarchy edits | A reparent keeps the world transform. A created or dropped child goes first. A reorder is a reparent to the same parent. A right-click selects the row, unless the row is already selected, which keeps the selection. | 2026-10-29 (S9-T16); the selected row 2026-10-31 (S9-D6), § *The hierarchy panel* |
 | The default layout yields to a saved one | It is built only when the dockspace's node does not exist, and a loaded layout creates that node. | 2026-10-29 (S9-T16), § *The layout* |
 | The layout is also saved at shutdown | Besides each `WantSaveIniSettings`, the editor saves once before the ImGui context is destroyed, because ImGui raises the flag only seconds after a change. | 2026-10-31 (S9-T19), § *The layout* |
-| Two placeholder views | A scene view and a game view, tabbed in the dock's centre. Neither draws until the renderer. | [[Editor - Brief]], 2026-10-31; § *The layout* |
+| Two views | A scene view and a game view, tabbed in the dock's centre. Each draws its own render target since S11-T10 (#221). | [[Editor - Brief]], 2026-10-31; § *The layout* |
 | The selection is a set with an active entity | `EditSession` holds the selected entities and the active one, the last one clicked. F2, Create Child and the values the inspector shows follow the active entity. | 2026-10-31 (S9-D6), § *Multi-select* |
 | Ctrl and Shift, no box | ImGui's `BeginMultiSelect` over the visible rows, with box selection off. A Shift range and Ctrl+A take visible rows only, so they never select inside a collapsed subtree. | [[Editor - Brief]], 2026-10-31; § *Multi-select* |
 | Main keeps its own selection while a select is in flight | A select command carries the whole set and a sequence number from main. Main draws its own set, and ignores the snapshot's until the snapshot carries that number. | 2026-10-31 (S9-D6), § *Multi-select* |
@@ -133,7 +133,7 @@ runtime never link ImGui. The render thread makes three calls on it:
 | Call | When |
 |---|---|
 | start | Once, after `gladLoadGL` succeeds and before `signalReady`, so main is still blocked in `Client::start`. |
-| draw | Every frame, after the scene draw and before `swapBuffers`. It takes no size: the backend reads it from the draw data, which main's frame filled. |
+| draw | Every frame, after the scene draw and before `swapBuffers`. It takes no size: the backend reads it from the draw data, which main's frame filled. It takes each view's token and GL texture name, good for that call only ([[Renderer - Design]] § *The editor's views as built*). |
 | stop | Once, before the render thread releases the context, also after a failed frame. |
 
 The editor's hook, `ImGuiBridge`, owns `imgui_impl_opengl3` and the consuming side of both
@@ -608,11 +608,10 @@ sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore`
   before closing would be lost. Each save clears the flag first, even if the write then fails.
 - **The folder.** `FileAccess::write` returns `NotFound` while `editorSettings/` is missing, so
   a save creates the folder first and treats `AlreadyExists` as the normal answer.
-- **The two views.** Both are placeholders in E1 that show one line of greyed text
-  ([[Editor - Brief]] § *Decided*, 2026-10-31). Once the renderer draws, the scene view looks
-  through the editor's own camera and the game view through the scene's main active camera.
-  Their solid backgrounds now cover the triangle that the renderer draws into the window behind
-  ImGui. Drawing inside a view needs render targets, which wait for R1 ([[Capability Map]] § *Renderer*, the E2 showcase row).
+- **The two views.** Each shows its own render target, sized to the panel (S11-T10, #221). The
+  scene view looks through a fixed pose until S11-T11's fly camera, and the game view through
+  the scene's main active camera. Both share `ViewPanel`; the mechanism is
+  [[Renderer - Design]] § *The editor's views as built*.
 
 ## Open questions
 

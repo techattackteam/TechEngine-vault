@@ -185,19 +185,27 @@ S11-T16 follows S11-T6, and no card waits for it.
   #220 (`ecb28c2`), Nov 20: a mirrored instance draws in its bucket's twin pipeline. ADR-028
   §2 is amended the same day: `gl_BaseInstance` in place of `gl_DrawID`.
 
-### Story C: The scene view draws (drops first)
+### Story C: The editor's views draw (drops first)
 
 Cut against [[Renderer - Design]] § *Decided*, rows *The scene view is a render target*, *Views*
 and *How the scene view's camera is driven*.
 
-- [ ] **S11-T10** · The scene view is a render target · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S11-T10** · The scene and game views are render targets · P2 · 🟠 Moderate · 2-3h ·
   done: the editor draws the frame into a texture that the scene view shows, sized to the panel,
   and the game view does the same through the main active camera. A hidden view is not drawn.
   Follows S11-T9.
+  **Grown at `/card-start` (Nov 20, Miguel's call):** retitled from *The scene view is a render
+  target*, because the clause already covered the game view. The card also builds the view slot,
+  the bridge's view tokens and the scene view's default camera, by the rows *How main declares
+  the views*, *How ImGui names a view's texture* and *The scene view's camera before the fly
+  camera* in [[Renderer - Design]] § *Decided*. Its size was never re-estimated.
+  #221 (`4bca0ae`), Nov 20. No capture of the editor's views was shared in the session.
 - [ ] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h ·
   done: the camera's state and its update from mouse and key deltas live in `edit/` with tests;
   `SceneViewPanel` feeds it from ImGui while the right mouse button is held, and it reaches
   render on ADR-019 §4's latest-value path. The PR ends with "needs Miguel's visual check".
+  Since S11-T10 (#221), that path is the view slot: the pose replaces the fixed one in
+  `SceneViewPanel::describeCamera`.
   Follows S11-T10.
 
 ### Story D: Design and product

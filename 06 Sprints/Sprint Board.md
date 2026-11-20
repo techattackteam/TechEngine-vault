@@ -18,9 +18,8 @@ kanban-plugin: board
 - [ ] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h: render drops a copy once no packet or live copy names it and a device fence shows the GPU finished with it. Follows S11-T6.
 
 
-## Story C: The scene view draws (drops first)
+## Story C: The editor's views draw (drops first)
 
-- [ ] **S11-T10** · The scene view is a render target · P2 · 🟠 Moderate · 2-3h: the editor draws the frame into a texture that the scene view and the game view show. Follows S11-T9.
 - [ ] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h: the camera's state and update live in `edit/` with tests, fed from ImGui while the right mouse button is held. Follows S11-T10.
 
 
@@ -50,6 +49,12 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-T10** · The scene and game views are render targets · P2 · 🟠 Moderate · 2-3h: #221 (`4bca0ae`), **Nov 20**. Main declares its views each ImGui frame through a slot on `Client`, render draws each visible one into its own target, and the editor's ImGui hook swaps each view's token for its texture ([[Renderer - Design]] § *The editor's views as built*). Unblocks S11-T11; Story C goes on with it.
+	- **Grown at `/card-start`:** retitled from *The scene view is a render target*, because the clause already named the game view, and three calls no artifact made became *Decided* rows: the view slot, the texture tokens, and the scene view's fixed pose until the fly camera. The card was never re-sized from 🟠, though it ran as a 🟢.
+	- **Not as scaffolded:** a padding enum on `Panel` was replaced by v1's per-panel style vars (`Panel::addStyleVar`), at Miguel's call.
+	- **`/card-review` found four things, all fixed before the merge:** `ViewTargets::update` stopped at the first view that failed, the lock style in `ViewSlot`, and 13 comments deleted from `EditorSnapshot.hpp` outside the card, which were restored. Diff coverage then failed at 84%; a stub that fails the framebuffer check covers the failure paths.
+	- *Retro:* with every test green, the editor showed only the clear colour. `endRenderPass` left the last view's framebuffer bound, so ImGui drew into a view's texture; no test drew through the hook. A pass now ends on the window, and the hook test reads the binding. No capture of the working editor views was shared in the session, and the PR has no description or review conversation, so this entry comes from the session.
 
 - [x] **S11-T9** · The first frame · P1 · 🟢 Deep · 4-6h: #220 (`ecb28c2`), **Nov 20**. One forward pass draws each packet with CPU-written indirect multi-draws, one batch per bucket and geometry block, and shades base color times its factor with cut-outs discarded ([[Renderer - Design]] § *The forward pass as built*). The exported runtime shows Sponza textured through the scene's main camera (Miguel's windowed check and screenshot). Unblocks S11-T10; Story B goes on with S11-T16.
 	- **`/card-start` found four calls no artifact made, settled by Miguel:** draws find their data through `gl_BaseInstance` instead of ADR-028 §2's `gl_DrawID`, a mirrored instance draws in a twin pipeline, the shader encodes sRGB, and blended draws go last, unsorted ([[Backlog]] § *client*). The camera follows v1's axes. All five are *Decided* rows. #220 carried no vault change, so ADR-028 §2's amendment for `gl_BaseInstance` was written after the merge, dated Nov 20.

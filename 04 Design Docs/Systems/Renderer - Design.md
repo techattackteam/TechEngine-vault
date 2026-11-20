@@ -11,8 +11,9 @@
 **Status:** designed on 2026-11-06 (S10-D4) against engine `a67c4d4`; materials designed on
 2026-11-10 (S10-D7) against `ac594e4`. The device is built (S11-T3, #207), and so are the frame
 packets (S11-T4, #210), the ordered uploads (S11-T6, #213), the geometry buffers (S11-T7,
-#217), the material buffer with bindless textures (S11-T8, #219) and the forward pass that draws
-the first frame (S11-T9, #220, `engine/client/src/render/FrameRenderer.cpp`).
+#217), the material buffer with bindless textures (S11-T8, #219), the forward pass that draws
+the first frame (S11-T9, #220, `engine/client/src/render/FrameRenderer.cpp`) and the editor's
+views (S11-T10, #221).
 **ADRs:** [[ADR-028 - Render device seam and frame packets]] ·
 [[ADR-029 - Materials, surfaces and lobes]] ·
 [[ADR-015 - Threading (sim on main, render thread owns GL)]] §2 ·
@@ -52,6 +53,9 @@ the render thread that draws packets through a small device.
 | How one main camera is kept | A `core` function sets a camera as main and clears `main` on every other `Camera`. Every caller goes through it: the editor's commands now, scripts from E11, so the runtime holds the rule too. A `Camera` added to a scene that already has a main camera is added with `main` off; the first camera in a scene is still main by default. Ticking `main` on several selected cameras at once is refused with a warning. Each camera it clears is part of the same edit, so one undo restores them all. | Miguel, 2026-11-16 |
 | A scene with two main cameras | An old file, a hand edit or a merge can still bring two. Loading warns once, and the first in hierarchy order wins. The file stays as it is until the user fixes it and saves. | Miguel, 2026-11-16 |
 | How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main and moves a fly camera: right mouse button to look, WASD to move. The `InputBuffer` stays detached while Stopped. Orbit and focus on the selection stay T3's. | Miguel, 2026-11-14 (S10-D6); [[Editor - Design]] § *Decided* |
+| How main declares the views | A latest-value slot on `Client`. Each ImGui frame, main writes one record per view: its id, its size, whether it is visible, and its camera, either the packet's main camera or a pose main sends. Render reads the slot each frame and creates, resizes or skips each view's target. A client with no record draws one view, the window, through the main camera, so the runtime writes nothing. | Miguel, 2026-11-20 (S11-T10); ADR-028 §3 |
+| How ImGui names a view's texture | Main passes a fixed token per view to `ImGui::Image`. On the render thread, the ImGui hook swaps each token for the view's current GL texture name in the draw-data snapshot, just before it draws. GL names never leave render, and a draw replayed after a resize still finds the live texture. | Miguel, 2026-11-20 (S11-T10) |
+| The scene view's camera before the fly camera | Main sends a fixed default pose through the view slot, so the scene view draws in a scene with no camera. S11-T11 replaces the fixed pose with the fly camera's. | Miguel, 2026-11-20 (S11-T10) |
 | The device's surface | One handle type per kind, each an index and a generation. The vertex layout lives inside the pipeline. An empty target is the window. A bad description returns an error code; misuse fires a check. | Miguel, 2026-11-15 (S11-T3); § *The device* |
 | The renderer is not a scheduled System | It is the extraction hook plus the render-thread frame. | ADR-028 §3, against ADR-006 §5 |
 | Uploads cross in order | Mesh, texture and material uploads are never dropped. One GPU copy per resource handle. | ADR-028 §4 |
@@ -127,7 +131,7 @@ Its surface was settled at the card's `/card-start` (Miguel, 2026-11-15).
 | Textures | `Rgba8`, `Rgba16F` and `Depth32F` for targets. The asset formats `Bc7Srgb`, `Bc7Unorm`, `Bc5Unorm` and `Rgb9E5` take their pixels level by level through `updateTexture` and cannot be a target's colour. Wrap and filter come from the description, and a texture with mips is sampled trilinear, or nearest-mipmap-nearest when its filter is `Nearest`. `makeTextureResident` makes one bindless handle, and only once. `readTexture` reads level 0 of a target format, and `Rgba16F` comes back as 32-bit floats. |
 | Pipelines | The program, the vertex layout with its strides, topology, cull, front face, depth and blend. `bindPipeline` applies all of it every time, and forgets the bound index buffer, because that lives in the pipeline's vertex array. |
 | Render targets | One colour texture and an optional depth texture, which the target does not own. |
-| Passes | An empty target is the window. The extent sets the viewport and the scissor, so a clear covers the extent only, and the scissor test is off again when the pass ends. Each pass starts with nothing bound. |
+| Passes | An empty target is the window. The extent sets the viewport and the scissor, so a clear covers the extent only, and the scissor test is off again when the pass ends. Each pass starts with nothing bound and ends with the window's framebuffer bound, because ImGui's backend draws into whatever is bound (S11-T10). |
 | Failures | A description the device cannot build returns a `ClientError` and creates nothing. Misuse, such as a stale handle, a draw outside a pass or a pass larger than its target, fires one `TE_CHECK` and returns before any GL call. |
 | Multi-draws | `drawIndexedIndirect` reads its `IndexedIndirectCommand` records from a buffer, at a byte offset, and binds that buffer to `GL_DRAW_INDIRECT_BUFFER` itself, because with none bound GL reads the offset as a client pointer. `bindUniformBuffer` binds a range, as `bindStorageBuffer` does (S11-T9, #220). |
 
@@ -542,6 +546,35 @@ flowchart LR
   `getCapacity()` counts CPU records, which can outgrow it.
 - **Tests.** `DrawListTests` run headless. `FrameRendererTests` draw a cube seen from inside, so
   they pass whichever axis the camera looks along.
+
+### The editor's views as built
+
+Built by S11-T10 (#221), by the *Decided* rows from *How main declares the views* to *The scene
+view's camera before the fly camera*.
+
+```mermaid
+flowchart LR
+    P["View panels on main<br/>size, visibility, camera"] -->|"ViewRequest per view, every ImGui frame"| S["ViewSlot<br/>latest value"]
+    S --> R["RenderThread::drawViews"]
+    R --> T["ViewTargets<br/>one target per sized view"]
+    R --> F["FrameRenderer<br/>prepare once, draw per view"]
+    T -->|"token and GL name"| B["ImGui hook<br/>swaps tokens in the draw data"]
+```
+
+- **One prepare, one draw per view.** `FrameRenderer::prepare` collects, builds and writes the
+  worlds, instances and commands once per frame; `draw(ViewDraw)` writes only the view's
+  uniforms. A null camera only clears.
+- **The window.** A client that never declared views draws the window through the main camera,
+  so the runtime is unchanged. With views, the window is only cleared, and ImGui covers it.
+- **Targets** are `Rgba8` with `Depth32F`, keyed by the view's token. A changed size replaces
+  them, a size of 0 has none, and a hidden view keeps its target. A view that fails is left out,
+  the others are still built, and the next frame retries it.
+- **Tokens** carry `VIEW_TEXTURE_TOKEN_BIT` (`RenderView.hpp`), so the editor's
+  `ViewTextureSwap` can tell a token from a texture name even before its target exists; such a
+  token draws texture 0. It restores the tokens after drawing, because the bridge draws the same
+  snapshot again when main publishes nothing new.
+- **The image's V runs 1 to 0** (`ViewPanel::onDraw`), because a GL target's first row is its
+  bottom. The panels push zero window padding through `Panel::addStyleVar`, as v1 did.
 
 ### Build notes
 
