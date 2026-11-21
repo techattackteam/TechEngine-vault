@@ -45,12 +45,14 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h: #222, opened **Nov 20**, **needs Miguel's visual check**. `FlyCamera` in `edit/` with 22 headless tests, fed from ImGui while the right mouse button is held, and its pose goes out through the view slot ([[Renderer - Design]] § *The scene view's fly camera as built*). Built and tested on `windows-debug` only, so CI's Linux legs are its first Linux build.
-	- **Grown in the session (Nov 20, Miguel's call):** F flies to the selected entity, and the speed follows the distance to it. Focus had been left to T3 by the *Decided* row *How the scene view's camera is driven*, which is updated. Orbit stays T3's.
-
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h: #222 (`a4c65ce`), **Nov 21**. `FlyCamera` in `edit/` takes a plain input record; the scene view rotates on a right drag, pans on a middle drag, zooms on the wheel, and F flies to the selection, with the pose sent through the view slot ([[Renderer - Design]] § *The scene view's fly camera as built*). Completes Story C.
+	- **Grown in the session (Miguel's calls, Nov 20-21):** F focus and distance-scaled movement, against the *Decided* row that left focus to T3 (row updated, orbit stays T3's). After his windowed checks the controls were redesigned twice: WASD and Q/E dropped, the wheel zooms instead of scaling the speed, a middle drag pans, and Shift and Ctrl scale every movement. Of the lane's six *Decisions I took*, the WASD speed model and the teleported cursor were reversed; #222's description still lists the first controls.
+	- *Retro:* 22 green tests missed two bugs Miguel's check found. ImGui drops every mouse position in the frame after `TeleportMousePos`, so rotation never moved, and main's event-driven loop stalled each ease between input events. The tests fed `FlyCamera` made-up deltas; `SceneViewPanelTests` now drives the real panel through headless ImGui, the drags lock the cursor through GLFW, and main asks for frames while the camera eases ([[Editor - Design]] § *Decided*).
+	- **Merged with two files outside the card:** `logs/techengine.log` (`logs/` is not ignored, [[Backlog]] § *etc*) and `projects/dev/assets/common/Startup.tescene`. The PR has no review conversation, so this entry comes from the session.
 
 - [x] **S11-T10** · The scene and game views are render targets · P2 · 🟠 Moderate · 2-3h: #221 (`4bca0ae`), **Nov 20**. Main declares its views each ImGui frame through a slot on `Client`, render draws each visible one into its own target, and the editor's ImGui hook swaps each view's token for its texture ([[Renderer - Design]] § *The editor's views as built*). Unblocks S11-T11; Story C goes on with it.
 	- **Grown at `/card-start`:** retitled from *The scene view is a render target*, because the clause already named the game view, and three calls no artifact made became *Decided* rows: the view slot, the texture tokens, and the scene view's fixed pose until the fly camera. The card was never re-sized from 🟠, though it ran as a 🟢.

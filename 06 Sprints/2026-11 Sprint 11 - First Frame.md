@@ -200,15 +200,16 @@ and *How the scene view's camera is driven*.
   the views*, *How ImGui names a view's texture* and *The scene view's camera before the fly
   camera* in [[Renderer - Design]] § *Decided*. Its size was never re-estimated.
   #221 (`4bca0ae`), Nov 20. No capture of the editor's views was shared in the session.
-- [ ] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h ·
+- [x] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h ·
   done: the camera's state and its update from mouse and key deltas live in `edit/` with tests;
   `SceneViewPanel` feeds it from ImGui while the right mouse button is held, and it reaches
   render on ADR-019 §4's latest-value path. The PR ends with "needs Miguel's visual check".
   Since S11-T10 (#221), that path is the view slot: the pose replaces the fixed one in
   `SceneViewPanel::describeCamera`.
   Follows S11-T10.
-  **Grown in the session (Nov 20, Miguel's call):** F flies to the selected entity, and the speed
-  follows the distance to it. #222, opened Nov 20, needs Miguel's visual check.
+  **Grown in the session (Nov 20-21, Miguel's calls):** F flies to the selected entity, movement
+  follows the distance to it, and the controls became a right drag to rotate, a middle drag to
+  pan and the wheel to zoom, with no WASD. #222 (`a4c65ce`), Nov 21.
 
 ### Story D: Design and product
 
@@ -290,6 +291,9 @@ and *How the scene view's camera is driven*.
   which replaced the textureless Sponza.
 - [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. S11-T5's seven: merged with none reversed, #208 (`4e05985`), Nov 16.
+  S11-T11's six: two reversed by Miguel in the session, not in review (the WASD speed model with
+  its wheel speed scale, and the teleported cursor); Q and E went with WASD; the smoothing, the
+  focus flight, its scale-based distance and the pitch clamp stand. #222 (`a4c65ce`), Nov 21.
 - [ ] Sprint 12's draft cut is in this note (S11-D4).
 
 ## Capacity note

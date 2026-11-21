@@ -52,7 +52,7 @@ the render thread that draws packets through a small device.
 | The main active camera | A scene has at most one `Camera` with `main` set, and the game view and the runtime draw through it. With none, the view clears to a colour and the app warns once. | Miguel, 2026-11-14 (S10-D6); one at a time, Miguel, 2026-11-16 |
 | How one main camera is kept | A `core` function sets a camera as main and clears `main` on every other `Camera`. Every caller goes through it: the editor's commands now, scripts from E11, so the runtime holds the rule too. A `Camera` added to a scene that already has a main camera is added with `main` off; the first camera in a scene is still main by default. Ticking `main` on several selected cameras at once is refused with a warning. Each camera it clears is part of the same edit, so one undo restores them all. | Miguel, 2026-11-16 |
 | A scene with two main cameras | An old file, a hand edit or a merge can still bring two. Loading warns once, and the first in hierarchy order wins. The file stays as it is until the user fixes it and saves. | Miguel, 2026-11-16 |
-| How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main and moves a fly camera: right mouse button to look, WASD to move. F flies the camera to the selected entity, and the speed follows the distance to it. The `InputBuffer` stays detached while Stopped. Orbit stays T3's. | Miguel, 2026-11-14 (S10-D6); focus and the speed, Miguel, 2026-11-20 (S11-T11); [[Editor - Design]] § *Decided* |
+| How the scene view's camera is driven | The scene view panel reads ImGui's mouse and keys on main. A right drag rotates the camera in place, a middle drag pans it, the wheel zooms, and F flies it to the selected entity from any panel. Pan and zoom follow the distance to the selection; Shift speeds every movement up and Ctrl slows it down. There is no WASD. The `InputBuffer` stays detached while Stopped. Orbit stays T3's. | Miguel, 2026-11-14 (S10-D6); the controls, Miguel, 2026-11-20 and 21 (S11-T11); [[Editor - Design]] § *Decided* |
 | How main declares the views | A latest-value slot on `Client`. Each ImGui frame, main writes one record per view: its id, its size, whether it is visible, and its camera, either the packet's main camera or a pose main sends. Render reads the slot each frame and creates, resizes or skips each view's target. A client with no record draws one view, the window, through the main camera, so the runtime writes nothing. | Miguel, 2026-11-20 (S11-T10); ADR-028 §3 |
 | How ImGui names a view's texture | Main passes a fixed token per view to `ImGui::Image`. On the render thread, the ImGui hook swaps each token for the view's current GL texture name in the draw-data snapshot, just before it draws. GL names never leave render, and a draw replayed after a resize still finds the live texture. | Miguel, 2026-11-20 (S11-T10) |
 | The scene view's own pose | Main sends the fly camera's pose through the view slot, so the scene view draws in a scene with no camera. The camera starts at the old fixed pose. | Miguel, 2026-11-20 (S11-T10); built by S11-T11 |
@@ -578,26 +578,33 @@ flowchart LR
 
 ### The scene view's fly camera as built
 
-Built by S11-T11 (#222, in review on Nov 20), by the row *How the scene view's camera is
-driven*. `FlyCamera` (`apps/editor/src/edit/FlyCamera.hpp`) takes a plain input record and never
-touches ImGui. `SceneViewPanel::updateCamera` fills that record on main, and `describeCamera`
-sends the pose through the view slot. These are the lane's calls, listed in #222 for Miguel to
-accept or reverse:
+Built by S11-T11 (#222, `a4c65ce`, Nov 21), by the row *How the scene view's camera is driven*.
+`FlyCamera` (`apps/editor/src/edit/FlyCamera.hpp`) takes a plain input record and never touches
+ImGui. `SceneViewPanel::updateCamera` fills that record on main, and `describeCamera` sends the
+pose through the view slot. The numbers are the lane's calls; the controls are Miguel's.
 
-- **Controls.** Pressing the right mouse button on the view starts a look, which lasts until the
-  button is released. While it lasts, WASD moves, Q and E move along the world's up, Shift
-  triples the speed, and each wheel step scales it by 1.2. F focuses when the view is hovered or
-  focused and no text field takes input.
-- **Speed.** It is 1 m/s per metre of distance to the selected entity, with the distance clamped
-  to 1 to 2000 m. With no selection, it uses 5 m.
-- **Smoothing.** Exponential damping, so it does not depend on the frame rate: a sharpness of
-  10/s for the velocity and 30/s for the look. One update is clamped to 0.1 s.
-- **Focus.** The camera turns to face the target from where it is, and eases there over 0.4 s,
-  the short way round in yaw. It stops at 2.5 times the entity's largest world-scale axis, and
-  never closer than 1.5 m ([[Backlog]] § *editor & tooling* has the bounds gap). Moving or
-  looking cancels it.
-- **The cursor** is hidden and put back where the drag started each frame
-  (`ImGui::TeleportMousePos`). GLFW cannot do that on Wayland.
+- **Drags.** A right or middle press on the view starts a drag that lasts until the button is
+  released, even off the panel. While either lasts, `EditorApp` locks the cursor with
+  `GLFW_CURSOR_DISABLED`, which hides it, keeps reporting motion past the screen's edge, and puts
+  it back where the drag began. `ImGui::TeleportMousePos` was tried first and cannot work: ImGui
+  drops every mouse position event in the frame after a teleport, so the drag read no motion.
+- **Distance.** Zoom and pan scale with the distance to the selected entity, clamped to 1 to
+  2000 m, or 5 m with no selection. A wheel step zooms a fifth of it, measured from where a zoom
+  still under way ends, so quick steps toward the selection shrink instead of passing it. A pan
+  keeps a point at that distance under the cursor. Shift multiplies rotation, pan and zoom by 3,
+  and Ctrl by 0.25.
+- **Easing.** Rotation, pan and zoom each ease exponentially toward their target, at 30/s, 20/s
+  and 15/s, so the result does not depend on the frame rate; one update is clamped to 0.1 s.
+  `FlyCamera::isMoving` stays true until each arrives, and main asks for frames until then
+  ([[Editor - Design]] § *Decided*).
+- **Focus.** F works from any panel unless a text field takes input. The camera turns to face
+  the target from where it is and eases there over 0.4 s, the short way round in yaw, dropping any
+  pan or zoom under way. It stops at 2.5 times the entity's largest world-scale axis, and never
+  closer than 1.5 m ([[Backlog]] § *editor & tooling* has the bounds gap). Rotating, panning or
+  zooming cancels it.
+- **Tests.** `FlyCameraTests` cover the camera headless. `SceneViewPanelTests` drive the real
+  panel through an ImGui context with no backend, fed events the way the GLFW backend feeds them,
+  which is what would have caught the teleport.
 
 ### Build notes
 

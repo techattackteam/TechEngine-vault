@@ -674,6 +674,11 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/medium · **`logs/` is not git-ignored**: the logger writes `logs/techengine.log` relative
+  to the working directory (`engine/base/src/diagnostics/Log.cpp:28`), and `.gitignore` has no
+  `logs` line, so any run from the repo root leaves a file that `git add .` picks up. #222
+  (S11-T11, `a4c65ce`, Nov 21) merged one line of it onto `master`. The fix is a `logs/` line in
+  `.gitignore` and a commit that deletes the tracked file. **Trigger:** the next engine PR.
 - #prio/low · **`CONVENTIONS.md` § *Headers* cites a deleted file**: its example of "the module's
   own header stays at the root" is `base/Base.hpp`, which S11-T14 (#212) deleted. Pick another
   example or drop the clause; `platform/Platform.hpp` would serve only if the *platform* rename
