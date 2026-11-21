@@ -123,7 +123,7 @@ product owner, unless a row says otherwise.
 
 | | |
 |---|---|
-| **E2** | Import **glTF, FBX and OBJ** through assimp, as one merged mesh or as a model that keeps the file's hierarchy · textures · re-import that keeps references and material edits · a list-only asset browser (2026-10-31, `/brief`). |
+| **E2** | Import **glTF, FBX and OBJ** through assimp, as one merged mesh or as a model that keeps the file's hierarchy · textures · an asset browser that creates, places and deletes, with no re-import: a source is created again as a new copy (2026-10-31, `/brief`; browser and re-import 2026-11-21, S11-D3). |
 | **Demo** | Import · textures · export to content packs (M6) · a packaged demo build. |
 | **Not in the demo** | Other formats as supported inputs, even where assimp can read them (FBX and OBJ joined on 2026-10-31, `/brief`). |
 | **Later** | Skeletons and animation, with C1 for G3 · morph targets · cameras and lights stored in the source file (2026-10-31, `/brief`). |

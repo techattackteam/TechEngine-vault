@@ -266,15 +266,67 @@ and *How the scene view's camera is driven*.
   window is Tue Nov 24 to Fri Nov 27, but Thu and Fri are karting days, so it runs on **Tue Nov
   24**, after S11-P3's brief from Monday.
 
+### Story G: The asset browser (added Nov 21, carries freely)
+
+Cut by S11-D3 on Nov 21 from [[Content Pipeline - Design]] § *The asset browser*: the core plus
+delete, with import and re-import replaced by *Create model* and *Create mesh*, which always write
+a new copy. Added mid-sprint at Miguel's call so he can start building; whatever is unfinished
+carries into Sprint 12 as it stands. About 5 🟢 slots in all.
+
+**Order:** S11-T17 → S11-T18. S11-T19 → S11-T20 → S11-T21 (also after S11-T18) → S11-T24.
+S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
+
+- [ ] **S11-T17** · Remove re-import · P2 · 🤖 Auto ·
+  done: `ReimportMatcher`, `ReimportCommand` and its commands, `ModelImporter::reimportFile` with
+  the code only it calls, `TextureImporter::reimportSky`, `EditorApp::m_reimportsInFlight`, the
+  *Re-import...* menu entry and their tests are gone. `ResourceCache::reload` and its tests stay.
+  `ctest` proves the rest unchanged. Deletes [[Known Issues]] D10, and prunes § *Re-import* and
+  § *Re-import as built* in [[Content Pipeline - Design]]. First, because S11-T18 edits
+  `ModelImporter.cpp`.
+- [ ] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h ·
+  done: a model, mesh or sky create writes `Sponza_1/` or `Sky_1.tetexture` when the name is
+  taken, taking each name by creating it, and `ImportFolderExists` and `ImportOutputExists` stop
+  being refusals. A test creates one source twice and gets two folders with different ids.
+  After S11-T17.
+- [ ] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h ·
+  done: the simulation thread lists the three sides with each file's kind, publishes the listing
+  in the snapshot with a revision, and lists again after each create, each delete and a refresh
+  command, rebuilding the asset index with it. The index skips source and image extensions
+  without a warning. Tests in `edit/`.
+- [ ] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h ·
+  done: the folder tree, breadcrumbs and the grid, with double-click to open a folder and Ctrl,
+  Shift and box selection; the default layout docks it beside the console. Miguel's windowed
+  check. After S11-T19.
+- [ ] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h ·
+  done: § *The context menu*'s entries, with the create dialog's scale, up axis and output name.
+  The File menu's *Place model...* and *Import image...* and the startup import
+  (`importStartupModel`, `STARTUP_IMPORT_MODE`) are gone. After S11-T18 and S11-T20.
+- [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h ·
+  done: the scene view and the hierarchy place a model or mesh, a drop on a row as its first
+  child (`PlaceModelCommand` gains the parent), and an inspector asset field takes an asset of its
+  type. After S11-T20.
+- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🟠 Moderate · 2-3h ·
+  done: a scene, a material's textures and a model's meshes treat an id no file holds as absent,
+  with a warning, and a file that exists and fails still fails ([[Resources - Design]]
+  § *Decided*). One test per holder. Independent of the browser. A 🤖 Claude candidate, if Miguel
+  picks it for the lane.
+- [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h ·
+  done: *Delete...* opens a warning that lists every scene, material and model naming the
+  selection, then one command removes the files and their index records (`AssetIndex::remove`),
+  makes the open scene's references absent and marks it unsaved. The open scene's file and a
+  folder a create is writing into are refused. After S11-T21 and S11-T23.
+
 ## 🤖 Lanes
 
 - 🤖 Claude features: S11-T5 (the camera) and S11-T11 (the fly camera, after S11-T10). Both are
   built to Miguel's design in [[Renderer - Design]] § *Decided*. S11-D2 left the lane on Nov 17
   as a 🟡 Light card.
-- 🤖 Auto cards: S11-P1, S11-T12, S11-T13, S11-T14, S11-P2 and S11-T15 (added Nov 16).
+- 🤖 Auto cards: S11-P1, S11-T12, S11-T13, S11-T14, S11-P2 and S11-T15 (added Nov 16), and
+  S11-T17 (added Nov 21).
 - Standing prep: S11-P3 (not before Mon Nov 23) and S11-D4 (Tue Nov 24).
-- PR load: eight PR-producing lane cards over two weeks (two 🤖 Claude, six 🤖 Auto), under the
-  limit of about five a week. S11-P3 is free. Review costs about 2.75h.
+- PR load: nine PR-producing lane cards over two weeks (two 🤖 Claude, seven 🤖 Auto), under the
+  limit of about five a week. S11-P3 is free. Review costs about 3h. S11-T23 would be a tenth if
+  Miguel gives it to the lane.
 - **The prompt paste is done** ([[Autonomous Lane - Routine Prompt]] § *Routine configuration*):
   the Nov 17 09:08 fire ran step 6 with `-LE '^gpu$'` ([[2026-11-17 09-08 Auto Run]]).
 
@@ -310,6 +362,10 @@ out of S11-T6 on Nov 17, at its `/card-start`.
   because 🟠 cards take half a full day.
 - **Drop order:** S11-T10 and S11-T11, then S11-D3, then S11-T16. S11-T9 does not drop; if it
   slips, it opens Sprint 12, and so does S11-T16 if it drops.
+- **Story G does not fit, by design (Nov 21).** Its 3 🟢 and 4 🟠 (about 5 slots) arrive with
+  Sun Nov 22 and the Mon Nov 23 evening left before S11-D4, which is about 3 🟢 slots, and
+  S11-T16 takes half of one. Miguel added it so he can start; its unfinished cards carry into Sprint 12 in its
+  order, and they are not counted as a miss in the retro.
 - **Suggested order:** Nov 14, S11-D1 and S11-D5. Nov 16, S11-T2 and S11-T1. Nov 19, S11-T3.
   Nov 20, S11-T6 and S11-T4. Nov 21, S11-T7 and S11-T8. Nov 22, S11-T9. Nov 23, S11-T16, Story C
   and S11-D3, or slack. Nov 24, S11-D4.

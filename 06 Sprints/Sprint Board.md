@@ -25,7 +25,6 @@ kanban-plugin: board
 ## Story D: Design and product
 
 - [ ] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h: `/triage` of camera paths, fixed-rate capture and the rest, recorded in the [[Capability Map]]. Was S10-D5. Retagged from 🤖 Claude on Nov 17, because the lane runs no Design card.
-- [ ] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h: [[Content Pipeline - Design]] decides the list-only browser and cuts its build cards for Sprint 12. Drops after Story C.
 
 
 ## Story E: The lane's small cards
@@ -39,8 +38,21 @@ kanban-plugin: board
 - [ ] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 12's goal and draft cut into the Sprint 11 note. Runs **Tue Nov 24**, after S11-P3.
 
 
+## Story G: The asset browser (carries freely)
+
+- [ ] **S11-T17** · Remove re-import · P2 · 🤖 Auto: the editor's re-import code, menu entry and tests go; `ResourceCache::reload` stays. Deletes Known Issue D10. First.
+- [ ] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h: `Sponza_1/` and `Sky_1.tetexture` when the name is taken. After S11-T17.
+- [ ] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h: the simulation thread lists the three sides with their kinds and publishes them in the snapshot.
+- [ ] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h: folder tree, breadcrumbs, grid, double-click, Ctrl, Shift and box selection. After S11-T19.
+- [ ] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h: create, place and refresh; the File menu entries and the startup import go. After S11-T18 and S11-T20.
+- [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
+- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🟠 Moderate · 2-3h: in a scene, a material and a model, with a warning. Independent; a 🤖 Claude candidate.
+- [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: a warning that lists what uses it, then one command. After S11-T21 and S11-T23.
+
+
 ## 🔨 In Progress
 
+- [ ] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h: [[Content Pipeline - Design]] decides the list-only browser and cuts its build cards for Sprint 12. Drops after Story C.
 
 
 ## 👀 Review / Demo
@@ -53,7 +65,6 @@ kanban-plugin: board
 	- **Grown in the session (Miguel's calls, Nov 20-21):** F focus and distance-scaled movement, against the *Decided* row that left focus to T3 (row updated, orbit stays T3's). After his windowed checks the controls were redesigned twice: WASD and Q/E dropped, the wheel zooms instead of scaling the speed, a middle drag pans, and Shift and Ctrl scale every movement. Of the lane's six *Decisions I took*, the WASD speed model and the teleported cursor were reversed; #222's description still lists the first controls.
 	- *Retro:* 22 green tests missed two bugs Miguel's check found. ImGui drops every mouse position in the frame after `TeleportMousePos`, so rotation never moved, and main's event-driven loop stalled each ease between input events. The tests fed `FlyCamera` made-up deltas; `SceneViewPanelTests` now drives the real panel through headless ImGui, the drags lock the cursor through GLFW, and main asks for frames while the camera eases ([[Editor - Design]] § *Decided*).
 	- **Merged with two files outside the card:** `logs/techengine.log` (`logs/` is not ignored, [[Backlog]] § *etc*) and `projects/dev/assets/common/Startup.tescene`. The PR has no review conversation, so this entry comes from the session.
-
 - [x] **S11-T10** · The scene and game views are render targets · P2 · 🟠 Moderate · 2-3h: #221 (`4bca0ae`), **Nov 20**. Main declares its views each ImGui frame through a slot on `Client`, render draws each visible one into its own target, and the editor's ImGui hook swaps each view's token for its texture ([[Renderer - Design]] § *The editor's views as built*). Unblocks S11-T11; Story C goes on with it.
 	- **Grown at `/card-start`:** retitled from *The scene view is a render target*, because the clause already named the game view, and three calls no artifact made became *Decided* rows: the view slot, the texture tokens, and the scene view's fixed pose until the fly camera. The card was never re-sized from 🟠, though it ran as a 🟢.
 	- **Not as scaffolded:** a padding enum on `Panel` was replaced by v1's per-panel style vars (`Panel::addStyleVar`), at Miguel's call.

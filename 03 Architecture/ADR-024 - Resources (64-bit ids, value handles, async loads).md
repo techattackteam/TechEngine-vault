@@ -25,6 +25,10 @@
   ones are released. Reload on a file change, and eviction, still wait. Re-import is a Must for
   E2, and every scene that uses an asset must keep working after it ([[Content Pipeline - Brief]]
   § *Requirements*). S10-D10; [[Content Pipeline - Design]] § *Re-import*.
+- **Amended 2026-11-21, consequence:** the 2026-11-09 entry's "for re-import only" → re-import
+  is removed (Miguel, S11-D3), so `ResourceCache::reload` stays built with no caller. The asset
+  edit path is its expected next one. Reload on a file change, and eviction, still wait.
+  [[Content Pipeline - Design]] § *Creating from a source*.
 - **Partially supersedes:** each rowed in [[ADR Index]] § *Partial supersessions*.
   - ADR-006 §4, the **`ResourceRegistry& resources` field** of the `EngineContext` sketch, and
     §5's "injected via `EngineContext`" for this one service (§4 below). The DI rule, context

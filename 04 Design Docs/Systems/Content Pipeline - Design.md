@@ -43,6 +43,10 @@ The calls these cards took that no artifact had made are recorded in the *as bui
 below. The implementation took them, and #203 merged them with no review conversation. Miguel
 accepted them as merged on 2026-11-14, with no reversal.
 
+The asset browser is designed (2026-11-21, S11-D3) against `a4c65ce`, and nothing of it is built.
+The same card removed re-import from the design: a create always writes a new copy
+(§ *The asset browser*). The re-import code is still on `master` until S11-T17 merges.
+
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
 [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9 (amended 2026-11-09) ·
 [[ADR-026 - Reference fields and scene-held acquires]] §2 §3 ·
@@ -65,17 +69,17 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | TEModel is its own node table | Not a scene fragment. Placement builds the entities from the nodes. | Miguel, 2026-11-06; § *The model file* |
 | An entity per mesh | A node with one mesh carries it. A node with several gets one child entity per mesh, because each source mesh has one material. This stays after TEMesh v2: a model never joins a node's meshes into slots. | Miguel, 2026-11-06; § *The model file* |
 | A folder per import | Importing `Sponza.gltf` writes a `Sponza/` folder beside it: `Sponza.temodel`, then `Meshes/`, `Materials/` and `Textures/`. | Miguel, 2026-11-06 |
-| Scale and up axis are baked at import | They are applied to the mesh vertices and the node transforms, so the settings never land on the placed root. A source root's own transform is kept. The settings live in the root asset's import block and are applied again on re-import. | Miguel, 2026-11-06; S10-T15 (#194), 2026-11-09 |
+| Scale and up axis are baked at import | They are applied to the mesh vertices and the node transforms, so the settings never land on the placed root. A source root's own transform is kept. The create dialog sets them, and the root asset's import block records them. | Miguel, 2026-11-06; S10-T15 (#194), 2026-11-09; the dialog 2026-11-21 (S11-D3) |
 | The import block | Every imported file (model, mesh, material, texture) carries one: the source path, the source key and the settings. Its type is in `core`; only the editor writes it; it ships in the packs inside every packed file and the runtime skips it. A `.temodel` itself is never packed, because the export packs only what a scene reaches and a placed copy does not reference its model. | S10-D9, 2026-11-06; § *The import block* |
 | The import block's layout | A byte count first, so a reader can step over the block. The source key is an index and a name. Every block writes its settings, and the up axis is Y or Z. | Miguel, 2026-11-06 (S10-T14); § *The import block* |
 | Import is editor-only, on the job system | assimp links into `apps/editor` alone. An import runs as a job and never blocks the editor's frame. | S10-D9, 2026-11-06 |
 | The import's own calls | Ids, refusals, file names, FBX pivots and closing the editor during an import. | S10-T15 (#194), 2026-11-09; § *The import* |
 | Placement is one edit command | Main sends it; the simulation thread builds the entities. | ADR-027 §3 |
 | Placement reads the model by path | The command finds the record in the asset index and reads the `.temodel` through `FileAccess` on the simulation thread. The cache has no model loader, because a placed copy keeps nothing from the file. | S10-T16 (#196), 2026-11-10 |
-| One bad mesh refuses the whole model | A mesh that is not in the index, is not a mesh, is a server asset or fails to load leaves the scene with no new entity. A mesh that loaded before the refusal stays a dependency of the scene until the scene is released. | Miguel, 2026-11-10 (S10-T16) |
+| One bad mesh refuses the whole model | A mesh that is not a mesh, is a server asset or fails to load leaves the scene with no new entity. A mesh that loaded before the refusal stays a dependency of the scene until the scene is released. A mesh the asset index does not know is no longer a refusal: that node gets an empty mesh field and a warning, so a model still places after one of its meshes is deleted. | Miguel, 2026-11-10 (S10-T16); the unknown mesh 2026-11-21 (S11-D3), § *Deleting an asset* |
 | The root is copied as stored | Placement adds no offset: the root keeps the transform the model stores for it. | Miguel, 2026-11-10 (S10-T16) |
 | Placement waits for its meshes | It runs the cache's loading phase on the simulation thread, as an asset field set does. Loading over several frames waits for a measured stall ([[Backlog]] § *editor & tooling*). | S10-T16 (#196), 2026-11-10 |
-| Materials are created once | A re-import never overwrites a material file that already exists. Built by `keepExistingIds` in `ModelImporter.cpp` (S10-T21, #203). | [[Content Pipeline - Brief]] § *Decided* |
+| Each create writes its own materials | A create never shares or overwrites another copy's materials or textures, so an edit to one copy's material reaches no other copy. This replaces "materials are created once", which only re-import needed. | Miguel, 2026-11-21 (S11-D3); § *Creating from a source* |
 | Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/glTF/Sponza.gltf` (moved from `assets/client/` by S11-T1, Nov 20, so the images sit in their own folder), skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
 | Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path (`STARTUP_IMPORT_MODE`). Re-import goes through a *Re-import* menu entry with a typed path and a merged-mesh checkbox, like placement. | S10-D10, 2026-11-09; S10-T21 (#203) |
 | UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. Texture rows are stored top row first with no flip, and the renderer's geometry upload stores `1 - v`: see § *Texture rows and V*. | Miguel, 2026-11-11 (S10-T19); § *The import's streams*; S10-T24 (#203) |
@@ -92,8 +96,11 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Slots under multi-select | The inspector shows slot rows only when every selected renderer has the same slot names in the same order. Otherwise it shows one read-only line saying that the materials differ. A row count that differs is flagged on the component's row, because each row's own mixed flag compares only the rows that both entities have. | Miguel, 2026-11-10 (S10-T18); § *Materials per slot* |
 | The engine merges, not assimp | A merged mesh comes from the model walk: each node's world transform is baked into its meshes, triangles are flipped where the determinant is negative, and meshes are joined by material. `aiProcess_PreTransformVertices` is not used. | S10-D10, 2026-11-09; § *The merged mesh* |
 | Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. The sky and re-import add their own refusals (§ *The sky image as built*, § *Re-import as built*). | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
-| Re-import keeps every id | Outputs are matched to their old files by source key. Old files with no match are left in place and logged. | S10-D10, 2026-11-09; § *Re-import* |
-| Re-import reloads at once | Only while the editor is Stopped. Built as `ResourceCache::reload` and `ReloadImportedAssetsCommand` (S10-T21, #203). | ADR-024 §9 (amended 2026-11-09); § *Re-import* |
+| No re-import | A create always writes a new copy beside the earlier ones, so `Sponza.gltf` gives `Sponza/`, then `Sponza_1/`. A changed source is created again and placed again. The editor's re-import code is removed; `ResourceCache::reload` stays in `core` for the asset edit path. This replaces S10-D10's "re-import keeps every id" and "re-import reloads at once". | Miguel, 2026-11-21 (S11-D3); ADR-024 (amended 2026-11-21); § *Creating from a source* |
+| The asset browser lists the assets folders | Every file and folder under the three sides, listed by the simulation thread and published in the snapshot. No file watcher: *Refresh* re-lists. | S11-D3, 2026-11-21; § *What the browser lists* |
+| Two panes, breadcrumbs, a grid with a box | A folder tree and the open folder's tiles. Ctrl, Shift and box selection on the grid. | Miguel, 2026-11-21 (S11-D3); § *The browser panel* |
+| The browser drags to three targets | The scene view and the hierarchy place a model or mesh; an inspector asset field takes an asset of its type. | Miguel, 2026-11-21 (S11-D3); § *Dragging from the browser* |
+| Delete is permanent, after a warning | The warning lists every file that names the asset. A reference to an asset no file holds loads as absent, with a warning. | Miguel, 2026-11-21 (S11-D3); § *Deleting an asset*; [[Resources - Design]] § *Decided* |
 | The texture file | A `.tetexture` holds one 2D image in its GPU format, with every mip, its wrap and its filter. No ADR: a wrong format costs a version bump and a re-import. | S10-D11, 2026-11-10; § *The texture file* |
 | A file per image, purpose and sampler | An image shared by many materials for one purpose is written once. Used for two purposes or with two samplers, it is written twice. | S10-D11, 2026-11-10; § *Texture import* |
 | A format per purpose | Base color and emissive are BC7 sRGB, the packed ORM is BC7 linear, a normal map is BC5, and the sky is uncompressed `RGB9E5`. | S10-D11, 2026-11-10; § *Texture import* |
@@ -525,7 +532,152 @@ Built by S10-T25 (#203), in `apps/editor/src/assets/TextureImporter.cpp`. The im
   `EditorApp::importSky` and `ImportSkyCommand`, until the asset browser lands. Its dialog and
   menu entry have not been tried in a window.
 
+## The asset browser
+
+Designed by S11-D3 on 2026-11-21 against engine `a4c65ce`. It replaces the startup import and
+the File menu's *Place model...*, *Import image...* and *Re-import...* entries
+(`apps/editor/src/ui/PanelsManager.cpp:73-84`, `apps/editor/src/EditorApp.cpp:523`). Baseline:
+Unity's Project window and Unreal's Content Browser both have a folder tree beside a grid, a
+path bar, box selection and drags into the scene and onto fields (from memory). Both also keep
+re-import, which this design drops (§ *Creating from a source*).
+
+### What the browser lists
+
+- **Every file and folder under `assets/common`, `assets/client` and `assets/server`.** The three
+  sides are the tree's top level, because an asset's side comes from its folder
+  (`TextureImporter::sideOf`).
+- **Each file has a kind.** An indexed asset takes its type tag and id from the asset index. A
+  source takes its kind from its extension: `.gltf`, `.glb`, `.fbx` and `.obj` are model sources,
+  and `.hdr` is a sky source. Any other file is listed with no entry of its own in the menu.
+- **The simulation thread lists the folders**, beside the asset index it already owns, and
+  publishes the listing in the editor snapshot with a revision, as it publishes the index's
+  copy (`apps/editor/src/edit/EditorSnapshot.hpp:75`). Main never lists folders, so a slow disk
+  never stalls a frame.
+- **It is listed again after every change the editor makes** (a create finishes, a delete
+  applies) and on *Refresh*. There is no file watcher, so a file copied in from outside shows
+  after *Refresh*. The asset index is rebuilt with it; today it is built once, at startup
+  (`apps/editor/src/EditorApp.cpp:100`).
+- **The index stops warning about sources.** It logs every file that is not an asset
+  (`apps/editor/src/assets/AssetIndex.cpp:177-179`), so Sponza's 69 images would log 69 lines on
+  every rebuild. A file with a known source or image extension is skipped quietly.
+
+### The browser panel
+
+- **Two panes.** The left pane is the folder tree, folders only. The right pane is the open
+  folder as a grid of tiles, each an icon for its kind and the file name. Folders come first, then
+  files, each sorted by name without case.
+- **Breadcrumbs** above the grid name each folder from the side down to the open one. A click on
+  one opens that folder.
+- **A click on a tree node opens its folder, and so does a double-click on a folder tile.** A
+  double-click on a file does nothing yet: opening a scene waits for more than one scene (T8).
+- **The default layout** docks the browser at the bottom, as a tab beside the console.
+- **The open folder and the selection belong to main.** They change nothing in the scene, so
+  they are not commands.
+- **Selection** is ImGui's `BeginMultiSelect` over the tiles with
+  `ImGuiMultiSelectFlags_BoxSelect2d`: Ctrl and Shift clicks and a box drag. The hierarchy has no
+  box ([[Editor - Design]] § *Decided*); the grid has one because its tiles sit in two
+  dimensions. The selection holds paths and is cleared when the open folder changes. A
+  right-click keeps ImGui's rule, as in the hierarchy: an unselected tile is selected alone, a
+  selected one keeps the set.
+
+### The context menu
+
+| Selection | Entries |
+|---|---|
+| One model source | *Create model...*, *Create mesh...* |
+| One `.hdr` | *Create sky...* |
+| Any `.temodel` or `.temesh` tiles | *Place in scene*, one copy of each |
+| Any files or folders | *Delete...* |
+| Empty space in the grid | *Refresh* |
+
+*Create mesh* is today's `ImportMode::MergedMesh`, and *Create model* is `ImportMode::Model`.
+
+### Creating from a source
+
+Miguel, 2026-11-21: "it does not matter if there is already another model or mesh from that
+source it will create a new one."
+
+- **The dialog** sets the scale and the up axis and shows the folder it will write.
+- **The output takes the next free name.** `Sponza.gltf` writes `Sponza/`, then `Sponza_1/`,
+  `Sponza_2/`, the rule mesh file names already use (§ *The import*). The sky writes
+  `Sky.tetexture`, then `Sky_1.tetexture`. The job takes a name by creating it
+  (`FileAccess::createDirectory` or `createFile`) and tries the next one on `AlreadyExists`, so two
+  creates at once never share an output. `ImportFolderExists` and `ImportOutputExists` stop being
+  refusals.
+- **Each create writes its own materials and textures** (§ *Decided*).
+- **The import block stays in every file**, unchanged, as a record of the source and its
+  settings. Nothing in the editor reads it once re-import is gone, but removing it would change
+  four file formats for no gain.
+- **Placement is unchanged** (`PlaceModelCommand`).
+
+### Dragging from the browser
+
+The browser is a drag source only. The payload is the selected tiles' paths, or the dragged tile
+alone when it is not selected, the hierarchy's rule ([[Editor - Design]] § *Multi-select*).
+
+- **The scene view** places each `.temodel` and `.temesh`, as *Place in scene* does, with the
+  stored root transform. The drop point is ignored until picking exists (T3).
+- **The hierarchy** places at the root on a drop over empty space. A drop on a row places the
+  model as that entity's first child, with the stored root transform as its local transform,
+  because a created child goes first ([[Editor - Design]] § *Decided*, "Hierarchy edits").
+  `PlaceModelCommand` gains the parent.
+- **An inspector asset field** (a `MeshRenderer`'s mesh, a material slot) takes one asset of its
+  type through the picker's set command, which already refuses an unknown id, a server asset and
+  another type ([[Editor - Design]] § *Decided*). The field highlights only for its own type.
+- **Anything else is refused**, a source dropped on the scene view included: creating stays a
+  menu entry.
+
+### Deleting an asset
+
+Miguel's behaviour from Oct 26, with his answers of Nov 21.
+
+- **The warning** lists every indexed scene, material and model that names a selected file,
+  scenes first, and says the delete cannot be undone. The simulation thread finds them when the
+  dialog opens, by reading each indexed file's references. A folder is deleted with everything
+  in it, and its warning gives a count of what it holds.
+- **The delete is permanent**, through `FileAccess::remove`. The project is in git, so a mistake
+  is restored from there. Undo is T8's.
+- **It is one command on the simulation thread.** It removes the files and their index records
+  (`AssetIndex` gains `remove`), makes every reference to a deleted id in the open scene absent,
+  and raises the edit revision, so the scene shows as unsaved. The deleted entries stay held
+  until the scene is released, as everything an editor edit swaps away from does (ADR-026 §4).
+- **Refused:** the open scene's own file, and a folder a create is still writing into.
+- **Deleting a source** deletes that file only. The folders created from it stay.
+- **Every later load** treats a reference to an id no file holds as absent, with a warning
+  ([[Resources - Design]] § *Decided*). That holds for a scene, a material's textures and a
+  model's meshes (§ *Decided*). Render already draws the default material when a material has no
+  copy, and skips a mesh with none (`engine/client/src/render/FrameRenderer.cpp:253-272`), so no
+  default asset files are needed.
+
+### Future features
+
+Miguel's list from 2026-11-21, not scheduled. Each line says what it needs first.
+
+- **Rename.** Safe since re-import is gone: references are ids, and an import block's source
+  path is only a record now.
+- **Copy.** It must write a new id into the copy, because two files with one id are both dropped
+  from the index (`apps/editor/src/assets/AssetIndex.cpp:100-108`).
+- **Dropping files from Explorer** into the open folder, which copies them in; creating stays a
+  menu entry. GLFW's drop callback needs a new window event in `platform` that reaches main. It
+  cannot travel with input, because the editor detaches the `InputBuffer` while Stopped.
+- **Texture thumbnails.** A job decodes a small mip of the `.tetexture` with bcdec, which the
+  editor already links, and hands ImGui an `ImTextureData` through `RegisterUserTexture`
+  (experimental in ImGui 1.93). The bridge already carries ImGui's own textures to render
+  (`apps/editor/src/ui/ImGuiBridge.cpp:21`, `:45`). A material's tile can show its base color
+  thumbnail tinted by its factor.
+- **Mesh and model thumbnails.** Render must draw a scene other than the open one into a small
+  target. `FrameRenderer` prepares one frame from the live scene's packet ([[Renderer - Design]]
+  § *The editor's views as built*).
+- **Dropping a texture on a material.** It needs the asset edit path ([[Backlog]] § *editor &
+  tooling*, "Design the asset edit path").
+- **Moving files** by dropping them on a folder or a tree node.
+- **Opening a scene** with a double-click, which needs more than one scene (T8).
+
 ## Re-import
+
+> **Removed by Miguel on 2026-11-21 (S11-D3)** and replaced by § *Creating from a source*. This
+> section and § *Re-import as built* describe code still on `master`; prune both when S11-T17,
+> which removes it, merges. § *The reload as built* stays, because `ResourceCache::reload` stays.
 
 By hand only ([[Content Pipeline - Brief]]), and refused unless the editor is Stopped.
 

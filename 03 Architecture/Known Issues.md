@@ -131,11 +131,11 @@ end up with two ids, and nothing reports it.
 `apps/editor/src/edit/ReimportCommand.cpp:34-39` at `25c93a4b`; the list is
 `EditorApp::m_reimportsInFlight` (`apps/editor/src/EditorApp.hpp:51`).
 
-**Fix:** not decided. The key could be the output folder, resolved to one form, instead of the
-typed source path.
+**Fix:** decided on 2026-11-21 (S11-D3): re-import is removed, `ReimportCommand` and the list
+with it ([[Content Pipeline - Design]] § *Creating from a source*). Delete this entry when that
+removal merges.
 
-**Trigger:** the asset browser's import or re-import, which stops paths from being typed, or
-any second caller of `ReimportCommand`.
+**Trigger:** S11-T17, which removes re-import.
 
 ### D9: An editor destroyed during an import races the import's log lines
 

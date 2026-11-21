@@ -488,16 +488,6 @@ groups are kept, because they show where future work will land.
   1.5 m (`apps/editor/src/edit/FlyCamera.hpp`, S11-T11, #222, Nov 20). A large model at scale 1,
   such as Sponza's root, frames from inside it. Framing the subtree's world bounds fixes it.
   **Trigger:** the first card that gives meshes bounds, such as culling or picking.
-- #prio/low · **The startup import starts silently**: `EditorApp::importStartupModel` starts the
-  job with no log line, and the root asset is written last, so for the minutes BC7 encoding takes
-  in a Debug build, *Place model* reports the model as "not in the asset index". Found by S11-T1
-  (#220, Nov 20). The asset browser replaces this import, so a log line at the start is the whole
-  fix. **Trigger:** the next card that touches the startup import, or the asset browser.
-- #prio/medium · **Sponza's import folder holds both root assets**: S11-T1 committed the merged
-  `glTF/Sponza/Sponza.temesh` beside `Sponza.temodel` (#220, Nov 20). § *Re-import* says the old
-  root stays and is logged, but no re-import has run on a folder with both, so which root's
-  settings it reads is untested. **Trigger:** the next re-import of Sponza, or the asset
-  browser's re-import.
 - #prio/medium · **An adopted `Startup.tescene` opens empty and cannot be saved**: when the
   startup load adopts an existing, indexed `Startup.tescene`, it points `project.toml` at it but
   does not load it, so that launch shows an empty scene and refuses every save; the next launch
@@ -519,14 +509,6 @@ groups are kept, because they show where future work will land.
   position, and `ReparentEntityCommand` passing it through for a reorder and a move to the root
   ([[Editor - Design]] § *The hierarchy panel*). Miguel kept it out of S10-B2 on Nov 10.
   **Trigger:** Miguel wants to order roots in the editor, or the next card on the hierarchy panel.
-- #prio/xhigh · **Deleting an asset in the editor**: Miguel's wanted behaviour, Oct 26, 2026.
-  Before the delete, a warning lists the scenes that use the asset. After it, each reference
-  points at its type's default asset. Loading a scene with an asset that is not there warns
-  instead of failing. Not decided and not designed. It changes the Decided row "a reference
-  that fails to be added or loaded fails the scene load" ([[Resources - Design]]), and it needs
-  a default asset per resource type, which does not exist yet. Today a deleted file goes
-  unnoticed until the next export (`NotFound`) or launch (the editor opens on an empty scene).
-  **Trigger:** the asset browser ([[Editor - Brief]], *Must, demo*).
 - #prio/high · **Design the asset edit path**: the editor cannot edit a value that lives in an
   asset. Every edit command changes a component on an entity
   (`apps/editor/src/edit/InspectorCommands.hpp:26`, `:47`), and a material's roughness lives in
@@ -613,6 +595,7 @@ groups are kept, because they show where future work will land.
   source holds the close until assimp returns ([[Content Pipeline - Design]] § *The import*).
   assimp's `ProgressHandler` can stop a read. Found at S10-T15 (#194) on Nov 9, 2026.
   **Trigger:** the asset browser's import, or the first close that waits long enough to notice.
+  **Fired Nov 21:** S11-D3 left it out of the browser's first cut.
 - #prio/medium · **Sponza ships in `projects/dev` with no licence file**: S10-T16 (#196) added
   `Sponza.gltf`, `Sponza.bin` and its import to `projects/dev/assets/client`, about 14.5 MB, by
   Miguel's choice. The Khronos sample carries its own licence and credits, and nothing in the

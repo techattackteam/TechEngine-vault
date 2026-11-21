@@ -609,6 +609,8 @@ sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore`
   before closing would be lost. Each save clears the flag first, even if the write then fails.
 - **The folder.** `FileAccess::write` returns `NotFound` while `editorSettings/` is missing, so
   a save creates the folder first and treats `AlreadyExists` as the normal answer.
+- **The asset browser** docks at the bottom, as a tab beside the console. The panel is designed
+  in [[Content Pipeline - Design]] § *The asset browser* (S11-D3, 2026-11-21).
 - **The two views.** Each shows its own render target, sized to the panel (S11-T10, #221). The
   scene view looks through the fly camera (S11-T11, #222), and the game view through the
   scene's main active camera. Both share `ViewPanel`; the mechanism is

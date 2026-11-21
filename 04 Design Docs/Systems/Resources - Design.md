@@ -87,7 +87,7 @@ built or run.
 | A scene is loaded at most once while it is held: a second load warns and returns `ReadError::AlreadyLoaded`. A released scene is drained before it loads again. | Miguel, Oct 24; § *Reference fields* |
 | A dependency the owner adds to a Ready entry that fails returns its error and leaves the holder Ready; a completion's failed dependency still fails its holder. | Miguel, Oct 24; § *The cache as built* |
 | `addDependency` returns the dependency's slot through an out-param, so the scene load fills its handles without a lookup by id. | Miguel, Oct 25; § *The cache as built* |
-| A reference that fails to be added or loaded fails the scene load, which clears the `Scene` and releases the scene entry. A reference absent for the role is not a failure: its handle names the absent entry. | Miguel, Oct 25; § *Reference fields* |
+| A reference that fails to be added or loaded fails the scene load, which clears the `Scene` and releases the scene entry. A reference absent for the role is not a failure: its handle names the absent entry. Since 2026-11-21, neither is a reference to an id that no file holds: it loads as absent and logs a warning, in a scene and in every loader that adds dependencies (a material's textures), so a scene still opens after an asset it names is deleted. A file that exists and fails to load still fails. | Miguel, Oct 25; the missing id 2026-11-21 (S11-D3), [[Content Pipeline - Design]] § *Deleting an asset*; § *Reference fields* |
 
 ### Decided: packs and the runtime layout
 
