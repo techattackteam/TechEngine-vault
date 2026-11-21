@@ -468,6 +468,21 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/medium · **The editor has no shortcut system**: each shortcut is a hand-written ImGui check
+  with its own rule for when it fires. Ctrl+S uses `ImGui::Shortcut` with a global route
+  (`PanelsManager::handleShortcuts`), Delete and F2 need the hierarchy focused and skip typing by
+  hand (`HierarchyPanel::handleKeys`), and F fires anywhere unless a text field takes input
+  (`SceneViewPanel::updateCamera`, S11-T11). No list holds them, so menus hard-code their text
+  (`MenuItem("Save", "Ctrl+S")`) and nothing catches two panels claiming one key. v1 let each
+  panel override `processKeyPressed` (`runtime/editor/src/panels/Panel.cpp` at `v1-reference`), but
+  keys needed the panel focused, carried no modifiers (S also fired on Ctrl+S), had no text-field
+  filter, and every named key was polled three times a frame. **Lean (Nov 21):** keep v1's idea,
+  each panel declaring its shortcuts as data (chord, scope, action) the way it declares style
+  vars, and have `Panel::draw` run them through `ImGui::Shortcut`. Three scopes: focused (Delete,
+  F2), hovered or focused (view keys, which needs a hover test on top of ImGui's routes), and
+  global (Ctrl+S, F). ImGui then ignores plain letter keys while a text field takes input, and one
+  list can feed menus and later remapping. It is a design row in [[Editor - Design]], then a card.
+  **Trigger:** the next card that adds a shortcut, such as the gizmo's modes.
 - #prio/low · **The scene view's focus frames by scale, not by size**: meshes carry no bounds, so
   F flies to 2.5 times the selected entity's largest world-scale axis, and never closer than
   1.5 m (`apps/editor/src/edit/FlyCamera.hpp`, S11-T11, #222, Nov 20). A large model at scale 1,
