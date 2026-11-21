@@ -41,7 +41,6 @@ kanban-plugin: board
 ## Story G: The asset browser (carries freely)
 
 - [ ] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h: `Sponza_1/` and `Sky_1.tetexture` when the name is taken. After S11-T17.
-- [ ] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h: the simulation thread lists the three sides with their kinds and publishes them in the snapshot.
 - [ ] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h: folder tree, breadcrumbs, grid, double-click, Ctrl, Shift and box selection. After S11-T19.
 - [ ] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h: create, place and refresh; the File menu entries and the startup import go. After S11-T18 and S11-T20.
 - [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
@@ -51,7 +50,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h: [[Content Pipeline - Design]] decides the list-only browser and cuts its build cards for Sprint 12. Drops after Story C.
 
 
 ## 👀 Review / Demo
@@ -60,6 +58,16 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h: #225 (`371e650`), **Nov 21**. `AssetIndex::build` lists the three sides in the same walk that indexes them, the editor snapshot carries the listing with its revision, and `RefreshAssetsCommand` lists again after every create and on `EditorCommands::refreshAssets` ([[Content Pipeline - Design]] § *What the browser lists as built*). Unblocks S11-T20; Story G goes on.
+	- **"After each delete" had no referent**, because delete is S11-T24, which will submit the same refresh. The design's `AssetIndex::remove` has no job if a delete lists again, so S11-T24 settles which one stays.
+	- **Two calls against the note (Miguel, Nov 21):** the listing lives inside the index, not beside it, so one walk feeds both. Only a file with an engine extension warns when it cannot be read, instead of a list of quiet source and image extensions, because that list still left the dev project's `.bin`, `.md`, `.gitkeep` and shader files warning on every rebuild.
+	- **Review caught a race and it was fixed before the merge:** a refresh during another create could index that create's `.tewrite` temporaries, so `FileAccess::list` now leaves them out, a change in `platform`. The copy of the listing in every published snapshot is unmeasured ([[Backlog]] § *editor & tooling*).
+	- *Retro:* #225 has no description and its title has no card ID, so the squashed commit is tied to S11-T19 only by its branch name, and the behaviour changes it made are recorded only in the design note. The review ran in the session, so the PR has no review conversation either.
+- [x] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h: vault `f6706cd`, **Nov 21**. [[Content Pipeline - Design]] § *The asset browser* decides the listing, the two-pane panel with breadcrumbs and multi-select, the context menu, the drags and delete, and Story G holds its eight build cards. The card did not drop, because Story C finished first.
+	- **The clause asked how the browser re-imports, and the answer was that it does not.** At Miguel's call, *Create model* and *Create mesh* always write a new copy (`Sponza_1/`), so re-import left the design and the code (S11-T17), `ResourceCache::reload` stays, and ADR-024 carries a consequence amendment dated Nov 21. The brief's re-import Must became a Won't.
+	- **Delete was weighed and taken into the core**, permanent after a warning, and its [[Backlog]] entry was deleted. The "list-only" browser of the clause grew a menu, creates, drags and delete.
+	- **The cards went into Sprint 11, not Sprint 12,** as Story G, added mid-sprint at Miguel's call so he can start building; whatever is unfinished carries. A missing reference now loads as absent with a warning ([[Resources - Design]], S11-T23).
+	- **Miguel's wider list** (drags from Explorer, thumbnails, rename, copy) is § *Future features*, "Won't, for now", untriaged by his call.
 - [x] **S11-T17** · Remove re-import · P2 · 🤖 Auto: #224 (`50d6f38`), **Nov 21**. The editor's re-import code, its menu entry and its tests are gone, `ResourceCache::reload` stays, and [[Known Issues]] D10 is deleted with the list it described. Unblocks S11-T18, the next card in Story G.
 	- **"The code only it calls" reached further than the clause named:** the four `ProjectError` codes only re-import returned, and `MaterialOutput::writeFile`, which only a re-import set to false. They were the last four codes, so no other value changed.
 	- **Kept for S11-T18:** the model import still accepts `AlreadyExists` on its `Textures`, `Materials` and `Meshes` folders (`ModelImporter.cpp`), which only a re-import needed. S11-T18 changes how the output folder is taken, so it decides whether the tolerance goes.

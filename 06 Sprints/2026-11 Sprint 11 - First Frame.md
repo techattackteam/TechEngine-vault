@@ -219,7 +219,7 @@ and *How the scene view's camera is driven*.
   with the date. Was S10-D5. Due before E2's showcase. **Retagged 🟡 Light on Nov 17** from
   🤖 Claude, so Miguel runs it in an attended session: the routine prompt never runs a Design card,
   and three fires in a row left it in To Do ([[2026-11-16 14-12 Auto Run]]).
-- [ ] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S11-D3** · Design the asset browser · P2 · 🟠 Moderate · 2-3h ·
   done: [[Content Pipeline - Design]] decides what the list-only browser shows and how it
   imports, re-imports and places, and whether deleting an asset is weighed now (its [[Backlog]]
   entry fires with this card). It cuts the build cards for Sprint 12. Drops after Story C.
@@ -288,7 +288,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   taken, taking each name by creating it, and `ImportFolderExists` and `ImportOutputExists` stop
   being refusals. A test creates one source twice and gets two folders with different ids.
   After S11-T17.
-- [ ] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h ·
+- [x] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h ·
   done: the simulation thread lists the three sides with each file's kind, publishes the listing
   in the snapshot with a revision, and lists again after each create, each delete and a refresh
   command, rebuilding the asset index with it. The index skips source and image extensions

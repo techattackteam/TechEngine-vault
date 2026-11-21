@@ -96,7 +96,7 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | The engine merges, not assimp | A merged mesh comes from the model walk: each node's world transform is baked into its meshes, triangles are flipped where the determinant is negative, and meshes are joined by material. `aiProcess_PreTransformVertices` is not used. | S10-D10, 2026-11-09; § *The merged mesh* |
 | Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. The sky adds its own refusals (§ *The sky image as built*). | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
 | No re-import | A create always writes a new copy beside the earlier ones, so `Sponza.gltf` gives `Sponza/`, then `Sponza_1/`. A changed source is created again and placed again. The editor's re-import code is removed; `ResourceCache::reload` stays in `core` for the asset edit path. This replaces S10-D10's "re-import keeps every id" and "re-import reloads at once". | Miguel, 2026-11-21 (S11-D3); ADR-024 (amended 2026-11-21); § *Creating from a source* |
-| The asset browser lists the assets folders | Every file and folder under the three sides, listed by the simulation thread and published in the snapshot. No file watcher: *Refresh* re-lists. | S11-D3, 2026-11-21; § *What the browser lists* |
+| The asset browser lists the assets folders | Every file and folder under the three sides, listed by the simulation thread in the asset index's own walk and published in the snapshot. No file watcher: *Refresh* re-lists. Only an engine file warns when it cannot be read. | S11-D3, 2026-11-21; Miguel, 2026-11-21 (S11-T19, #225); § *What the browser lists* |
 | Two panes, breadcrumbs, a grid with a box | A folder tree and the open folder's tiles. Ctrl, Shift and box selection on the grid. | Miguel, 2026-11-21 (S11-D3); § *The browser panel* |
 | The browser drags to three targets | The scene view and the hierarchy place a model or mesh; an inspector asset field takes an asset of its type. | Miguel, 2026-11-21 (S11-D3); § *Dragging from the browser* |
 | Delete is permanent, after a warning | The warning lists every file that names the asset. A reference to an asset no file holds loads as absent, with a warning. | Miguel, 2026-11-21 (S11-D3); § *Deleting an asset*; [[Resources - Design]] § *Decided* |
@@ -541,17 +541,42 @@ re-import, which this design drops (§ *Creating from a source*).
 - **Each file has a kind.** An indexed asset takes its type tag and id from the asset index. A
   source takes its kind from its extension: `.gltf`, `.glb`, `.fbx` and `.obj` are model sources,
   and `.hdr` is a sky source. Any other file is listed with no entry of its own in the menu.
-- **The simulation thread lists the folders**, beside the asset index it already owns, and
-  publishes the listing in the editor snapshot with a revision, as it publishes the index's
-  copy (`apps/editor/src/edit/EditorSnapshot.hpp:75`). Main never lists folders, so a slow disk
-  never stalls a frame.
+- **The simulation thread lists the folders inside the asset index**, in the same walk that
+  indexes them, and publishes the listing in the editor snapshot with a revision, beside the
+  index's copy. Main never lists folders, so a slow disk never stalls a frame. Miguel, Nov 21
+  (S11-T19): one walk, not a second one beside the index.
 - **It is listed again after every change the editor makes** (a create finishes, a delete
   applies) and on *Refresh*. There is no file watcher, so a file copied in from outside shows
-  after *Refresh*. The asset index is rebuilt with it; today it is built once, at startup
-  (`apps/editor/src/EditorApp.cpp:100`).
-- **The index stops warning about sources.** It logs every file that is not an asset
-  (`apps/editor/src/assets/AssetIndex.cpp:177-179`), so Sponza's 69 images would log 69 lines on
-  every rebuild. A file with a known source or image extension is skipped quietly.
+  after *Refresh*. The asset index is rebuilt with it. A refresh replaces the whole index, so
+  delete's `AssetIndex::remove` (§ *Deleting an asset*) may have no job left: S11-T24 decides.
+- **Only an engine file warns.** A file that cannot be read as an asset is logged only when its
+  extension is an engine one (`.tescene`, `.temesh`, `.temodel`, `.tetexture`, `.tematerial`).
+  Every other file is skipped quietly, but is still read by its magic, so a renamed asset is still
+  indexed. Miguel, Nov 21 (S11-T19): a list of quiet source and image extensions still left
+  Sponza's `.bin`, the `.md` files, `.gitkeep` and the shaders warning on every rebuild.
+
+### What the browser lists as built
+
+Built by S11-T19 (#225), in `apps/editor/src/assets/AssetIndex.cpp:78`. The implementation took
+these calls:
+
+- **`ListedEntry` is the listing's row** (`AssetIndex.hpp:37`): a path, a side, a `ListedKind`
+  (Folder, Asset, ModelSource, SkySource, Other), and an id and type tag only on an Asset entry.
+  It is not an `AssetRecord`, because a record promises a valid, unique id. The listing is sorted
+  by path. The three side folders are not entries.
+- **A source is never read.** It takes its kind from its extension without case (`:103`), and a
+  file the index drops (a duplicate or a null id) is listed as Other.
+- **A failed build keeps the last good one.** Records, listing and revision are replaced together
+  only when every side was listed, so a refresh after a side folder is deleted changes nothing
+  and logs a warning (`RefreshAssetsCommand.cpp:12`).
+- **A create ends with `RefreshAssetsCommand`**, which replaced `RegisterImportedAssetsCommand`.
+  An imported id that is already taken is now dropped with the old file as a duplicate, instead
+  of the old file being kept. The startup's `EditorApp::createAsset` rebuilds too
+  (`EditorApp.cpp:540`), so `AssetIndex::add` has no caller outside tests.
+- **`FileAccess::list` leaves out `.tewrite` temporaries** (`FileAccess.cpp:27`), so a refresh
+  during another create never indexes a half-written file.
+- **Every publish copies the whole listing**, as it copies the index. It is unmeasured
+  ([[Backlog]] § *editor & tooling*).
 
 ### The browser panel
 
