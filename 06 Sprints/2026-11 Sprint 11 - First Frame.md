@@ -276,7 +276,7 @@ carries into Sprint 12 as it stands. About 5 🟢 slots in all.
 **Order:** S11-T17 → S11-T18. S11-T19 → S11-T20 → S11-T21 (also after S11-T18) → S11-T24.
 S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
 
-- [ ] **S11-T17** · Remove re-import · P2 · 🤖 Auto ·
+- [x] **S11-T17** · Remove re-import · P2 · 🤖 Auto ·
   done: `ReimportMatcher`, `ReimportCommand` and its commands, `ModelImporter::reimportFile` with
   the code only it calls, `TextureImporter::reimportSky`, `EditorApp::m_reimportsInFlight`, the
   *Re-import...* menu entry and their tests are gone. `ResourceCache::reload` and its tests stay.

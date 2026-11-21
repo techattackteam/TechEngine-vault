@@ -116,27 +116,6 @@ after the header before calling stb_image.
 **Trigger:** R1's sky card, the first code that draws the image, or the next change to
 `ImageDecoder`.
 
-### D10: Two spellings of one source re-import at the same time
-
-`ReimportCommand` refuses a second re-import of a source that has one running, because two
-jobs would give one new output two ids. It compares the source path as typed, so
-`assets/client/Kit.gltf` and another spelling of the same file, or `Kit.gltf` and `Kit.fbx`
-importing into one `Kit/` folder, are both let through. If the finishing command cannot be
-submitted, the path also stays in the list until the editor restarts. Logged in #203's
-description, not fixed.
-
-**Silent because both jobs succeed.** Neither job sees the other's ids, so a new output can
-end up with two ids, and nothing reports it.
-
-`apps/editor/src/edit/ReimportCommand.cpp:34-39` at `25c93a4b`; the list is
-`EditorApp::m_reimportsInFlight` (`apps/editor/src/EditorApp.hpp:51`).
-
-**Fix:** decided on 2026-11-21 (S11-D3): re-import is removed, `ReimportCommand` and the list
-with it ([[Content Pipeline - Design]] § *Creating from a source*). Delete this entry when that
-removal merges.
-
-**Trigger:** S11-T17, which removes re-import.
-
 ### D9: An editor destroyed during an import races the import's log lines
 
 `EditorApp::~EditorApp()` waits for running imports, but the destructor has already rewritten

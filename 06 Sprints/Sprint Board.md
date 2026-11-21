@@ -56,11 +56,14 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S11-T17** · Remove re-import · P2 · 🤖 Auto: the editor's re-import code, menu entry and tests go; `ResourceCache::reload` stays. Deletes Known Issue D10. First. PR #224, branch `S11-T17/Remove-re-import`. Built and tested on Windows debug (1443 passed); CI pending.
 
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T17** · Remove re-import · P2 · 🤖 Auto: #224 (`50d6f38`), **Nov 21**. The editor's re-import code, its menu entry and its tests are gone, `ResourceCache::reload` stays, and [[Known Issues]] D10 is deleted with the list it described. Unblocks S11-T18, the next card in Story G.
+	- **"The code only it calls" reached further than the clause named:** the four `ProjectError` codes only re-import returned, and `MaterialOutput::writeFile`, which only a re-import set to false. They were the last four codes, so no other value changed.
+	- **Kept for S11-T18:** the model import still accepts `AlreadyExists` on its `Textures`, `Materials` and `Meshes` folders (`ModelImporter.cpp`), which only a re-import needed. S11-T18 changes how the output folder is taken, so it decides whether the tolerance goes.
+	- *Retro:* diff coverage first failed at 84%, because folding the re-import branches re-indented error paths that no test reached. A sky test on an unmounted alias fixed it. The model's write-failure lines stay uncovered, because `FileAccess` cannot fail a write on purpose ([[Backlog]] § *platform*). The card ran in an attended session acting as the lane, so it was built and tested on Windows debug, not on the lane's Linux presets. The PR has no review conversation, so this entry comes from the card, the PR body and the session.
 - [x] **S11-T11** · The scene view's fly camera · P2 · 🤖 Claude · 2-3h: #222 (`a4c65ce`), **Nov 21**. `FlyCamera` in `edit/` takes a plain input record; the scene view rotates on a right drag, pans on a middle drag, zooms on the wheel, and F flies to the selection, with the pose sent through the view slot ([[Renderer - Design]] § *The scene view's fly camera as built*). Completes Story C.
 	- **Grown in the session (Miguel's calls, Nov 20-21):** F focus and distance-scaled movement, against the *Decided* row that left focus to T3 (row updated, orbit stays T3's). After his windowed checks the controls were redesigned twice: WASD and Q/E dropped, the wheel zooms instead of scaling the speed, a middle drag pans, and Shift and Ctrl scale every movement. Of the lane's six *Decisions I took*, the WASD speed model and the teleported cursor were reversed; #222's description still lists the first controls.
 	- *Retro:* 22 green tests missed two bugs Miguel's check found. ImGui drops every mouse position in the frame after `TeleportMousePos`, so rotation never moved, and main's event-driven loop stalled each ease between input events. The tests fed `FlyCamera` made-up deltas; `SceneViewPanelTests` now drives the real panel through headless ImGui, the drags lock the cursor through GLFW, and main asks for frames while the camera eases ([[Editor - Design]] § *Decided*).

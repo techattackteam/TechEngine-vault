@@ -71,6 +71,12 @@ groups are kept, because they show where future work will land.
 
 ## platform
 
+- #prio/low · **`FileAccess` cannot fail a write on purpose**, so no test reaches the import's
+  write-failure and folder-creation paths in `ModelImporter.cpp`. They count against diff
+  coverage on every card that touches them: S11-T17 (#224) re-indented five of them and passed
+  the gate only through a sky test on an unmounted alias. A test hook that makes the next write
+  or `createDirectory` fail would cover them. **Trigger:** the next card whose diff coverage
+  fails on those lines.
 - #prio/low · **`Platform.hpp` declares only `executablePath()`**: S11-T14 (#212) removed
   `platformVersion()`, so the header's name no longer says what it holds, and its `.cpp` is
   `engine/platform/src/ExecutablePath.cpp`. A rename to `ExecutablePath.hpp` touches five

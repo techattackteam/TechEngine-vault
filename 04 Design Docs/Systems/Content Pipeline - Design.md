@@ -27,16 +27,15 @@ image...*:
 - **S10-T20, the merged mesh:** `apps/editor/src/assets/ModelImporter.hpp`, `MeshImporter.hpp`
   and `apps/editor/src/edit/PlaceModelCommand.hpp`.
 - **S10-T21, reload and re-import:** `ResourceCache::reload`
-  (`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`),
-  `apps/editor/src/assets/ReimportMatcher.hpp`, which also reads the old outputs, and
-  `apps/editor/src/edit/ReimportCommand.hpp`.
+  (`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`). Its re-import half was
+  removed by S11-T17 (#224).
 - **S10-T22, the texture file:** `engine/core/include/TechEngine/core/texture/Texture.hpp`.
 - **S10-T23, the material file:** `engine/core/include/TechEngine/core/material/Material.hpp`,
   written up in [[Renderer - Design]] § *The material file*.
 - **S10-T24, materials and textures at import:** `apps/editor/src/assets/MaterialImporter.hpp`,
   `TextureImporter.hpp` (encoding and the mip chain) and `ImageDecoder.hpp` (DDS decoding).
-- **S10-T25, the sky image:** `apps/editor/src/assets/TextureImporter.hpp` (`importSky`,
-  `reimportSky` and the `RGB9E5` packing), `ImageDecoder.hpp` and
+- **S10-T25, the sky image:** `apps/editor/src/assets/TextureImporter.hpp` (`importSky` and
+  the `RGB9E5` packing), `ImageDecoder.hpp` and
   `apps/editor/src/edit/ImportSkyCommand.hpp`.
 
 The calls these cards took that no artifact had made are recorded in the *as built* subsections
@@ -45,7 +44,7 @@ accepted them as merged on 2026-11-14, with no reversal.
 
 The asset browser is designed (2026-11-21, S11-D3) against `a4c65ce`, and nothing of it is built.
 The same card removed re-import from the design: a create always writes a new copy
-(§ *The asset browser*). The re-import code is still on `master` until S11-T17 merges.
+(§ *The asset browser*). S11-T17 (#224, 2026-11-21) removed the re-import code.
 
 **ADRs:** [[ADR-025 - Content packs (.tepack and the runtime load path)]] §6 ·
 [[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §9 (amended 2026-11-09) ·
@@ -81,7 +80,7 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Placement waits for its meshes | It runs the cache's loading phase on the simulation thread, as an asset field set does. Loading over several frames waits for a measured stall ([[Backlog]] § *editor & tooling*). | S10-T16 (#196), 2026-11-10 |
 | Each create writes its own materials | A create never shares or overwrites another copy's materials or textures, so an edit to one copy's material reaches no other copy. This replaces "materials are created once", which only re-import needed. | Miguel, 2026-11-21 (S11-D3); § *Creating from a source* |
 | Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/glTF/Sponza.gltf` (moved from `assets/client/` by S11-T1, Nov 20, so the images sit in their own folder), skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
-| Before the asset browser, merge and re-import | The hardcoded import's mode (model or merged mesh) is a constant beside its path (`STARTUP_IMPORT_MODE`). Re-import goes through a *Re-import* menu entry with a typed path and a merged-mesh checkbox, like placement. | S10-D10, 2026-11-09; S10-T21 (#203) |
+| Before the asset browser, merge | The hardcoded import's mode (model or merged mesh) is a constant beside its path (`STARTUP_IMPORT_MODE`). | S10-D10, 2026-11-09; S10-T21 (#203) |
 | UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. Texture rows are stored top row first with no flip, and the renderer's geometry upload stores `1 - v`: see § *Texture rows and V*. | Miguel, 2026-11-11 (S10-T19); § *The import's streams*; S10-T24 (#203) |
 | The import's stream calls | Flat normals when a file has none, no tangents without UV0, the `extensionsUsed` scanner, the scale refusal and the two importer classes. | Miguel, 2026-11-11 (S10-T19, #201); § *The import's streams* |
 | TEMesh v2's own calls | Stream counts, unknown stream bits, empty slots and the loader's duplicates. | S10-T17 (#198), 2026-11-10; § *The mesh file* |
@@ -95,7 +94,7 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | The material type | S10-T23 (#203) defines `Material`, and `MeshRenderer.hpp` still only forward-declares it, so a slot holds an `AssetRef<Material>` without including the type. Both apps register the material loader, and the slot card's tests now load a real material. | Miguel, 2026-11-10 (S10-T18); S10-T23 (#203) |
 | Slots under multi-select | The inspector shows slot rows only when every selected renderer has the same slot names in the same order. Otherwise it shows one read-only line saying that the materials differ. A row count that differs is flagged on the component's row, because each row's own mixed flag compares only the rows that both entities have. | Miguel, 2026-11-10 (S10-T18); § *Materials per slot* |
 | The engine merges, not assimp | A merged mesh comes from the model walk: each node's world transform is baked into its meshes, triangles are flipped where the determinant is negative, and meshes are joined by material. `aiProcess_PreTransformVertices` is not used. | S10-D10, 2026-11-09; § *The merged mesh* |
-| Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. The sky and re-import add their own refusals (§ *The sky image as built*, § *Re-import as built*). | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
+| Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. The sky adds its own refusals (§ *The sky image as built*). | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
 | No re-import | A create always writes a new copy beside the earlier ones, so `Sponza.gltf` gives `Sponza/`, then `Sponza_1/`. A changed source is created again and placed again. The editor's re-import code is removed; `ResourceCache::reload` stays in `core` for the asset edit path. This replaces S10-D10's "re-import keeps every id" and "re-import reloads at once". | Miguel, 2026-11-21 (S11-D3); ADR-024 (amended 2026-11-21); § *Creating from a source* |
 | The asset browser lists the assets folders | Every file and folder under the three sides, listed by the simulation thread and published in the snapshot. No file watcher: *Refresh* re-lists. | S11-D3, 2026-11-21; § *What the browser lists* |
 | Two panes, breadcrumbs, a grid with a box | A folder tree and the open folder's tiles. Ctrl, Shift and box selection on the grid. | Miguel, 2026-11-21 (S11-D3); § *The browser panel* |
@@ -130,24 +129,20 @@ Placing a model walks the list once and creates an entity per node, with `Name`,
 root, with the transform the model stores for it. Entity ids are fresh; the model file is not
 referenced by the result.
 
-The meshes are shared, not copied: every placed copy points at the same mesh ids. So a
-re-import that changes a mesh's triangles shows in every copy, while a re-import that adds or
-removes nodes changes only the model file and the copies placed after it.
+The meshes are shared, not copied: every placed copy points at the same mesh ids.
 
 The editor's asset index learns the model's kind (`apps/editor/src/assets/AssetIndex.cpp:33-36`).
 
 ## The import block
 
-The block is how a re-import finds each file it wrote. It answers [[Resources - Design]]'s
-former open question, sidecar or registry: neither, the data lives inside each file.
+The block records what each file was made from. It answers [[Resources - Design]]'s former open
+question, sidecar or registry: neither, the data lives inside each file.
 
 - **Byte count:** a `u32` count of the bytes that follow, so a reader that does not need the
   block steps over it without parsing it. A count that does not match the fields is refused.
 - **Source path:** the source file, relative to the project.
 - **Source key:** what the file was made from inside the source: a `u32` index into assimp's
-  array and the name there. The root asset's key is empty, index 0 with no name. A re-import
-  matches each output to its old file by this key, so the file keeps its id and every
-  reference to it survives (§ *Re-import*).
+  array and the name there. The root asset's key is empty, index 0 with no name.
 - **Settings:** scale and up axis, where the up axis is Y or Z. Every block writes them, so
   the layout never branches; files other than the root asset carry the defaults, scale 1 and
   Y up.
@@ -169,8 +164,8 @@ calls came from the card, not the design above.
   triangle mesh places nothing visible), `ImportFolderExists`, and since S10-T19
   `SourceCompressed` and `InvalidImportScale`. A failed import leaves no folder behind. Of two
   imports of one source at once, only one creates the folder (`FileAccess::createDirectory`); the
-  other gets `ImportFolderExists` and removes nothing. The codes added since by S10-T21, S10-T24 and S10-T25 (#203) are named where they are used:
-  § *Re-import as built*, § *Texture inputs as built* and § *The sky image as built*.
+  other gets `ImportFolderExists` and removes nothing. The codes added since by S10-T24 and S10-T25 (#203) are named where they are used:
+  § *Texture inputs as built* and § *The sky image as built*.
 - **Every triangle mesh is written**, even one that no node uses. Points and lines are skipped.
 - **Mesh file names** keep ASCII letters, digits, space, `.`, `_` and `-`. A clash, compared
   without case because Windows treats `Part_A` and `part_a` as one file, gets `_1`, `_2`.
@@ -271,10 +266,10 @@ Built by S10-T17 (#198), in `engine/core/src/mesh/Mesh.cpp`. These calls came fr
 
 - **Filled from the mesh.** Placement copies each mesh's default materials, so placement loads
   the meshes first. Picking another mesh in the inspector does the same.
-- **Rebuilt by name** when the editor opens a scene, once its meshes are ready, and over the open
-  scene after a re-import (S10-T21, #203). The rebuild is not an undo step.
-- **A slot with no entry draws with the mesh's default.** That covers a scene nobody opened since
-  a re-import and then exported, which still holds its old list.
+- **Rebuilt by name** when the editor opens a scene, once its meshes are ready. The rebuild is not
+  an undo step.
+- **A slot with no entry draws with the mesh's default.** That covers a scene exported without
+  being opened since its mesh's slots changed, which still holds its old list.
 - **Editing a slot** in the inspector is an ordinary `AssetRef` edit (ADR-026 §4).
 
 As built (S10-T18, #199): `Writer`, `Reader`, `ReferenceVisitor` and `FieldVisitor` walk a vector
@@ -412,7 +407,6 @@ texture's format follows the input that samples it. Rows are stored top row firs
   sampler, for example `Textures/wall.png#normal#repeat-linear`, so a key never depends on which
   material the walk reached first. An embedded image uses its own name when assimp has one,
   otherwise `*<index>`. A packed ORM names both images: `ao.png+mr.png#orm#repeat-linear`.
-  Re-import matches it by name, as for meshes (§ *Re-import*).
 
 **Known costs.** Cut-outs thin out in distant mips (Sponza's plants), because keeping the alpha
 coverage needs the material's cutoff; that waits for a measured need. BC7 encoding at good
@@ -429,8 +423,8 @@ Built by S10-T24 (#203). The implementation took these calls:
   `RuntimeApp.cpp`, and the editor registers the loader in `EditorApp.cpp`.
 - **Planning is separate from writing.** `MaterialImporter::plan` turns the scene's materials
   into a `MaterialPlan` of material and texture outputs. `ModelImporter::assignOutputs` then
-  gives each a path and an id, a re-import swaps in the old ones (`keepExistingIds`), and
-  `MaterialImporter::write` writes every texture and then every material.
+  gives each a path and an id, and `MaterialImporter::write` writes every texture and then every
+  material.
 - **Only a used material gets a file.** A material is planned when a written mesh, or a merged
   part, names it. A model import still writes every triangle mesh.
 - **A texture that cannot be read is left out.** The import logs it, and the inputs that named
@@ -498,7 +492,7 @@ Also S10-T24 (#203), in `apps/editor/src/assets/TextureImporter.cpp`:
 The sky has no model file, so an *Import image* menu entry with a typed path imports it, like
 *Place model*, until the asset browser exists. It writes one `.tetexture` beside the source and
 named after it: `Sky.hdr` gives `Sky.tetexture`, with no folder, because there is one output.
-It is the root asset, so its key is empty and a re-import rewrites the same file.
+It is the root asset, so its key is empty.
 
 Its format is `RGB9E5`, a core GL format that the renderer samples as it is. A 4096×2048 sky with
 its mips takes about 43 MB, against about 11 MB in BC6H. BC6H joins as a format value if
@@ -525,9 +519,6 @@ Built by S10-T25 (#203), in `apps/editor/src/assets/TextureImporter.cpp`. The im
 - **The mips come from `TextureImporter::buildMipChain`** on the float image, so a sky whose side
   is odd loses a row or column at that level, as any texture does.
 - **The key is empty.** The import block holds only the source path and the default settings.
-- **Re-import rewrites the same file** under its id (`TextureImporter::reimportSky`). It returns
-  the id as rewritten, with no new record. It refuses with `ReimportTargetMissing` when the output
-  is missing or is not a texture.
 - **The menu entry is *Import image...*** (`PanelsManager::drawImportImagePopup`), through
   `EditorApp::importSky` and `ImportSkyCommand`, until the asset browser lands. Its dialog and
   menu entry have not been tried in a window.
@@ -535,8 +526,9 @@ Built by S10-T25 (#203), in `apps/editor/src/assets/TextureImporter.cpp`. The im
 ## The asset browser
 
 Designed by S11-D3 on 2026-11-21 against engine `a4c65ce`. It replaces the startup import and
-the File menu's *Place model...*, *Import image...* and *Re-import...* entries
-(`apps/editor/src/ui/PanelsManager.cpp:73-84`, `apps/editor/src/EditorApp.cpp:523`). Baseline:
+the File menu's *Place model...* and *Import image...* entries
+(`apps/editor/src/ui/PanelsManager.cpp:69-75`, `apps/editor/src/EditorApp.cpp:508`). S11-T17
+(#224) already removed *Re-import...*. Baseline:
 Unity's Project window and Unreal's Content Browser both have a folder tree beside a grid, a
 path bar, box selection and drags into the scene and onto fields (from memory). Both also keep
 re-import, which this design drops (§ *Creating from a source*).
@@ -673,73 +665,19 @@ Miguel's list from 2026-11-21, not scheduled. Each line says what it needs first
 - **Moving files** by dropping them on a folder or a tree node.
 - **Opening a scene** with a double-click, which needs more than one scene (T8).
 
-## Re-import
+## The reload
 
-> **Removed by Miguel on 2026-11-21 (S11-D3)** and replaced by § *Creating from a source*. This
-> section and § *Re-import as built* describe code still on `master`; prune both when S11-T17,
-> which removes it, merges. § *The reload as built* stays, because `ResourceCache::reload` stays.
-
-By hand only ([[Content Pipeline - Brief]]), and refused unless the editor is Stopped.
-
-1. **Read the folder.** Every file under the import folder gives its kind, source key and id.
-2. **Match each output** against files of its kind: by name first; among equal names, the index
-   decides; an empty name matches by index alone. Matching by index first would hand every id to
-   the wrong output when a tool reorders its arrays, with no error. assimp itself reorders: its
-   glTF reader lists meshes in the order the nodes first name them, not in the file's order
-   (found by S10-T15's two-mesh fixture).
-3. **Write.** A matched output keeps its id; a new one gets a fresh id. A matched material is
-   never rewritten. An old file with no match stays and is logged, since E2's browser cannot
-   delete and a scene that names it must still open.
-4. **Settings** come from the root asset's import block. Importing the other way switches the
-   root asset between `.temodel` and `.temesh` in the same folder; the old root stays and is
-   logged, and `Materials/` keeps its edits.
-5. **Reload.** The job sends one reload command naming every rewritten id. The simulation thread
-   runs it as a loading phase through `ResourceCache::reload`: each loaded payload is replaced
-   behind its handle, new dependencies are acquired before the old ones are released, and render
-   gets a new upload under its fence (ADR-028 §4). The slot rebuild then runs over the open
-   scene.
-
-`ResourceCache::reload` is built (S10-T21, #203;
-`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`).
-
-### Re-import as built
-
-Built by S10-T21 (#203). The implementation took these calls:
-
-- **`ReimportMatcher::match` runs two passes** over all outputs. The first pairs a name and an
-  index that both agree. The second gives an output the lowest remaining old index with its name.
-  An empty name is matched only by the first pass, so it never takes a named file.
-- **`ModelImporter::reimportFile` reads the root asset's settings** and ignores the request's.
-  `listImportedFiles` in `ReimportMatcher.hpp` reads only each file's header, id and import block,
-  and skips with a log line any file that is not an imported one.
-- **The refusals are four `ProjectError` codes.** `ReimportTargetMissing` is a folder that does
-  not exist, `ReimportRootMissing` is a folder with neither root asset, and `EditorNotStopped`
-  stops the whole re-import. A stored scale that is not valid is still `InvalidImportScale`.
-- **A second re-import of a source is refused while one runs**, as `ReimportInFlight`, because
-  the two would give one new output two ids. `EditorApp::m_reimportsInFlight` lives on the
-  simulation thread, and the job's last command takes the source out again:
-  `ReloadImportedAssetsCommand` on success, `FinishReimportCommand` on failure. The key is the
-  typed source path, so two spellings of one source are not caught (D10 in [[Known Issues]]).
-- **The result splits in two.** `ModelImportResult::records` holds only files with a new id,
-  and `rewritten` holds the ids that were written again. A matched material is in neither.
-- **A new output avoids the names already in the folder** (`ExistingFolder::taken*Names`), so it
-  never overwrites an old file that matched nothing. Such an old file is logged
-  (`ModelImporter::finishReimport`).
-- **`ReloadImportedAssetsCommand` indexes the new records first**, so the reload's loaders find
-  the new materials and textures. It then reloads, and then rebuilds the slots if a scene is open.
-- **The Stopped check cannot fail yet.** `EditSession::getPlayState` is always Stopped until
-  Play and Stop set it (`TODO(E11)` in `EditSession.hpp`), and the command checks it twice: when
-  it starts and again before the reload.
-- **A `.hdr` path re-imports the sky** and ignores the mode. Any other path takes its side from
-  `TextureImporter::sideOf`. The *Re-import...* dialog has a merged-mesh checkbox
-  (`PanelsManager::drawReimportPopup`).
+`ResourceCache::reload` replaces each loaded payload behind its handle, acquires the new
+dependencies before it releases the old ones, and sends render a new upload. Nothing in the editor
+calls it since S11-T17 (#224) removed re-import; it stays for the asset edit path
+(§ *Decided*, "No re-import").
 
 ### The reload as built
 
-Also S10-T21 (#203), in `engine/core/src/resources/ResourceCache.cpp`:
+Built by S10-T21 (#203), in `engine/core/src/resources/ResourceCache.cpp`:
 
 - **Only a Ready or Failed entry that is not loading is reloaded.** Any other id is skipped
-  without an error, so the caller can pass every rewritten id.
+  without an error, so the caller can pass every id it wrote.
 - **A failed reload keeps the old payload** and the old dependencies, logs a warning, and
   returns the first error. A file whose type changed is refused as `BadMagic`.
 - **A reloaded entry keeps only its loader's dependencies.** One added with `addDependency` is
@@ -747,8 +685,9 @@ Also S10-T21 (#203), in `engine/core/src/resources/ResourceCache.cpp`:
 - **Load results travel in the completion.** A task no longer writes its entry, and the owner
   installs the payload when it drains (`publishCompletion`). That also changes a first load, and
   is what lets a failed reload leave the entry alone.
-- **The old payload is destroyed at once**, because nothing on render holds one yet. Step 5's
-  upload under render's fence is R1's to add.
+- **The old payload was destroyed at once**, because nothing on render held one then. Since
+  S11-T6 (#213) it waits for its upload's slot and token ([[Renderer - Design]] § *Uploads and
+  the fence*).
 
 ## Open questions
 
