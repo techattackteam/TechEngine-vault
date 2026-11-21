@@ -97,7 +97,7 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Refused at import | Quantized and meshopt-compressed glTF, as Draco already is, because assimp imports them as garbage positions. A scale that is not a finite number above zero, since S10-T19. The sky adds its own refusals (§ *The sky image as built*). | S10-D10, 2026-11-09; [[Content Pipeline - Mesh Import Report]] §5; S10-T19 (#201), 2026-11-11 |
 | No re-import | A create always writes a new copy beside the earlier ones, so `Sponza.gltf` gives `Sponza/`, then `Sponza_1/`. A changed source is created again and placed again. The editor's re-import code is removed; `ResourceCache::reload` stays in `core` for the asset edit path. This replaces S10-D10's "re-import keeps every id" and "re-import reloads at once". | Miguel, 2026-11-21 (S11-D3); ADR-024 (amended 2026-11-21); § *Creating from a source* |
 | The asset browser lists the assets folders | Every file and folder under the three sides, listed by the simulation thread in the asset index's own walk and published in the snapshot. No file watcher: *Refresh* re-lists. Only an engine file warns when it cannot be read. | S11-D3, 2026-11-21; Miguel, 2026-11-21 (S11-T19, #225); § *What the browser lists* |
-| Two panes, breadcrumbs, a grid with a box | A folder tree and the open folder's tiles. Ctrl, Shift and box selection on the grid. | Miguel, 2026-11-21 (S11-D3); § *The browser panel* |
+| Two panes, breadcrumbs, a grid with a box | A folder tree and the open folder's tiles, each with a drawn badge for its kind. Ctrl, Shift and box selection on the grid. The open folder is remembered in the layout, and a folder that is gone opens its closest listed ancestor. | Miguel, 2026-11-21 (S11-D3); the badge and the open folder 2026-11-21 (S11-T20); § *The browser panel* |
 | The browser drags to three targets | The scene view and the hierarchy place a model or mesh; an inspector asset field takes an asset of its type. | Miguel, 2026-11-21 (S11-D3); § *Dragging from the browser* |
 | Delete is permanent, after a warning | The warning lists every file that names the asset. A reference to an asset no file holds loads as absent, with a warning. | Miguel, 2026-11-21 (S11-D3); § *Deleting an asset*; [[Resources - Design]] § *Decided* |
 | The texture file | A `.tetexture` holds one 2D image in its GPU format, with every mip, its wrap and its filter. No ADR: a wrong format costs a version bump and a re-import. | S10-D11, 2026-11-10; § *The texture file* |
@@ -581,8 +581,11 @@ these calls:
 ### The browser panel
 
 - **Two panes.** The left pane is the folder tree, folders only. The right pane is the open
-  folder as a grid of tiles, each an icon for its kind and the file name. Folders come first, then
+  folder as a grid of tiles, each a badge for its kind and the file name. Folders come first, then
   files, each sorted by name without case.
+- **The badge is drawn**, with ImGui's draw list: a folder shape, or a colored box with a short
+  label such as MODEL, MESH or TEX. The editor has no icon font or images, so icons and thumbnails
+  wait (§ *Future features*). Miguel, Nov 21 (S11-T20).
 - **Breadcrumbs** above the grid name each folder from the side down to the open one. A click on
   one opens that folder.
 - **A click on a tree node opens its folder, and so does a double-click on a folder tile.** A
@@ -590,12 +593,41 @@ these calls:
 - **The default layout** docks the browser at the bottom, as a tab beside the console.
 - **The open folder and the selection belong to main.** They change nothing in the scene, so
   they are not commands.
+- **The open folder is remembered between launches.** An ImGui settings handler saves it in
+  `layout.ini`, so it is read and written with the layout. The first launch, and a remembered
+  folder under no side, open `assets/client`. Miguel, Nov 21 (S11-T20).
+- **A folder that is gone** after a refresh, or since the last launch, opens its closest ancestor
+  that is still listed, down to its side folder. Selected paths that are gone are dropped. The
+  check waits for the first listing, so a remembered folder is not lost to an empty snapshot.
+  Miguel, Nov 21 (S11-T20).
+- **The index publishes the side folders.** The listing leaves them out, so the snapshot carries
+  their paths beside it, for the tree's top level and the breadcrumbs of an empty side. Miguel,
+  Nov 21 (S11-T20).
 - **Selection** is ImGui's `BeginMultiSelect` over the tiles with
   `ImGuiMultiSelectFlags_BoxSelect2d`: Ctrl and Shift clicks and a box drag. The hierarchy has no
   box ([[Editor - Design]] § *Decided*); the grid has one because its tiles sit in two
   dimensions. The selection holds paths and is cleared when the open folder changes. A
   right-click keeps ImGui's rule, as in the hierarchy: an unselected tile is selected alone, a
   selected one keeps the set.
+
+### The browser panel as built
+
+Built by S11-T20 (#227), in `apps/editor/src/ui/panels/AssetBrowserPanel.cpp`, with the folder
+queries on the snapshot (`apps/editor/src/edit/EditorSnapshot.cpp:201`, `:241`, `:265`). The
+implementation took these calls:
+
+- **The layout and the look are v1's `ContentBrowserPanel`** (tag `v1-reference`), at Miguel's
+  call: a resizable two-column table with a 250 px tree, and 64 px tiles with up to three wrapped
+  lines of name, cut with "..." and a tooltip. The highlight takes the editor theme's colors.
+- **The grid is its own child window**, because multi-select scopes its box and its click on
+  empty space to the current window. A double-click opens its folder only after
+  `EndMultiSelect` (`AssetBrowserPanel.cpp:225`).
+- **A folder's children are found by their parent path.** The listing is sorted byte by byte, so
+  `Sponza-old` sorts between `Sponza` and `Sponza/Meshes`, and a subtree is not one run.
+- **The open folder is checked only on a new listing revision** (`:115`). Opening the folder that
+  is already open keeps the selection, and a change marks the layout for saving.
+- **Every frame measures each tile's name and scans the listing once per tree node.** Unmeasured
+  ([[Backlog]] § *editor & tooling*).
 
 ### The context menu
 
@@ -677,6 +709,8 @@ Miguel's list from 2026-11-21, not scheduled. Each line says what it needs first
 - **Dropping files from Explorer** into the open folder, which copies them in; creating stays a
   menu entry. GLFW's drop callback needs a new window event in `platform` that reaches main. It
   cannot travel with input, because the editor detaches the `InputBuffer` while Stopped.
+- **Icons.** An icon font or icon images in place of the drawn badges. Either one is a new
+  pinned dependency, linked by the editor alone, like the others in § *Decided*.
 - **Texture thumbnails.** A job decodes a small mip of the `.tetexture` with bcdec, which the
   editor already links, and hands ImGui an `ImTextureData` through `RegisterUserTexture`
   (experimental in ImGui 1.93). The bridge already carries ImGui's own textures to render

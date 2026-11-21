@@ -41,7 +41,6 @@ kanban-plugin: board
 ## Story G: The asset browser (carries freely)
 
 - [ ] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h: `Sponza_1/` and `Sky_1.tetexture` when the name is taken. After S11-T17.
-- [ ] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h: folder tree, breadcrumbs, grid, double-click, Ctrl, Shift and box selection. After S11-T19.
 - [ ] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h: create, place and refresh; the File menu entries and the startup import go. After S11-T18 and S11-T20.
 - [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
 - [ ] **S11-T23** · A missing asset loads as absent · P2 · 🟠 Moderate · 2-3h: in a scene, a material and a model, with a warning. Independent; a 🤖 Claude candidate.
@@ -57,6 +56,12 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h: #227 (`cdf9ef3`), **Nov 21**. The editor docks an *Asset Browser* beside the console: a folder tree, breadcrumbs and a grid of tiles with Ctrl, Shift and box selection, where a double-click opens a folder ([[Content Pipeline - Design]] § *The browser panel as built*). Unblocks S11-T22, and S11-T21 once S11-T18 lands; Story G goes on.
+	- **"An icon for its kind" had no referent**, because the editor has no icon font or icon images. At Miguel's call each tile draws a badge, and icons joined § *Future features*. He also took three calls the note did not make: the open folder is remembered in `layout.ini`, a folder that is gone opens its closest listed ancestor, and the index publishes the side folders that the listing leaves out.
+	- **The layout and the visuals came from v1's `ContentBrowserPanel`**, at Miguel's call mid-card. v1's icon images, its hand-written selection and box, and its file watcher stayed out, because the design replaced them.
+	- **The review in the session caught three defects, all fixed before the merge:** the browser waited on the scene's edit revision, so it stayed empty until the first scene edit; the grid listed the open folder itself instead of its children; and a folder that was gone was never resolved. Miguel's windowed check then found the first row's highlight cut at the top, because v1 drew it above the cell, where the table clips.
+	- *Retro:* as with #225, #227 has no description and its title lost the card ID (`S11 t20/the browser panel`), and the review ran in the session, so the PR records none of the above. Claude wrote the v1 port, the badge, the selection and the review fixes at Miguel's request on this 🟢 card.
 
 - [x] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h: #225 (`371e650`), **Nov 21**. `AssetIndex::build` lists the three sides in the same walk that indexes them, the editor snapshot carries the listing with its revision, and `RefreshAssetsCommand` lists again after every create and on `EditorCommands::refreshAssets` ([[Content Pipeline - Design]] § *What the browser lists as built*). Unblocks S11-T20; Story G goes on.
 	- **"After each delete" had no referent**, because delete is S11-T24, which will submit the same refresh. The design's `AssetIndex::remove` has no job if a delete lists again, so S11-T24 settles which one stays.

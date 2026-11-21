@@ -475,6 +475,12 @@ groups are kept, because they show where future work will land.
   frames. Unmeasured. The revision already says when the listing changed, so main could keep its
   own copy and the snapshot could carry it only on a new revision. **Trigger:** a profile of an
   inspector drag that shows the copy, or a project with thousands of files.
+- #prio/low · **The asset browser redoes its layout work every frame**: since S11-T20 (#227, Nov
+  21), each visible tile wraps its name by measuring the text again and again
+  (`AssetBrowserPanel::wrapLabel`), and each drawn tree node scans the whole listing for its
+  children (`EditorSnapshot::collectFolderContents`). Both only change on a new listing revision,
+  so they could be kept with `m_contents`. Unmeasured. **Trigger:** a frame-time profile with the
+  browser open on a large folder, or a project with thousands of files.
 - #prio/medium · **The editor has no shortcut system**: each shortcut is a hand-written ImGui check
   with its own rule for when it fires. Ctrl+S uses `ImGui::Shortcut` with a global route
   (`PanelsManager::handleShortcuts`), Delete and F2 need the hierarchy focused and skip typing by

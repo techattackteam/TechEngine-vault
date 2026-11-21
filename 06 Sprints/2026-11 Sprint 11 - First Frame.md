@@ -293,7 +293,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   in the snapshot with a revision, and lists again after each create, each delete and a refresh
   command, rebuilding the asset index with it. The index skips source and image extensions
   without a warning. Tests in `edit/`.
-- [ ] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h ·
+- [x] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h ·
   done: the folder tree, breadcrumbs and the grid, with double-click to open a folder and Ctrl,
   Shift and box selection; the default layout docks it beside the console. Miguel's windowed
   check. After S11-T19.
