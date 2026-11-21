@@ -3,6 +3,10 @@
 > Living design doc. Thread ownership is Accepted under ADR-018. The time model below
 > is the ADR-019 target, Accepted by Miguel Sep 10. The current triangle/input stage shipped
 > Sep 11 as `7d2546fc` (#81); see [[2026-09-11 Threaded Engine Validation]] for evidence.
+> Since S11-T4 (#210, Nov 16), a pooled frame packet that moves between threads replaces the
+> copied render snapshot ([[ADR-028 - Render device seam and frame packets]] §3). The timing
+> rules below are unchanged; the packet's contents are in [[Renderer - Design]] § *The frame
+> packet*.
 
 **Module:** `app` coordinates simulation; `client` owns presentation.
 **ADRs:** [[ADR-019 - Fixed simulation ticks, render interpolation and shared clock]] ·
@@ -18,9 +22,9 @@
 | Main, simulation and render have independent loops; only simulation mutates live Scene state. | ADR-018 §1 §2, Accepted |
 | Keep fixed ticks, catch-up, the configurable 60 Hz default and 0.25 s clamp. | ADR-007 §5; ADR-019 §1 preserves these |
 | Replace the simulation's variable tail with a publication hook taking no delta or alpha. | ADR-019 §1, Accepted; Miguel's Sep 10 constraint |
-| Ordered input is consumed before each Tick and reaches selected system input handlers during that Tick; renderer-specific preparation, drawing and presentation consume snapshots. Vsync can be disabled. | ADR-019 §2; ADR-020 §1, Sep 26 amendment; [[Input - Design]] |
+| Ordered input is consumed before each Tick and reaches selected system input handlers during that Tick; renderer-specific preparation, drawing and presentation consume frame packets. Vsync can be disabled. | ADR-019 §2; ADR-020 §1, Sep 26 amendment; [[Input - Design]]; the packet ADR-028 §3 (S11-T4, #210) |
 | Fixed context carries tick, fixed step and role; presentation context carries frame delta and per-view alpha. | ADR-019 §2 §3, Accepted |
-| Share the EngineContext Clock; render retains two received snapshots and computes alpha. | ADR-019 §3, Accepted |
+| Share the EngineContext Clock; render retains two received frame packets and computes alpha. | ADR-019 §3, Accepted; packets since ADR-028 §3 (S11-T4, #210) |
 | Gameplay scripts have only fixed updates; presentation scripting needs a separate restricted API. | ADR-019 §2 and revised Proposed ADR-010 §2-4 |
 | Main fans out presentation input without draining simulation ingress. | ADR-019 §4, Accepted |
 | Primary simulation advances and pushes the diagnostic stamp once per completed tick. | ADR-019 §5, Accepted; ADR-011 §9 push retained |
@@ -54,7 +58,7 @@ flowchart LR
     subgraph Sim["Simulation thread · fixed tick"]
         direction TB
         S0["applyCommands<br/>the admitted batch"]
-        S0a["publishEdits(scene)<br/>if a batch applied"]
+        S0a["publishEdits(scene), then publishFrame<br/>if a batch applied"]
         S0b{"app ticks?"}
         S0c["waitForCommands<br/>(Stopped editor)"]
         S1["Sample Clock<br/>accumulate elapsed"]
@@ -62,7 +66,7 @@ flowchart LR
         S3["Drain InputBuffer batch"]
         S4["executeSimulationTick<br/>scheduled systems + barrier"]
         S5["Advance diagnostic counter"]
-        S6["publishSnapshot<br/>→ SnapshotMailbox"]
+        S6["publishFrame<br/>→ PacketMailbox"]
         S7["Publish TPS to TimingMetrics"]
         S8["Wait for next tick deadline"]
         S0 --> S0a --> S0b
@@ -74,8 +78,8 @@ flowchart LR
 
     subgraph Render["Render thread · variable frame"]
         direction TB
-        R1["Acquire from SnapshotMailbox"]
-        R2["Update SnapshotHistory<br/>(two-snapshot pair)"]
+        R1["Take the packet from PacketMailbox"]
+        R2["Update PacketHistory<br/>(two-packet pair)"]
         R3["Read presentationState"]
         R4["Compute alpha · interpolate"]
         R5["Camera · animation · cull"]
@@ -87,7 +91,8 @@ flowchart LR
 
     M3 -.->|"InputBuffer<br/>ordered · bounded"| S3
     M3 -.->|"InputBuffer<br/>latest state"| R3
-    S6 -.->|"SnapshotMailbox<br/>newest wins"| R1
+    S6 -.->|"PacketMailbox<br/>newest wins · moved"| R1
+    S0a -.->|"PacketMailbox"| R1
     S7 -.-> M4
     M5 -.->|"CommandQueue<br/>bounded · wakes sim"| S0
     S0a -.->|"EditorSnapshot<br/>newest wins"| M5
@@ -107,8 +112,11 @@ ScriptSystem remains Proposed.
 The captured input batch reaches interested systems at their scheduled slots in that
 same Tick. It does not use the next-Tick Scene event path shown below; see
 [[Input - Design]].
-The publication hook extracts complete state once after catch-up, only if ticks advanced.
-Publish an initial complete state before readiness; no render phase runs on a headless server.
+The publication hook extracts complete state once after catch-up, only if ticks advanced. It
+also runs after each applied command batch and after the startup load, so a Stopped editor's
+edits and its loaded scene reach render without a tick (`engine/app/src/SimulationThread.cpp:205`,
+`:222`). Publish an initial complete state before readiness; no render phase runs on a headless
+server.
 
 Presentation has its own ordered stages and frame delta. It reads no live Scene, even
 through an SDK façade or a script instance. Render-only camera and animation state live in
@@ -116,7 +124,7 @@ client. Root motion, gameplay animation events and collision transforms are fixe
 Transform changes needed by gameplay must settle before publication; render finalization
 only prepares visual transforms. A renderer remains a replaceable default on its own lane.
 
-Suggested function vocabulary is `prepareFrame()` (acquire snapshots/input, interpolate,
+Suggested function vocabulary is `prepareFrame()` (acquire packets/input, interpolate,
 camera, animation and culling), `renderFrame()` (submit drawing), then `presentFrame()`
 (swap and frame accounting). These are renderer operations, not renamed simulation hooks;
 the old phases need no one-to-one replacement. Exact API layout remains implementation work.
@@ -142,7 +150,7 @@ flowchart TB
 ```
 
 EventStream is single-thread staged publishing (ADR-014). It is not a cross-thread
-mechanism; InputBuffer, SnapshotMailbox and TimingMetrics handle those. Systems within
+mechanism; InputBuffer, PacketMailbox and TimingMetrics handle those. Systems within
 a Tick may publish events, but no later level in that Tick sees them. They become
 visible only at the barrier and are delivered in the next Tick. This shipped in S7-T7
 (#100); [[Events - Design]] § *Scheduled Tick delivery* has the calls.
@@ -150,19 +158,19 @@ visible only at the barrier and are delivered in the next Tick. This shipped in 
 ## Tick timestamps
 
 The runner owns a mapping from simulation tick boundaries to the shared monotonic Clock.
-At normal speed, successive boundaries are separated by the fixed step. Stamp a snapshot
+At normal speed, successive boundaries are separated by the fixed step. Stamp a packet
 with the boundary represented by its completed tick, not with the end of extraction.
 For example, two ticks executed after a late wake still have boundary times one step apart.
-Tick zero's initial snapshot establishes the mapping's origin.
+Tick zero's initial packet establishes the mapping's origin.
 
 The mapping is per simulation. Sampling the Clock does not mutate it. The synchronous
 advance seam takes synthetic elapsed time and an explicit test origin; interpolation can
-be tested with synthetic snapshot times and render-now values without sleeping or faking Clock.
+be tested with synthetic packet times and render-now values without sleeping or faking Clock.
 Use double durations or Clock time points for arithmetic, not long-running float timestamps.
 
 If the measured interval exceeds 0.25 s, keep the existing clamp: discard the excess elapsed
 wall time without jumping tick numbers. Move the boundary mapping forward by the discarded
-amount and increment a timeline generation. Snapshots from different generations must not
+amount and increment a timeline generation. Packets from different generations must not
 be blended. A scene restart or seek also resets history; pause/time scaling needs an explicit
 mapping policy before implementation. Neither belongs on Clock itself.
 
@@ -170,21 +178,21 @@ TPS counts completed ticks over actual unclamped elapsed time. Update/publicatio
 are not ticks: one call may represent several catch-up ticks. A clamp-sized stall can reduce
 one TPS sample; ordinary jitter is recovered, while sustained overload reduces long-term TPS.
 
-## Snapshot acquisition and alpha
+## Packet acquisition and alpha
 
-The transfer has one shared slot. The two interpolation snapshots belong privately to
-render; there is no shared double buffer or producer reuse of consumer-owned history.
-Simulation constructs a complete value, briefly locks to copy it into the mailbox, then
-continues. Render briefly locks to copy it out and releases the lock before updating its
-history or drawing. On a newer snapshot, old current becomes previous and received becomes
-current. Neither side holds the transfer lock during simulation work or drawing.
+The transfer has one shared slot, and packets move through it from a pool of four; nothing is
+copied ([[Renderer - Design]] § *Packet delivery*). The two interpolation packets belong
+privately to render. Simulation acquires a free packet, fills it, and moves it into the slot,
+which returns an unread packet to the pool. Render hands the slot's packet to its history
+under the slot's lock, so it never holds a third packet, then draws outside the lock. Neither
+side holds the lock during simulation work or drawing.
 
-The mailbox still holds one complete value. Render copies it under a short lock and owns
-its history outside that lock. It replaces its pair only on a newer tick in the same timeline;
-re-reading the same publication does not shift history. A new timeline clears the pair.
-A generation is ordered within this handoff; stale generations are ignored.
+On a newer tick in the same timeline, old current becomes previous and the received packet
+becomes current. On the same tick, a newer sequence replaces current in place, which is how an
+edit reaches render without a tick (`engine/client/src/render/PacketHistory.cpp:33`). Anything
+older is dropped. A new timeline clears the pair; stale generations are ignored.
 
-Let A and B be the last two acquired compatible snapshots, with boundary times tA < tB.
+Let A and B be the last two acquired compatible packets, with boundary times tA < tB.
 At render time now, use presentationTime = now - fixedStep initially, then compute:
 
 `alpha = clamp((presentationTime - tA) / (tB - tA), 0, 1)`
@@ -195,12 +203,12 @@ This local one-step delay is independent of ADR-007 §3's remote-entity interpol
 
 | Condition | Presentation behavior |
 |---|---|
-| No initial snapshot yet | Draw the startup fallback; never read uninitialized world data. |
-| Only one snapshot, or a timeline reset | Draw that snapshot until a compatible pair arrives. |
+| No initial packet yet | Draw the startup fallback; never read uninitialized world data. |
+| Only one packet, or a timeline reset | Draw that packet until a compatible pair arrives. |
 | Presentation time is before A | Hold A (alpha 0). |
 | Presentation time is between A and B | Interpolate compatible visual fields. |
 | Presentation time reaches or exceeds B | Hold B (alpha 1); keep camera/UI work running. |
-| Equal or reversed timestamps in an otherwise newer snapshot | Treat as a discontinuity and reset history; report invalid metadata. |
+| Equal or reversed timestamps in an otherwise newer packet | Treat as a discontinuity and reset history; report invalid metadata. |
 | Entity spawn, despawn, teleport or incompatible pose history | Use explicit presence/discontinuity rules; never blend unrelated identities. |
 
 Initial one-step delay can fail to bracket after skipped publications or long stalls.
@@ -209,11 +217,13 @@ extrapolation. A larger history, guaranteed adjacent pair or adaptive delay need
 
 ### Payload and lifetime
 
-Snapshots contain tick/time/generation, presentation values, stable entity identity when
-entities exist, and the input sequence reflected in controlled-view state. They contain no
-pointers into mutable Scene storage. Asset/resource handles need a lifetime protocol before
-richer payloads ship; the current clear-color/triangle value needs none of that machinery.
-These are local render snapshots, not a replacement for replication's network snapshot ring.
+A packet holds tick/time/generation and a sequence, the held input, one instance per
+`MeshRenderer` with its `Entity`, world matrix and handles, and the main camera
+([[Renderer - Design]] § *The frame packet*). It holds no pointers into mutable Scene storage.
+Resource handles have their lifetime protocol: render keeps its own GPU copies, fed by ordered
+uploads under render's fence ([[Renderer - Design]] § *Uploads and the fence*). Dropping a copy
+once nothing names it is S11-T16's ([[Known Issues]] D14).
+These are local render packets, not a replacement for replication's network snapshot ring.
 
 ## Presentation input
 
@@ -222,7 +232,7 @@ also publishes copied presentation state with capture sequence/time and a focus 
 Render reads the latter once per frame. Use cumulative look motion within each generation,
 not a replaceable last mouse delta: replacing deltas loses motion when render skips reads.
 
-Snapshot view data includes the cumulative look baseline/sequence consumed by simulation.
+Packet view data includes the cumulative look baseline/sequence consumed by simulation.
 Render applies only the motion beyond that baseline to the newest controlled-view orientation;
 do not add a newer residual to an older interpolated orientation. World position can still
 interpolate. Both paths share look mapping; focus/capture resets establish a fresh baseline.
@@ -235,7 +245,7 @@ A blocked host cannot supply new physical input to either path.
 |---|---|---|
 | Main to simulation | Input transitions and editor/CLI commands | Separate bounded ordered queues; preserve accepted order and explicit overflow/admission policy. |
 | Main to render | Latest cumulative mouse-look/focus state and framebuffer size | Latest-value publication; replacing older state is allowed. |
-| Simulation to render | Complete snapshot, tick and tick time | Single-slot mailbox, copied into render's private two-snapshot history. |
+| Simulation to render | Complete frame packet, tick, tick time and sequence | Single-slot mailbox; the packet moves from a pool of four into render's private two-packet history. |
 | Simulation/render to main | Timing samples and current status | Coherent copied latest values; timing samples carry their capture times. |
 | Simulation to main | Individual command results | Bounded ordered delivery, correlated with accepted commands; never overwrite an unread result with a newer one. |
 
@@ -246,8 +256,9 @@ This extends the existing explicit admission/cancellation contract; it does not 
 unbounded queue. Raw-input recovery remains in [[Simulation Thread - Design]].
 
 Short transfer locks permit brief contention, not waiting for another thread's frame or
-tick to finish. Copy cost should be measured before changing the small-value mailbox into
-a shared buffer ownership protocol. Each transfer has its own synchronization boundary.
+tick to finish. The render transfer stopped copying in S11-T4 (#210): a packet holds 64
+bytes of matrix per instance, which is about 64 MB in E2b's stress scene, so it moves instead.
+Each transfer has its own synchronization boundary.
 
 ## Main thread waiting and diagnostics
 

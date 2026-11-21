@@ -17,17 +17,17 @@ was Accepted during S5-T14 review and implemented by #81. ADR-018 ownership rema
 |---|---|
 | Main owns window/editor or server CLI/control interaction; simulation has a dedicated thread. | ADR-018 §1 |
 | Editor edits and CLI commands enter simulation as data; published responses travel back. | ADR-018 §2 |
-| Rendering takes the newest completed snapshot, or redraws its current one if none is ready; simulation never waits for presentation. | ADR-018 §2; Miguel's Sep 7 choices |
+| Rendering takes the newest completed frame packet, or redraws its current one if none is ready; simulation never waits for presentation. | ADR-018 §2; Miguel's Sep 7 choices; packets since ADR-028 §3 (S11-T4, #210) |
 | `app` owns both loops and their lifecycle; only one driver advances simulation. | ADR-018 §3 |
 | `JobSystem` provides dedicated-thread creation and registration alongside batch jobs; subsystem owners retain stop/join responsibility. | ADR-018 §4 |
 | Input is consumed before each fixed tick; selected systems receive that Tick's input notifications, while stalls retain held state and overflow explicitly resynchronizes it. | [[Input - Design]]; Input and control handoffs below |
-| Keep the value mailbox and publish once after an iteration that advances ticks. | Render handoff and pacing below; Sep 8 |
+| One mailbox slot; publish after an iteration that advances ticks, after an applied command batch and after the startup load. | Render handoff and pacing below; Sep 8; the packet and the extra publish points ADR-028 §3 (S11-T4, #210) |
 | Main and simulation hooks have separate thread affinity and staged failure cleanup. | Lifecycle below; ADR-018 §3 |
 | `App::m_scene` is private: a subclass reaches the scene only as the startup load's parameter, so no main-thread hook can name it. | Lifecycle below; S8-T18 (#146) |
 | `RuntimeApp` and `EditorApp` derive from `ClientApp` (`apps/clientapp/`), which owns the client and implements its hooks. It is a static lib under `apps/`, not an engine module, so `app` stays presentation-agnostic and a runtime-server never links it. | ADR-006 §1; S8-T19 (#151) |
 | Simulation executes fixed ticks and a no-delta publication hook; render owns variable presentation work. | ADR-019 §1 §2, Accepted |
 | One EngineContext Clock supplies all lanes; tick state stays per simulation. | ADR-019 §3, Accepted |
-| Render keeps two received snapshots with tick boundary times; mailbox remains single-slot. | ADR-019 §3, Accepted |
+| Render keeps two received frame packets with tick boundary times; mailbox remains single-slot. | ADR-019 §3, Accepted; packets since S11-T4 (#210) |
 | Main fans out presentation input and blocks on events; stop wakes it. | ADR-019 §4 §5, Accepted |
 
 Current accepted topology: [[Concurrency - Design]]. The fixed-step accumulator and four
@@ -64,10 +64,10 @@ flowchart TB
     end
     E --> A & W
     A & W --> J
-    D["Value mailbox under a short mutex<br/>Newest complete wins"]
+    D["Packet mailbox under a short mutex<br/>Newest complete wins · packets move"]
     F -->|"Client only"| D
     subgraph Render["Render thread: client only"]
-        R["Acquire latest complete snapshot<br/>retain two for interpolation"]
+        R["Take the latest complete packet<br/>retain two for interpolation"]
         G["GL draw and swap"]
         R --> G --> R
     end
@@ -149,17 +149,16 @@ remaining main/simulation integration cards.
 
 ## Render handoff and pacing
 
-Keep the single-slot mutex-protected `SnapshotMailbox` carrying `RenderSnapshot`. Simulation publishes
-a complete value; rendering copies it under the lock and draws from its own copy after
-unlocking. Neither side holds the transfer lock during callbacks, GL work or presentation.
-Rendering redraws its current value when no newer one exists, using current framebuffer
-dimensions. Publish an initial complete value before simulation reports ready.
+Since S11-T4 (#210, Nov 16), the single-slot `PacketMailbox` carries a `FramePacket` that
+moves by ownership from a pool of four ([[ADR-028 - Render device seam and frame packets]] §3).
+Simulation fills a free packet and moves it into the slot; render hands it to its history under
+the slot's lock and draws after unlocking. Neither side holds the lock during callbacks, GL work
+or presentation. Rendering redraws its current packet when no newer one exists, using current
+framebuffer dimensions. Publish an initial complete packet before simulation reports ready.
 
-The Sep 7 double-buffer proposal is deferred: the small value payload needs no slot-lifetime
-protocol. ADR-018's delivery policy remains unchanged. Resource lifetime is decided, not yet built (Nov 6):
-[[ADR-028 - Render device seam and frame packets]] §3 replaces the value with pooled frame
-packets that move by ownership, published after ticks and after applied edits, and §4 sends
-uploads in their own ordered channel. [[Renderer - Design]] holds the how.
+Packets are published after ticks, after an applied command batch and after the startup load,
+and uploads travel in their own ordered channel (ADR-028 §4, S11-T6, #213). ADR-018's delivery
+policy is unchanged. [[Renderer - Design]] § *Packet delivery* holds the how.
 
 Under Accepted ADR-019, the app owns the shared Clock; simulation owns the accumulator,
 tick-to-clock mapping and TPS accounting. Preserve the fixed step and delta clamp.
@@ -168,10 +167,10 @@ the accumulator remainder; measure elapsed time after waking rather than assumin
 was exact. Stop/failure wakes the wait. Input arrival alone does not force an early tick.
 Late wakes use normal catch-up; no busy-spin or hard real-time guarantee is introduced.
 
-Accepted ADR-019 replaces `update(frame)` with `publishSnapshot(simulation)` taking a fixed
-SimulationContext and no variable delta time or
-alpha, once after a catch-up batch that advances ticks. Publish tick, tick-boundary time
-and complete presentation values. Render keeps two distinct acquired snapshots privately;
+Accepted ADR-019 replaces `update(frame)` with a publication hook taking a fixed
+SimulationContext and no variable delta time or alpha, spelled `publishFrame(scene, simulation)`
+since S11-T4 (#210). After ticks it runs once per catch-up batch that advances them. Publish
+tick, tick-boundary time and complete presentation values. Render keeps two distinct packets privately;
 this does not require two transfer slots. [[Game Loop - Frame Flow]] owns timestamp,
 interpolation, skipped-publication and discontinuity rules. Publish copied tick/rate metrics
 to main, which must not inspect the live simulation context.
@@ -232,7 +231,7 @@ dispatch; no parallel callback registry is added. Shipped hook names and affinit
 | `simulationStartupLoad(scene)` | Simulation, after readiness and before the first tick; the startup loading phase. `scene` is the App's live scene, the one the ticks run on, and it is the only way a subclass reaches it: `App::m_scene` is private, and `SimulationThread`, a friend, passes it (S8-T18, #146). Tests reach the scene and call this hook through `TechEngineTests::AppTestAccess`, the other friend, in `te_test_support`. Its end state loads the boot roots and everything they hard-reference on the `JobSystem`, then systems read their settings ([[ADR-024 - Resources (64-bit ids, value handles, async loads)]] §4). No override loads through the `ResourceCache` yet ([[Backlog]] → `core`). The timeline restarts after it, so the load is not replayed as catch-up. A returned error is fatal for that App: no tick runs, `simulationShutdown()` still runs, `App::stopSimulation()` logs the code and `run()` returns 1, while `completion()` stays `Completed` (S8-T8, #134). An App that survives a failed load, like the editor, reports it in its own override and returns `{}`. The default does nothing. The runtime's override (S8-T9, #139) loads the startup scene from the packs and returns the load's error ([[Resources - Design]] § *The runtime's startup load*). The editor's override (S8-T13, #138) runs here, not in `init()`, because components register in `finalizeSimulation()` after `init()`: with no client startup scene it builds one into the live scene, writes and indexes it, saves its id, then runs the startup export, and it returns `{}`. A creation failure is a `TE_CHECK`. |
 | Each fixed tick | Simulation; not a hook. Ingress is consumed, then the executor runs the scheduled systems and the barrier. `fixedUpdate` was removed in S6-T9 (#92). |
 | `simulationTicks()` | Simulation, read once after the startup load. The default is `true`; an App that returns `false` never ticks and sleeps until a command or stop. `EditorApp` returns `false` (S9-T13, #166). |
-| `publishSnapshot(simulation)` | Simulation; fixed context only, once after catch-up for extraction/publication; initial publication before readiness. |
+| `publishFrame(scene, simulation)` | Simulation; fixed context only. Once before readiness, after the startup load, after each applied command batch (right after `publishEdits`) and after a catch-up that advanced ticks (`engine/app/src/SimulationThread.cpp:191`, `:205`, `:222`, `:238`; S11-T4, #210). |
 | `publishEdits(const Scene&)` | Simulation, with the live scene; after each loop pass whose command batch held a command, before that pass's ticks. The default does nothing (S9-T13, #166; the argument since S9-T16, #171). `EditorApp` also calls it once at the end of its startup load. |
 | `simulationShutdown()` | Simulation; release simulation-owned state, including the app's resource handles. The base releases the scene's handle and drains frees (S9-T7, #161). Right after it returns, the simulation thread calls `ResourceCache::shutdown()`, which waits for the in-flight load batches and logs every entry still counted (S8-T11, #142; [[Resources - Design]] § *Loads on the job system, as built*). |
 | `shutdown()` | Main; stop/join rendering and destroy resources after simulation joins. `ClientApp`'s override stops the client and throws if the render thread failed; a subclass that adds its own shutdown calls it. |
@@ -308,7 +307,8 @@ main thread remained in `Main.WaitEvents`; the focused profile test passed. See
 [[2026-09-11 Threaded Engine Validation]] records its evidence. App owns Clock/InputBuffer;
 EngineContext carries the
 shared Clock; SimulationContext has fixed tick state and input only. Editor event waiting and
-snapshot publication run on their separate owners. SnapshotHistory computes render alpha;
+snapshot publication run on their separate owners. SnapshotHistory computed render alpha
+(`PacketHistory` since S11-T4, #210);
 RateCounter and TimingMetrics replace the old frame/update rate paths. The publication
 hook passes fixed context so extraction does not reach into runner internals; it carries
 no variable delta or alpha. This is the implemented spelling of ADR-019's no-delta hook.

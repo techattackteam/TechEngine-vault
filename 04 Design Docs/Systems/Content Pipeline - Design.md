@@ -256,7 +256,7 @@ Built by S10-T17 (#198), in `engine/core/src/mesh/Mesh.cpp`. These calls came fr
   order, in whole triangles.
 - **A default material is a `ResourceId`**, and it stays one now that the material type exists
   (S10-T23, #203). `MeshSlot` keeps the bare id, and the loader lists it as a dependency
-  (`engine/core/src/mesh/Mesh.cpp:183`).
+  (`engine/core/src/mesh/Mesh.cpp:175`).
 - **The loader lists a material once per slot** that names it, without removing duplicates. The
   cache counts references, so a duplicate costs one more count.
 - **The committed version 1 meshes were rewritten in place**, with their ids kept, because

@@ -260,9 +260,10 @@ ADR-017 § *Decision* 3 instead specifies a shared `EntryPoint.hpp` defining
 [[Backlog]]. No `main()` is compiled into the `app` library.
 
 The old `update(FrameContext)` hook is gone. Simulation runs the systems that
-`configureSimulation()` scheduled, then calls `publishSnapshot(SimulationContext)`
+`configureSimulation()` scheduled, then calls `publishFrame(scene, simulation)`
 ([[Simulation Thread - Design]] § *Lifecycle*);
-rendering consumes copied values and owns every GL call under ADR-015 §2 and ADR-019.
+rendering consumes the frame packets it moves in and owns every GL call under ADR-015 §2 and
+ADR-019.
 The alternative mount seams remain in ADR-017 § *Alternatives*.
 
 ### The mount set

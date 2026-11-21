@@ -146,7 +146,7 @@ The pressure test still applies to the surface: types and formatters, and no hel
 **Deferred to the renderer ADR at R1. Not decided here.**
 
 glm switches both globally, through `GLM_FORCE_LEFT_HANDED` and
-`GLM_FORCE_DEPTH_ZERO_TO_ONE`. GL 4.5 defaults to right-handed with a `[-1, 1]` depth range.
+`GLM_FORCE_DEPTH_ZERO_TO_ONE`. GL 4.6 defaults to right-handed with a `[-1, 1]` depth range.
 A `[0, 1]` range gives better depth precision and is what every other API uses, but it needs
 `glClipControl` and shaders that expect it.
 

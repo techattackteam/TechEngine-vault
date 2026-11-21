@@ -8,14 +8,17 @@ It supplies candidates at `/sprint-plan`, not design decisions or implementation
   a decision, a rationale or a `How:` has outgrown this file. Move that content to an
   ADR or a design note ([[Planning Workflow - Artifact Gate]]).
 - **Prio means *want*; a trigger marks a reason to act now.** At sprint planning, turn
-  every still-valid fired entry into a task after checking its evidence. Then review
-  the rest by priority with Miguel, choose one to three to add to the sprint, remove
-  rejected or obsolete entries, and keep useful unselected items with an updated priority.
-  An item does not need a fired trigger to be chosen.
+  every still-valid fired entry into a task after checking its evidence, and choose one to
+  three more by priority with Miguel. An item does not need a fired trigger to be chosen.
+- **Two rituals keep it short.** `/weekly-review` (and `/sprint-plan` on a boundary weekend)
+  deletes every *finished* entry without asking: fixed, its code gone, the event its own text
+  names has happened, or decided, scheduled or on the ladder. `/sprint-prep` grooms the rest
+  with Miguel: at most 15 old, untriggered or low-priority entries a sprint, each kept,
+  re-prioritized or dropped. A kept entry carries `**Kept <date>.**`.
   This is not the board's `P1/P2/P3`. That scores value against one sprint's goal
   ([[Planning Workflow - Artifact Gate]] → *Priority + weight*). This scores whether a thing
   has value in the backlog.
-- **Five levels, re-bucketed at `/sprint-plan`:** `#prio/xhigh` › `#prio/high` ›
+- **Five levels, re-bucketed at `/sprint-prep`'s grooming:** `#prio/xhigh` › `#prio/high` ›
   `#prio/medium` › `#prio/low` › `#prio/xlow`. Filter with `tag:#prio/high` in search, or use
   the tag pane. A bucket that nobody ever re-scores downward is a broken bucket, so that pass
   is part of grooming rather than optional.
@@ -77,7 +80,7 @@ groups are kept, because they show where future work will land.
   declaration to `platform`'s root, or a 🤖 Auto slot once the name is chosen.
 
 - #prio/medium · **The window asks for the GL version its renderer needs**: the window sets one
-  context hint for every window it opens (`engine/platform/src/window/Window.cpp:58-59`), which
+  context hint for every window it opens (`engine/platform/src/window/Window.cpp:59-60`), which
   S11-T2 raises to 4.6 core. So eight window cases that use no GL
   (`engine/platform/tests/window/WindowTests.cpp`, listed in [[B3 - Build & Testing Notes]]
   § *Test tiers*) need the renderer's floor and stay `[gpu]`. Asked for less, they would run on
@@ -156,14 +159,6 @@ groups are kept, because they show where future work will land.
   boundary (A1) or the next signature change.
 
 ## core
-
-- #prio/low · **`core` links toml++ that none of its files use**: `Core.cpp` was the only file in
-  `core` that included `toml++`, and S11-T14 (#212) deletes it, so `engine/core/CMakeLists.txt`'s
-  `LIBS_PRIVATE tomlplusplus::tomlplusplus` becomes a dead dependency. The editor links its own
-  copy (`apps/editor/CMakeLists.txt:93`). Drop the line once nothing in `core` parses TOML. Found
-  by the lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]). **Trigger:** #212 merges. **Fired by
-  S11-T14 (#212, Nov 17).** A one-line fix, a 🤖 Auto candidate. **Dropped in #216** (the core
-  sweep, Nov 19, open); delete this entry when it merges.
 
 - #prio/medium · **Classify the failures behind Scene's and `Transform`'s `bool` mutators**:
   `setParent`, `unparent`, `reorderChild`, `destroyEntity`, `fromLocalToWorld`,
@@ -672,41 +667,10 @@ groups are kept, because they show where future work will land.
   comment at `cmake/deps.cmake:246` still gives the 4.5 command with no extensions. The next
   regeneration from that comment would drop the floor and bindless. The header records the real
   command (`external/glad/include/glad/gl.h`). A one-line fix, a 🤖 Auto candidate. Found at
-  S11-T2's close on Nov 14, 2026.
-- #prio/medium · **Six design notes still describe the snapshot path that S11-T4 replaced**:
-  #210 removed `SnapshotMailbox`, `SnapshotHistory` and `RenderSnapshot` and renamed
-  `publishSnapshot` to `publishFrame`, but only [[Renderer - Design]] was updated at its close.
-  These passages still describe the old path as current:
-  - [[Game Loop - Frame Flow]]: the frame-flow diagram (lines 65-90), the channel table's
-    *Simulation to render* row (line 238) and the transfer list (line 145).
-  - [[Simulation Thread - Design]] § *Render handoff and pacing* (line 152) and the lifecycle
-    table's `publishSnapshot(simulation)` row (line 235).
-  - [[Editor - Design]]: the Decided row *Edits publish through their own hook* (line 74), whose
-    reason is now false, since `PacketHistory` keeps a same-tick packet with a newer sequence
-    (`engine/client/src/render/PacketHistory.cpp:33`); and § *Commands and the idle simulation*
-    (line 209), which says a non-ticking App skips publication, while the loop now calls
-    `publishFrame` after `publishEdits` (`engine/app/src/SimulationThread.cpp:218-222`).
-  - [[Project - Design]] (line 263) and [[Window - Design]]'s Decided rows *Frame handoff at M4*
-    and *The snapshot's visual contents are M4's* (the second says the frame packet is not built).
-  - [[Renderer - Design]] § *References* (line 475) cites the two deleted files as current.
-  The fix is a rewrite to the packet path that [[Renderer - Design]] § *The frame packet* already
-  describes, plus a dated line in each Decided row that changes. Found by the lane's freshness
-  check on Nov 19 ([[2026-11-19 09-08 Auto Run]]). **Trigger:** the Nov 21-22 `/weekly-review`'s
-  drift check.
-- #prio/low · **[[Window - Design]] still describes GL 4.5 and M4's triangle wrappers**: #206 moved
-  the context to 4.6 core (`engine/platform/src/window/Window.cpp:59-60`) and glad to
-  `GL_ARB_bindless_texture`, and #207 replaced the private `Buffer` and `VertexArray` wrappers with
-  `RenderDevice`. The Decided rows *glad2 is generated, committed, and never fetched* and
-  *Triangle resources*, § *glad2: generation and vendoring* (lines 143-149), the ownership row at
-  line 85 and the `initialize()` comment at line 98 still say 4.5, no extensions, or the old
-  wrappers. The `cmake/deps.cmake:246` entry above is the code half of the same drift. Found by
-  the lane's freshness check on Nov 19 ([[2026-11-19 09-08 Auto Run]]). **Trigger:** the Nov 21-22
-  `/weekly-review`'s drift check, or the `cmake/deps.cmake` fix, whichever comes first.
-- #prio/low · **[[Content Pipeline - Design]] cites a shifted line in `Mesh.cpp`**: the row *A
-  default material is a `ResourceId`* (line 250) cites `engine/core/src/mesh/Mesh.cpp:183` for the
-  loader listing a slot's material as a dependency. #216's shared asset prologue shortened the file
-  to 180 lines, and the `push_back` is now at `:175`. Found by the lane's freshness check on Nov 20
-  ([[2026-11-20 09-08 Auto Run]]). **Trigger:** the Nov 21-22 `/weekly-review`'s drift check.
+  S11-T2's close on Nov 14, 2026. **Fixed in the engine working tree on Nov 21**, with every
+  `#version 450` moved to 460 (the ImGui backend, two test files, the dev project's geometry
+  shaders), at Miguel's call; not in a PR yet. When that PR merges, delete this entry and the
+  sentence in [[Window - Design]] § *glad2* that says the comment still shows 4.5.
 - #prio/medium · **The million cubes as an end-to-end benchmark**: Miguel's ask, Oct 30, 2026.
   [[Renderer - Brief]]'s Should of a million cubes moving on a grid at 60 fps (v1 reached 20)
   exercises one whole frame: a System over the ECS, the task graph's executor, transform
@@ -812,7 +776,9 @@ groups are kept, because they show where future work will land.
   the next test that seems to pass and fail with no code change, or the next sweep of a test file.
   **Fired Nov 5:** the lane swept `RenderThreadTests.cpp` (#185) and `AppTests.cpp` (#191) and
   kept every name, commas included: `engine/client/tests/render/RenderThreadTests.cpp:92` and
-  `engine/app/tests/AppTests.cpp:243`, `:721` and `:1026` at `e59d77c`.
+  `engine/app/tests/AppTests.cpp:243`, `:721` and `:1026` at `e59d77c`. At `a4c65ce` the same two
+  files hold six comma names: `RenderThreadTests.cpp:96`, `:186` and `AppTests.cpp:243`, `:726`,
+  `:1035`, `:1300`.
 ## Ideas (unsorted)
 
 - _drop raw ideas here; untagged until triage gives them a `#prio/…` and, when useful, a `Trigger:`_

@@ -6,7 +6,8 @@
 **ADRs:** [[ADR-015 - Threading (sim on main, render thread owns GL)]] §1 §2 ·
 [[ADR-006 - v2 core architecture & module layout]] §1 ·
 [[ADR-008 - v2 build & testing baseline]] §4 case 3 · §5 ·
-[[ADR-005 - v2 tech stack & toolchain]] (GLFW, glad2, GL 4.5 core)
+[[ADR-005 - v2 tech stack & toolchain]] (GLFW, glad2, GL 4.5 core, raised to 4.6 by
+[[ADR-028 - Render device seam and frame packets]] §2)
 **v1:** [[v1 Code Audit]] F22 (the device seam) · **Backlog:** [[Backlog]] → `platform`, `client`
 
 ## Purpose
@@ -29,20 +30,20 @@ This table is the summary. Every row that needed an argument has one in *Design*
 |---|---|---|
 | **Accepted time model, Sep 10** | Main is event-driven with no periodic timer; render owns variable work and interpolation with optional vsync. | ADR-019 §2 §5 |
 | **Window input fan-out** | Ordered simulation ingress plus independent latest presentation input. Framebuffer size remains copied state. | ADR-019 §4; [[Game Loop - Frame Flow]] |
-| **Render snapshot handoff** | Simulation publishes tick/time-stamped complete values through one shared slot; render owns two private history values. | ADR-019 §3; shipped in #81 |
+| **Render handoff** | Simulation publishes tick/time-stamped complete frame packets through one shared slot; render owns two private history packets. | ADR-019 §3; shipped in #81 as a copied snapshot; a moved packet since ADR-028 §3 (S11-T4, #210) |
 | **Main/simulation split** | Main owns events; simulation consumes ordered input and publishes complete render values. Lifecycle and overflow recovery are settled. | ADR-018 §1-3; shipped in #81 |
 | **Module split** | `platform` owns the window and raw input and issues **no GL call ever**. `client` owns the context, glad2 and every GL call. The one exception is the editor's ImGui renderer, `imgui_impl_opengl3`, which issues GL on the render thread through `client`'s ImGui hook. | See *The seam*, 2026-08-30; [[Editor - Design]] § *The ImGui hook*, 2026-10-26 |
 | **The native window handle** | `Window` and `Client` expose the `GLFWwindow*` to main, for `imgui_impl_glfw` only. Its header still only forward-declares the GLFW type. | [[Editor - Design]] § *The ImGui frame on main*, 2026-10-26 |
 | **GLFW stays inside `platform`** | `client` never calls a `glfw*` function. Context and presentation operations are methods on `Window`. The one exception is the editor executable, which links ImGui's GLFW backend. | See *The seam*; ADR-027 §1 |
 | **The editor's ImGui shares this window** | Main builds the ImGui frame and render draws it after the scene, through its own channel and an overlay seam in `client`. Multi-viewport is off in E1. | ADR-027 §1 |
 | **glad2 lives in `client`** | Moved off `platform`'s dependency row. **This reverses ADR-006 §1** and is filed there as a dated `decision` amendment. | ADR-006 §1 amendment, 2026-08-30 |
-| **glad2 is generated, committed, and never fetched** | GL 4.5 core, no extensions, `--reproducible`. Committed under `external/glad/`, wrapped in `cmake/deps.cmake`. The one vendored dep. | ADR-008 §4 case 3 |
+| **glad2 is generated, committed, and never fetched** | GL 4.6 core with `GL_ARB_bindless_texture`, `--reproducible`. Committed under `external/glad/`, wrapped in `cmake/deps.cmake`. The one vendored dep. | ADR-008 §4 case 3; 4.6 and bindless since S11-T2 (#206) |
 | **Context handoff** | Main creates the window and never makes the context current. The render thread claims it once and holds it until shutdown. | See *Startup and shutdown order* |
 | **`gladLoadGL` runs on the render thread** | It needs a current context, so it cannot run at startup on main. | See *Startup and shutdown order* |
-| **Frame handoff at M4** | A single-slot `SnapshotMailbox` carries tick/time-stamped complete values; render retains two private values for interpolation. Newest complete wins. | ADR-019 §3; see *The frame command buffer* for the historical baseline |
-| **The snapshot's visual contents are M4's, not R1's** | Clear colour plus a draw flag. R1 replaces it with the frame packet ([[ADR-028 - Render device seam and frame packets]] §3, Nov 6), which is not built yet. | ADR-015 §2; ADR-028 §3 |
+| **Frame handoff** | A single-slot `PacketMailbox` carries tick/time-stamped frame packets that move from a pool of four; render retains two private packets for interpolation. Newest complete wins. M4 used a copied `SnapshotMailbox` value. | ADR-019 §3; ADR-028 §3 (S11-T4, #210); see *The frame command buffer* for the historical baseline |
+| **The packet's visual contents are R1's** | Instances with their meshes and materials, and the main camera ([[Renderer - Design]] § *The frame packet*). M4's clear colour and draw flag went with the snapshot. | ADR-028 §3; S11-T4 (#210) |
 | **Framebuffer dimensions** | Main seeds pixel dimensions and publishes framebuffer callback updates; both writer and render-thread snapshot reader use the same mutex. | S5-T8, #77 |
-| **Triangle resources** | Private `Buffer` and `VertexArray` wrappers use GL 4.5 DSA; `FrameRenderer` owns vertex/index buffers, VAO and checked shader startup. Cleanup precedes context release. | S5-T8, #77 |
+| **GL resources** | `RenderDevice` owns every GL object behind generational handles, with DSA; `FrameRenderer` issues no GL call of its own. Cleanup precedes context release. M4's private `Buffer` and `VertexArray` wrappers are gone. | S5-T8, #77; S11-T3 (#207), [[Renderer - Design]] § *The device* |
 | **CI opens a real window** | Linux uses Xvfb, with zink over lavapipe on every leg but TSan. Windows uses pinned Mesa DLLs beside the binaries, but since Nov 14 no Windows leg runs a case tagged `[gpu]`, so it opens no window there. | See *How CI proves this*, verified 2026-09-06; [[ADR-008 - v2 build & testing baseline]]'s Nov 14 amendment, S11-D5 (#205) |
 | **On Linux the context is created through EGL** | Always, not only on CI: zink creates no context over GLX, and it is the only software driver that meets the renderer's GL floor. `Window::initialize()` sets `GLFW_CONTEXT_CREATION_API` under `__linux__`. | S11-D1's spike; S11-D5 (#205) |
 | **No `IWindow` interface** | One implementation, and no carded work needs a second. Same reasoning as [[File Access - Design]] § *Why there is no interface*. | 2026-08-30 |
@@ -64,11 +65,12 @@ main thread is alive. After a stall, process delivered events in order and perfo
 work; never replay missed iterations. [[Game Loop - Frame Flow]] owns the wake-lifetime
 details.
 
-Render owns preparation, drawing and presentation, plus two private snapshots for
+Render owns preparation, drawing and presentation, plus two private frame packets for
 interpolation. Vsync can be disabled; changing it is applied on the context-owning thread.
 Main publishes presentation input and framebuffer size independently of simulation ingress.
 No main thread callback reads live simulation state or calls GL. Simulation publishes complete
-tick/time-stamped snapshots through the single-slot mailbox after catch-up.
+tick/time-stamped packets through the single-slot mailbox after catch-up, after applied edits
+and after the startup load.
 
 The shared Clock and copied metrics are specified in [[Clock - Design]]. Render emits
 Tracy's default frame marker after swap; main uses zones, as in [[Profiler - Design]].
@@ -82,7 +84,7 @@ under `platform`. That row cannot be followed as written, so this note resolves 
 |---|---|---|
 | GLFW init, window creation, `pollEvents`, destruction | `platform` | It is the OS seam. A dedicated server links `platform` for files and the timer and never creates a window. |
 | Raw keyboard, mouse and gamepad events | `platform` | Same seam. Input is an OS fact before it is a presentation one, and ADR-007 §2 already turns it into command data a rung above. |
-| The GL context, glad2, every `gl*` call | `client` | `client` **is** the presentation module and owns the GL 4.5 device seam (F22). |
+| The GL context, glad2, every `gl*` call | `client` | `client` **is** the presentation module and owns the GL 4.6 device seam (F22). |
 | The render thread | `client` | `app` is the composition root and is explicitly presentation-agnostic (ADR-006 §1), so it cannot own a thread whose whole job is GL. |
 
 ## The `Window` surface
@@ -95,7 +97,7 @@ namespace TechEngine {
     class Window {                       // platform. Owns the GLFWwindow*.
     public:
         // --- main thread only (GLFW pins these) ---
-        static std::error_code initialize(); // glfwInit + the 4.5 core hints, EGL on Linux
+        static std::error_code initialize(); // glfwInit + the 4.6 core hints, EGL on Linux
         static void  terminate();        // after every window closes
         std::error_code open(int width, int height, std::string_view title);
         void         pollEvents();
@@ -137,16 +139,20 @@ row would wire it the other way and only find out at link time, or not at all.
 
 Generated with the `glad2` **2.0.8** Python package and shipped **2026-09-06** at
 `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)). The version and
-command are recorded above the target in `cmake/deps.cmake`:
+command are recorded above the target in `cmake/deps.cmake`.
+
+S11-T2 (#206, Nov 14) regenerated it for 4.6 with bindless textures. The header records that
+command line, while the comment in `cmake/deps.cmake:246` still shows the 4.5 one
+([[Backlog]] § *etc*):
 
 ```bash
-glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c
+glad --api gl:core=4.6 --extensions=GL_ARB_bindless_texture --out-path external/glad --reproducible c
 ```
 
 | Choice | Call | Why |
 |---|---|---|
-| Profile | `gl:core=4.5` | ADR-005's row. DSA is core in 4.5, so the renderer never needs the ARB spelling. |
-| Extensions | **none** | 4.5 core already contains DSA and `glDebugMessageCallback` (`KHR_debug` became core at 4.3). An empty list keeps the generated file small and the loader honest. |
+| Profile | `gl:core=4.6` | ADR-028 §2's floor, raised from ADR-005's 4.5 by S11-T2. DSA is core since 4.5, so the renderer never needs the ARB spelling. |
+| Extensions | `GL_ARB_bindless_texture` only | The material buffer's texture handles need it ([[Renderer - Design]] § *The material buffer*). Everything else the renderer calls, DSA and `glDebugMessageCallback` included, is core. |
 | `--reproducible` | on | Uses the generator's bundled specifications; keep the generator version pinned when regenerating the same output. |
 | Output | committed | ADR-008 §4 case 3. It is not a fetchable CMake project, so it is the one vendored dep. |
 
@@ -180,7 +186,7 @@ on the worker before it releases the context.
 At S5-T8, rendering continued while main was inside native move/resize processing but
 simulation still paused. S5-D3 supplied the replacement design. S5-T14-T17 and T9 shipped
 Sep 11 as `7d2546fc` (#81): main now waits on events, simulation runs independently, and
-completed tick/time-stamped snapshots feed render. Miguel's native Windows Tracy demo showed
+completed tick/time-stamped snapshots feed render (frame packets since S11-T4, #210). Miguel's native Windows Tracy demo showed
 both independent streams progressing across `Main.WaitEvents`; see
 [[2026-09-11 Threaded Engine Validation]].
 

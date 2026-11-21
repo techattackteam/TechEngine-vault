@@ -79,7 +79,7 @@ otherwise:
 
 ## Depends on and constrains
 
-- **Leans on:** OpenGL 4.5 behind a thin device seam ([[ADR-005 - v2 tech stack & toolchain]]);
+- **Leans on:** OpenGL 4.6 with bindless textures behind a thin device seam ([[ADR-005 - v2 tech stack & toolchain]], raised by [[ADR-028 - Render device seam and frame packets]] §2);
   only the render thread issues GL ([[ADR-018 - Main and simulation threads, render-owned GL]]);
   glTF import through assimp ([[Capability Map]] § *Content pipeline*).
 - **Leans on:** T4's import, which is on E2's critical path ([[Roadmap]], 2026-10-31).

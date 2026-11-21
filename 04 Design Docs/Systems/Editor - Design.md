@@ -72,7 +72,7 @@ message. This note says how those messages are shaped.
 | A command never waits for a tick | An accepted command wakes the simulation thread, which applies the batch at the top of each loop pass, never inside a tick. The queue is open only while that thread runs. | 2026-10-26 (S9-T12), § *Commands and the idle simulation* |
 | No game input while Stopped | The editor detaches the `InputBuffer` while Stopped. ImGui reads input through its own callbacks. | 2026-10-26, § *Commands and the idle simulation* |
 | An App says whether it ticks | A virtual `simulationTicks()`, read once after the startup load. The editor says no; every other App keeps the default yes. | 2026-10-27 (S9-T13), § *Commands and the idle simulation* |
-| Edits publish through their own hook | `publishEdits(const Scene&)` runs after each applied batch, in both loops. `publishSnapshot` stays render's, because render drops a snapshot whose tick did not advance (`engine/client/src/render/SnapshotHistory.cpp:20`). | 2026-10-27 (S9-T13); the `Scene` argument 2026-10-29 (S9-T16), § *Commands and the idle simulation* |
+| Edits publish through their own hook | `publishEdits(const Scene&)` runs after each applied batch, in both loops. `publishFrame` stays render's, and since S11-T4 (#210) it runs after `publishEdits` too: render takes a packet at the same tick with a newer sequence in place of the current one (`engine/client/src/render/PacketHistory.cpp:33`), so an edit reaches the views without a tick. The old reason, that render dropped a snapshot whose tick did not advance, went with `SnapshotHistory`. | 2026-10-27 (S9-T13); the `Scene` argument 2026-10-29 (S9-T16); the packet 2026-11-21 (weekly review), § *Commands and the idle simulation* |
 | Every batch publishes | The editor publishes after every applied batch and once at the end of the startup load. Only a command that changes the scene raises the edit revision, so a select publishes without one. | 2026-10-29 (S9-T16), § *The editor snapshot* |
 | Panels send through one sender | `EditorCommands` builds each command with the edit session and submits it. Panels never touch the session, which belongs to the simulation thread. A File menu item whose command needs more than `EditorCommands` holds is a callback that `EditorApp` gives `PanelsManager`: Export needs the `Project`, the `AssetIndex` and a mutable registry, and S10-T4's Run takes the same route. | 2026-10-29 (S9-T16); the menu callback 2026-11-02 (S10-T3, accepted at its merge), § *The hierarchy panel* |
 | Hierarchy edits | A reparent keeps the world transform. A created or dropped child goes first. A reorder is a reparent to the same parent. A right-click selects the row, unless the row is already selected, which keeps the selection. | 2026-10-29 (S9-T16); the selected row 2026-10-31 (S9-D6), § *The hierarchy panel* |
@@ -112,7 +112,7 @@ flowchart LR
         A --> V
     end
     subgraph Render["Render thread"]
-        S["Draw the scene snapshot"]
+        S["Draw each view from the frame packet"]
         O["ImGui hook: imgui_impl_opengl3"]
         S --> O
     end
@@ -123,8 +123,9 @@ flowchart LR
     F -->|"Texture requests, in order"| O
 ```
 
-Each arrow is a copy under a short lock, never a shared reference. The simulation's existing
-render snapshot still feeds the scene draw beside these.
+Each arrow is a copy under a short lock, never a shared reference. Beside these, the frame
+packet feeds the scene draw: it moves rather than copies, and simulation publishes one after
+each applied batch as well as after ticks ([[Renderer - Design]] § *Packet delivery*).
 
 ## The ImGui hook
 
@@ -204,11 +205,11 @@ commands accepted but not applied at shutdown are reported as cancelled.
   cannot stay in the command, which is destroyed at the end of its batch (§ *The inspector*).
 - Applying a command never waits for a tick. An accepted command wakes the simulation thread,
   which applies the whole batch at the top of each pass of its loop, before that pass's ticks
-  and never inside one. After a batch that held a command, the loop calls `publishEdits(scene)`, in
-  both loops (`engine/app/src/SimulationThread.cpp:201-230`).
+  and never inside one. After a batch that held a command, the loop calls `publishEdits(scene)`
+  and then `publishFrame`, in both loops (`engine/app/src/SimulationThread.cpp:213-224`).
 - An App whose `simulationTicks()` returns false has no tick deadline. Its thread skips the
-  advance and `publishSnapshot`, and sleeps in `waitForCommands()` until a command arrives or
-  stop is requested. `EditorApp` returns false. The runtime keeps the default and never submits
+  advance and the tick's `publishFrame`, and sleeps in `waitForCommands()` until a command
+  arrives or stop is requested. Its edits still reach render through the batch's `publishFrame`. `EditorApp` returns false. The runtime keeps the default and never submits
   a command, so its loop does not change.
 - The queue is open only while the simulation thread runs, so a command submitted before the
   run or after stop is rejected. Commands still queued at shutdown are cancelled with one

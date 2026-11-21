@@ -680,6 +680,8 @@ Mechanism sections land as the build cards are cut. Known build work:
 
 ## References
 
-- M4's triangle and the snapshot path: `engine/client/src/render/`.
-- The copies ADR-028 removes: `SnapshotMailbox.cpp:6`, `:14`; `SnapshotHistory.cpp:17-29`, `:42`.
+- The packet path that replaced M4's snapshot (S11-T4, #210): `engine/client/src/render/`,
+  `PacketMailbox.cpp`, `PacketHistory.cpp` and `FramePacketPool.cpp`.
+- At `6836c87`, the copies ADR-028 removed were `SnapshotMailbox.cpp:6`, `:14` and
+  `SnapshotHistory.cpp:17-29`, `:42`.
 - The publish points: `engine/app/src/SimulationThread.cpp:189-191`, `:211-214`, `:226-229`.
