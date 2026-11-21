@@ -40,7 +40,6 @@ kanban-plugin: board
 
 ## Story G: The asset browser (carries freely)
 
-- [ ] **S11-T17** · Remove re-import · P2 · 🤖 Auto: the editor's re-import code, menu entry and tests go; `ResourceCache::reload` stays. Deletes Known Issue D10. First.
 - [ ] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h: `Sponza_1/` and `Sky_1.tetexture` when the name is taken. After S11-T17.
 - [ ] **S11-T19** · The browser's listing · P2 · 🟢 Deep · 4-6h: the simulation thread lists the three sides with their kinds and publishes them in the snapshot.
 - [ ] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h: folder tree, breadcrumbs, grid, double-click, Ctrl, Shift and box selection. After S11-T19.
@@ -57,6 +56,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S11-T17** · Remove re-import · P2 · 🤖 Auto: the editor's re-import code, menu entry and tests go; `ResourceCache::reload` stays. Deletes Known Issue D10. First. PR #224, branch `S11-T17/Remove-re-import`. Built and tested on Windows debug (1443 passed); CI pending.
 
 
 ## ✅ Done: Sprint 11
