@@ -234,9 +234,11 @@ and *How the scene view's camera is driven*.
 - [x] **S11-T12** · The runtime logs entities at Debug · P3 · 🤖 Auto ·
   done: `RuntimeApp::logSceneTree` writes its per-entity lines with `TE_LOGGER_DEBUG` and keeps
   one `INFO` summary line. After S11-T5, which also edits `RuntimeApp.cpp`.
-- [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto ·
+- [x] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto ·
   done: a placed model's children of one split mesh take their material's name, with `_1`, `_2`
   on a repeat, and a test places a two-primitive fixture. After S11-T1.
+  #228 (`2adb13f`), Nov 23. The placement test's fixture has three primitives, which covers the
+  repeat too.
 - [x] **S11-T14** · The base sweep's leftover · P3 · 🤖 Auto ·
   done: the version anchors go: `baseVersion()`, `platformVersion()` and `coreVersion()` with
   `Base.hpp`, `Platform.hpp`, `Core.hpp` and their `.cpp`, and `BaseTests.cpp`, whose glm case
@@ -306,11 +308,11 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   done: the scene view and the hierarchy place a model or mesh, a drop on a row as its first
   child (`PlaceModelCommand` gains the parent), and an inspector asset field takes an asset of its
   type. After S11-T20.
-- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🟠 Moderate · 2-3h ·
+- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h ·
   done: a scene, a material's textures and a model's meshes treat an id no file holds as absent,
   with a warning, and a file that exists and fails still fails ([[Resources - Design]]
-  § *Decided*). One test per holder. Independent of the browser. A 🤖 Claude candidate, if Miguel
-  picks it for the lane.
+  § *Decided*). One test per holder. Independent of the browser. **Retagged 🤖 Claude on Nov 23**
+  from 🟠 Moderate, at Miguel's call, so the lane builds it.
 - [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h ·
   done: *Delete...* opens a warning that lists every scene, material and model naming the
   selection, then one command removes the files and their index records (`AssetIndex::remove`),
@@ -321,13 +323,14 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
 
 - 🤖 Claude features: S11-T5 (the camera) and S11-T11 (the fly camera, after S11-T10). Both are
   built to Miguel's design in [[Renderer - Design]] § *Decided*. S11-D2 left the lane on Nov 17
-  as a 🟡 Light card.
+  as a 🟡 Light card. S11-T23 (a missing asset loads as absent) joined on Nov 23, built to
+  [[Resources - Design]] § *Decided*.
 - 🤖 Auto cards: S11-P1, S11-T12, S11-T13, S11-T14, S11-P2 and S11-T15 (added Nov 16), and
   S11-T17 (added Nov 21).
 - Standing prep: S11-P3 (not before Mon Nov 23) and S11-D4 (Tue Nov 24).
-- PR load: nine PR-producing lane cards over two weeks (two 🤖 Claude, seven 🤖 Auto), under the
-  limit of about five a week. S11-P3 is free. Review costs about 3h. S11-T23 would be a tenth if
-  Miguel gives it to the lane.
+- PR load: ten PR-producing lane cards over two weeks (three 🤖 Claude, seven 🤖 Auto) since
+  S11-T23 joined on Nov 23, still under the limit of about five a week. S11-P3 is free. Review
+  costs about 3h.
 - **The prompt paste is done** ([[Autonomous Lane - Routine Prompt]] § *Routine configuration*):
   the Nov 17 09:08 fire ran step 6 with `-LE '^gpu$'` ([[2026-11-17 09-08 Auto Run]]).
 

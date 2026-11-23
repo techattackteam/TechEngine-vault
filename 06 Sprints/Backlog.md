@@ -670,6 +670,13 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/low · **The lane's sandbox has the wrong clang-format**: it ships 18, CI pins 19.1.5, and
+  the two format member pointers differently, so S11-T13's first push (#228, Nov 23) failed
+  `clang-format` and cost a second CI run. The fire installed 19.1.5 for that session only
+  ([[2026-11-23 14-11 Auto Run]]). The fix is to install the pinned version in the environment's
+  setup script beside the `docs` link. **Trigger:** the next edit to the lane's setup script, or
+  a second format-only CI failure from the lane.
+
 - #prio/medium · **`logs/` is not git-ignored**: the logger writes `logs/techengine.log` relative
   to the working directory (`engine/base/src/diagnostics/Log.cpp:28`), and `.gitignore` has no
   `logs` line, so any run from the repo root leaves a file that `git add .` picks up. #222

@@ -41,7 +41,7 @@ kanban-plugin: board
 - [ ] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h: `Sponza_1/` and `Sky_1.tetexture` when the name is taken. After S11-T17.
 - [ ] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h: create, place and refresh; the File menu entries and the startup import go. After S11-T18 and S11-T20.
 - [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
-- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🟠 Moderate · 2-3h: in a scene, a material and a model, with a warning. Independent; a 🤖 Claude candidate.
+- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h: in a scene, a material and a model, with a warning. Independent. Given to the lane on Nov 23, at Miguel's call.
 - [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: a warning that lists what uses it, then one command. After S11-T21 and S11-T23.
 
 
@@ -51,10 +51,14 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: PR #228, branch `S11-T13/split-children-names`, opened Nov 23 by the lane ([[2026-11-23 14-11 Auto Run]]). Green on Linux locally. An unnamed material gives the child its slot name, `Slot <index>`. Miguel merges; the next fire closes it.
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: #228 (`2adb13f`), **Nov 23**. Each child of a split mesh takes its mesh's slot name, with `_1`, `_2` on a repeat among that node's children, through the suffix rule the merged mesh's slots already used ([[Content Pipeline - Design]] § *The model file*). Completes Story E.
+	- **The clause left an unnamed material open.** The lane gave the child the slot's own fallback, `Slot <index>`, so a child's name always matches its renderer's slot; the material file's `Material <index>` was the other reading. It merged unchanged.
+	- **The fixture has three primitives, not the clause's two** (Paint, Glass, Paint), so one fixture shows the name and the repeat; the older two-primitive fixture still checks the repeat alone. Sponza itself was not re-imported, so nobody has read its new hierarchy by eye.
+	- *Retro:* the first push failed CI's `clang-format`, because the lane's sandbox had clang-format 18 and CI pins 19.1.5; a whitespace commit cost a second run ([[Backlog]] § *etc*). The PR has no review conversation, so this entry comes from the card, the PR body, the diff and [[2026-11-23 14-11 Auto Run]].
 
 - [x] **S11-P3** · Prep brief for Sprint 12 · P2 · 🤖 Auto · report-only: closed **Nov 23** by the lane, [[2026-11-23 09-08 Auto Run]]. It lists the Decided rows with no code, the open questions behind them, the fired [[Backlog]] triggers and the 🤖 Claude candidates, and decides nothing. S11-D4 starts from it.
 - [x] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h: #227 (`cdf9ef3`), **Nov 21**. The editor docks an *Asset Browser* beside the console: a folder tree, breadcrumbs and a grid of tiles with Ctrl, Shift and box selection, where a double-click opens a folder ([[Content Pipeline - Design]] § *The browser panel as built*). Unblocks S11-T22, and S11-T21 once S11-T18 lands; Story G goes on.

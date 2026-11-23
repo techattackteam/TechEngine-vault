@@ -66,7 +66,7 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 |---|---|---|
 | No links and no prefabs | A placed model is a copy. Changes in the scene reach neither the other copies nor the model file. | Miguel, 2026-11-06; [[Content Pipeline - Brief]] § *Decided* |
 | TEModel is its own node table | Not a scene fragment. Placement builds the entities from the nodes. | Miguel, 2026-11-06; § *The model file* |
-| An entity per mesh | A node with one mesh carries it. A node with several gets one child entity per mesh, because each source mesh has one material. This stays after TEMesh v2: a model never joins a node's meshes into slots. | Miguel, 2026-11-06; § *The model file* |
+| An entity per mesh | A node with one mesh carries it. A node with several gets one child entity per mesh, because each source mesh has one material. This stays after TEMesh v2: a model never joins a node's meshes into slots. | Miguel, 2026-11-06; the children's names S11-T13 (#228), 2026-11-23; § *The model file* |
 | A folder per import | Importing `Sponza.gltf` writes a `Sponza/` folder beside it: `Sponza.temodel`, then `Meshes/`, `Materials/` and `Textures/`. | Miguel, 2026-11-06 |
 | Scale and up axis are baked at import | They are applied to the mesh vertices and the node transforms, so the settings never land on the placed root. A source root's own transform is kept. The create dialog sets them, and the root asset's import block records them. | Miguel, 2026-11-06; S10-T15 (#194), 2026-11-09; the dialog 2026-11-21 (S11-D3) |
 | The import block | Every imported file (model, mesh, material, texture) carries one: the source path, the source key and the settings. Its type is in `core`; only the editor writes it; it ships in the packs inside every packed file and the runtime skips it. A `.temodel` itself is never packed, because the export packs only what a scene reaches and a placed copy does not reference its model. | S10-D9, 2026-11-06; § *The import block* |
@@ -120,6 +120,10 @@ A `.temodel` is a binary blob with its own `BlobKind`, like the mesh and the sce
 - **A node list in parent-first order**, so a node's parent is always earlier. Each node has a
   name, its parent's index (none for the root), a local translation, rotation and scale, and
   an optional mesh reference. Materials come from the mesh (§ *Materials per slot*).
+- **A split node's children are named after their material.** Each child takes its mesh's slot
+  name, so an unnamed material gives `Slot <index>`, and a repeat among that node's children gets
+  `_1`, `_2` by the same rule as a merged mesh's slots (`ModelImporter::uniqueName`). Every other
+  node keeps its source name. S11-T13 (#228), 2026-11-23.
 - **Exactly one root, always named after the file.** A source with several top-level nodes gets
   a new root. A lone top-level node is the root: it keeps its transform and loses its name,
   because assimp gives no way to tell a root it added (`ROOT`, `RootNode`) from a real one.
