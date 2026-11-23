@@ -29,7 +29,6 @@ kanban-plugin: board
 
 ## Story E: The lane's small cards
 
-- [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: with `_1`, `_2` on a repeat, and a two-primitive fixture test. After S11-T1.
 
 
 ## Story F: Prepare Sprint 12
@@ -52,6 +51,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S11-T13** · A split mesh's children are named after their material · P3 · 🤖 Auto: PR #228, branch `S11-T13/split-children-names`, opened Nov 23 by the lane ([[2026-11-23 14-11 Auto Run]]). Green on Linux locally. An unnamed material gives the child its slot name, `Slot <index>`. Miguel merges; the next fire closes it.
 
 
 ## ✅ Done: Sprint 11
