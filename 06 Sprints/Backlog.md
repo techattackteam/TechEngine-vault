@@ -797,6 +797,13 @@ groups are kept, because they show where future work will land.
   `engine/app/tests/AppTests.cpp:243`, `:721` and `:1026` at `e59d77c`. At `a4c65ce` the same two
   files hold six comma names: `RenderThreadTests.cpp:96`, `:186` and `AppTests.cpp:243`, `:726`,
   `:1035`, `:1300`.
+- #prio/low · **Two design-note lines lag the code since the Nov 21 check**: found by the lane's
+  prep brief on Nov 23 ([[2026-11-23 09-08 Auto Run]]). [[Content Pipeline - Design]] § *Open questions* still asks
+  which way a texture is sampled, which S11-T8 decided ([[Renderer - Design]] § *Decided*, *Which
+  way V runs*). [[Renderer - Design]] § *The scene view's fly camera as built* describes the lock
+  as `GLFW_CURSOR_DISABLED` alone, but #226 (`5f0f8e6`) also turns on raw mouse motion and sets
+  ImGui's `NoMouse` while locked (`apps/editor/src/EditorApp.cpp:365-375`). **Trigger:** the next
+  drift check, at the Sprint 11 boundary's `/sprint-plan`.
 ## Ideas (unsorted)
 
 - _drop raw ideas here; untagged until triage gives them a `#prio/…` and, when useful, a `Trigger:`_

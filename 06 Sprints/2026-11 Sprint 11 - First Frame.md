@@ -257,10 +257,11 @@ and *How the scene view's camera is driven*.
 
 ### Story F: Prepare Sprint 12 (standing)
 
-- [ ] **S11-P3** · Prep brief for Sprint 12 · P2 · 🤖 Auto · report-only ·
+- [x] **S11-P3** · Prep brief for Sprint 12 · P2 · 🤖 Auto · report-only ·
   done: a run report lists the *Decided* rows with no code behind them, the open questions
   blocking them, the fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides
-  nothing. **Not before Mon Nov 23**: a fire before that leaves it in To Do.
+  nothing. **Not before Mon Nov 23**: a fire before that leaves it in To Do. Closed Nov 23 by the
+  lane: [[2026-11-23 09-08 Auto Run]].
 - [ ] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h ·
   done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Its
   window is Tue Nov 24 to Fri Nov 27, but Thu and Fri are karting days, so it runs on **Tue Nov

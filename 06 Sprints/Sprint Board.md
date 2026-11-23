@@ -34,7 +34,6 @@ kanban-plugin: board
 
 ## Story F: Prepare Sprint 12
 
-- [ ] **S11-P3** · Prep brief for Sprint 12 · P2 · 🤖 Auto · report-only: **not before Mon Nov 23**.
 - [ ] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 12's goal and draft cut into the Sprint 11 note. Runs **Tue Nov 24**, after S11-P3.
 
 
@@ -57,6 +56,7 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-P3** · Prep brief for Sprint 12 · P2 · 🤖 Auto · report-only: closed **Nov 23** by the lane, [[2026-11-23 09-08 Auto Run]]. It lists the Decided rows with no code, the open questions behind them, the fired [[Backlog]] triggers and the 🤖 Claude candidates, and decides nothing. S11-D4 starts from it.
 - [x] **S11-T20** · The browser panel · P2 · 🟢 Deep · 4-6h: #227 (`cdf9ef3`), **Nov 21**. The editor docks an *Asset Browser* beside the console: a folder tree, breadcrumbs and a grid of tiles with Ctrl, Shift and box selection, where a double-click opens a folder ([[Content Pipeline - Design]] § *The browser panel as built*). Unblocks S11-T22, and S11-T21 once S11-T18 lands; Story G goes on.
 	- **"An icon for its kind" had no referent**, because the editor has no icon font or icon images. At Miguel's call each tile draws a badge, and icons joined § *Future features*. He also took three calls the note did not make: the open folder is remembered in `layout.ini`, a folder that is gone opens its closest listed ancestor, and the index publishes the side folders that the listing leaves out.
 	- **The layout and the visuals came from v1's `ContentBrowserPanel`**, at Miguel's call mid-card. v1's icon images, its hand-written selection and box, and its file watcher stayed out, because the design replaced them.
