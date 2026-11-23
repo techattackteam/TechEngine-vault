@@ -35,6 +35,26 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
+### D15: A click on empty grid space keeps the browser's selection
+
+Miguel's windowed check of S11-T21 (Nov 23): after a tile is selected, a click on an empty part
+of the asset browser leaves the tile highlighted, where the grid's
+`ImGuiMultiSelectFlags_ClearOnClickVoid` should clear it. Where the click landed was not
+recorded: below the tiles, beside the last tile, or in the folder tree, which is outside the
+grid's selection scope.
+
+**Silent because it is only a stale highlight.** The menus act on the selection, so the next
+right-click on a tile acts on the old set too, but the right-click itself selects an unselected
+tile first.
+
+`apps/editor/src/ui/panels/AssetBrowserPanel.cpp:240-264` (`drawGrid`) at `fabb29b2`.
+ImGui 1.93's void-click path (`EndMultiSelect`) reads correct for these flags.
+
+**Fix:** not decided. First find where the click lands, with ImGui's Debug Log and its
+*Selection* filter on.
+
+**Trigger:** the next card that touches the browser's grid (S11-T22's drags, or S11-T24).
+
 ### D14: A reload never frees its old GPU copy
 
 A reload sends a new upload for the same slot, and `GpuCopies::apply` replaces the copy with
@@ -125,7 +145,8 @@ reported it on the Linux leg of #194, and the test that reached it was deleted i
 fixed. `shutdown()` waits first, so it is safe.
 
 **Silent because no normal path reaches it.** `App::run()` calls `shutdown()` whenever `init()`
-completed, and the startup import starts after `init()`, in the startup load. Only a caller
+completed, and an import starts only from the asset browser's menus, while the simulation runs
+(the startup import went with S11-T21, #230). Only a caller
 that skips `shutdown()` reaches the race: a test that bootstraps an editor and destroys it, or a
 new entry point. Outside TSan it is undefined behaviour with no symptom.
 

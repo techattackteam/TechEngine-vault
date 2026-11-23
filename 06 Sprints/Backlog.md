@@ -469,6 +469,17 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/med · **A create shows its progress**: a model or mesh create runs as a job and shows
+  nothing until its files appear. Miguel wants a window with a progress bar and a line saying what
+  is being read or written (Nov 23, during S11-T21). Nothing reports progress today: the importer
+  has no progress handler and the job has no channel back to main. It needs a design first (the
+  channel, the steps, one window for several creates), so it starts as a design card. **Trigger:**
+  `/sprint-prep` for Sprint 12.
+- #prio/low · **Create a scene from the browser**: Miguel, Nov 23, during S11-T21. A new
+  `.tescene` is cheap to write, but nothing can open it until the editor holds more than one
+  scene (T8), so it would sit unused. A creator class is all the browser side needs
+  ([[Content Pipeline - Design]] § *Creators*). **Trigger:** T8's card, or `/triage` if wanted
+  sooner.
 - #prio/low · **Every published snapshot copies the whole asset listing**: `EditorApp::publishEdits`
   copies the index's records and, since S11-T19 (#225, Nov 21), its listing, a few hundred strings
   on Sponza. An inspector drag publishes every frame, so this adds allocations to each of those

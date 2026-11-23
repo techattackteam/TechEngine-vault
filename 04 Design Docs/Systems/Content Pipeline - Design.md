@@ -79,8 +79,6 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | The root is copied as stored | Placement adds no offset: the root keeps the transform the model stores for it. | Miguel, 2026-11-10 (S10-T16) |
 | Placement waits for its meshes | It runs the cache's loading phase on the simulation thread, as an asset field set does. Loading over several frames waits for a measured stall ([[Backlog]] § *editor & tooling*). | S10-T16 (#196), 2026-11-10 |
 | Each create writes its own materials | A create never shares or overwrites another copy's materials or textures, so an edit to one copy's material reaches no other copy. This replaces "materials are created once", which only re-import needed. | Miguel, 2026-11-21 (S11-D3); § *Creating from a source* |
-| Before the asset browser | The editor imports one hardcoded source file at startup, `assets/client/glTF/Sponza.gltf` (moved from `assets/client/` by S11-T1, Nov 20, so the images sit in their own folder), skipped quietly when the file is missing or its folder exists. Placement goes through a *Place model* menu entry with a typed path, never at startup, because each launch would add a copy to a saved scene. Both go when the browser lands. | Miguel, 2026-11-06 |
-| Before the asset browser, merge | The hardcoded import's mode (model or merged mesh) is a constant beside its path (`STARTUP_IMPORT_MODE`). | S10-D10, 2026-11-09; S10-T21 (#203) |
 | UV0 is stored as assimp gives it | V grows the same way for every format, and a tangent's `w` follows the stored UV0. assimp flips glTF's V but keeps glTF's bitangent, so a glTF file's own `w` is negated. Texture rows are stored top row first with no flip, and the renderer's geometry upload stores `1 - v`: see § *Texture rows and V*. | Miguel, 2026-11-11 (S10-T19); § *The import's streams*; S10-T24 (#203) |
 | The import's stream calls | Flat normals when a file has none, no tangents without UV0, the `extensionsUsed` scanner, the scale refusal and the two importer classes. | Miguel, 2026-11-11 (S10-T19, #201); § *The import's streams* |
 | TEMesh v2's own calls | Stream counts, unknown stream bits, empty slots and the loader's duplicates. | S10-T17 (#198), 2026-11-10; § *The mesh file* |
@@ -98,6 +96,7 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | No re-import | A create always writes a new copy beside the earlier ones, so `Sponza.gltf` gives `Sponza/`, then `Sponza_1/`. A changed source is created again and placed again. The editor's re-import code is removed; `ResourceCache::reload` stays in `core` for the asset edit path. This replaces S10-D10's "re-import keeps every id" and "re-import reloads at once". | Miguel, 2026-11-21 (S11-D3); ADR-024 (amended 2026-11-21); § *Creating from a source* |
 | The asset browser lists the assets folders | Every file and folder under the three sides, listed by the simulation thread in the asset index's own walk and published in the snapshot. No file watcher: *Refresh* re-lists. Only an engine file warns when it cannot be read. | S11-D3, 2026-11-21; Miguel, 2026-11-21 (S11-T19, #225); § *What the browser lists* |
 | Two panes, breadcrumbs, a grid with a box | A folder tree and the open folder's tiles, each with a drawn badge for its kind. Ctrl, Shift and box selection on the grid. The open folder is remembered in the layout, and a folder that is gone opens its closest listed ancestor. | Miguel, 2026-11-21 (S11-D3); the badge and the open folder 2026-11-21 (S11-T20); § *The browser panel* |
+| Each create kind is a creator | One `AssetCreator` class per kind, listed by the panel, behind one shared dialog with a typed name. Model, mesh and sky names are typed too. | Miguel, 2026-11-23 (S11-T21); § *Creators* |
 | The browser drags to three targets | The scene view and the hierarchy place a model or mesh; an inspector asset field takes an asset of its type. | Miguel, 2026-11-21 (S11-D3); § *Dragging from the browser* |
 | Delete is permanent, after a warning | The warning lists every file that names the asset. A reference to an asset no file holds loads as absent, with a warning. | Miguel, 2026-11-21 (S11-D3); § *Deleting an asset*; [[Resources - Design]] § *Decided* |
 | The texture file | A `.tetexture` holds one 2D image in its GPU format, with every mip, its wrap and its filter. No ADR: a wrong format costs a version bump and a re-import. | S10-D11, 2026-11-10; § *The texture file* |
@@ -165,11 +164,11 @@ calls came from the card, not the design above.
   `RegisterImportedAssetsCommand`, which adds the records there and skips, with a log line, a
   record whose id is taken.
 - **Refusals** are `ProjectError` codes: `SourceUnreadable`, `SourceHasNoMeshes` (a model with no
-  triangle mesh places nothing visible), `ImportFolderExists`, and since S10-T19
-  `SourceCompressed` and `InvalidImportScale`. A failed import leaves no folder behind. Of two
-  imports of one source at once, only one creates the folder (`FileAccess::createDirectory`); the
-  other gets `ImportFolderExists` and removes nothing. The codes added since by S10-T24 and S10-T25 (#203) are named where they are used:
-  § *Texture inputs as built* and § *The sky image as built*.
+  triangle mesh places nothing visible), and since S10-T19 `SourceCompressed` and
+  `InvalidImportScale`. A failed import leaves no folder behind, the one it claimed included. A
+  taken folder name is not a refusal since S11-T18 (§ *Creating from a source*). The codes added
+  since by S10-T24 and S10-T25 (#203) are named where they are used: § *Texture inputs as built*
+  and § *The sky image as built*.
 - **Every triangle mesh is written**, even one that no node uses. Points and lines are skipped.
 - **Mesh file names** keep ASCII letters, digits, space, `.`, `_` and `-`. A clash, compared
   without case because Windows treats `Part_A` and `part_a` as one file, gets `_1`, `_2`.
@@ -511,10 +510,9 @@ Built by S10-T25 (#203), in `apps/editor/src/assets/TextureImporter.cpp`. The im
 
 - **Only a `.hdr` file is imported.** Any other extension is `UnsupportedImageType`. A source
   outside `assets/common`, `assets/client` or `assets/server` is `SourceNotInAssets`, because the
-  record's side comes from that folder (`TextureImporter::sideOf`). An existing output is
-  `ImportOutputExists`, and a file stb_image cannot read is `ImageUnreadable`. The output is
-  written with `FileAccess::createFile`, so of two imports at once one gets `ImportOutputExists`
-  and registers no record.
+  record's side comes from that folder (`TextureImporter::sideOf`). A file stb_image cannot read
+  is `ImageUnreadable`. The output takes the next free name since S11-T18
+  (§ *Creating from a source*).
 - **The sampler is repeat in U, clamp in V and linear** (`SKY_SAMPLER`), because a lat-long sky
   wraps around in longitude and ends at the poles.
 - **The image is decoded as float and packed per channel.** Alpha is dropped. A negative or NaN
@@ -529,10 +527,9 @@ Built by S10-T25 (#203), in `apps/editor/src/assets/TextureImporter.cpp`. The im
 
 ## The asset browser
 
-Designed by S11-D3 on 2026-11-21 against engine `a4c65ce`. It replaces the startup import and
-the File menu's *Place model...* and *Import image...* entries
-(`apps/editor/src/ui/PanelsManager.cpp:69-75`, `apps/editor/src/EditorApp.cpp:508`). S11-T17
-(#224) already removed *Re-import...*. Baseline:
+Designed by S11-D3 on 2026-11-21 against engine `a4c65ce`. It replaced the startup import and
+the File menu's *Place model...* and *Import image...* entries, which S11-T21 (#230) removed, as
+S11-T17 (#224) removed *Re-import...*. Baseline:
 Unity's Project window and Unreal's Content Browser both have a folder tree beside a grid, a
 path bar, box selection and drags into the scene and onto fields (from memory). Both also keep
 re-import, which this design drops (§ *Creating from a source*).
@@ -576,7 +573,7 @@ these calls:
 - **A create ends with `RefreshAssetsCommand`**, which replaced `RegisterImportedAssetsCommand`.
   An imported id that is already taken is now dropped with the old file as a duplicate, instead
   of the old file being kept. The startup's `EditorApp::createAsset` rebuilds too
-  (`EditorApp.cpp:540`), so `AssetIndex::add` has no caller outside tests.
+  (`EditorApp.cpp:506`), so `AssetIndex::add` has no caller outside tests.
 - **`FileAccess::list` leaves out `.tewrite` temporaries** (`FileAccess.cpp:27`), so a refresh
   during another create never indexes a half-written file.
 - **Every publish copies the whole listing**, as it copies the index. It is unmeasured
@@ -593,7 +590,9 @@ these calls:
 - **Breadcrumbs** above the grid name each folder from the side down to the open one. A click on
   one opens that folder.
 - **A click on a tree node opens its folder, and so does a double-click on a folder tile.** A
-  double-click on a file does nothing yet: opening a scene waits for more than one scene (T8).
+  double-click on a `.temodel` or `.temesh` places one copy, as *Place in scene* does (Miguel,
+  2026-11-23). A double-click on any other file does nothing yet: opening a scene waits for more
+  than one scene (T8).
 - **The default layout** docks the browser at the bottom, as a tab beside the console.
 - **The open folder and the selection belong to main.** They change nothing in the scene, so
   they are not commands.
@@ -640,28 +639,89 @@ implementation took these calls:
 | One model source | *Create model...*, *Create mesh...* |
 | One `.hdr` | *Create sky...* |
 | Any `.temodel` or `.temesh` tiles | *Place in scene*, one copy of each |
-| Any files or folders | *Delete...* |
-| Empty space in the grid | *Refresh* |
+| Any files or folders | *Delete...*, shown disabled until S11-T24 builds it, so no menu is empty |
+| Empty space in the grid | *Create folder...*, *Create material...* (client and common only), *Refresh* |
 
 *Create mesh* is today's `ImportMode::MergedMesh`, and *Create model* is `ImportMode::Model`.
+
+### The context menu as built
+
+Built by S11-T21 (#230), in `apps/editor/src/ui/panels/AssetBrowserPanel.cpp`. The implementation
+took these calls:
+
+- **The grid's menu is drawn before `EndMultiSelect`.** `EndMultiSelect` counts a popup as part
+  of the grid, so a menu drawn after it saw a click on an entry as a click in empty space, which
+  started a box select and swallowed the click.
+- **The create dialog's "Writes" line is worked out every frame** from the text the name field
+  shows (`TextEditField::getText`), so it follows each key and a refresh behind the dialog. The
+  name that is sent is the one committed when the edit ends, which a click on *Create* does first.
+- **A material and a folder are created on the simulation thread**, by `CreateMaterialCommand`
+  and `CreateFolderCommand`, with no job; a model, mesh or sky stays a job.
+
+### Creators
+
+Miguel, 2026-11-23 (S11-T21): more kinds of asset will be created from the browser (physics, AI,
+audio), so each kind is a class of its own. Baseline: Unreal gives each asset type a `UFactory`
+that the Content Browser's *Add* menu lists, and Unity marks a type with `[CreateAssetMenu]`
+(from memory).
+
+- **One `AssetCreator` per kind** (`apps/editor/src/ui/creators/AssetCreator.hpp`): its menu
+  label, which selections it accepts, its default name, its output path, its own settings
+  widgets, and the command it submits. The panel lists the creators in menu order, and a new kind
+  is one new class added to that list.
+- **The dialog is shared.** It owns the name field and the "Writes" line, and draws the creator's
+  settings below them. A creator holds only what its settings add, such as a model's scale.
+- **This replaced a `std::variant` of request types**, which assumed every create had a source
+  file and stopped fitting at the first create from nothing.
 
 ### Creating from a source
 
 Miguel, 2026-11-21: "it does not matter if there is already another model or mesh from that
 source it will create a new one."
 
-- **The dialog** sets the scale and the up axis and shows the folder it will write.
-- **The output takes the next free name.** `Sponza.gltf` writes `Sponza/`, then `Sponza_1/`,
-  `Sponza_2/`, the rule mesh file names already use (§ *The import*). The sky writes
-  `Sky.tetexture`, then `Sky_1.tetexture`. The job takes a name by creating it
-  (`FileAccess::createDirectory` or `createFile`) and tries the next one on `AlreadyExists`, so two
-  creates at once never share an output. `ImportFolderExists` and `ImportOutputExists` stop being
-  refusals.
+- **The dialog** takes a typed name, which starts as the source's own name, and sets the scale
+  and the up axis. It shows the first free output for that name, recomputed when the name
+  changes. The job takes its name when it runs, so another create may take the shown one first
+  (Miguel, 2026-11-23, replacing a name that was only shown).
+- **The output sits beside the source.** A typed name replaces the source's name, so `Sponza.gltf`
+  named `Atrium` writes `Atrium/Atrium.temodel` with the root node `Atrium`. An empty name in the
+  request still takes the source's name.
+- **The output takes the next free name**, built by S11-T18 (#229). `Sponza.gltf` writes
+  `Sponza/`, then `Sponza_1/`, `Sponza_2/`, and the files inside follow the folder: the model is
+  `Sponza_1/Sponza_1.temodel`, and its root node is `Sponza_1`. The sky writes `Sky.tetexture`,
+  then `Sky_1.tetexture`. A gap is filled: with `Sponza/` and `Sponza_2/` taken, the next create
+  writes `Sponza_1/`. `ImportFolderExists` and `ImportOutputExists` are gone.
+- **A name is taken by creating it** (`AssetNaming::claimFirstFree`, which every create calls),
+  and only `AlreadyExists` moves on to the next one. So two
+  creates at once never share an output, even from two processes. A check before the create
+  leaves a gap that another create can take, and a mutex covers one process only, so neither was
+  used (Miguel, 2026-11-23).
+- **The folder is claimed as soon as assimp has read the source**, because every output path is
+  built from its name. It therefore exists, empty, while the meshes are processed, and a source
+  with no triangle mesh removes the folder it claimed. Its `Textures`, `Materials` and `Meshes`
+  folders refuse `AlreadyExists`, because the folder is new.
 - **Each create writes its own materials and textures** (§ *Decided*).
 - **The import block stays in every file**, unchanged, as a record of the source and its
   settings. Nothing in the editor reads it once re-import is gone, but removing it would change
   four file formats for no gain.
 - **Placement is unchanged** (`PlaceModelCommand`).
+
+### Creating a material
+
+Miguel, 2026-11-23 (S11-T21): the browser creates a default material, ahead of the asset edit
+path. Nothing in the editor edits it yet.
+
+- **It is a default `Material`** with a new id and an empty import block, because it has no
+  source.
+- **The dialog takes a typed name**, "Material" at first, because there is no rename yet. It
+  shows the first free file, `Material.tematerial` or `Material_1.tematerial`, in the open folder.
+- **Every create refuses the same names** (`AssetNaming::isValidName`): empty, ending in a dot or
+  a space, or holding a character Windows refuses in a file name. A folder (*Create folder...*,
+  "New Folder" at first) follows the same rules, and its parent must still exist.
+- **A name is taken by creating it**, as in § *Creating from a source*, and the command lists the
+  assets again on the simulation thread. It is not a job, because the file is small.
+- **The entry is hidden under `assets/server`**, because the inspector's picker refuses a server
+  asset, so a server material could never be assigned.
 
 ### Dragging from the browser
 

@@ -286,7 +286,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   `ctest` proves the rest unchanged. Deletes [[Known Issues]] D10, and prunes § *Re-import* and
   § *Re-import as built* in [[Content Pipeline - Design]]. First, because S11-T18 edits
   `ModelImporter.cpp`.
-- [ ] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S11-T18** · A create takes the next free name · P2 · 🟠 Moderate · 2-3h ·
   done: a model, mesh or sky create writes `Sponza_1/` or `Sky_1.tetexture` when the name is
   taken, taking each name by creating it, and `ImportFolderExists` and `ImportOutputExists` stop
   being refusals. A test creates one source twice and gets two folders with different ids.
@@ -300,10 +300,14 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   done: the folder tree, breadcrumbs and the grid, with double-click to open a folder and Ctrl,
   Shift and box selection; the default layout docks it beside the console. Miguel's windowed
   check. After S11-T19.
-- [ ] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h ·
   done: § *The context menu*'s entries, with the create dialog's scale, up axis and output name.
   The File menu's *Place model...* and *Import image...* and the startup import
-  (`importStartupModel`, `STARTUP_IMPORT_MODE`) are gone. After S11-T18 and S11-T20.
+  (`importStartupModel`, `STARTUP_IMPORT_MODE`) are gone. *Create material...* writes a default
+  material under a typed name (§ *Creating a material*), added Nov 23 at Miguel's call. Also added
+  Nov 23 at his call: every create is a creator class with a typed name (§ *Creators*), model,
+  mesh and sky included; *Create folder...*; a double-click places a model or mesh; a disabled
+  *Delete...* keeps every menu non-empty. After S11-T18 and S11-T20.
 - [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h ·
   done: the scene view and the hierarchy place a model or mesh, a drop on a row as its first
   child (`PlaceModelCommand` gains the parent), and an inspector asset field takes an asset of its
