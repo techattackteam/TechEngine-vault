@@ -279,6 +279,19 @@ S9-T1 (#154, 2026-10-24) added two owner-only calls, settled at its `/card-start
   it returns `false` for any entry that is not Ready. It exists because `resolve` returns a const
   payload, and the scene load must free its bytes while the entry stays held.
 
+S11-T23 (#231, in review) made a missing reference load as absent. These calls are the lane's,
+listed in #231 for Miguel to accept or reverse:
+
+- **A held id that no file holds gets a `Missing` entry**, a state of its own beside
+  `AbsentForRole`, and the cache logs one warning that names the holder and the id. The check sits
+  in `requestEntry`, which now takes the holder's slot, so a scene's references, a loader's
+  dependencies and the editor's `addDependency` callers all take it at one point.
+- **A request with no holder still fails** with `UnknownResource`, so a missing startup scene
+  still ends the run.
+- **A `Missing` entry keeps its place** in its holder's dependency list, because render reads a
+  material's textures and a mesh's default materials by position. `reload` skips it, and a reload
+  whose new bytes name a missing id now publishes instead of failing.
+
 ### The reload as built
 
 S10-T21 (#203) added `reload(ids)`, an owner-only call that runs as a loading phase. It

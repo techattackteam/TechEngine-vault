@@ -39,7 +39,6 @@ kanban-plugin: board
 ## Story G: The asset browser (carries freely)
 
 - [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
-- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h: in a scene, a material and a model, with a warning. Independent. Given to the lane on Nov 23, at Miguel's call.
 - [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: a warning that lists what uses it, then one command. After S11-T21 and S11-T23.
 
 
@@ -49,6 +48,7 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h: PR #231 (`S11-T23/missing-asset-absent`), opened by the lane on Nov 24. Review it and its five *Decisions I took*: the new `Missing` state, a held reference only, one cache warning, a kept dependency position, and a reload that now publishes. Also decide whether export should accept a missing reference: it still refuses one (see [[2026-11-24 09-08 Auto Run]]).
 
 
 ## ✅ Done: Sprint 11

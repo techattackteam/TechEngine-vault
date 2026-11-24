@@ -469,6 +469,12 @@ groups are kept, because they show where future work will land.
 
 ## editor & tooling *(exe)*
 
+- #prio/med · **Export refuses a reference that no file holds**: since S11-T23 (#231), a scene
+  that names a deleted asset opens with that reference missing, but `Project::exportTo` still
+  returns `UnknownReference` when a reached asset names an unindexed id, so the project no longer
+  exports. Whether the bake should skip such a reference with a warning, or keep refusing so a
+  shipped build never lacks content, is Miguel's call. Found by [[2026-11-24 09-08 Auto Run]].
+  **Trigger:** #231 merges, or S11-T24's delete lands.
 - #prio/med · **A create shows its progress**: a model or mesh create runs as a job and shows
   nothing until its files appear. Miguel wants a window with a progress bar and a line saying what
   is being read or written (Nov 23, during S11-T21). Nothing reports progress today: the importer
