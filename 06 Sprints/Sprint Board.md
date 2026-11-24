@@ -44,6 +44,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S11-T25** · The editor's `edit/` and `assets/` get subfolders · P3 · 🟡 Light · 1-2h: moves only, `tests/` mirrors; added Nov 24. Whichever of it and S11-T22 merges second redoes its include paths.
 
 
 ## 👀 Review / Demo

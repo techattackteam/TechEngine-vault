@@ -322,6 +322,12 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   selection, then one command removes the files and their index records (`AssetIndex::remove`),
   makes the open scene's references absent and marks it unsaved. The open scene's file and a
   folder a create is writing into are refused. After S11-T21 and S11-T23.
+- [ ] **S11-T25** · The editor's `edit/` and `assets/` get subfolders · P3 · 🟡 Light · 1-2h ·
+  done: `edit/` splits into `snapshot/`, `fields/`, `session/`, `scene/`, `assets/`, `project/`,
+  `console/` and `camera/` with `EditorCommands` at its root, and `assets/` into `index/` and
+  `import/`. `tests/` mirrors both. Only moves, includes and CMake lists change. Added Nov 24 at
+  Miguel's call; Claude does the moves in an attended session. It and S11-T22 both touch `edit/`,
+  so whichever merges second redoes its include paths.
 
 ## 🤖 Lanes
 
