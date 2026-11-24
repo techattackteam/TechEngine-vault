@@ -128,7 +128,7 @@ or wholly black. Logged in #203's description, not fixed.
 **Silent because the file is valid.** Every check after the decode passes, the texture loads,
 and nothing in the editor draws a sky until R1.
 
-`apps/editor/src/assets/ImageDecoder.cpp:70-74` at `25c93a4b`.
+`apps/editor/src/assets/import/ImageDecoder.cpp:70-74` at `25c93a4b`.
 
 **Fix:** not decided. The decoder could compare the bytes a flat image needs against the bytes
 after the header before calling stb_image.

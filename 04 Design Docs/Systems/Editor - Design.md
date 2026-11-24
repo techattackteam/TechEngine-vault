@@ -88,7 +88,7 @@ message. This note says how those messages are shaped.
 | A rename of several gives them one name | The name field shows a dash when the names differ, and an edit renames every selected entity. | 2026-10-31 (S9-D6), § *Multi-select* |
 | A move of several counts among the children not moved | The position of a move of several counts among the parent's children that are not moved, and the moved ones land together in hierarchy order. A drop of several at the root is allowed while one of them is a child. | 2026-11-01 (S10-T1), § *Multi-select as built* |
 | A refused entity is skipped, not the whole command | A move or a delete of several skips each entity the `Scene` refuses, and raises the edit revision if anything changed. A move into any moved subtree is still refused whole. | 2026-11-01 (S10-T1), § *Multi-select as built* |
-| `ui/` draws, `edit/` decides | `apps/editor/src/ui/` holds ImGui drawing and the plumbing around it: the panels, the widgets, the theme, the close prompt and the bridge to the render thread. Everything a test can reach lives in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot. Diff coverage skips `ui/`, because no test draws ImGui, so logic put there goes unscored. | 2026-11-02 (S10-T5); `cmake/coverage_report.cmake` |
+| `ui/` draws, `edit/` decides | `apps/editor/src/ui/` holds ImGui drawing and the plumbing around it: the panels, the widgets, the theme, the close prompt and the bridge to the render thread. Everything a test can reach lives in `edit/`: the snapshot and its drop resolution, the commands, the session and the slot. Diff coverage skips `ui/`, because no test draws ImGui, so logic put there goes unscored. `edit/` has one folder per subject (`snapshot/`, `fields/`, `session/`, `scene/`, `assets/`, `project/`, `console/`, `camera/`), with `EditorCommands` at its root as the front every panel includes. The editor's `assets/` splits into `index/` and `import/`, and `tests/` mirrors both. | 2026-11-02 (S10-T5); `cmake/coverage_report.cmake`; the folders Miguel, 2026-11-24 (S11-T25, #233) |
 | The console is the editor's own log sink | `ConsoleLog`, a member of `EditorApp`, registers a `LogSink` and copies each record into a bounded queue; main drains it at the start of each frame. | 2026-11-03 (S10-D2); ADR-011 §3 amended; § *The console* |
 | A Warn or worse from another thread wakes main | Once, until main drains. Info and below, and anything main logs itself, wait for the next frame main builds. | 2026-11-03 (S10-D2), § *The console* |
 | The console filters by level and text | A *Show* dropdown lists each level with its count, and a search field takes the message. The channel filter waits until modules register channels. | 2026-11-03 (S10-D2); dropdown 2026-11-06 (S10-T12), § *The console panel* |
@@ -407,7 +407,7 @@ Built by S10-T1 (#178 `9afda8d`, 2026-11-01). The calls it made where the design
 - **A move of several.** Its position counts among the parent's children that are not moved.
   `ReparentEntityCommand` puts the first child after the last unmoved child before that
   position, and each next child after the one before it, because `Scene` counts a position among
-  the current other children (`apps/editor/src/edit/HierarchyCommands.cpp`).
+  the current other children (`apps/editor/src/edit/scene/HierarchyCommands.cpp`).
 - **Refused entities.** A child the `Scene` refuses is skipped and the rest still move, and so
   is a dead entity in a delete. A drop of several at the root skips the dragged roots.
 - **A select with a dead entity** drops it and still stores the sequence number. Otherwise main
@@ -458,7 +458,7 @@ Brief]] makes it a Should.
   clears. Unreal's Output Log adds a filter by log category, which is our channel (both from
   memory). Ours takes Unity's shape, because no module registers a channel yet, so every
   record is `default/default` and a channel filter would offer one entry.
-- **The sink.** `ConsoleLog` in `edit/` is a `LogSink`. Its `write` runs on whichever thread
+- **The sink.** `ConsoleLog` in `edit/console/` is a `LogSink`. Its `write` runs on whichever thread
   logged, so it copies the record, message included, into a queue under its own short mutex.
   The message points into the dispatch call's stack buffer (`Log.hpp:76-78`), so it must be
   copied. That is one allocation per record, in the editor only. The queue holds 1,024
@@ -490,7 +490,7 @@ Brief]] makes it a Should.
 
 Designed by S10-D2 with § *The console*. Built by S10-T12.
 
-- **The store.** Main moves drained records into `ConsoleHistory` in `edit/`, which keeps 5,000
+- **The store.** Main moves drained records into `ConsoleHistory` in `edit/console/`, which keeps 5,000
   and drops the oldest. It keeps a count per level and the list of rows that pass the filter:
   the levels shown, and a case-insensitive search on the message. A drain that reports dropped
   records adds one Info row, "N records dropped", before its batch. Clear empties the records
@@ -632,9 +632,9 @@ sets `WantSaveIniSettings`, and once more at shutdown. `projects/dev/.gitignore`
 - The render frame the ImGui hook joins: `engine/client/src/render/RenderThread.cpp:97-155`.
 - The bridge: `apps/editor/src/ui/ImGuiBridge.cpp`; the frame on main and the shutdown order:
   `apps/editor/src/EditorApp.cpp:115-145`.
-- Save and close: `apps/editor/src/edit/SaveSceneCommand.cpp`, `apps/editor/src/ui/ClosePrompt.cpp`,
+- Save and close: `apps/editor/src/edit/project/SaveSceneCommand.cpp`, `apps/editor/src/ui/ClosePrompt.cpp`,
   and `EditorApp::handleCloseRequest` and `drawClosePrompt`.
-- The snapshot, the session, the commands and the sender: `apps/editor/src/edit/`; the
+- The snapshot, the session, the commands and the sender: `apps/editor/src/edit/`, one subfolder per subject; the
   dockspace and the panels: `apps/editor/src/ui/PanelsManager.cpp` and `apps/editor/src/ui/panels/`;
   the shared widgets: `apps/editor/src/ui/widgets/`.
 - The sink the console builds on: `engine/base/src/diagnostics/Log.cpp`, `deliverRecord` and

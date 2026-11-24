@@ -297,7 +297,7 @@ groups are kept, because they show where future work will land.
     `tests/scene/SceneTestRegistry.hpp` saves about 60 lines.
   - Registering the three built-in components (`Hierarchy`, `Transform`, `Name`) is written by
     hand outside `core`: `engine/app/src/App.cpp:124-132` (only when missing),
-    `engine/app/tests/SimulationThreadTests.cpp:96`, `apps/editor/tests/edit/EditTestScene.hpp:95`,
+    `engine/app/tests/SimulationThreadTests.cpp:96`, `apps/editor/tests/edit/session/EditTestScene.hpp:95`,
     `apps/editor/tests/project/ProjectTests.cpp:92`, `apps/editor/tests/EditorAppTests.cpp:279`,
     and `apps/runtime/tests/RuntimeAppTests.cpp:395` and `:841`. `core`'s own tests already share
     `registerBuiltInSceneComponents` (`engine/core/tests/scene/SceneTestRegistry.hpp:31`). A
@@ -343,7 +343,7 @@ groups are kept, because they show where future work will land.
     (a defaulted `operator==` on the boot record types, about 28 lines).
   - Appending a child as the last one is written as
     `setParent(child, parent, scene.getChildren(parent).size())`, which builds the child vector
-    only to count it: `apps/editor/src/edit/PlaceModelCommand.cpp:164`,
+    only to count it: `apps/editor/src/edit/scene/PlaceModelCommand.cpp:164`,
     `engine/core/tests/camera/CameraTests.cpp:36` and
     `engine/client/tests/render/FrameExtractionTests.cpp:56`. An append position on `setParent`, or
     a child count, is a new public symbol. About 3 lines, and one allocation per call. Found by the
@@ -355,7 +355,7 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **`Scene` has no tree-order walk, so every caller writes its own**: four walks
   call `getChildren`, which builds a new vector for each node. Two are depth-first and track the
-  depth: `EditSession::buildSnapshot` (`apps/editor/src/edit/EditSession.cpp:74`) and
+  depth: `EditSession::buildSnapshot` (`apps/editor/src/edit/session/EditSession.cpp:74`) and
   `RuntimeApp::logSceneTree` (`apps/runtime/src/RuntimeApp.cpp:100`). Two are breadth-first:
   `SceneAsset::write` (`engine/core/src/scene/SceneAsset.cpp:33`) and
   `SceneAsset::visitReferences` (`:300`). A walk inside `Scene` could follow the `Hierarchy`
@@ -366,7 +366,7 @@ groups are kept, because they show where future work will land.
   depth-first walk keeps that. Found while pairing on S10-T1, Nov 1. Since S10-B2 (#197, Nov 10)
   the roots are a sibling list too, so the walk can start at the first root and allocate
   nothing; S10-B2 left the walk out on purpose. S10-T18 (#199, Nov 10) added a fifth, breadth-first:
-  the whole-scene `rebuildMaterialSlots` (`apps/editor/src/edit/MaterialSlotRebuild.cpp:54`), so
+  the whole-scene `rebuildMaterialSlots` (`apps/editor/src/edit/scene/MaterialSlotRebuild.cpp:54`), so
   the first trigger has fired. S11-T5 (#208, Nov 16) added the sixth, depth-first and stopping
   at the first match: `findMainCamera` (`engine/core/src/camera/Camera.cpp`). Since S11-T4 (#210,
   Nov 16) it walks only when two cameras are main. S11-T15 (#215, Nov 18) made
@@ -515,7 +515,7 @@ groups are kept, because they show where future work will land.
   **Trigger:** the next card that adds a shortcut, such as the gizmo's modes.
 - #prio/low · **The scene view's focus frames by scale, not by size**: meshes carry no bounds, so
   F flies to 2.5 times the selected entity's largest world-scale axis, and never closer than
-  1.5 m (`apps/editor/src/edit/FlyCamera.hpp`, S11-T11, #222, Nov 20). A large model at scale 1,
+  1.5 m (`apps/editor/src/edit/camera/FlyCamera.hpp`, S11-T11, #222, Nov 20). A large model at scale 1,
   such as Sponza's root, frames from inside it. Framing the subtree's world bounds fixes it.
   **Trigger:** the first card that gives meshes bounds, such as culling or picking.
 - #prio/medium · **An adopted `Startup.tescene` opens empty and cannot be saved**: when the
@@ -541,7 +541,7 @@ groups are kept, because they show where future work will land.
   **Trigger:** Miguel wants to order roots in the editor, or the next card on the hierarchy panel.
 - #prio/high · **Design the asset edit path**: the editor cannot edit a value that lives in an
   asset. Every edit command changes a component on an entity
-  (`apps/editor/src/edit/InspectorCommands.hpp:26`, `:47`), and a material's roughness lives in
+  (`apps/editor/src/edit/scene/InspectorCommands.hpp:26`, `:47`), and a material's roughness lives in
   its own file, shared by every entity that uses it. Decided by Miguel on Nov 9: each edit is an
   undo step, and the file is written on Save. Still to design: the command and what it changes
   in the cache, how an undo record names an asset, how the editor tracks an unsaved asset and
@@ -648,15 +648,15 @@ groups are kept, because they show where future work will land.
 - #prio/medium · **Code sweep leftovers: apps**: Found by the code sweep on Nov 10, 2026
   ([[2026-11-10 14-12 Auto Run]]). Lines are at engine `9c93b8f`; #195 shifts some of them in `InspectorCommands.cpp`.
   - Eight commands open their entity loop with the same two guards, an `!entity.valid()` warning and
-    a `!scene.contains(entity)` warning (`apps/editor/src/edit/HierarchyCommands.cpp:36`, `:66`,
-    `:171`; `apps/editor/src/edit/InspectorCommands.cpp:54`, `:156`, `:233`, `:293`, `:357`).
+    a `!scene.contains(entity)` warning (`apps/editor/src/edit/scene/HierarchyCommands.cpp:36`, `:66`,
+    `:171`; `apps/editor/src/edit/scene/InspectorCommands.cpp:54`, `:156`, `:233`, `:293`, `:357`).
     `contains` already refuses an invalid entity, so one check would do, but the two warnings would
     become one. About 30 lines.
   - `SetFieldCommand::apply` and `SetAssetFieldCommand::apply` share their per-entity loop, from
-    the guard to the `FieldEditRecord` (`apps/editor/src/edit/InspectorCommands.cpp:53-86`,
+    the guard to the `FieldEditRecord` (`apps/editor/src/edit/scene/InspectorCommands.cpp:53-86`,
     `:155-188`). Their logging and their slot differ, so a shared helper needs choosing. About 25
     lines.
-  - The single-entity `EditorSnapshot::resolveDrop` (`apps/editor/src/edit/EditorSnapshot.cpp:99`)
+  - The single-entity `EditorSnapshot::resolveDrop` (`apps/editor/src/edit/snapshot/EditorSnapshot.cpp:99`)
     gives the same answer as the span overload for one entity, except when the parent is not in
     the snapshot. Dropping it changes `HierarchyPanel.cpp:176` and the tests that call it. About
     20 lines.
@@ -664,19 +664,19 @@ groups are kept, because they show where future work will land.
     registrations (`apps/editor/src/EditorApp.cpp:99`, `apps/runtime/src/RuntimeApp.cpp:39`).
     `ClientApp` could make them once, but that is a new override in its public header. About 12
     lines.
-  - `EULER_MIXED_EPSILON` (`apps/editor/src/edit/EditSession.cpp:20`) must equal the inspector's
+  - `EULER_MIXED_EPSILON` (`apps/editor/src/edit/session/EditSession.cpp:20`) must equal the inspector's
     `EULER_DISPLAY_EPSILON` (`apps/editor/src/ui/panels/InspectorPanel.cpp:33`). One shared
     constant would remove the "must match" comment. About 2 lines.
   - Test copies in the editor's test executable, about 50 lines together:
     - The triangle `meshBytes` (`apps/editor/tests/project/ProjectTests.cpp:617`,
-      `apps/editor/tests/edit/AssetEditHarness.hpp:159`). About 6 lines.
+      `apps/editor/tests/edit/scene/AssetEditHarness.hpp:159`). About 6 lines.
     - `registerExportComponents` (`apps/editor/tests/project/ProjectTests.cpp:91`) is typed out
       again at `apps/editor/tests/EditorAppTests.cpp:283`. About 3 lines.
     - A directory entry count, three times (`apps/editor/tests/assets/ModelImportTests.cpp:133`,
-      `apps/editor/tests/EditorAppTests.cpp:203`, `apps/editor/tests/edit/SaveSceneCommandTests.cpp:72`).
+      `apps/editor/tests/EditorAppTests.cpp:203`, `apps/editor/tests/edit/project/SaveSceneCommandTests.cpp:72`).
       About 5 lines.
     - "Records nothing, revision kept" checks, about ten times in
-      `apps/editor/tests/edit/InspectorCommandsTests.cpp` (from `:171`), and "asset set refused"
+      `apps/editor/tests/edit/scene/InspectorCommandsTests.cpp` (from `:171`), and "asset set refused"
       five times (from `:926`). About 12 lines.
     - "File content unchanged", six times in `apps/editor/tests/EditorAppTests.cpp` (from `:641`),
       and "scene held once" twice (`:521`, `:562`). About 13 lines.
@@ -728,7 +728,7 @@ groups are kept, because they show where future work will land.
   it: `engine/core/src/scene/SceneAssetRowWriter.cpp:14`. **Trigger:** S9-T15 merges, then the
   next card that adds or edits a log line about an entity. **Fired by S9-T16 (#171)**: its
   hierarchy commands warn about entities through the new `std::formatter<Entity>`, which prints
-  `index:generation` only (`apps/editor/src/edit/HierarchyCommands.cpp`).
+  `index:generation` only (`apps/editor/src/edit/scene/HierarchyCommands.cpp`).
 
 - #prio/medium · **A workflow file that does not parse can still merge**: #95 broke
   `ci-docs.yml`'s YAML (fixed by S7-P9, #104). A run that fails to parse reports under the

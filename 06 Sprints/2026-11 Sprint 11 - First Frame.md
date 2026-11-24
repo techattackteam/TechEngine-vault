@@ -250,7 +250,7 @@ and *How the scene view's camera is driven*.
   line. Each walk whose result does not depend on hierarchy order becomes a component query; each
   one that does stays, with its reason (the outliner, sibling order, row order on disk, a tree
   print). The known candidate is the whole-scene `rebuildMaterialSlots`
-  (`apps/editor/src/edit/MaterialSlotRebuild.cpp:54`), which gathers every entity only to rebuild
+  (`apps/editor/src/edit/scene/MaterialSlotRebuild.cpp:54`), which gathers every entity only to rebuild
   each `MeshRenderer`'s slots. It stays off S11-T4's files (`Camera.cpp`, `SceneAsset.cpp`,
   `FrameExtraction.cpp`) and S11-T12's (`RuntimeApp.cpp`), and only lists the walks there. A walk
   that holds a `const Scene&` needs S11-T4's const query, which is not on `master` yet, so it is
@@ -312,7 +312,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   done: the scene view and the hierarchy place a model or mesh, a drop on a row as its first
   child (`PlaceModelCommand` gains the parent), and an inspector asset field takes an asset of its
   type. After S11-T20.
-- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h ·
+- [x] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h ·
   done: a scene, a material's textures and a model's meshes treat an id no file holds as absent,
   with a warning, and a file that exists and fails still fails ([[Resources - Design]]
   § *Decided*). One test per holder. Independent of the browser. **Retagged 🤖 Claude on Nov 23**
@@ -322,7 +322,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   selection, then one command removes the files and their index records (`AssetIndex::remove`),
   makes the open scene's references absent and marks it unsaved. The open scene's file and a
   folder a create is writing into are refused. After S11-T21 and S11-T23.
-- [ ] **S11-T25** · The editor's `edit/` and `assets/` get subfolders · P3 · 🟡 Light · 1-2h ·
+- [x] **S11-T25** · The editor's `edit/` and `assets/` get subfolders · P3 · 🟡 Light · 1-2h ·
   done: `edit/` splits into `snapshot/`, `fields/`, `session/`, `scene/`, `assets/`, `project/`,
   `console/` and `camera/` with `EditorCommands` at its root, and `assets/` into `index/` and
   `import/`. `tests/` mirrors both. Only moves, includes and CMake lists change. Added Nov 24 at
@@ -355,11 +355,13 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
 - [x] Sponza was re-imported with its images through *Re-import...*, and its ids were kept
   (S11-T1). #220 (`ecb28c2`), Nov 20: the ids kept are those of a fresh import with the images,
   which replaced the textureless Sponza.
-- [ ] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
+- [x] Every 🤖 Claude PR's *Decisions I took* list is accepted or reversed, and the reversals are
   counted for the retro. S11-T5's seven: merged with none reversed, #208 (`4e05985`), Nov 16.
   S11-T11's six: two reversed by Miguel in the session, not in review (the WASD speed model with
   its wheel speed scale, and the teleported cursor); Q and E went with WASD; the smoothing, the
   focus flight, its scale-based distance and the pitch clamp stand. #222 (`a4c65ce`), Nov 21.
+  S11-T23's five: merged with none reversed, #231 (`5b27fb9`), Nov 24. #231 has no review
+  conversation, so "none reversed" means it merged unchanged.
 - [ ] Sprint 12's draft cut is in this note (S11-D4).
 
 ## Capacity note

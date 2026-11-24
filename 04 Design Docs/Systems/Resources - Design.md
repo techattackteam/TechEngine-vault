@@ -171,7 +171,7 @@ A duplicate id, such as a file copied outside the editor, is reported at index t
 paths. The index is not persisted, and rebuilding it on file changes waits for file watching
 ([[Backlog]] → `platform`).
 
-**As built** (S8-T6, #131, 2026-10-12). `AssetIndex` lives in `apps/editor/src/assets/`, and
+**As built** (S8-T6, #131, 2026-10-12). `AssetIndex` lives in `apps/editor/src/assets/index/`, and
 `EditorApp::init()` builds it right after the project mounts, with `TE_CHECK` on failure, like
 the project load. Miguel settled these at `/card-start`:
 
@@ -209,6 +209,7 @@ fixed-size blocks that never move, which is what lets a fenced reader keep a poi
 stateDiagram-v2
   [*] --> Pending: request (owner)
   [*] --> AbsentForRole: id on a side this role never opens
+  [*] --> Missing: held id that no file holds (S11-T23)
   Pending --> Pending: dependencies requested (next round)
   Pending --> Ready: published by the owner
   Pending --> Failed: error kept on the entry
@@ -217,7 +218,8 @@ stateDiagram-v2
 ```
 
 A request on the simulation thread finds or creates the entry and adds one to its count. An
-unknown id fails at once. A new entry gets a `JobSystem` task that reads and decodes, then
+unknown id fails at once when nothing holds it, and a held one gets a `Missing` entry (§ *The
+cache as built*). A new entry gets a `JobSystem` task that reads and decodes, then
 pushes a completion that carries the payload and the ids it depends on (since #203 a task no
 longer writes its entry; § *Loads on the job system, as built*); the completion queue's lock
 is the only lock a load task takes. The owner drains completions
@@ -279,8 +281,8 @@ S9-T1 (#154, 2026-10-24) added two owner-only calls, settled at its `/card-start
   it returns `false` for any entry that is not Ready. It exists because `resolve` returns a const
   payload, and the scene load must free its bytes while the entry stays held.
 
-S11-T23 (#231, in review) made a missing reference load as absent. These calls are the lane's,
-listed in #231 for Miguel to accept or reverse:
+S11-T23 (#231, `5b27fb9`, Nov 24) made a missing reference load as absent. These calls are the
+lane's, listed in #231, and all of them merged unchanged:
 
 - **A held id that no file holds gets a `Missing` entry**, a state of its own beside
   `AbsentForRole`, and the cache logs one warning that names the holder and the id. The check sits
@@ -688,7 +690,7 @@ build profiles each carry their own scene list (both from memory).
 
 Designed Nov 2 by S10-D1, a 🤖 Claude Design card, under Miguel's Oct 31 hand-off (§ *Decided:
 packs and the runtime layout*). Built by S10-T3 (#179, 2026-11-02) as `ExportCommand` in
-`apps/editor/src/edit/`. S10-T4 built the Run button (#181, 2026-11-03).
+`apps/editor/src/edit/project/`. S10-T4 built the Run button (#181, 2026-11-03).
 
 - **The copy is the runtime executable alone**: `runtime.exe` on Windows, `runtime` on Linux.
   Every first-party library and dependency links statically (`cmake/deps.cmake`), engine assets

@@ -579,7 +579,7 @@ flowchart LR
 ### The scene view's fly camera as built
 
 Built by S11-T11 (#222, `a4c65ce`, Nov 21), by the row *How the scene view's camera is driven*.
-`FlyCamera` (`apps/editor/src/edit/FlyCamera.hpp`) takes a plain input record and never touches
+`FlyCamera` (`apps/editor/src/edit/camera/FlyCamera.hpp`) takes a plain input record and never touches
 ImGui. `SceneViewPanel::updateCamera` fills that record on main, and `describeCamera` sends the
 pose through the view slot. The numbers are the lane's calls; the controls are Miguel's.
 
@@ -632,7 +632,7 @@ Mechanism sections land as the build cards are cut. Known build work:
   (`engine/core/src/camera/Camera.cpp`). The lookup counts main cameras with a const query
   and walks the tree through `getChildren` only when two or more tie, so a normal scene never
   walks. The inspector's `main` tick and the add-component command go through them
-  (`apps/editor/src/edit/InspectorCommands.cpp`), and `SceneAsset::read` warns on two.
+  (`apps/editor/src/edit/scene/InspectorCommands.cpp`), and `SceneAsset::read` warns on two.
 - **GPU captures** go through Nsight, since RenderDoc cannot capture bindless GL (Miguel, v1).
 - **The light clusters follow v1's two dispatches:** one builds each cluster's bounds, one
   assigns lights. v1 ran both every frame and read the light count from the live `Scene`

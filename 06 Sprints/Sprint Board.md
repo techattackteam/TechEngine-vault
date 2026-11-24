@@ -38,22 +38,27 @@ kanban-plugin: board
 
 ## Story G: The asset browser (carries freely)
 
-- [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
 - [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: a warning that lists what uses it, then one command. After S11-T21 and S11-T23.
 
 
 ## 🔨 In Progress
 
-- [ ] **S11-T25** · The editor's `edit/` and `assets/` get subfolders · P3 · 🟡 Light · 1-2h: moves only, `tests/` mirrors; added Nov 24. Whichever of it and S11-T22 merges second redoes its include paths.
+- [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
 
 
 ## 👀 Review / Demo
 
-- [ ] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h: PR #231 (`S11-T23/missing-asset-absent`), opened by the lane on Nov 24. Review it and its five *Decisions I took*: the new `Missing` state, a held reference only, one cache warning, a kept dependency position, and a reload that now publishes. Also decide whether export should accept a missing reference: it still refuses one (see [[2026-11-24 09-08 Auto Run]]).
 
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T25** · The editor's `edit/` and `assets/` get subfolders · P3 · 🟡 Light · 1-2h: #233 (`93c65db`), **Nov 24**. The layout is the card's own: eight subject folders under `edit/` with `EditorCommands` at its root, `index/` and `import/` under `assets/`, and `tests/` mirroring both ([[Editor - Design]] § *Decided*, "`ui/` draws, `edit/` decides"). Only moves, include paths and CMake lists changed, and the vault's citations of the moved files were rewritten to the new paths.
+	- **Added mid-sprint on Nov 24 at Miguel's call**, and done in its own session while S11-T22 was in progress. It merged first, so S11-T22's branch redoes its include paths, and its new `AssetDragPayload` needs a folder in the new layout.
+	- #233 has no review conversation, so this entry comes from the card, the PR body and the diff. Every CI check on #233 was green.
+- [x] **S11-T23** · A missing asset loads as absent · P2 · 🤖 Claude · 2-3h: #231 (`5b27fb9`), **Nov 24**. A held reference to an id no file holds gets a `Missing` entry and one warning, in a scene, a material's textures and a model's meshes, and a file that exists and fails still fails ([[Resources - Design]] § *The cache as built*). Unblocks S11-T24, which now waits on nothing; Story G goes on with S11-T22 and S11-T24.
+	- **All five *Decisions I took* stood:** the new `Missing` state, a held reference only, one warning from the cache, a kept dependency position, and a reload that now publishes. #231 merged unchanged and has no review conversation, so nothing records what was weighed and rejected.
+	- **Two behaviour changes the clause did not name:** a reload whose new bytes name a missing id now publishes instead of keeping the old payload, and `PlaceModelCommand` dropped its "not in the asset index" refusal, so a model with a missing mesh places that node with an empty slot list.
+	- **Left open:** export still refuses a missing reference, so a project with a deleted asset opens but does not export ([[Backlog]] § *editor & tooling*). The board asked Miguel to decide it, and that call is still owed. Every CI check on #231 was green.
 - [x] **S11-T21** · The browser's menu and create dialogs · P2 · 🟠 Moderate · 2-3h: #230 (`fabb29b`), **Nov 23**. The browser's tile and empty-space menus create, place and refresh, behind one create dialog, and the File menu's *Place model...*, *Import image...* and the startup import are gone ([[Content Pipeline - Design]] § *The context menu*, § *Creators*). Unblocks S11-T24 once S11-T23 lands; Story G goes on with S11-T22, S11-T23 and S11-T24.
 	- **The scope grew five times mid-card, each at Miguel's call:** a default material create, a folder create, a double-click that places, a disabled *Delete...* so no menu is empty, and typed names for model, mesh and sky. The last reversed the card's "output name", which `/card-start` read as shown only, per the note as written; § *Creating from a source* now records the typed name.
 	- **Written and replaced before it shipped:** the dialog held a `std::variant` of request types, which assumed every create had a source file and broke at the first create from nothing. Miguel asked for a shape that takes physics, AI and audio creates later, so each kind became an `AssetCreator` class, and the name rules every create shares moved into `AssetNaming`, which S11-T18's two claim loops now call.

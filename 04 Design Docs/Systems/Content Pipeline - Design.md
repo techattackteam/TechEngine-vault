@@ -14,29 +14,29 @@ the editor's build with only its glTF, FBX and OBJ importers (S10-T13, `cmake/de
 model file and the import block are built, with write and read (S10-T14,
 `engine/core/include/TechEngine/core/model/Model.hpp` and
 `engine/core/include/TechEngine/core/assets/ImportBlock.hpp`). The import is built (S10-T15,
-`apps/editor/src/assets/ModelImporter.hpp`). The placement is built (S10-T16,
-`apps/editor/src/edit/PlaceModelCommand.hpp`). TEMesh v2's file is built, with write and read
+`apps/editor/src/assets/import/ModelImporter.hpp`). The placement is built (S10-T16,
+`apps/editor/src/edit/scene/PlaceModelCommand.hpp`). TEMesh v2's file is built, with write and read
 (S10-T17, `engine/core/include/TechEngine/core/mesh/Mesh.hpp`). Import writes the vertex streams
-(S10-T19, `apps/editor/src/assets/MeshImporter.hpp`).
+(S10-T19, `apps/editor/src/assets/import/MeshImporter.hpp`).
 
 Six more cards are built, merged together in #203 (`25c93a4`, 2026-11-14). S11-T1 (#220,
 2026-11-20) gave them their first windowed run: Sponza imported with its 69 images, re-imported
 with its ids kept, placed as a model and as a merged mesh, and a real `.hdr` through *Import
 image...*:
 
-- **S10-T20, the merged mesh:** `apps/editor/src/assets/ModelImporter.hpp`, `MeshImporter.hpp`
-  and `apps/editor/src/edit/PlaceModelCommand.hpp`.
+- **S10-T20, the merged mesh:** `apps/editor/src/assets/import/ModelImporter.hpp`, `MeshImporter.hpp`
+  and `apps/editor/src/edit/scene/PlaceModelCommand.hpp`.
 - **S10-T21, reload and re-import:** `ResourceCache::reload`
   (`engine/core/include/TechEngine/core/resources/ResourceCache.hpp`). Its re-import half was
   removed by S11-T17 (#224).
 - **S10-T22, the texture file:** `engine/core/include/TechEngine/core/texture/Texture.hpp`.
 - **S10-T23, the material file:** `engine/core/include/TechEngine/core/material/Material.hpp`,
   written up in [[Renderer - Design]] § *The material file*.
-- **S10-T24, materials and textures at import:** `apps/editor/src/assets/MaterialImporter.hpp`,
+- **S10-T24, materials and textures at import:** `apps/editor/src/assets/import/MaterialImporter.hpp`,
   `TextureImporter.hpp` (encoding and the mip chain) and `ImageDecoder.hpp` (DDS decoding).
-- **S10-T25, the sky image:** `apps/editor/src/assets/TextureImporter.hpp` (`importSky` and
+- **S10-T25, the sky image:** `apps/editor/src/assets/import/TextureImporter.hpp` (`importSky` and
   the `RGB9E5` packing), `ImageDecoder.hpp` and
-  `apps/editor/src/edit/ImportSkyCommand.hpp`.
+  `apps/editor/src/edit/assets/ImportSkyCommand.hpp`.
 
 The calls these cards took that no artifact had made are recorded in the *as built* subsections
 below. The implementation took them, and #203 merged them with no review conversation. Miguel
@@ -114,7 +114,7 @@ A `.temodel` is a binary blob with its own `BlobKind`, like the mesh and the sce
 
 - **Its id, straight after the header**, as in the mesh and the scene, because the editor's
   asset index reads only the first 16 bytes (`ASSET_PREFIX_SIZE` in
-  `apps/editor/src/assets/AssetIndex.cpp`).
+  `apps/editor/src/assets/index/AssetIndex.cpp`).
 - **The import block** (§ below), whose settings are the scale and up axis.
 - **A node list in parent-first order**, so a node's parent is always earlier. Each node has a
   name, its parent's index (none for the root), a local translation, rotation and scale, and
@@ -134,7 +134,7 @@ referenced by the result.
 
 The meshes are shared, not copied: every placed copy points at the same mesh ids.
 
-The editor's asset index learns the model's kind (`apps/editor/src/assets/AssetIndex.cpp:33-36`).
+The editor's asset index learns the model's kind (`apps/editor/src/assets/index/AssetIndex.cpp:33-36`).
 
 ## The import block
 
@@ -155,8 +155,8 @@ the editor fills it in.
 
 ## The import
 
-Built by S10-T15 (#194): `ModelImporter::importFile` in `apps/editor/src/assets/ModelImporter.cpp`
-since S10-T19 (#201), run as a job by `ImportModelCommand` in `apps/editor/src/edit/`. These
+Built by S10-T15 (#194): `ModelImporter::importFile` in `apps/editor/src/assets/import/ModelImporter.cpp`
+since S10-T19 (#201), run as a job by `ImportModelCommand` in `apps/editor/src/edit/assets/`. These
 calls came from the card, not the design above.
 
 - **Ids are drawn on the worker** by `randomResourceId()`, because the job needs them before it
@@ -280,7 +280,7 @@ of a visited type element by element, and a bare vector of `Entity` or `AssetRef
 compile (`engine/core/include/TechEngine/core/serialization/Writer.hpp:95`, `Reader.hpp:109`,
 `ReferenceVisitor.hpp:38`, `FieldVisitor.hpp:120`). The rebuild is `MeshRenderer::rebuildSlots`
 (`engine/core/src/mesh/MeshRenderer.cpp`), and the editor acquires each new default in
-`apps/editor/src/edit/MaterialSlotRebuild.cpp`.
+`apps/editor/src/edit/scene/MaterialSlotRebuild.cpp`.
 
 From memory: Unity's renderer holds a full material array indexed by submesh, and Unreal's
 component holds overrides by slot index, with the names on the mesh. This shape is Unity's full
@@ -362,7 +362,7 @@ Built by S10-T22 (#203), in `engine/core/src/texture/Texture.cpp`. The implement
   can equal, so a huge size is refused without a special case.
 - **A texture has no dependencies.** Its loader clears the list, and both apps register it
   (`apps/editor/src/EditorApp.cpp`, `apps/runtime/src/RuntimeApp.cpp`). The editor's asset index
-  learns the kind in `apps/editor/src/assets/AssetIndex.cpp`.
+  learns the kind in `apps/editor/src/assets/index/AssetIndex.cpp`.
 
 ## Texture rows and V
 
@@ -476,7 +476,7 @@ Also S10-T24 (#203), in `MaterialImporter.cpp`, `ImageDecoder.cpp` and `TextureI
 
 ### Encoding as built
 
-Also S10-T24 (#203), in `apps/editor/src/assets/TextureImporter.cpp`:
+Also S10-T24 (#203), in `apps/editor/src/assets/import/TextureImporter.cpp`:
 
 - **The top level is encoded from the source's own bytes.** Only the levels below it go through
   linear float and back, so the largest level never takes that round trip's rounding.
@@ -506,7 +506,7 @@ light) is the renderer's ([[Renderer - Design]] § *Open questions*).
 
 ### The sky image as built
 
-Built by S10-T25 (#203), in `apps/editor/src/assets/TextureImporter.cpp`. The implementation took these calls:
+Built by S10-T25 (#203), in `apps/editor/src/assets/import/TextureImporter.cpp`. The implementation took these calls:
 
 - **Only a `.hdr` file is imported.** Any other extension is `UnsupportedImageType`. A source
   outside `assets/common`, `assets/client` or `assets/server` is `SourceNotInAssets`, because the
@@ -558,7 +558,7 @@ re-import, which this design drops (§ *Creating from a source*).
 
 ### What the browser lists as built
 
-Built by S11-T19 (#225), in `apps/editor/src/assets/AssetIndex.cpp:78`. The implementation took
+Built by S11-T19 (#225), in `apps/editor/src/assets/index/AssetIndex.cpp:78`. The implementation took
 these calls:
 
 - **`ListedEntry` is the listing's row** (`AssetIndex.hpp:37`): a path, a side, a `ListedKind`
@@ -616,7 +616,7 @@ these calls:
 ### The browser panel as built
 
 Built by S11-T20 (#227), in `apps/editor/src/ui/panels/AssetBrowserPanel.cpp`, with the folder
-queries on the snapshot (`apps/editor/src/edit/EditorSnapshot.cpp:201`, `:241`, `:265`). The
+queries on the snapshot (`apps/editor/src/edit/snapshot/EditorSnapshot.cpp:201`, `:241`, `:265`). The
 implementation took these calls:
 
 - **The layout and the look are v1's `ContentBrowserPanel`** (tag `v1-reference`), at Miguel's
@@ -757,7 +757,8 @@ Miguel's behaviour from Oct 26, with his answers of Nov 21.
 - **Refused:** the open scene's own file, and a folder a create is still writing into.
 - **Deleting a source** deletes that file only. The folders created from it stay.
 - **Every later load** treats a reference to an id no file holds as absent, with a warning
-  ([[Resources - Design]] § *Decided*). That holds for a scene, a material's textures and a
+  ([[Resources - Design]] § *Decided*), built by S11-T23 (#231) as a `Missing` entry
+  ([[Resources - Design]] § *The cache as built*). That holds for a scene, a material's textures and a
   model's meshes (§ *Decided*). Render already draws the default material when a material has no
   copy, and skips a mesh with none (`engine/client/src/render/FrameRenderer.cpp:253-272`), so no
   default asset files are needed.
@@ -769,7 +770,7 @@ Miguel's list from 2026-11-21, not scheduled. Each line says what it needs first
 - **Rename.** Safe since re-import is gone: references are ids, and an import block's source
   path is only a record now.
 - **Copy.** It must write a new id into the copy, because two files with one id are both dropped
-  from the index (`apps/editor/src/assets/AssetIndex.cpp:100-108`).
+  from the index (`apps/editor/src/assets/index/AssetIndex.cpp:100-108`).
 - **Dropping files from Explorer** into the open folder, which copies them in; creating stays a
   menu entry. GLFW's drop callback needs a new window event in `platform` that reaches main. It
   cannot travel with input, because the editor detaches the `InputBuffer` while Stopped.
