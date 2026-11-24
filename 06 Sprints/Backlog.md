@@ -37,14 +37,14 @@ groups are kept, because they show where future work will land.
 
 ## base
 
-- #prio/medium · **Get `<chrono>` out of `Log.hpp`**: `LogRecord`'s `system_clock::time_point`
+- #prio/low · **Get `<chrono>` out of `Log.hpp`**: `LogRecord`'s `system_clock::time_point`
   is the only reason it is there, and `<chrono>` costs ~1200 ms and 73k preprocessed lines per
   TU on MSVC (S4-T1's numbers, [[B3 - Build & Testing Notes]]). It is the engine's most widely
-  included header. **Trigger:** a full-rebuild time that actually hurts, measured not guessed.
-- #prio/medium · **Allocators**: a Pool primitive. **Trigger:** a first consumer. Events
+  included header. **Trigger:** a full-rebuild time that actually hurts, measured not guessed. **Kept 2026-11-24.**
+- #prio/low · **Allocators**: a Pool primitive. **Trigger:** a first consumer. Events
   declined it ([[ADR-014 - Events (buffered streams) & StringId]] §7, contiguous streams, no
   node churn); next candidate: script instance storage (ADR-010 §2a's pool option → scripting
-  ADR).
+  ADR). **Kept 2026-11-24.**
 - #prio/low · **The crash path needs a ring read that does not allocate**: since S10-T11,
   `ringSnapshot` appends `StoredLogRecord`s, so it allocates a string per record, and a crash
   handler cannot rely on the heap. [[Logger - Design]] still says the crash path flushes the
@@ -95,9 +95,9 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
-  [[ADR-014 - Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+).
+  [[ADR-014 - Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+). **Kept 2026-11-24.**
 
-- #prio/low · **`executablePath()` aborts on a Windows path longer than `MAX_PATH`**:
+- #prio/xlow · **`executablePath()` aborts on a Windows path longer than `MAX_PATH`**:
   `resolveExecutablePath` calls `GetModuleFileNameW` into a fixed `wchar_t[MAX_PATH]` and
   `TE_CHECK`s that the result fit (`engine/platform/src/ExecutablePath.cpp:16-19`). 260
   characters is not the Windows limit, so a deep install path is legal and kills the process.
@@ -105,7 +105,7 @@ groups are kept, because they show where future work will land.
   deliberately at S5-T1 with the trade named: a fatal is honest, and nothing ships to a deep
   path today. **Loud, not silent**, so it is here rather than in [[Known Issues]].
   **Trigger:** the first install or CI checkout under a long path, or long-path support being
-  turned on.
+  turned on. **Kept 2026-11-24.**
 
 - #prio/low · **`FileAccess::move` cannot cross a filesystem boundary**:
   `std::filesystem::rename` fails with `cross_device_link` when two mounts on one alias sit on
@@ -118,7 +118,7 @@ groups are kept, because they show where future work will land.
   `cmake/`. Either it was dropped in review under `CLAUDE.md` § *Code conventions*' default-to-no-comment
   rule or it was never written, so this entry is the only record of the decision.
   **Trigger:** the first project mounted from a different drive than the engine, which the
-  editor's two-root bootstrap (S5-T5) makes reachable.
+  editor's two-root bootstrap (S5-T5) makes reachable. **Kept 2026-11-24.**
 
 - #prio/medium · **`FileAccess::remove` resolves a must-exist path through `resolveForCreate`**:
   `remove` takes the highest-priority mount for the alias and never probes
@@ -134,7 +134,7 @@ groups are kept, because they show where future work will land.
   `remove` has none. **Silent**, because `NotFound` is a legitimate answer and the caller cannot
   tell it from the resolver having taken the wrong mount. **Trigger:** the first overlay mount
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
-  that section.
+  that section. **Kept 2026-11-24.**
 
 - #prio/low · **Code sweep leftovers: platform**: Found by the code sweep on Nov 12, 2026
   ([[2026-11-12 14-09 Auto Run]]), and carried from the Oct 9 and Oct 30 sweeps.
@@ -156,13 +156,13 @@ groups are kept, because they show where future work will land.
     and read nowhere, tests included. `InputEvent::capturedAt` is the one that is read. Deleting
     the field drops the age of the presentation copy, which a renderer may want. About 2 lines.
 
-- #prio/medium · **Restore a read-only FileAccess boundary**: `copy`, `move` and
+- #prio/low · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
   records the options. **Trigger:** the SDK boundary or the next FileAccess API edit.
   **Fired Oct 11:** S8-T1 (#126) added `FileAccess::readRange`. The three calls are still
   `const`, and the note's *Open questions* still records the options. **Re-armed Oct 24:** not
   picked for Sprint 09, which edits no `FileAccess` signature; the trigger is now the SDK
-  boundary (A1) or the next signature change.
+  boundary (A1) or the next signature change. **Kept 2026-11-24.**
 
 ## core
 
@@ -181,11 +181,6 @@ groups are kept, because they show where future work will land.
   Failed entry. It cannot happen at startup, where the cache starts empty. Found while pairing
   on S9-T3, Oct 25. **Trigger:** T1's scene reload, or any second scene load in one process.
 
-- #prio/low · **A test for `wait()` called from a pool worker**: the `TE_CHECK` added at
-  S4-T4 is the only guard, and it has no case, because without it the test hangs rather than
-  fails and costs a CI timeout to catch. **Trigger:** a test helper that can fail a case on a
-  deadline.
-
 - #prio/low · **Remove call-site access and ordering from `Schedule::add`**: S7-T3 moves
   declarations into `ISystem::init`, but `add<T>(DeclareAccess<…>)` and the returned
   registration's `setPriority`, `setSlot`, `before` and `after` still work. They run after
@@ -193,7 +188,7 @@ groups are kept, because they show where future work will land.
   and graph tests use them heavily. S7-T4 added `onEvent<Event>` to the same handle, and a
   `ScheduleTests` case now pins a handle declaration after the `init` handlers. The
   constructor-injection entry below depends on removing this parameter. **Trigger:** a bug
-  where a call-site declaration hides a system's own, or the next rewrite of those tests.
+  where a call-site declaration hides a system's own, or the next rewrite of those tests. **Kept 2026-11-24.**
 
 - #prio/medium · **Systems cannot receive services through their constructor**:
   `Schedule::add` requires `std::default_initializable<T>` and builds the instance with
@@ -205,7 +200,7 @@ groups are kept, because they show where future work will land.
   Jolt world with the `JobSystem`, has to defer that setup to its first Tick. Letting `add<T>`
   forward constructor arguments collides with the call-site `DeclareAccess` parameter, so this
   depends on the entry above. Found at the ownership review, Sep 27. **Trigger:** the first
-  system that needs a service, S1's physics system at the latest.
+  system that needs a service, S1's physics system at the latest. **Kept 2026-11-24.**
 
 - #prio/low · **Rename `EngineContext` to `EngineServices`**: the struct holds only
   process-lifetime services (`FileAccess`, `JobSystem`, `Clock`), but its name makes it look
@@ -214,18 +209,18 @@ groups are kept, because they show where future work will land.
   later ADRs use the current name, so the rename needs a naming amendment in ADR-006's header,
   like its Jul 24 vocabulary amendment. Proposed by Miguel at the ownership review, Sep 27.
   **Trigger:** before an SDK surface exposes the name to project code, because a rename after
-  that breaks projects.
+  that breaks projects. **Kept 2026-11-24.**
 
-- #prio/medium · **Declare the event types a system publishes**: ADR-014 §4 makes event
+- #prio/low · **Declare the event types a system publishes**: ADR-014 §4 makes event
   access a declared `SystemAccess` category, and only the reader side was amended to
   handlers. `Scene::publish` accepts any registered type from any system, and no card owns
   the publish declaration. The shape is a publish declaration on S7-T4's entry-scoped
   surface, checked in `Scene::publish` the way `validateWrite` checks components. Found at
   S7-T6's review, Sep 27. **Trigger:** P1's parallel executor, where an undeclared publisher
   becomes a race. Its first trigger (S7-T4's surface, #99) fired on Sep 27, and Sprint 08's
-  planning re-triggered it on Oct 11 because no M6 card needs it.
+  planning re-triggered it on Oct 11 because no M6 card needs it. **Kept 2026-11-24.**
 
-- #prio/medium · **Should `SerialExecutor` borrow the graph instead of copying it?**: its
+- #prio/low · **Should `SerialExecutor` borrow the graph instead of copying it?**: its
   constructor copies each `TaskGraphNode`'s access mask and system pointer into its own node,
   then drops the graph (`engine/core/src/systems/SerialExecutor.cpp:29`). Only per-node runtime
   state, such as the command buffer, has to live in the executor; the parallel executor needs
@@ -234,7 +229,7 @@ groups are kept, because they show where future work will land.
   the options, including the executor-before-graph lifetime in `App` and the tests, and
   implement the better one if borrowing wins. Found at S7-T4, Sep 27. **Trigger:** the parallel
   executor at P1. S7-T7's dispatch (#100) fired the first trigger on Sep 27; Sprint 08's
-  planning re-triggered it on Oct 11 because no M6 card needs it.
+  planning re-triggered it on Oct 11 because no M6 card needs it. **Kept 2026-11-24.**
 
 - #prio/low · **Events published in a failed Tick stay staged**: a failed phase discards its
   structural commands but not its publications, so a retried Tick would make them visible
@@ -578,8 +573,10 @@ groups are kept, because they show where future work will land.
   would be an optional argument to `visit`'s `field`, which the other archives ignore, so they
   are a [[Serialization - Design]] decision first. Found at S9-T17. **Trigger:** the first
   component with a field that needs a range, or the third custom drawer, likely in R1.
-- #prio/medium · **Frame capture / debug-visualization tools.** **Trigger:** a renderer to
-  inspect (R2).
+- #prio/low · **Frame capture tools**: capturing one frame to inspect its passes and
+  resources, such as a RenderDoc integration. Sprint 12's visualizers and view modes took the
+  debug-visualization half on Nov 24 ([[Renderer - Design]] § *Decided*). **Trigger:** a
+  renderer to inspect (R2). **Kept 2026-11-24.**
 - #prio/medium · **The Profiler panel's build**: recording each Play session's tick, render and
   main-frame samples, a file per run under `editorSettings/profiler/`, and the panel that lists
   the runs and graphs the selected one. Designed by S10-D3 on Nov 3, 2026, in [[Editor -
@@ -710,15 +707,6 @@ groups are kept, because they show where future work will land.
   example or drop the clause; `platform/Platform.hpp` would serve only if the *platform* rename
   above keeps it at the root. Found by the lane on Nov 17 ([[2026-11-17 14-10 Auto Run]]).
   **Trigger:** the *platform* rename is decided, or the next edit to § *Headers*.
-- #prio/low · **glad2's generator command in `cmake/deps.cmake` is stale**: S11-T2 (#206)
-  regenerated glad with `--api gl:core=4.6 --extensions GL_ARB_bindless_texture`, but the
-  comment at `cmake/deps.cmake:246` still gives the 4.5 command with no extensions. The next
-  regeneration from that comment would drop the floor and bindless. The header records the real
-  command (`external/glad/include/glad/gl.h`). A one-line fix, a 🤖 Auto candidate. Found at
-  S11-T2's close on Nov 14, 2026. **Fixed in the engine working tree on Nov 21**, with every
-  `#version 450` moved to 460 (the ImGui backend, two test files, the dev project's geometry
-  shaders), at Miguel's call; not in a PR yet. When that PR merges, delete this entry and the
-  sentence in [[Window - Design]] § *glad2* that says the comment still shows 4.5.
 - #prio/medium · **The million cubes as an end-to-end benchmark**: Miguel's ask, Oct 30, 2026.
   [[Renderer - Brief]]'s Should of a million cubes moving on a grid at 60 fps (v1 reached 20)
   exercises one whole frame: a System over the ECS, the task graph's executor, transform
@@ -772,7 +760,7 @@ groups are kept, because they show where future work will land.
   those four excludes are not enough to make it a gate yet. **Re-armed Oct 24:** not picked for
   Sprint 09; the trigger is now an exclude for historical card text, or the next full
   reconciliation.
-- #prio/medium · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
+- #prio/low · **A `TE_ENSURE` case passes under `ctest` and fails when the test exe is run
   directly**: report-once is per call site through a function-local static (ADR-011 §5), and
   `catch_discover_tests` hides that by giving every Catch2 case its own process. Two
   `EventRegistryTests` cases hit the duplicate-tag site, and S5-T2 dropped the fire count from
@@ -780,7 +768,7 @@ groups are kept, because they show where future work will land.
   asserts a fire twice through one site inherits the same split behaviour, and it will look
   like a flake. Options are a test-only reset hook on the report-once static, or a rule that a
   fire count is asserted at exactly one case per site. **Trigger:** the next card that adds a
-  `TE_ENSURE` case, or the first developer confused by a green `ctest` and a red exe.
+  `TE_ENSURE` case, or the first developer confused by a green `ctest` and a red exe. **Kept 2026-11-24.**
 - #prio/low · **`delete_branch_on_merge` is off**: [[ADR-009 - Branching strategy & merge rules]]
   §1 says topic branches are deleted after merge, and the repo setting does not enforce it, so
   merged branches accumulate by hand. **Trigger:** the next settings pass, or the first time a

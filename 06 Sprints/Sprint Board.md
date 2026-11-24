@@ -32,7 +32,6 @@ kanban-plugin: board
 
 ## Story F: Prepare Sprint 12
 
-- [ ] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 12's goal and draft cut into the Sprint 11 note. Runs **Tue Nov 24**, after S11-P3.
 
 
 ## Story G: The asset browser (carries freely)
@@ -42,6 +41,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 12's goal and draft cut into the Sprint 11 note. Runs **Tue Nov 24**, after S11-P3.
 
 
 ## 👀 Review / Demo

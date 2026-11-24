@@ -96,6 +96,11 @@ the render thread that draws packets through a small device.
 | Where linear becomes sRGB | The forward pass's fragment shader encodes its output, until E2's final image pass takes the encode over. The window's framebuffer stays linear, so `platform` does not change. Until then, blending happens on encoded values. | Miguel, 2026-11-20 (S11-T9) |
 | How blended materials draw | Last, after opaque and cut-outs, with the depth test on, depth writes off and no sorting. Batches run bucket first across every geometry block, so no block's opaque draws follow another block's blended ones. Overlapping blended surfaces blend in the wrong order until a sort lands ([[Backlog]] § *client*). | Miguel, 2026-11-20 (S11-T9) |
 | The camera's axes and depth | As in v1: a camera looks down its local −Z, its view is the inverse of its world matrix, and its projection is `glm::perspective`, with GL's −1 to 1 depth range and `Less`. Reversed-Z waits for a float depth target. | Miguel, 2026-11-20 (S11-T9); v1's `Camera::updateViewMatrix` at `v1-reference` |
+| Visualizers | A visualizer is a shape that represents a component in the scene view: a camera's frustum, the sphere a point light reaches, a spot light's cone and the sun's direction. They are not debug lines. Every camera and light shows its visualizer, and the selected ones are drawn brighter, as in v1. The game view and the runtime never draw them. A settings panel may make them customizable later. | Miguel, 2026-11-24 (S11-D4) |
+| How visualizers reach render | The packet carries every light and every `Camera`, not only the main one. A view's record asks for visualizers, and only the scene view's record does. Render builds the shapes from the packet and draws them in one shape pass in `client`, from a buffer the CPU writes each frame (§ *Geometry buffers*). | Miguel, 2026-11-24 (S11-D4), as proposed |
+| The light components | One component per type: a directional light for the sun, a point light and a spot light, in `core`, with values in ADR-029 §6's units. All three exist as data and visualizers before any of them lights the scene. | Miguel, 2026-11-24 (S11-D4), as proposed |
+| View modes | Debug modes for developing the renderer. They are a renderer feature in `client`, set per view, not an editor feature. The light-count heat map is one of them and arrives with the light clusters. v1's heat map coloured each pixel by its tile's light count on a log scale up to 512 lights, mixed half over the lit colour (`templates/project/resources/client/assets/shaders/geometryFragment.glsl:326-478` at `v1-reference`). Whether a shipped game keeps them is open (§ *Open questions*). | Miguel, 2026-11-24 (S11-D4) |
+| Reloading shaders | A manual *Reload shaders* command rebuilds the programs from their files. File watching stays deferred (ADR-024). | Miguel, 2026-11-24 (S11-D4), as proposed |
 
 ## Design
 
@@ -715,6 +720,9 @@ Mechanism sections land as the build cards are cut. Known build work:
   *Open questions*, owner R1).
 - **Whether lights go only to occupied clusters,** found from the depth pre-pass, or to every
   cluster as v1 did. With hundreds of lights, every cluster may be enough. Owner: E2b.
+- **Whether a shipped game keeps the view modes.** Miguel thinks they could let a developer see
+  what the renderer sees in their own game, but has not weighed it (Nov 24). Owner: Sprint 12's
+  `/triage` of the renderer's debug tools.
 - **An ordered pass list or a render graph.** E2 needs only the list; ADR-013 §8's GPU zones
   attach to each pass either way.
 

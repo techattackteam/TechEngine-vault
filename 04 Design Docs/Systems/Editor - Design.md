@@ -95,6 +95,7 @@ message. This note says how those messages are shaped.
 | The console keeps 5,000 records | The oldest drop first. Clear empties it. | 2026-11-03 (S10-D2), § *The console* |
 | The Profiler panel shows recorded Play sessions | Each Play session is recorded, from Play to Stop, and saved as one file in the project. While Stopped the panel graphs the run the user selects. It is built with Play (E11), not in E1. | 2026-11-03 (S10-D3); ADR-013 §3 amended; § *The Profiler panel* |
 | The scene view's camera reads ImGui on main | The scene view panel moves its camera from ImGui's mouse and keys, so "No game input while Stopped" stands and nothing re-attaches the `InputBuffer`. A drag locks the window's cursor through GLFW (`EditorApp::setCursorLocked`, S11-T11). The game view draws through the scene's main active camera. Both cameras are decided in [[Renderer - Design]] § *Decided*. | Miguel, 2026-11-14 (S10-D6) |
+| The gizmo is ImGuizmo | The scene view moves, rotates and scales the selection with ImGuizmo (`github.com/CedricGuillemet/ImGuizmo`), as v1 did. The scene view panel draws it on main, over the view's image, and its edits go through the edit commands. It is T3's; picking comes later, so the selection comes from the hierarchy. Camera and light visualizers are the renderer's ([[Renderer - Design]] § *Decided*). | Miguel, 2026-11-24 (S11-D4) |
 
 ## Threads and channels
 

@@ -269,6 +269,130 @@ and *How the scene view's camera is driven*.
   window is Tue Nov 24 to Fri Nov 27, but Thu and Fri are karting days, so it runs on **Tue Nov
   24**, after S11-P3's brief from Monday.
 
+#### Sprint 12's cut
+
+Drafts for `/sprint-plan`, which gives them `S12-` IDs and fits them to capacity. S11-D4 cut them
+on Nov 24 with Miguel.
+
+- **Proposed goal:** renderer groundwork, E2's second sprint. The engine's shaders load from
+  engine asset files and reload on command, the light components exist, the scene view draws a
+  visualizer for every camera and light and moves the selection with a gizmo, and each view can
+  switch to a debug view mode. Nothing is lit yet.
+- **Why not the lit pass:** S11-D4 first proposed lighting Sponza. Miguel declined on Nov 24,
+  because the forward shader is a C++ string (`engine/client/src/render/FrameRenderer.cpp:44`),
+  ADR-029 §5's engine shader assets do not exist, and the renderer has no way to show what it is
+  doing. The lit pass moves to Sprint 13, so E2 runs about four sprints instead of three. Miguel
+  accepted the stretch for this reason, and `/sprint-plan` adjusts E2's row in the [[Roadmap]].
+- **First Design cards:** card 1, then card 2, on day 1. Story B stays unsized until card 2.
+- **Decisions:** the visualizers, the light components, the view modes and shader reload are
+  rows in [[Renderer - Design]] § *Decided*, and the gizmo is a row in [[Editor - Design]]
+  § *Decided*, all dated Nov 24.
+- **Showcase:** none, because E2 does not end here. `/showcase E2` is owed before the sprint that
+  ends it, and S11-D2 feeds it.
+- **Carry-over:** S11-D2 and S11-T24 stay in Sprint 11 at Miguel's call (Nov 24). This cut
+  counts neither of them.
+- **Fired [[Backlog]] entries:** card 7 (*Inspector field hints*), card 12 (*The editor has no
+  shortcut system*) and card 15 (*`logs/` is not git-ignored*). Card 13 has not fired; Miguel
+  picked it.
+- **[[Known Issues]]:** D9, D11, D12 and D13 neither block nor touch these cards. D13 needs a
+  mesh, texture or material that gains a dependency, and a light holds no reference.
+- **Lane:** enabled. It still owes the paste recorded in [[Autonomous Lane - Routine Prompt]]
+  § *Routine configuration*.
+- **Rough count:** Miguel 4 🟢, 7 🟠 and 1 🟡, about 8 slots; 🤖 Claude 2 cards; 🤖 Auto 3
+  cards. That is heavy for a sprint whose first weekend is a vacation. Drop order: card 13, card
+  12, card 10.
+
+##### Story A: Day 1 (Miguel)
+
+1. **D · Triage the renderer's debug tools** · P1 · 🟡 Light · 1-2h · done: `/triage` weighs the
+   visualizers, the view modes with the light-count heat map, and whether a shipped game keeps the
+   view modes. The [[Capability Map]] records the result with the date. Before cards 9 and 10.
+2. **D · Engine assets and the renderer's settings asset** · P1 · 🟢 Deep · 4-6h · done:
+   [[Project - Design]] and [[Resources - Design]] decide how the editor's `<exe dir>/engine`
+   folder is filled from the repository, how an engine asset gets its id and enters the asset
+   index so the bake packs what a settings asset reaches, whether the browser shows engine assets,
+   and where the project names the renderer's settings asset (Resources - Design § *Open
+   questions*). Unreal, Unity and Godot are the baseline. The card confirms or replaces the Oct 10
+   home (Project - Design § *Why no template tree*, `apps/editor/src/EditorApp.cpp:78`). On Nov 24
+   Miguel floated the project's own `engine/` folder or a `resources/` folder at its root; either
+   one brings back v1's F27 unless the comparison answers it. The card narrows Project - Design's
+   row *Shaders live in `assets/client/`* to developers' own shaders. A change to the bake amends
+   ADR-025 §6. It cuts Story B.
+
+##### Story B: The engine's shaders are files (Miguel, unsized until card 2)
+
+3. **T · The forward shader leaves the code** · P1 · 🟢 Deep · 4-6h · done: the GLSL in
+   `engine/client/src/render/FrameRenderer.cpp` moves into engine shader files that the renderer's
+   settings asset names, render builds its programs from them, and no GLSL is left in `client`'s
+   sources. How much of ADR-029 §5's assembly lands now is settled at `/card-start`. The unused
+   `projects/dev/assets/client/shaders/GeometryShader.vert` and `.frag` are deleted. After card 2.
+4. **T · Reload shaders** · P2 · 🟠 Moderate · 2-3h · done: the editor's *Reload shaders* command
+   rebuilds every program from its files. A program that fails to compile keeps the old one and
+   logs the error. After card 3.
+
+##### Story C: Lights as data
+
+5. **T · The light components** · P1 · 🤖 Claude · 2-3h · done: the three light components in
+   [[Renderer - Design]] § *Decided*, in `core`, with values in ADR-029 §6's units, registered in
+   both apps and shown in the inspector. Their fields are the card's decisions, listed in the PR.
+   Tests: each component round-trips through the scene file.
+6. **T · Every light and camera in the packet** · P1 · 🟠 Moderate · 2-3h · done: extraction
+   writes every light with its world transform, and every `Camera`, into the packet, by the row
+   *How visualizers reach render*. The main camera is found as it is today. Render receives them
+   and draws nothing new. Tests: a packet holds each light and camera of its scene. After card 5.
+7. **T · Inspector field hints** · P2 · 🟠 Moderate · 2-3h · done: the [[Backlog]] entry.
+   [[Serialization - Design]] decides how a field carries a range, a speed and a display name, the
+   inspector reads them, and a drawer registry replaces `drawComponent`'s `if` chain. The lights'
+   fields get their ranges. After card 5. *From a fired Backlog entry.*
+
+##### Story D: Seeing what the renderer does (Miguel)
+
+8. **T · The shape pass** · P1 · 🟢 Deep · 4-6h · done: a pass in `client` draws lines that the
+   CPU writes each frame into their own buffer, over the frame, in each view whose record asks
+   for it. The scene view's record asks. Miguel's windowed check. After card 6.
+9. **T · Camera and light visualizers** · P1 · 🤖 Claude · 2-3h · done: every camera's frustum,
+   every point light's reach, every spot light's cone and the sun's direction, drawn through card
+   8's pass, with the selection brighter. How render learns the selection is the card's decision.
+   The PR ends with "needs Miguel's visual check". After cards 1 and 8.
+10. **T · View modes** · P2 · 🟠 Moderate · 2-3h · done: each view's record names a view mode.
+    Render draws at least lit (base color until the lit pass), unlit, wireframe and normals. The
+    scene view picks one from its toolbar, and the runtime gets whatever switch card 1 decides.
+    After cards 1 and 3.
+
+##### Story E: The gizmo (Miguel, T3)
+
+11. **T · ImGuizmo moves the selection** · P1 · 🟢 Deep · 4-6h · done: ImGuizmo is pinned in
+    `cmake/deps.cmake`, and the scene view draws it over the selected entity to move, rotate and
+    scale it, in local or world space, by [[Editor - Design]] § *Decided*. A child's drag writes
+    its local transform. How a drag becomes undo steps is settled at `/card-start`. Miguel's
+    windowed check.
+12. **T · A shortcut system** · P2 · 🟠 Moderate · 2-3h · done: the [[Backlog]] entry's lean
+    becomes a row in [[Editor - Design]], each panel declares its shortcuts as data, and W, E and R
+    switch the gizmo's modes through it, with Ctrl+S, Delete, F2 and F moved onto it. After card
+    11. *From a fired Backlog entry.*
+
+##### Story F: Editor refinement
+
+13. **T · The editor scales with the display** · P3 · 🟠 Moderate · 2-3h · done: the [[Backlog]]
+    entry, with ImGui's vector font and the window's content scale. A real typeface waits for
+    card 2's engine assets.
+
+##### Story G: The lane's cards · 🤖 Auto
+
+14. **P · Research clustered forward shading** · P2 · 🤖 Auto · report-only · done: a report in
+    `05 Research/` from Olsson et al. 2012 ([[Paper]]) to current practice: the grid, depth
+    slicing, light assignment in compute and the light-count heat map, read against v1's
+    `engine/client/src/renderer/passes/LightCullingPass.cpp` at `v1-reference`. It decides
+    nothing; it feeds E2b's light clusters.
+15. **T · `logs/` is git-ignored** · P3 · 🤖 Auto · done: `.gitignore` lists `logs/`, and
+    `logs/techengine.log` leaves the index. *From a fired Backlog entry.*
+
+##### Story H: Prepare Sprint 13 (standing)
+
+16. **P · Prep brief for Sprint 13** · P2 · 🤖 Auto · report-only · not before the Monday of week 2.
+17. **D · Prepare Sprint 13** · P1 · 🟠 Moderate · 2-3h · done: `/sprint-prep` writes Sprint 13's
+    goal and draft cut into Sprint 12's note, in week 2.
+
 ### Story G: The asset browser (added Nov 21, carries freely)
 
 Cut by S11-D3 on Nov 21 from [[Content Pipeline - Design]] § *The asset browser*: the core plus

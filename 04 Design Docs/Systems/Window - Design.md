@@ -141,9 +141,8 @@ Generated with the `glad2` **2.0.8** Python package and shipped **2026-09-06** a
 `f71b128d` ([#74](https://github.com/techattackteam/TechEngine/pull/74)). The version and
 command are recorded above the target in `cmake/deps.cmake`.
 
-S11-T2 (#206, Nov 14) regenerated it for 4.6 with bindless textures. The header records that
-command line, while the comment in `cmake/deps.cmake:246` still shows the 4.5 one
-([[Backlog]] § *etc*):
+S11-T2 (#206, Nov 14) regenerated it for 4.6 with bindless textures. The header and the comment
+in `cmake/deps.cmake:246` both record that command line (#223, Nov 21):
 
 ```bash
 glad --api gl:core=4.6 --extensions=GL_ARB_bindless_texture --out-path external/glad --reproducible c
