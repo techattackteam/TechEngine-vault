@@ -264,7 +264,7 @@ and *How the scene view's camera is driven*.
   blocking them, the fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides
   nothing. **Not before Mon Nov 23**: a fire before that leaves it in To Do. Closed Nov 23 by the
   lane: [[2026-11-23 09-08 Auto Run]].
-- [ ] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h ·
+- [x] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h ·
   done: `/sprint-prep` wrote the next sprint's goal and draft cut into this sprint note. Its
   window is Tue Nov 24 to Fri Nov 27, but Thu and Fri are karting days, so it runs on **Tue Nov
   24**, after S11-P3's brief from Monday.
@@ -486,7 +486,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   focus flight, its scale-based distance and the pitch clamp stand. #222 (`a4c65ce`), Nov 21.
   S11-T23's five: merged with none reversed, #231 (`5b27fb9`), Nov 24. #231 has no review
   conversation, so "none reversed" means it merged unchanged.
-- [ ] Sprint 12's draft cut is in this note (S11-D4).
+- [x] Sprint 12's draft cut is in this note (S11-D4). Vault `509c1db`, Nov 24: § *Sprint 12's cut*, 17 drafts.
 
 ## Capacity note
 

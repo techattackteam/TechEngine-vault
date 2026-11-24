@@ -41,7 +41,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h: `/sprint-prep` writes Sprint 12's goal and draft cut into the Sprint 11 note. Runs **Tue Nov 24**, after S11-P3.
 
 
 ## 👀 Review / Demo
@@ -49,6 +48,12 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 11
+
+- [x] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h: vault `509c1db`, **Nov 24**. Sprint 12's cut has 17 drafts for renderer groundwork: engine shader files, light components, visualizers, view modes, ImGuizmo and editor refinements ([[2026-11 Sprint 11 - First Frame]] § *Sprint 12's cut*). Its calls are rows in [[Renderer - Design]] and [[Editor - Design]] § *Decided*. Story F is complete.
+	- **The first proposed goal was declined:** Claude proposed lighting Sponza. Miguel declined it, because the forward shader is still a C++ string and the renderer cannot show what it is doing. The lit pass moves to Sprint 13, and E2 now runs about four sprints. Miguel accepted that stretch for this reason.
+	- **Reversed in the session:** Claude's own gizmo became ImGuizmo, as v1 used. A per-panel style card was cut and then dropped, because `Panel::addStyleVar` already ports v1's system.
+	- **Grooming:** 15 entries were reviewed. 13 were kept (8 of them moved down a level), the frame capture entry was re-worded, and the `wait()` test entry was dropped. The finished glad2 entry was deleted together with its stale sentence in [[Window - Design]].
+	- *Retro:* Claude said the vault never decided where engine assets live. In fact [[Project - Design]] put them in the editor's `engine` alias on Oct 10, but nothing fills or indexes that folder, and that gap is Sprint 12's card 2. S11-P3's brief was a day stale (S11-T16, S11-T22 and S11-T23 had merged since), and it called the Sponza licence entry finished, although crediting Sponza in a showcase is still owed.
 
 - [x] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h: #236 (`092a297`), **Nov 24**. A released copy retires once neither packet in the history nor a reachable copy names it, a reload's old copy retires at once, and a retired copy is dropped when the device's frame fence shows the GPU finished its stamped frame ([[Renderer - Design]] § *Uploads: dropping a copy*). [[Known Issues]] D14 is closed. Story B is complete, and no card waited on this one.
 	- **Fork 1 was Claude's call:** a frame number on the device, not fence handles. Miguel answered only fork 2 (both packets), so the frame number stands as taken, and the note records why.
