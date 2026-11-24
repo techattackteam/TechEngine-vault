@@ -35,49 +35,6 @@ Not a backlog. A [[Backlog]] entry is a **want**; an entry here is a **known wro
 
 ---
 
-### D15: A click on empty grid space keeps the browser's selection
-
-Miguel's windowed check of S11-T21 (Nov 23): after a tile is selected, a click on an empty part
-of the asset browser leaves the tile highlighted, where the grid's
-`ImGuiMultiSelectFlags_ClearOnClickVoid` should clear it. Where the click landed was not
-recorded: below the tiles, beside the last tile, or in the folder tree, which is outside the
-grid's selection scope.
-
-**Silent because it is only a stale highlight.** The menus act on the selection, so the next
-right-click on a tile acts on the old set too, but the right-click itself selects an unselected
-tile first.
-
-`apps/editor/src/ui/panels/AssetBrowserPanel.cpp:240-264` (`drawGrid`) at `fabb29b2`.
-ImGui 1.93's void-click path (`EndMultiSelect`) reads correct for these flags.
-
-**Fix:** not decided. First find where the click lands, with ImGui's Debug Log and its
-*Selection* filter on.
-
-**Trigger:** the next card that touches the browser's grid (S11-T22's drags, or S11-T24).
-
-### D14: A reload never frees its old GPU copy
-
-A reload sends a new upload for the same slot, and `GpuCopies::apply` replaces the copy with
-`insert_or_assign` (`engine/client/src/render/GpuCopies.cpp:38` at `4af204b`). What the old copy
-held goes with it, and nothing frees it:
-
-- **A mesh's `GeometryRange`** stays taken, because nothing calls `GeometryBuffers::free`.
-  Logged at S11-T7's close (#217), as planned when S11-T16 was split out of S11-T6.
-- **A texture** stays allocated and its bindless handle stays resident, because
-  `GpuCopies::shutdown` only destroys the textures of the copies it still holds;
-  `RenderDevice::shutdown` frees it at exit. Added at S11-T8's close (#219).
-
-**Silent because** nothing fails: each re-import of a mesh takes a new range, and when a block
-fills, a new 64 MB block is added. Each re-import of a texture keeps one more texture in GPU
-memory. Neither is named by any packet or material.
-
-**Fix:** S11-T16 drops a copy on a release and a reload's old copy, and frees its range or
-destroys its texture then. The replaced copy must survive `insert_or_assign` long enough for
-that.
-
-**Trigger:** S11-T16, or the first editor session that re-imports meshes or textures often
-enough for a second geometry block or a GPU memory warning to show up.
-
 ### D13: A dependency added after an upload never reaches render
 
 An upload carries the dependency slots its entry held when it turned Ready

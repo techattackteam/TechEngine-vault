@@ -492,6 +492,12 @@ groups are kept, because they show where future work will land.
   frames. Unmeasured. The revision already says when the listing changed, so main could keep its
   own copy and the snapshot could carry it only on a new revision. **Trigger:** a profile of an
   inspector drag that shows the copy, or a project with thousands of files.
+- #prio/low · **A box select from empty grid space keeps ImGui's nav outline**: S11-T22 (#234)
+  clears the nav id when `EndMultiSelect` returns a lone clear, which a click on empty space
+  does. A box drag that starts in empty space reports its clear from `BeginMultiSelect` on the
+  next frame instead, so a box that selects nothing leaves the outline on the last tile clicked,
+  and that tile still looks selected (`AssetBrowserPanel.cpp:261-267`). Found while fixing D15,
+  not seen in a window. **Trigger:** the next card that touches the browser's grid (S11-T24).
 - #prio/low · **The asset browser redoes its layout work every frame**: since S11-T20 (#227, Nov
   21), each visible tile wraps its name by measuring the text again and again
   (`AssetBrowserPanel::wrapLabel`), and each drawn tree node scans the whole listing for its

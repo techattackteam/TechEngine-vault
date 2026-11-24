@@ -15,7 +15,6 @@ kanban-plugin: board
 
 ## Story B: R1's first frame
 
-- [ ] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h: render drops a copy once no packet or live copy names it and a device fence shows the GPU finished with it. Follows S11-T6.
 
 
 ## Story C: The editor's views draw (drops first)
@@ -43,7 +42,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: to the scene view, the hierarchy and the inspector's asset fields. After S11-T20.
 
 
 ## 👀 Review / Demo
@@ -52,6 +50,16 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h: #236 (`092a297`), **Nov 24**. A released copy retires once neither packet in the history nor a reachable copy names it, a reload's old copy retires at once, and a retired copy is dropped when the device's frame fence shows the GPU finished its stamped frame ([[Renderer - Design]] § *Uploads: dropping a copy*). [[Known Issues]] D14 is closed. Story B is complete, and no card waited on this one.
+	- **Fork 1 was Claude's call:** a frame number on the device, not fence handles. Miguel answered only fork 2 (both packets), so the frame number stands as taken, and the note records why.
+	- **Caught by the scaffold's tests before the PR:** `dropFinished` erased retired copies without dropping them, so nothing was ever freed; `signalFrame` compared with the last completed frame instead of the newest fence, and inserted the fence even after its check fired; `getCompletedFrame` took one fence per call.
+	- **Not the card, but in the same PR:** the editor logged about 95 "not released before cache shutdown" warnings on every close. It publishes only after an edit, so render's finished uploads were never collected, and the shutdown drain kept every entry still pinned and everything it held. `ClientApp::simulationShutdown` now collects them first, and `~ResourceCache` only waits for loads, so each leak is reported once ([[Renderer - Design]] § *Uploads: order, reads and shutdown*). The commit title does not mention it.
+	- *Retro:* Claude wrote the scaffold and its tests and Miguel filled the stubs. At his request Claude then fixed the two failing tests' causes, three review findings and the shutdown leak; Miguel replaced Claude's report-once flag by taking `shutdown()` out of the destructor. #236 has no review conversation, so this entry comes from the session. Every CI check on #236 was green.
+- [x] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h: #234 (`5d48c54`) and #235 (`682133e`), **Nov 24**. The browser's tiles drag to the scene view and to the hierarchy, which place a model or mesh (a row places it as its first child), and to an inspector asset field of the same type ([[Content Pipeline - Design]] § *Dragging from the browser as built*). Story G goes on with S11-T24 alone.
+	- **Four calls the note did not make:** the payload carries the paths in grid order, several models dropped on a row are sent last first so they land in the dragged order, a field refuses a drop of several paths, and a parent deleted before the command runs refuses the place.
+	- **D15 closed:** the void click did clear the selection; what stayed was ImGui's nav outline on the last tile clicked. The grid now clears the nav id after a lone clear. #235 came after #234 merged: the tile painted its own fill over that outline, so a selected tile looked smaller than a hovered one, and the tile's Selectable now draws its highlight instead.
+	- **Caught before the commit:** the first dead-parent check tested `!m_parent.valid()`, which refused every place at the root. S11-T25 merged first, so the merge moved the new payload codec into `edit/assets/`.
+	- *Retro:* Claude wrote the scaffold, every ImGui function, the payload codec and the two snapshot queries at Miguel's request; Miguel wrote the parent in `PlaceModelCommand`. The first drag test did nothing because the codec stubs were still empty. Neither PR has a review conversation, so this entry comes from the session. Every CI check on both PRs was green.
 - [x] **S11-T25** · The editor's `edit/` and `assets/` get subfolders · P3 · 🟡 Light · 1-2h: #233 (`93c65db`), **Nov 24**. The layout is the card's own: eight subject folders under `edit/` with `EditorCommands` at its root, `index/` and `import/` under `assets/`, and `tests/` mirroring both ([[Editor - Design]] § *Decided*, "`ui/` draws, `edit/` decides"). Only moves, include paths and CMake lists changed, and the vault's citations of the moved files were rewritten to the new paths.
 	- **Added mid-sprint on Nov 24 at Miguel's call**, and done in its own session while S11-T22 was in progress. It merged first, so S11-T22's branch redoes its include paths, and its new `AssetDragPayload` needs a folder in the new layout.
 	- #233 has no review conversation, so this entry comes from the card, the PR body and the diff. Every CI check on #233 was green.

@@ -160,7 +160,7 @@ S11-T16 follows S11-T6, and no card waits for it.
   **Split at `/card-start` (Nov 17, Miguel's call):** dropping a GPU copy moved to S11-T16.
   #213 (`8f2a444`), Nov 17. The empty-pool clause has no headless test; only the call order in
   `ClientApp::publishFrame` holds it ([[Backlog]] § *client*).
-- [ ] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h ·
   done: render drops a copy on a release request, and a reload's old copy, by *The GPU copy's
   lifetime* in [[Renderer - Design]] § *Decided*, with a device fence for the frames that drew
   it. Its `/card-start` settles § *Open questions*' *How render drops a copy safely*. Until it
@@ -308,7 +308,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   Nov 23 at his call: every create is a creator class with a typed name (§ *Creators*), model,
   mesh and sky included; *Create folder...*; a double-click places a model or mesh; a disabled
   *Delete...* keeps every menu non-empty. After S11-T18 and S11-T20.
-- [ ] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h ·
+- [x] **S11-T22** · Drags from the browser · P2 · 🟠 Moderate · 2-3h ·
   done: the scene view and the hierarchy place a model or mesh, a drop on a row as its first
   child (`PlaceModelCommand` gains the parent), and an inspector asset field takes an asset of its
   type. After S11-T20.

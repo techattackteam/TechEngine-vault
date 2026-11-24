@@ -66,6 +66,7 @@ the render thread that draws packets through a small device.
 | A replaced payload waits for its upload | A reload's old payload is destroyed only once render reports that payload's upload done. | ADR-024 §6; Miguel, 2026-11-17 (S11-T6) |
 | Deferred frees retry at each publish point | Render's finished uploads, each a slot and a token, unpin their payloads, and the cache drains frees, before the outbox is sent. | Miguel, 2026-11-17 (S11-T6); § *Uploads and the fence* |
 | Dropping a copy is its own card | S11-T6 builds the queue, the pins and the done reports, and leaves each type's handler empty for S11-T7 and S11-T8. Render keeps every copy until shutdown, and S11-T16 adds the drop. | Miguel, 2026-11-17 |
+| How render drops a copy | A released copy is retired once neither packet in render's history names it and no reachable copy names it as a dependency; a reload's old copy is retired at once. A retired copy is stamped with the last frame that could have drawn it, and dropped once the device's frame fence shows the GPU finished that frame. | Miguel, 2026-11-24 (S11-T16); § *Uploads: dropping a copy* |
 | E2's frame | Depth pre-pass, light clusters built and filled in compute as in v1, one forward lit pass with CPU-written multi-draws, sky, final image. | ADR-028 §5 |
 | Compute from E2 | The device dispatches compute and binds storage buffers. A pass that writes in compute issues GL's coarse memory barrier through the device; per-resource barriers stay out. | ADR-028 §5 §6 |
 | Shared geometry buffers | Static meshes share one set: a position buffer, an attribute buffer and a 32-bit index buffer. A new vertex layout gets its own set. A mesh never moves once placed. | ADR-028 §5; § *Geometry buffers* |
@@ -231,8 +232,8 @@ sequenceDiagram
 
 ### Uploads and the fence
 
-Designed at S11-T6's `/card-start` (Miguel, 2026-11-17). How render drops a copy is S11-T16's
-(§ *Open questions*).
+Designed at S11-T6's `/card-start` (Miguel, 2026-11-17). How render drops a copy is
+§ *Uploads: dropping a copy*.
 
 ```mermaid
 flowchart LR
@@ -264,7 +265,7 @@ flowchart LR
 | The pin | An upload pins the payload it points at until render reports that upload's slot and token. The cache finds the entry by the slot, so it never searches for a token. `drainFrees` defers an entry whose payload is pinned, as it already defers one that is still loading. |
 | A reload | The new payload goes in at once and sends its own upload. A pinned old payload moves to a retired list under its token and is destroyed when that token comes back; an unpinned one is destroyed at once, as before. ADR-024 §6 counts the replacement as a free. |
 | The publish point | `ClientApp` hands render's finished uploads to the cache, drains frees, then sends the outbox, all before it acquires a packet. A publish point follows a loading phase or a tick batch, so this keeps ADR-024 §3's rule on when memory is freed. |
-| Render | After `deliverTo`, it takes every queued record in order. An upload runs its type's handler, then reports its slot and token; a release is recorded. The handlers are S11-T7's (meshes) and S11-T8's (textures and materials), and until S11-T16 every copy lives until shutdown. |
+| Render | After `deliverTo`, it takes every queued record in order. An upload runs its type's handler, then reports its slot and token; a release is recorded. The handlers are S11-T7's (meshes) and S11-T8's (textures and materials). § *Uploads: dropping a copy* says when a copy goes. |
 
 ### Uploads: order, reads and shutdown
 
@@ -287,8 +288,54 @@ flowchart LR
   (`engine/app/src/SimulationThread.cpp:249`, `:256`); render stops later, in `App::shutdown`.
   Pinned payloads stay valid only because `ClientApp::m_client` is destroyed before
   `App::m_resources`. Records still queued when render stops are discarded.
+- **Finished uploads are collected before the scene is released.** An app that publishes only
+  after an edit, as the editor does, has not taken what render finished since its last publish.
+  `ClientApp::simulationShutdown` takes it before `App::simulationShutdown` releases the scene
+  and drains (`apps/clientapp/src/ClientApp.cpp:77`), or the drain keeps every entry still
+  pinned and leaves everything it holds acquired. Fixed in S11-T16 (#236).
+- **Only `shutdown()` reports leaks.** `~ResourceCache` waits for loads still in flight, because
+  a load task points into the cache, but it does not report, so each leak is logged once
+  (`engine/core/src/resources/ResourceCache.cpp:23`).
 - **A render thread that failed never reports**, so its pinned entries are never freed. The app
   is stopping by then, so nothing is lost.
+
+### Uploads: dropping a copy
+
+Designed at S11-T16's `/card-start` (Miguel, 2026-11-24), for a release and for a reload's old
+copy, and built as designed by S11-T16 (#236, Nov 24). It settles ADR-028 §4's "no packet in render's history names the handle and the GPU has
+finished the frames that drew it".
+
+```mermaid
+flowchart LR
+    R["Release: copy marked released"] --> U{"Named by either packet,<br/>or by a reachable copy?"}
+    U -->|"yes"| K["Kept, checked again next frame"]
+    U -->|"no"| S["Retired, stamped with the<br/>frame before this one"]
+    L["Reload: the new copy replaces it"] --> S
+    S --> F{"The GPU finished<br/>the stamped frame?"}
+    F -->|"yes"| D["Dropped"]
+```
+
+| Part | How it works |
+|---|---|
+| Frames | Render numbers its frames from 1. The device inserts one `glFenceSync` after a frame's last draw and before the swap, which flushes it. It reports the last frame whose fence has signalled, polling the oldest fence first with a zero timeout and stopping at the first that has not. 0 means no frame has finished. A frame that is not above the newest fence fires a check and inserts no fence (`engine/client/src/render/device/RenderDevice.cpp:664`); so does a retire at frame 0, which stamps 0. |
+| Reachable | Each frame, after `prepareFrame`, a copy is reachable when either packet in the history names its slot (an instance's mesh or a slot material), when it is not released, or when it is a dependency slot of a reachable copy. A released copy that is not reachable is retired. |
+| A reload | `apply` swaps the new copy in after its handler ran, and retires the old one at once. A material reload keeps its record, so the old copy is retired without it. |
+| The stamp | The frame before the one being drawn: the last frame that could have drawn the copy. |
+| Dropping | A mesh frees its range, a material frees its record, and a texture is destroyed, which makes its handle non-resident. `GpuCopies::shutdown` also destroys the textures of retired copies. |
+
+- **Both packets, though only the current one is drawn.** ADR-028 §4 names the history, and the
+  rule stays true if a later change draws the previous packet. The cost: while ticks stop, as in
+  a paused play session, a copy named only by the previous packet waits for the next tick.
+- **A frame number, not a fence handle.** Callers compare one integer, and it is the shape of a
+  Vulkan timeline semaphore.
+- **Why dependencies are followed.** A packet names meshes and slot materials only; a mesh's
+  default material and a material's textures are reached through copies. The cache records a
+  holder's release before its dependencies' releases, in the same drain.
+- **`GpuCopies` takes frame numbers and never touches the fence**, so the rules are tested
+  headless; only the fence itself needs a `[gpu]` case.
+- **Reached today only at shutdown.** No app releases an asset before it (the scene's entry holds
+  every asset it named), and nothing calls `ResourceCache::reload` since S11-T17. Streaming (E6)
+  is the first heavy user.
 
 ### Geometry buffers
 
@@ -348,10 +395,9 @@ flowchart TB
 | The attribute record | `GeometryAttributes` puts the normal at byte 0, the tangent at 12 and UV0 at 28. A stream the mesh lacks takes import's defaults: normal (0, 1, 0), tangent (1, 0, 0, 1), UV0 (0, 0). |
 | An empty mesh | A mesh with no positions or no indices gets an empty range, with no error and no GL call. Import never writes one, but `Mesh::read` accepts both, and it is a valid file with nothing to draw. |
 
-- **Not built yet:** nothing frees a range until S11-T16 drops a mesh's copy. Until then a
-  reload replaces the copy in `GpuCopies::apply`, and the old range is never returned
-  ([[Known Issues]] D14). The payload is gone once the upload reports done, so `uploadMesh`
-  copies each slot's index range and default material into the copy's `meshSlots` (S11-T9).
+- **A range is freed when its copy is dropped** (§ *Uploads: dropping a copy*, S11-T16). The
+  payload is gone once the upload reports done, so `uploadMesh` copies each slot's index range
+  and default material into the copy's `meshSlots` (S11-T9).
 - **The allocator is tested headless** (`engine/client/tests/render/GeometryBuffersTests.cpp`).
   No test reads the GL writes back; S11-T9's frame (#220) drew Sponza from them.
 
@@ -642,12 +688,6 @@ Mechanism sections land as the build cards are cut. Known build work:
 
 ## Open questions
 
-- **How render drops a copy safely,** for a release and for a reload's old copy. Three checks
-  are owed: no packet in the history names the handle, no live copy names it as a dependency (a
-  texture under its material, a default material under its mesh, since `freeEntry` releases a
-  holder and its dependencies in the same drain), and the GPU finished the frames that drew it.
-  The lean for the last check is a `glFenceSync` per frame, polled with a zero timeout, rather
-  than a fixed frame count. Owner: S11-T16.
 - **Whether instance interpolation moves to the GPU.** From E2 the CPU interpolates every
   instance each frame (§ *Decided*). The GPU could do it from both packets' buffers instead.
   Owner: E2b, measured against the stress scene.

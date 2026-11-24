@@ -622,9 +622,16 @@ implementation took these calls:
 - **The layout and the look are v1's `ContentBrowserPanel`** (tag `v1-reference`), at Miguel's
   call: a resizable two-column table with a 250 px tree, and 64 px tiles with up to three wrapped
   lines of name, cut with "..." and a tooltip. The highlight takes the editor theme's colors.
+- **The tile's Selectable draws its highlight**, with the tile's rounding and without ImGui's
+  half-spacing pad, so ImGui's nav outline sits on the highlight's edge. A fill the tile painted
+  itself covered that outline, and a selected tile looked smaller than a hovered one (S11-T22,
+  #235).
 - **The grid is its own child window**, because multi-select scopes its box and its click on
   empty space to the current window. A double-click opens its folder only after
-  `EndMultiSelect` (`AssetBrowserPanel.cpp:225`).
+  `EndMultiSelect` (`AssetBrowserPanel.cpp:270`).
+- **A click on empty space also clears ImGui's nav id** (`:261-267`). The click clears the
+  selection, but ImGui keeps its nav outline on the last tile clicked and always draws it in a
+  multi-select, so that tile still looked selected (S11-T22, #234).
 - **A folder's children are found by their parent path.** The listing is sorted byte by byte, so
   `Sponza-old` sorts between `Sponza` and `Sponza/Meshes`, and a subtree is not one run.
 - **The open folder is checked only on a new listing revision** (`:115`). Opening the folder that
@@ -739,6 +746,25 @@ alone when it is not selected, the hierarchy's rule ([[Editor - Design]] § *Mul
   another type ([[Editor - Design]] § *Decided*). The field highlights only for its own type.
 - **Anything else is refused**, a source dropped on the scene view included: creating stays a
   menu entry.
+
+### Dragging from the browser as built
+
+Built by S11-T22 (#234, #235). The implementation took these calls:
+
+- **The payload is the paths in grid order**, not in the order they were clicked, each followed
+  by a NUL (`apps/editor/src/edit/assets/AssetDragPayload.hpp`). The panels read it through
+  `ui/widgets/AssetDragDrop`, and the snapshot decides what a drop takes
+  (`apps/editor/src/edit/snapshot/EditorSnapshot.cpp:200`, `:212`).
+- **Several models dropped on a row are sent last first**, because each lands as the first child,
+  so they end in the order they were dragged (`HierarchyPanel.cpp:423`). A drop at the root sends
+  them in order.
+- **A field refuses a drop of several paths**, even when each is of its type, and a drop of the
+  asset every selected entity already has sends nothing, as the picker does.
+- **A parent the scene no longer holds refuses the place**, with a warning, before any mesh is
+  added to the scene, as a create with a dead parent does
+  (`apps/editor/src/edit/scene/PlaceModelCommand.cpp:37`).
+- **The scene view's drop target is its image**, through a `ViewPanel::acceptDrop` hook that runs
+  only while the image is the last item.
 
 ### Deleting an asset
 

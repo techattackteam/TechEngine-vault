@@ -221,8 +221,8 @@ A packet holds tick/time/generation and a sequence, the held input, one instance
 `MeshRenderer` with its `Entity`, world matrix and handles, and the main camera
 ([[Renderer - Design]] § *The frame packet*). It holds no pointers into mutable Scene storage.
 Resource handles have their lifetime protocol: render keeps its own GPU copies, fed by ordered
-uploads under render's fence ([[Renderer - Design]] § *Uploads and the fence*). Dropping a copy
-once nothing names it is S11-T16's ([[Known Issues]] D14).
+uploads under render's fence ([[Renderer - Design]] § *Uploads and the fence*), and dropped
+once nothing names them and the GPU is done with them (§ *Uploads: dropping a copy*).
 These are local render packets, not a replacement for replication's network snapshot ring.
 
 ## Presentation input
