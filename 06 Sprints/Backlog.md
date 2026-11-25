@@ -347,6 +347,15 @@ groups are kept, because they show where future work will land.
     the registry and `ArchetypeStorage` setup in about 27 cases (a fixture per file, 60-80 lines;
     the local components differ per case). `DedicatedThreadTests` repeats its gated entry lambda six
     times (about 12 lines) and `EventStreamManagerTests` its two-type registry four times (about 9).
+  - Reading the boot record is four steps by hand over `PackReader` (`engine/core/include/TechEngine/core/resources/PackReader.hpp:37`):
+    open, `bootRecord`, `read`, then `BootRecord::read`. Copies: `apps/runtime/src/RuntimeApp.cpp:56-78`
+    and `apps/editor/tests/project/ProjectTests.cpp:192` (also filed under *apps*). A
+    `PackReader::readBootRecord(BootRecord&)` is a new public symbol, and the runtime keeps a log
+    line per step. About 10 lines. Found by the `apps/` sweep on Nov 25.
+  - `sceneLoadLogNames` (`engine/core/tests/scene/SceneAssetTests.cpp:510`) and `logNames`
+    (`engine/core/tests/resources/ResourceCacheTests.cpp:197`) spell out `LogCaptureGuard::contains`.
+    Test-only, no decision. About 6 lines. Found by the `apps/` sweep on Nov 25, which fixed the
+    three copies in `apps/` (#237).
 
 - #prio/medium · **`Scene` has no tree-order walk, so every caller writes its own**: four walks
   call `getChildren`, which builds a new vector for each node. Two are depth-first and track the
@@ -648,45 +657,97 @@ groups are kept, because they show where future work will land.
   `base` would serve both. Found at S10-T12 (#189) on Nov 6, 2026. **Trigger:** a third place
   that formats a record's time, or the next change to the console's row format.
 
-- #prio/medium · **Code sweep leftovers: apps**: Found by the code sweep on Nov 10, 2026
-  ([[2026-11-10 14-12 Auto Run]]). Lines are at engine `9c93b8f`; #195 shifts some of them in `InspectorCommands.cpp`.
+- #prio/medium · **Code sweep leftovers: apps**: Found by the code sweep on Nov 25, 2026
+  ([[2026-11-25 14-09 Auto Run]]), and carried from Nov 10 ([[2026-11-10 14-12 Auto Run]]).
+  #195 and #237 fixed what needed no decision. Lines are at engine `092a297`, before #237.
   - Eight commands open their entity loop with the same two guards, an `!entity.valid()` warning and
     a `!scene.contains(entity)` warning (`apps/editor/src/edit/scene/HierarchyCommands.cpp:36`, `:66`,
-    `:171`; `apps/editor/src/edit/scene/InspectorCommands.cpp:54`, `:156`, `:233`, `:293`, `:357`).
-    `contains` already refuses an invalid entity, so one check would do, but the two warnings would
-    become one. About 30 lines.
+    `:171`; `apps/editor/src/edit/scene/InspectorCommands.cpp:70`, `:219`, `:300`, `:358`, `:420`;
+    `applyMainCamera` at `:112` has a partial ninth). `contains` already refuses an invalid entity, so
+    one check would do, but the two warnings would become one. About 30 lines.
   - `SetFieldCommand::apply` and `SetAssetFieldCommand::apply` share their per-entity loop, from
-    the guard to the `FieldEditRecord` (`apps/editor/src/edit/scene/InspectorCommands.cpp:53-86`,
-    `:155-188`). Their logging and their slot differ, so a shared helper needs choosing. About 25
+    the guard to the `FieldEditRecord` (`apps/editor/src/edit/scene/InspectorCommands.cpp:69-98`,
+    `:218-247`). Their logging and their slot differ, so a shared helper needs choosing. About 25
     lines.
-  - The single-entity `EditorSnapshot::resolveDrop` (`apps/editor/src/edit/snapshot/EditorSnapshot.cpp:99`)
+  - The single-entity `EditorSnapshot::resolveDrop` (`apps/editor/src/edit/snapshot/EditorSnapshot.cpp:96`)
     gives the same answer as the span overload for one entity, except when the parent is not in
-    the snapshot. Dropping it changes `HierarchyPanel.cpp:176` and the tests that call it. About
-    20 lines.
+    the snapshot. Dropping it also drops `HierarchyPanel::resolveDraggedDrop` (`HierarchyPanel.cpp:178`)
+    and changes the tests that call it. About 25 lines.
   - `EditorApp::configureSimulation` and `RuntimeApp::configureSimulation` make the same three
-    registrations (`apps/editor/src/EditorApp.cpp:99`, `apps/runtime/src/RuntimeApp.cpp:39`).
+    registrations (`apps/editor/src/EditorApp.cpp:101`, `apps/runtime/src/RuntimeApp.cpp:42`).
     `ClientApp` could make them once, but that is a new override in its public header. About 12
     lines.
   - `EULER_MIXED_EPSILON` (`apps/editor/src/edit/session/EditSession.cpp:20`) must equal the inspector's
-    `EULER_DISPLAY_EPSILON` (`apps/editor/src/ui/panels/InspectorPanel.cpp:33`). One shared
+    `EULER_DISPLAY_EPSILON` (`apps/editor/src/ui/panels/InspectorPanel.cpp:36`). One shared
     constant would remove the "must match" comment. About 2 lines.
-  - Test copies in the editor's test executable, about 50 lines together:
-    - The triangle `meshBytes` (`apps/editor/tests/project/ProjectTests.cpp:617`,
-      `apps/editor/tests/edit/scene/AssetEditHarness.hpp:159`). About 6 lines.
-    - `registerExportComponents` (`apps/editor/tests/project/ProjectTests.cpp:91`) is typed out
-      again at `apps/editor/tests/EditorAppTests.cpp:283`. About 3 lines.
-    - A directory entry count, three times (`apps/editor/tests/assets/ModelImportTests.cpp:133`,
-      `apps/editor/tests/EditorAppTests.cpp:203`, `apps/editor/tests/edit/project/SaveSceneCommandTests.cpp:72`).
-      About 5 lines.
+  - The last path segment is cut three times: `AssetBrowserPanel::nameOf` (`apps/editor/src/ui/panels/AssetBrowserPanel.cpp:591`),
+    `ModelImporter::fileStem`, which keeps the extension despite its name (`apps/editor/src/assets/import/ModelImporter.cpp:613`),
+    and the `leaf` lambda (`apps/editor/src/edit/snapshot/EditorSnapshot.cpp:246`). An `AssetNaming::nameOf`
+    beside `stemOf` would serve all three; it is a new symbol on a type three classes share. About 12 lines.
+  - A lower-cased extension test is written three times: `TextureImporter::isHdr` and its `toLowerAscii`
+    (`apps/editor/src/assets/import/TextureImporter.cpp:242`, `:521`), `ModelImporter::isGltfSource`
+    (`ModelImporter.cpp:625`) and `AssetIndex::lowerExtensionOf` (`apps/editor/src/assets/index/AssetIndex.cpp:295`).
+    One shared function is a new symbol on `AssetNaming`. About 15 lines.
+  - A little-endian `std::uint32_t` read at an offset is written twice: `ImageDecoder::readU32`
+    (`apps/editor/src/assets/import/ImageDecoder.cpp:354`) and `ModelImporter::readLittleEndianU32`
+    (`ModelImporter.cpp:636`). `core`'s `Reader` reads only in sequence. About 7 lines.
+  - Deleting the topmost selection is written twice in `HierarchyPanel` (`apps/editor/src/ui/panels/HierarchyPanel.cpp:91`,
+    `:441`). A private `destroySelection` fixes it with no decision. About 3 lines.
+  - Bolt-on: `TextureImporter::sideOf` (`TextureImporter.cpp:253`) works out the sky's side from its
+    own copy of `INDEXED_SIDES` (`AssetIndex.cpp:59`), while `SkyCreator::submit`
+    (`apps/editor/src/ui/creators/AssetCreators.cpp:80`) drops the `context.side` that the model
+    creator passes on (`:57`). `isHdr` likewise re-checks the classification the index already made.
+    The vault documents `SourceNotInAssets` as a design call ([[Content Pipeline - Design]]), and a
+    test covers it, so this is a decision. About 25 lines.
+  - `SkyImportResult` (`apps/editor/src/assets/import/TextureImporter.hpp:35`) holds a vector that
+    always holds one record, and its only caller reads `records[0]` (`ImportSkyCommand.cpp:32`).
+    A single `AssetRecord` changes about 15 assertions.
+  - Test copies in the editor's test executable, about 230 lines together:
+    - The triangle `meshBytes` (`apps/editor/tests/project/ProjectTests.cpp:639`,
+      `apps/editor/tests/edit/scene/AssetEditHarness.hpp:159`), and a hand-built mesh at
+      `apps/editor/tests/EditorAppTests.cpp:753` with different positions. About 12 lines.
+    - `registerExportComponents` (`apps/editor/tests/project/ProjectTests.cpp:99`) is typed out
+      again at `apps/editor/tests/EditorAppTests.cpp:320`. About 3 lines.
+    - A directory entry count, five times (`apps/editor/tests/assets/import/ModelImporterTests.cpp:149`,
+      `MergedMeshImportTests.cpp:146`, `SkyImportTests.cpp:269`, `apps/editor/tests/EditorAppTests.cpp:210`,
+      `apps/editor/tests/edit/project/SaveSceneCommandTests.cpp:72`). About 8 lines.
     - "Records nothing, revision kept" checks, about ten times in
       `apps/editor/tests/edit/scene/InspectorCommandsTests.cpp` (from `:171`), and "asset set refused"
       five times (from `:926`). About 12 lines.
     - "File content unchanged", six times in `apps/editor/tests/EditorAppTests.cpp` (from `:641`),
-      and "scene held once" twice (`:521`, `:562`). About 13 lines.
+      and "scene held once" twice (`:560`, `:601`). About 13 lines.
     - `ExportScratch::readBootRecord`'s body typed out again at
-      `apps/editor/tests/project/ProjectTests.cpp:589`. About 6 lines.
+      `apps/editor/tests/project/ProjectTests.cpp:611`. About 6 lines.
     - Six fixtures mount a scratch project as `MountedProject` does
-      (`apps/editor/tests/project/ProjectTests.cpp:69`). About 10 lines.
+      (`apps/editor/tests/project/ProjectTests.cpp:74`). The asset command fixtures make
+      `assets/{common,client,server}` and mount it again (`RefreshAssetsCommandTests.cpp:41`,
+      `CreateFolderCommandTests.cpp:34`, `CreateMaterialCommandTests.cpp:37`, `ImportModelCommandTests.cpp:53`,
+      `ImportSkyCommandTests.cpp:50`), with `underClient` three times and `isListed` twice.
+      `AssetTestFiles.hpp` could hold the scaffold. About 25 lines.
+    - The three import fixtures (`ModelImporterTests.cpp:60`, `MergedMeshImportTests.cpp:46`,
+      `MaterialImportTests.cpp:56`) repeat their scratch, mounts, id counter and `readMesh`.
+      `checkVec3`, `checkVec2`, `uvBitangent` and `TOLERANCE` are in two of them, and `meshRecords`
+      is `MaterialImportTests`' `recordsOf`. `ModelTestFiles.hpp` could hold them. About 60 lines.
+    - `appendU32` (`ModelTestFiles.hpp:144`) is `appendLittleEndianU32` (`TextureTestFiles.hpp:22`),
+      and `near` with `BC_TOLERANCE` is in `TextureImporterTests.cpp:40` and `MaterialImportTests.cpp:155`.
+      About 15 lines.
+    - The two import App probes (`ImportModelCommandTests.cpp:45`, `ImportSkyCommandTests.cpp:42`)
+      and their 30-second run-until-registered controllers are the same apart from the request and
+      command types. Sharing them needs a template in a new header. About 55 lines.
+    - The headless ImGui context is set up twice (`apps/editor/tests/ui/SceneViewPanelTests.cpp:41`,
+      `AssetBrowserPanelTests.cpp:59`). A small RAII type in `PanelAppProbe.hpp`. About 15 lines.
+    - Two export SECTIONs read a packed entry and compare it with the disk file the same way
+      (`apps/editor/tests/EditorAppTests.cpp:381`, `:401`). A static helper. About 8 lines.
+    - `EditorCommandsTests` builds `EditorCommands` three times through four probe getters
+      (`apps/editor/tests/edit/EditorCommandsTests.cpp:156`, `:260`, `:305`). A probe member, as
+      `PanelAppProbe` holds one. About 15 lines.
+    - `AssetEditHarness` retypes `EditTestScene`'s registry, scene, session, `selectOnly` and
+      `snapshot` (`AssetEditHarness.hpp:61-135`). About 15 lines, and it changes the shared fixture.
+    - `PlaceModelCommandTests.cpp:516` retypes the harness's private `addAsset`, and
+      `InspectorCommandsTests.cpp:413` and `:582` build the same expected payload. About 11 lines.
+    - The stall loop and the one-line probe accessors are repeated across the editor and runtime
+      test executables (`EditorAppTests.cpp:1056`, `apps/runtime/tests/RuntimeAppTests.cpp:937`;
+      `EditorAppTests.cpp:94`, `RuntimeAppTests.cpp:259`). Sharing them needs a test header. About 25 lines.
 
 ## etc: cross-cutting
 
