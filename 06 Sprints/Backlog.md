@@ -757,6 +757,17 @@ groups are kept, because they show where future work will land.
   ([[2026-11-23 14-11 Auto Run]]). The fix is to install the pinned version in the environment's
   setup script beside the `docs` link. **Trigger:** the next edit to the lane's setup script, or
   a second format-only CI failure from the lane.
+- #prio/low · **[[Content Pipeline - Design]] names three symbols that no longer exist**. Found by
+  the freshness check on Nov 26 ([[2026-11-26 09-09 Auto Run]]), against `97799bc`.
+  - § *The import* (line 164) says the import job submits `RegisterImportedAssetsCommand`. #225
+    added `RefreshAssetsCommand` and #230 (S11-T21) removed the last use of the old one, as
+    § *What the browser lists as built* (line 573) already says.
+  - § *The merged mesh as built* (line 322) cites `uniqueSlotName`. #228 (S11-T13) renamed it to
+    `ModelImporter::uniqueName`, which takes a span and a name field.
+  - § *The sky image as built* (line 524) says the sky is imported through
+    `PanelsManager::drawImportImagePopup` "until the asset browser lands". #230 (S11-T21) removed
+    that menu entry, as line 531 already says.
+  **Trigger:** the Nov 28-29 `/sprint-plan`'s drift check.
 
 - #prio/medium · **`logs/` is not git-ignored**: the logger writes `logs/techengine.log` relative
   to the working directory (`engine/base/src/diagnostics/Log.cpp:28`), and `.gitignore` has no
