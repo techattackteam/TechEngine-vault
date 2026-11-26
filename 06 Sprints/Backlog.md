@@ -50,24 +50,38 @@ groups are kept, because they show where future work will land.
   handler cannot rely on the heap. [[Logger - Design]] still says the crash path flushes the
   ring. Found at S10-T11's close, Nov 5. **Trigger:** the platform crash handler is built.
 
-- #prio/low · **Code sweep leftovers: base**: Found by the code sweep on Nov 11, 2026
-  ([[2026-11-11 14-10 Auto Run]]); the first two bullets came from the `core` sweep on Nov 4
-  ([[2026-11-04 14-12 Auto Run]]) and the `apps` sweep on Nov 10.
+- #prio/medium · **Code sweep leftovers: base**: Found by the code sweep on Nov 26, 2026
+  ([[2026-11-26 14-09 Auto Run]]), which re-checked the Nov 11 items ([[2026-11-11 14-10 Auto Run]]).
+  The first two bullets came from the `core` sweep on Nov 4 ([[2026-11-04 14-12 Auto Run]]) and the
+  `apps` sweep on Nov 10. Together the items would remove about 60 lines.
   - The boost hash-combine formula (`0x9e3779b9 + (seed << 6) + (seed >> 2)`) is written twice:
     `engine/core/include/TechEngine/core/scene/Entity.hpp:31` and
-    `engine/core/src/scene/ArchetypeStorage.cpp:165`. A `hashCombine` in `base` would serve both.
+    `engine/core/src/scene/ArchetypeStorage.cpp:169`. A `hashCombine` in `base` would serve both.
     It is a new public symbol, and saves about 2 lines.
   - Added by the `apps` sweep on Nov 10 ([[2026-11-10 14-12 Auto Run]]). The console names a log level and formats a
-    record's time by hand (`apps/editor/src/ui/panels/ConsolePanel.cpp:26`, `:171`), as `base`
+    record's time by hand (`apps/editor/src/ui/panels/ConsolePanel.cpp:26`, `:69`, `:173`), as `base`
     does privately (`engine/base/src/diagnostics/Log.cpp:119`, `:398`). The `localTime` copy is the
     editor's entry "The console repeats `Log.cpp`'s `localTime`". About 25 lines.
-  - `logChannelModule` (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:117`) and
-    `assertKindName` (`engine/base/include/TechEngine/base/diagnostics/Assert.hpp:41`) are public,
-    but nothing outside their own `.cpp` calls them. Each could be `static` there. Removing a
-    used public symbol is your call. About 4 lines.
+  - `logChannelModule` (`engine/base/include/TechEngine/base/diagnostics/Log.hpp:117`),
+    `isEnabled` (`Log.hpp:129`) and `assertKindName`
+    (`engine/base/include/TechEngine/base/diagnostics/Assert.hpp:41`) are public, but nothing
+    outside their own `.cpp` calls them, tests included. Each could be `static` there. Removing a
+    used public symbol is your call. About 6 lines.
   - Test-only: `FillerSink` (`engine/base/tests/diagnostics/LogErrorTests.cpp:20`) is the
-    no-op sink that `CountingSink` (`engine/base/tests/diagnostics/LogTests.cpp:38`) already is,
+    no-op sink that `CountingSink` (`engine/base/tests/diagnostics/LogTests.cpp:39`) already is,
     in the same test executable. Sharing it needs a new test header. About 5 lines.
+  - Test-only, across modules: the same "poll until a condition holds or a deadline passes"
+    loop is written out about thirteen times. `waitUntil` (`engine/base/tests/diagnostics/LogTests.cpp:82`)
+    is the one helper; the others are inline: `engine/platform/tests/process/ProcessTests.cpp:21`,
+    `engine/app/tests/CommandQueueTests.cpp:165`, `engine/app/tests/AppTests.cpp:532`,
+    `engine/client/tests/render/RenderThreadTests.cpp:160`, `engine/client/tests/render/UploadChannelTests.cpp:117`,
+    `apps/editor/tests/edit/snapshot/EditorSnapshotSlotTests.cpp:125`,
+    `apps/editor/tests/edit/assets/ImportSkyCommandTests.cpp:163`,
+    `apps/editor/tests/edit/assets/ImportModelCommandTests.cpp:171`,
+    `apps/editor/tests/edit/EditorCommandsTests.cpp:147`, `apps/editor/tests/EditorAppTests.cpp:492`
+    and `:1079`, and `apps/runtime/tests/RuntimeAppTests.cpp:969`. One `waitUntil(predicate, timeout)`
+    in `tests/support` would serve them all. The loops differ in whether they sleep, yield or spin,
+    so picking one wait is a small decision. About 25 lines.
 
 ## platform
 
