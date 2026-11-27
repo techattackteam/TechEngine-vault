@@ -18,8 +18,8 @@ enough to teach.
 ## How a video fits the plan
 
 - **A showcase is a cinematic**: an edited, professional video, not live footage of someone
-  editing (2026-10-31). What the engine must provide to record one, such as camera paths and
-  capture at a fixed frame rate, is not mapped yet; a `/triage` of it comes before E2's showcase.
+  editing (2026-10-31). It is recorded with OBS while the runtime flies a camera path in real
+  time; the engine itself records no video ([[Capability Map]] § *Cinematics*, 2026-11-27).
 - **A showcase is part of its goal's Definition of Done.** The goal is not done until its video
   is out.
 - **Recording and editing are real work**, so each showcase gets its own card in the goal's

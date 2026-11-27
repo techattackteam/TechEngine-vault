@@ -23,7 +23,7 @@ must exist before the goal's first ADR.
 | Goal | The showcase shows | Needs | Alongside | Map |
 |---|---|---|---|---|
 | **E1 · Editor and export** ✅ Nov 14 | (internal demo, no video, 2026-10-25) Build a scene of named entities in the editor (hierarchy, inspector, a simple scene view), export it, and run it in the runtime | T1 · T2 | The renderer brief and ADR | Editor |
-| **E2 · First renderer** 🔨 since Nov 14 | Imported glTF reference models with physically based materials, lit by a sun and a sky image, with a finished image, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** · T4 import | T3 viewport tools | Renderer, content pipeline |
+| **E2 · First renderer** 🔨 since Nov 14 | Imported glTF reference models with physically based materials, lit by a sun and a sky image, with a finished image, in the runtime and the editor's scene view | R1, after the **two renderer ADRs** · T4 import · T9 camera paths (2026-11-27) | T3 viewport tools | Renderer, content pipeline, cinematics |
 | **E2b · Many lights, many objects** | Hundreds of local lights at night, and a stress scene of hundreds of thousands of copies of the reference models. Split from E2 on 2026-10-31 | R1's local lights and instanced drawing | The million cubes, a Should ([[Renderer - Brief]]) | Renderer |
 | **E3 · Sky and light** | A physically based sky, a moving sun, day and night, dynamic sun shadows | R2 · R3 | T8 editor workflow | Renderer |
 | **E4 · Fog and god rays** | Volumetric fog and light shafts | R4 | The terrain brief and ADR | Renderer |
@@ -61,6 +61,7 @@ cite them. Order **within** a lane is real.
 | 🔧 **T6** · Play in the editor | Run the game inside the editor and return to the edited state | T1 · A1 | E11, alongside |
 | 🔧 **T7** · Terrain tools | Sculpt and paint voxel terrain, and set up generation, in the editor | W1 · T3 | E6, alongside |
 | 🔧 **T8** · Editor workflow | Undo · more than one scene · reopening the last one ([[Editor - Brief]], 2026-10-31) | R1 · T2 | E3, alongside |
+| 🔧 **T9** · Camera paths | A camera flies a keyed path in the runtime · a timeline panel that sets the keys and their interpolation and plays the path in the game view · the path drawn as a line in the scene view ([[Capability Map]] § *Cinematics*, 2026-11-27) | R1 · T3 | E2 |
 | 🎨 **R1** · Renderer v0 | Device seam (F22) · meshes, shaders and physically based materials · camera · frustum culling | M6 · **two renderer ADRs** (2026-10-30, S9-D4): the frame and device seam, with lights and culling, which also decides whether a per-frame allocator is owed; and materials and shading models | E2 · E2b |
 | 🎨 **R2** · Render graph and lighting | Passes · lights and shadows · depth prepass · post (auto-exposure, bloom) · GPU zones per pass | R1 | E3 |
 | 🎨 **R3** · Sky and sun | Physically based atmosphere · a moving sun · day and night | R2 | E3 |

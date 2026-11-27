@@ -128,6 +128,18 @@ product owner, unless a row says otherwise.
 | **Not in the demo** | Other formats as supported inputs, even where assimp can read them (FBX and OBJ joined on 2026-10-31, `/brief`). |
 | **Later** | Skeletons and animation, with C1 for G3 · morph targets · cameras and lights stored in the source file (2026-10-31, `/brief`). |
 
+## Cinematics
+
+**For:** whoever records the showcases; later, developers making cut-scenes. **Goals:** E2.
+Decided 2026-11-27 by `/triage` (S11-D2), Miguel as product owner.
+
+| | |
+|---|---|
+| **E2** | A camera path: a camera flies a smooth path through keyed positions, played back in the runtime. In the editor, a timeline panel sets the keys and the interpolation between them, and its Play button flies the path's camera in the game view. The scene view's own camera does not move, and the scene view draws the path as a line through its keys. |
+| **Later** | Cut-scenes in games, built on the same camera path. A cut-scene is always a real-time render. |
+| **Not in the demo** | The engine records no video and writes no frames, at a fixed frame rate or otherwise. Miguel records each showcase with OBS while the runtime plays in real time. |
+| **Open** | How playback starts, in the runtime and in the editor's Play mode (T6). E2 needs the runtime's answer, because the showcase is recorded there. How the path stores its keys: Miguel's first idea is a camera path component whose keys are child entities, so a key is selected and moved like any other entity. The design card for T9 settles both. |
+
 ## First release
 
 **For:** developers making their own games. Decided 2026-10-31 at `/product-review`.
