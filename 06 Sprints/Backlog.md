@@ -150,8 +150,8 @@ groups are kept, because they show where future work will land.
   set with a delete over it, which S5-T5's editor bootstrap makes reachable, or the next edit to
   that section. **Kept 2026-11-24.**
 
-- #prio/low · **Code sweep leftovers: platform**: Found by the code sweep on Nov 12, 2026
-  ([[2026-11-12 14-09 Auto Run]]), and carried from the Oct 9 and Oct 30 sweeps.
+- #prio/low · **Code sweep leftovers: platform**: Found by the code sweep on Nov 27, 2026
+  ([[2026-11-27 14-10 Auto Run]]), and carried from the Oct 9, Oct 30 and Nov 12 sweeps.
   - The four input event builders are copied in `engine/platform/tests/input/InputStateTests.cpp:17`
     and `engine/platform/tests/input/InputBufferTests.cpp:16`. Sharing them needs a new test
     header. About 16 lines.
@@ -159,16 +159,22 @@ groups are kept, because they show where future work will land.
     (`engine/platform/src/input/InputState.cpp:8`). A helper would be a template over the bitset
     size in a public header. About 8 lines.
   - `FileAccess::list` splits the virtual path before `resolveExisting` splits it again
-    (`engine/platform/src/files/FileAccess.cpp:189`). About 2 lines.
+    (`engine/platform/src/files/FileAccess.cpp:199`). About 2 lines.
   - Added by the `apps` sweep on Nov 10 ([[2026-11-10 14-12 Auto Run]]). The editor converts between text and
-    `FileAccess`'s bytes by hand (`apps/editor/src/project/Project.cpp:69`, `:125`;
-    `apps/editor/src/EditorApp.cpp:271`, `:285`), and treats `AlreadyExists` after
-    `createDirectory` and `NotFound` after `remove` as success (`Project.cpp:225`, `:237`, `:254`,
-    `:311`; `EditorApp.cpp:280`). Text and idempotent calls in `FileAccess` would serve them.
+    `FileAccess`'s bytes by hand (`apps/editor/src/project/Project.cpp:76`, `:132`;
+    `apps/editor/src/EditorApp.cpp:284`, `:298`), and treats `AlreadyExists` after
+    `createDirectory` and `NotFound` after `remove` as success (`Project.cpp:223`, `:235`, `:252`,
+    `:335`; `EditorApp.cpp:294`). Text and idempotent calls in `FileAccess` would serve them.
     These are new public symbols. About 10 lines.
   - `InputState::capturedAt` is written by `apply` (`engine/platform/src/input/InputState.cpp:6`)
     and read nowhere, tests included. `InputEvent::capturedAt` is the one that is read. Deleting
     the field drops the age of the presentation copy, which a renderer may want. About 2 lines.
+  - New, cross-module: the start-racers-from-one-latch scaffold. #238 shares it inside
+    `FileAccessTests.cpp` as `raceCalls` (`engine/platform/tests/files/FileAccessTests.cpp:83`); the
+    same latch, thread list and join loop is written again in
+    `apps/editor/tests/assets/import/ModelImporterTests.cpp:590` and
+    `apps/editor/tests/assets/import/SkyImportTests.cpp:244`, which also fill a result array. A
+    helper in `tests/support` is a new header. About 15 lines.
 
 - #prio/low · **Restore a read-only FileAccess boundary**: `copy`, `move` and
   `rename` are `const` but write to disk. [[File Access - Design]] § *Open questions*
