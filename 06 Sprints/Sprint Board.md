@@ -11,7 +11,6 @@ kanban-plugin: board
 
 ## Story A: Day 1
 
-- [ ] **S12-D1** · Triage the renderer's debug tools · P1 · 🟡 Light · 1-2h
 - [ ] **S12-D2** · Engine assets and the renderer's settings asset · P1 · 🟢 Deep · 4-6h
 
 
@@ -67,6 +66,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S12-D1** · Triage the renderer's debug tools · P1 · 🟡 Light · 1-2h
 
 
 ## 👀 Review / Demo
@@ -74,6 +74,7 @@ kanban-plugin: board
 
 
 ## ✅ Done: Sprint 12
+
 
 
 

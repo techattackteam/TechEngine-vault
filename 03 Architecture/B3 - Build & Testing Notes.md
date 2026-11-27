@@ -798,7 +798,7 @@ includes every editor case that bootstraps, which matters for [[Known Issues]] D
 | Tier | Shape | Trigger |
 |---|---|---|
 | Visual | Render a fixed scene offscreen, read it back and compare it with a reference image per driver, within a tolerance: zink over lavapipe on CI, Miguel's GPU locally. `FrameRendererTests.cpp:93` already reads pixels back and checks them by hand. | R1's first card that draws a lit frame |
-| Performance | A repeatable scene with its frame time recorded. The million cubes entry in the [[Backlog]] (*etc*) is the first candidate. | That entry's own trigger, R1's first instanced draw |
+| Performance | A repeatable scene with its frame time recorded. The million cubes entry in the [[Backlog]] (*etc*) is the first candidate. | That entry's own trigger, scripting (E11) |
 | Functional | The runtime opens a scene, runs a fixed number of frames and exits, and the exit code and the log are checked, as Unreal's Gauntlet does. | None yet: the runtime takes no arguments today |
 
 ## Scaffold checklist

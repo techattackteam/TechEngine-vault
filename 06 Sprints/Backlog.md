@@ -577,6 +577,11 @@ groups are kept, because they show where future work will land.
   resources, such as a RenderDoc integration. Sprint 12's visualizers and view modes took the
   debug-visualization half on Nov 24 ([[Renderer - Design]] § *Decided*). **Trigger:** a
   renderer to inspect (R2). **Kept 2026-11-24.**
+- #prio/medium · **The renderer's stats panel and GL debug groups**: the shared debug tooling in
+  [[Renderer - Design]] § *Decided*. Render fills a stats record each frame (draw commands,
+  instances, triangles, lights) and an editor panel shows it; each pass and buffer gets a GL
+  debug group or object label, so an Nsight capture names them. Each later renderer feature adds
+  its own rows. Decided at S12-D1 on Nov 27, 2026. **Trigger:** Sprint 13's lit pass.
 - #prio/medium · **The Profiler panel's build**: recording each Play session's tick, render and
   main-frame samples, a file per run under `editorSettings/profiler/`, and the panel that lists
   the runs and graphs the selected one. Designed by S10-D3 on Nov 3, 2026, in [[Editor -
@@ -753,8 +758,9 @@ groups are kept, because they show where future work will land.
   propagation, the snapshot to the render thread, and instanced drawing. Kept as a repeatable
   scene with its frame time recorded, it is a candidate first case for a perf tier, which S11-D5
   decides ([[2026-11 Sprint 11 - First Frame]]). One System that moves every cube is one node on one level,
-  so P1's parallel executor alone does not speed it up. **Trigger:** R1's first card that
-  draws instanced meshes.
+  so P1's parallel executor alone does not speed it up. **Trigger:** scripting lands (E11), because
+  v1 moved its cubes from scripts and a run without them is not a fair comparison (Miguel, Nov 27,
+  S12-D1). It replaces "R1's first card that draws instanced meshes", which S11-T9 met on Nov 20.
 - #prio/low · **Log lines that mention an entity print its name**: Miguel's ask, Oct 26, 2026.
   Once entities have names (S9-T15), a warning or error about an entity should print its name
   beside `index:generation`, not the index alone. S9-T15 covers only the runtime's scene log,

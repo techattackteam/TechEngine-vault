@@ -25,8 +25,7 @@ materials and shading models, and the renderer's design note.
    and it holds 60 fps at 1080p on the target PC. A stress scene fills the view with hundreds of
    thousands of copies of the reference models, and it holds 60 fps too.
 4. He exports and starts the runtime: the same image, with correct brightness and smooth edges.
-5. He switches the scene view to Unlit or Wireframe to inspect a model (a Should).
-6. Alongside E11, he writes a surface shader in code for a scrolling conveyor belt, and a Script
+5. Alongside E11, he writes a surface shader in code for a scrolling conveyor belt, and a Script
    sets the belt's speed. The engine lights it like everything else, and it still works after E3
    added shadows and E8 bounced light.
 
@@ -43,8 +42,8 @@ materials and shading models, and the renderer's design note.
 | **Must, E2** | A finished image: correct brightness for a bright sky and dark corners, and smooth edges. | Scenario 4; a comparison video |
 | **Must, E2** | Cut-out surfaces (leaves, fences, curtains) draw correctly. | Sponza |
 | **Must, E2b** | Hundreds of thousands of objects on screen, many of them copies of one model. The video shows a stress scene of copies of the reference models. | Scenario 3 |
-| **Must, alongside E11** | Developers write surface shaders in code, and the engine still lights them. A Script can set a material's values. A shader keeps working when the engine adds lighting features or the frame is replaced. | Scenario 6; `/triage` |
-| **Should, E2** | Glass draws correctly. Debug view modes in the scene view (Unlit, Wireframe). | Cut first if E2 runs long |
+| **Must, alongside E11** | Developers write surface shaders in code, and the engine still lights them. A Script can set a material's values. A shader keeps working when the engine adds lighting features or the frame is replaced. | Scenario 5; `/triage` |
+| **Should, E2** | Glass draws correctly. | Cut first if E2 runs long |
 | **Should, E2b** | v1's test of a million cubes moving up and down on a grid runs at 60 fps; v1 reached 20 fps. It is also an end-to-end test of the ECS, the task graph and the renderer. | Miguel |
 | **Later** | A node-graph material editor, after the demo. Developers add their own passes, or replace the whole frame through the engine's device seam. | `/triage` |
 | **Won't, for now** | Shadows in E2 (they are E3's). Reflections of nearby objects in E2. | Keeps E2 to its goal |
@@ -65,8 +64,8 @@ Checked on 2026-10-30 against Epic's, Unity's and Godot's current docs, unless a
 otherwise:
 
 - **The editor draws with the game's renderer**, with editor-only view modes on top (Unreal's
-  Lit, Unlit and Wireframe; Unity's draw modes). TechEngine meets it: identical, with view modes
-  as a Should.
+  Lit, Unlit and Wireframe; Unity's draw modes). TechEngine meets it: identical. Its view modes
+  are tools for developing the renderer, not a requirement (§ *Decided*, 2026-11-27).
 - **Material instances**: one shader, many materials with their own values, changed without a
   recompile (Unreal, Unity, Godot). E2 meets it.
 - **A node-graph material editor** is the main path in Unreal and Unity, and Godot has one too.
@@ -108,7 +107,7 @@ None. The three owed to `/product-review` were settled on 2026-10-31 (§ *Decide
 | Editing materials in E2 | Yes, live: inspector edits show in the scene view at once. | 2026-10-30 |
 | Local lights on screen | Hundreds, "using the same technique v1 used, forward rendering plus (clustered forward)". The technique goes to the ADR as Miguel's starting point. | 2026-10-30 |
 | Shadows | None in E2; shadows stay in E3. | 2026-10-30 |
-| Debug view modes | Should in E2. | 2026-10-30 |
+| Debug view modes | Tools for developing the renderer, mainly clustered forward shading, and not a requirement. The light-count heat map is one of them. No runtime or shipped game offers them. Miguel: "The renderer debug tools are just for the renderer." This replaces the 2026-10-30 answer, a Should in E2, and its scenario. | 2026-11-27, S12-D1 `/triage` |
 | A finished image | Correct brightness and smooth edges are both a Must in E2. | 2026-10-30 |
 | Scene size | Sponza and Bistro at 60 fps, 1080p, on the target PC. | 2026-10-30 |
 | See-through surfaces | Cut-outs Must, glass Should. | 2026-10-30 |

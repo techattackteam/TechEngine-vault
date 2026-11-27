@@ -25,6 +25,7 @@ product owner, unless a row says otherwise.
 | | |
 |---|---|
 | **E1, internal demo** | No public video (2026-10-25; P4 amended 2026-10-31). A hierarchy that shows each entity's name, an inspector that edits fields and renames entities, and a placeholder scene view; build a scene, save it, export it, and start the runtime by hand. Entity names were added on 2026-10-26 by `/triage`. A Should, added on 2026-10-31 by `/triage`: multi-select in the hierarchy (Ctrl+click and Shift+click, no box selection), with an inspector that shows the components the selected entities share and edits all of them. |
+| **E2, alongside (T3)** | Every camera and light shows a visualizer in the scene view: a camera's frustum, a point light's reach, a spot light's cone and the sun's direction, with the selected ones brighter. The game view and the runtime never show them (2026-11-27, `/triage`, S12-D1). |
 | **Demo** | Edit scenes · play in the editor and return to the edited state · terrain tools (sculpt, paint, generation settings) · an asset browser with import · a visual game UI designer (§ *Game UI*). |
 | **Later** | After R1, as T8 alongside E3: undo, more than one scene, and reopening the last one · a project launcher, with T5 packaging. |
 
@@ -44,6 +45,7 @@ product owner, unless a row says otherwise.
 | **Numbers** | 60 fps at 1080p on the target hardware, with all of the above on screen. In E2b, Sponza and Bistro each hold it with hundreds of local lights, and so do hundreds of thousands of objects (2026-10-30, `/brief`). |
 | **Later** | After the demo: a node-graph material editor (2026-10-30, `/brief`) · developers add their own passes to the engine's frame · developers replace the whole frame and still draw through the engine's device seam (2026-10-30, `/triage`). |
 | **Not in the demo** | Lighting written by developers: a stylized look uses an unlit material and custom passes instead · replacing the device layer, because the engine's render thread owns the graphics context ([[ADR-018 - Main and simulation threads, render-owned GL]]) (2026-10-30, `/triage`) · ray tracing · VR · HDR displays · low-end PCs and mobile (2026-10-30, `/brief`). |
+| **Not product** | The view modes and the light-count heat map are tools for developing the renderer, mainly clustered forward shading. No runtime or shipped game offers them, and they are not a requirement in any goal (2026-11-27, `/triage`, S12-D1). |
 | **Decided at `/product-review`** | The renderer is P1's one exception: its bar is to stand out among indie engines (Godot 4, Flax, Bevy, Stride), without competing with Unreal or Unity. Mesh LOD joins R7; particles stay out until Phase 2 is mapped (2026-10-31). |
 
 ## World and terrain

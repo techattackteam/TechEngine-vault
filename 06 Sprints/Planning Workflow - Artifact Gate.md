@@ -235,7 +235,9 @@ stays a dev day.
 Sprint 11 a 🤖 Auto prep brief ran from the Monday of week 2 and gave the prep a reading list.
 The order flipped so that the theme is chosen with Miguel, and the lane then looks for what the
 prep missed: a *Decided* row the goal consumes with no card, a fired [[Backlog]] entry neither
-taken nor declined, a `done:` clause with no referent. The prep runs Tuesday to Thursday so a
+taken nor declined, a `done:` clause with no referent, a renderer feature card whose `done:`
+does not say how its work and cost can be seen ([[Renderer - Design]] § *Decided*, *Every
+feature shows itself*, 2026-11-27). The prep runs Tuesday to Thursday so a
 weekday fire follows it. Both standing cards are planted by `/sprint-plan` on day 1 of every
 sprint.
 

@@ -99,8 +99,10 @@ the render thread that draws packets through a small device.
 | Visualizers | A visualizer is a shape that represents a component in the scene view: a camera's frustum, the sphere a point light reaches, a spot light's cone and the sun's direction. They are not debug lines. Every camera and light shows its visualizer, and the selected ones are drawn brighter, as in v1. The game view and the runtime never draw them. A settings panel may make them customizable later. | Miguel, 2026-11-24 (S11-D4) |
 | How visualizers reach render | The packet carries every light and every `Camera`, not only the main one. A view's record asks for visualizers, and only the scene view's record does. Render builds the shapes from the packet and draws them in one shape pass in `client`, from a buffer the CPU writes each frame (§ *Geometry buffers*). | Miguel, 2026-11-24 (S11-D4), as proposed |
 | The light components | One component per type: a directional light for the sun, a point light and a spot light, in `core`, with values in ADR-029 §6's units. All three exist as data and visualizers before any of them lights the scene. | Miguel, 2026-11-24 (S11-D4), as proposed |
-| View modes | Debug modes for developing the renderer. They are a renderer feature in `client`, set per view, not an editor feature. The light-count heat map is one of them and arrives with the light clusters. v1's heat map coloured each pixel by its tile's light count on a log scale up to 512 lights, mixed half over the lit colour (`templates/project/resources/client/assets/shaders/geometryFragment.glsl:326-478` at `v1-reference`). Whether a shipped game keeps them is open (§ *Open questions*). | Miguel, 2026-11-24 (S11-D4) |
+| View modes | Debug modes for developing the renderer. They are a renderer feature in `client`, set per view, not an editor feature. The light-count heat map is one of them and arrives with the light clusters. v1's heat map coloured each pixel by its tile's light count on a log scale up to 512 lights, mixed half over the lit colour (`templates/project/resources/client/assets/shaders/geometryFragment.glsl:326-478` at `v1-reference`). They are not product, so no runtime or shipped game offers them ([[Capability Map]] § *Renderer*). | Miguel, 2026-11-24 (S11-D4); the runtime half 2026-11-27 (S12-D1) |
 | Reloading shaders | A manual *Reload shaders* command rebuilds the programs from their files. File watching stays deferred (ADR-024). | Miguel, 2026-11-24 (S11-D4), as proposed |
+| Every feature shows itself | Each renderer feature card's `done:` says how its work and its cost can be seen: a stats row, a GPU zone, a view mode, or "none, because" with the reason. A view mode or a new panel gets its own card; a row or a zone stays inside the feature's card. Unreal's Nanite and Lumen views and Godot's per-element cluster views are the precedent. | Miguel, 2026-11-27 (S12-D1) |
+| The shared debug tooling | Built once, so each feature only adds to it: a renderer stats record that render fills each frame, shown in an editor panel; GPU zones per pass (§ *Open questions*); GL debug groups and object labels on passes and buffers, which Nsight shows in a capture; and the view mode switch (S12-T8). The stats panel and the debug groups wait in the [[Backlog]]. | Miguel, 2026-11-27 (S12-D1) |
 
 ## Design
 
@@ -722,9 +724,11 @@ Mechanism sections land as the build cards are cut. Known build work:
   *Open questions*, owner R1).
 - **Whether lights go only to occupied clusters,** found from the depth pre-pass, or to every
   cluster as v1 did. With hundreds of lights, every cluster may be enough. Owner: E2b.
-- **Whether a shipped game keeps the view modes.** Miguel thinks they could let a developer see
-  what the renderer sees in their own game, but has not weighed it (Nov 24). Owner: Sprint 12's
-  `/triage` of the renderer's debug tools.
+- **When GPU zones land.** ADR-013 §8 puts them on render-graph passes and the [[Roadmap]] in
+  R2, but E2 may run on an ordered pass list (below), so E2b's light clusters would be built with
+  no GPU time at all. *Every feature shows itself* (§ *Decided*) needs them from the first frame
+  with more than one pass. Moving the trigger amends ADR-013 §8. Owner: Miguel, before Sprint
+  13's lit pass.
 - **An ordered pass list or a render graph.** E2 needs only the list; ADR-013 §8's GPU zones
   attach to each pass either way.
 

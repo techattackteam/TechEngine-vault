@@ -94,7 +94,7 @@ and S12-D5 from fired [[Backlog]] entries, and the fit added S12-P2.
 - [ ] **S12-T8** · View modes · P2 · 🟠 Moderate · 2-3h ·
   done: each view's record names a view mode. Render draws at least lit (base color until the lit
   pass), unlit, wireframe and normals. The scene view picks one from its toolbar, and the runtime
-  gets whatever switch S12-D1 decides. After S12-D1 and S12-T1.
+  gets none, by S12-D1 (Nov 27). After S12-D1 and S12-T1.
 
 ### Story E: The gizmo (Miguel, T3)
 
