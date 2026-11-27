@@ -161,8 +161,8 @@ calls came from the card, not the design above.
 
 - **Ids are drawn on the worker** by `randomResourceId()`, because the job needs them before it
   writes a file and the asset index belongs to the simulation thread. The job then submits
-  `RegisterImportedAssetsCommand`, which adds the records there and skips, with a log line, a
-  record whose id is taken.
+  `RefreshAssetsCommand`, which rebuilds the index from disk and drops an id that is already
+  taken as a duplicate (§ *What the browser lists as built*).
 - **Refusals** are `ProjectError` codes: `SourceUnreadable`, `SourceHasNoMeshes` (a model with no
   triangle mesh places nothing visible), and since S10-T19 `SourceCompressed` and
   `InvalidImportScale`. A failed import leaves no folder behind, the one it claimed included. A
@@ -319,7 +319,7 @@ Built by S10-T20 (#203). The implementation took these calls:
   the default: normal `(0, 1, 0)`, UV0 `(0, 0)`, tangent `(1, 0, 0, 1)`.
 - **Parts are stable-sorted by material index** (`joinParts`), so the parts of one material
   keep their walk order. A material that no part uses gets no slot and no material file.
-- **Two slots with one name get `_1`, `_2`** (`uniqueSlotName`), because a renderer's list is
+- **Two slots with one name get `_1`, `_2`** (`ModelImporter::uniqueName`), because a renderer's list is
   rebuilt by slot name and a clash would hand both slots one material.
 - **Placing a mesh reuses placement.** `PlaceModelCommand::wrapMesh` turns a `.temesh` path into
   a model of one root node named after the file, with the default transform, so *Place model*
@@ -378,7 +378,7 @@ The renderer depends on this, so it is written down once, here.
   down means a path skipped that upload.
 - **The sky has the same rule.** Its first row is the top of the picture.
 
-[[Renderer - Design]] § *Open questions* carries the matching entry, owned by R1.
+[[Renderer - Design]] § *Decided* records the call as the row *Which way V runs*.
 
 ## Texture import
 
@@ -521,9 +521,8 @@ Built by S10-T25 (#203), in `apps/editor/src/assets/import/TextureImporter.cpp`.
 - **The mips come from `TextureImporter::buildMipChain`** on the float image, so a sky whose side
   is odd loses a row or column at that level, as any texture does.
 - **The key is empty.** The import block holds only the source path and the default settings.
-- **The menu entry is *Import image...*** (`PanelsManager::drawImportImagePopup`), through
-  `EditorApp::importSky` and `ImportSkyCommand`, until the asset browser lands. Its dialog and
-  menu entry have not been tried in a window.
+- **The entry is the browser's *Create sky...*** (`SkyCreator`, § *Creators*), which submits
+  `ImportSkyCommand`. The File menu's *Import image...* went with S11-T21.
 
 ## The asset browser
 
@@ -864,9 +863,6 @@ Built by S10-T21 (#203), in `engine/core/src/resources/ResourceCache.cpp`:
 
 ## Open questions
 
-- **Which way a texture is sampled.** Rows are stored top row first and UV0 keeps assimp's V, so
-  the renderer samples at `(u, 1 - v)` (§ *Texture rows and V*). Owner: R1, listed in
-  [[Renderer - Design]] § *Open questions*.
 - **The material file** is decided: [[Renderer - Design]] § *The material file*, built by S10-T23
   and written by S10-T24's walk (both #203, § *Materials and textures as built*).
 

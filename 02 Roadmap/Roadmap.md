@@ -6,9 +6,11 @@ system must support is in the [[Capability Map]], derived from the [[Reference G
 
 **Where we are:** the foundation chain (M0 to M6) is done; M6 closed on Oct 31 with Miguel's
 windowed run ([[2026-10 Sprint 09 - Close M6]]). Phase 1 has opened with E1: Sprint 09 built its
-panels, and [[2026-10 Sprint 10 - Close E1]] closed it on Nov 14 (S10-T7). E2 is in progress: [[2026-11 Sprint 11 - First Frame]] is the first
-of about three sprints for it, and its import half (T4, without the asset browser) shipped in
-Sprint 10. Phase 1's goals run from E1 to E13, with E2 split
+panels, and [[2026-10 Sprint 10 - Close E1]] closed it on Nov 14 (S10-T7). E2 is in progress over about four sprints:
+[[2026-11 Sprint 11 - First Frame]] drew the first frame and built the asset browser, and
+[[2026-11 Sprint 12 - Renderer Groundwork]] is the second. The lit pass moved to Sprint 13 on
+Nov 24, because the renderer had no shader files and no way to show what it does. T9's camera
+paths joined E2 on Nov 27, and no sprint has cut them yet. Phase 1's goals run from E1 to E13, with E2 split
 in two, about a month each, each ending in a demo and most in a showcase video ([[Channel]],
 [[Principles]] P4). Phase 2 is the game itself, TechAttack.
 

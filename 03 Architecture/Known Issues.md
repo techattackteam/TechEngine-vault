@@ -113,7 +113,7 @@ new entry point. Outside TSan it is undefined behaviour with no symptom.
 editor's imports could be owned by a member destroyed before the app's virtual calls end.
 
 **TSan is the only detector, and it is off for editor tests for now.** From S11-D5's merge until
-the null render device lands ([[Backlog]], *client*), a test that bootstraps an editor is `[gpu]`,
+the null render device lands (designed by S12-D4), a test that bootstraps an editor is `[gpu]`,
 and TSan does not run `[gpu]`. A new test that reaches this race would go unreported.
 
 **Trigger:** the next change to how `EditorApp` starts or stops imports (the asset browser's

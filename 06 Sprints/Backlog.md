@@ -8,8 +8,10 @@ It supplies candidates at `/sprint-plan`, not design decisions or implementation
   a decision, a rationale or a `How:` has outgrown this file. Move that content to an
   ADR or a design note ([[Planning Workflow - Artifact Gate]]).
 - **Prio means *want*; a trigger marks a reason to act now.** At sprint planning, turn
-  every still-valid fired entry into a task after checking its evidence, and choose one to
-  three more by priority with Miguel. An item does not need a fired trigger to be chosen.
+  every still-valid fired entry into a task after checking its evidence. **Every sprint takes at
+  least one entry, ideally two or three**, by priority with Miguel (2026-11-27). An item does not
+  need a fired trigger to be chosen, and a pulled entry that turns out invalid may be dropped
+  mid-sprint, said out loud.
 - **Two rituals keep it short.** `/weekly-review` (and `/sprint-plan` on a boundary weekend)
   deletes every *finished* entry without asking: fixed, its code gone, the event its own text
   names has happened, or decided, scheduled or on the ladder. `/sprint-prep` grooms the rest
@@ -403,15 +405,6 @@ groups are kept, because they show where future work will land.
 
 ## client
 
-- #prio/high · **A null render device, so the app tests stop needing a driver**: 47 of the 62
-  `[gpu]` cases open a window only because the client cannot start without a GL context. 39
-  are app lifecycle cases in `apps/editor/tests/EditorAppTests.cpp` and
-  `apps/runtime/tests/RuntimeAppTests.cpp`, where `bootstrap()` opens a window, and 8 are render
-  thread and client lifecycle cases. Until they leave `[gpu]`, no Windows leg, no TSan run and
-  no lane run reaches them ([[B3 - Build & Testing Notes]] § *Test tiers*, S11-D5). Godot's mock
-  rendering server and Unreal's NullRHI are the prior art, and
-  [[ADR-028 - Render device seam and frame packets]] has a device seam but no null device. Its
-  shape is a design decision, so it starts as a Design card. **Trigger:** S11-D5 merges.
 - #prio/low · **No test can make the render thread fail**: `Client` has no way to fail on
   purpose, so `ClientApp`'s failure handling has no test. That covers the stop it requests from
   the render thread, the stop in `mainThreadUpdate()` when `failed()` is set, and the throw in
@@ -422,7 +415,7 @@ groups are kept, because they show where future work will land.
   `done:` asked for one, but no clientapp test exe exists, so only the call order in
   `ClientApp::publishFrame` holds it (`exchangeUploads()` runs before `acquirePacket()`, #213).
   A headless `ClientApp` case needs a client that starts without a GL context. **Trigger:** the
-  null render device above lands, or the next change to `publishFrame`'s order.
+  null render device (S12-D4) is built, or the next change to `publishFrame`'s order.
 - #prio/low · **No test reads back what `GeometryBuffers::place` writes**: S11-T7's tests are
   headless, so none checks the three `updateBuffer` writes, their offsets or the interleaved
   record on the GPU (#217). A `[gpu]` case would need `runOnContext`, which is `static` in
@@ -502,12 +495,6 @@ groups are kept, because they show where future work will land.
   shipped build never lacks content, is Miguel's call. Found by [[2026-11-24 09-08 Auto Run]].
   **Trigger:** #231 merges, or S11-T24's delete lands. **Fired by S11-T24 (#239, Nov 27):** a
   delete from the browser now leaves a project that does not export.
-- #prio/med · **A create shows its progress**: a model or mesh create runs as a job and shows
-  nothing until its files appear. Miguel wants a window with a progress bar and a line saying what
-  is being read or written (Nov 23, during S11-T21). Nothing reports progress today: the importer
-  has no progress handler and the job has no channel back to main. It needs a design first (the
-  channel, the steps, one window for several creates), so it starts as a design card. **Trigger:**
-  `/sprint-prep` for Sprint 12.
 - #prio/low · **Create a scene from the browser**: Miguel, Nov 23, during S11-T21. A new
   `.tescene` is cheap to write, but nothing can open it until the editor holds more than one
   scene (T8), so it would sit unused. A creator class is all the browser side needs
@@ -532,21 +519,6 @@ groups are kept, because they show where future work will land.
   children (`EditorSnapshot::collectFolderContents`). Both only change on a new listing revision,
   so they could be kept with `m_contents`. Unmeasured. **Trigger:** a frame-time profile with the
   browser open on a large folder, or a project with thousands of files.
-- #prio/medium · **The editor has no shortcut system**: each shortcut is a hand-written ImGui check
-  with its own rule for when it fires. Ctrl+S uses `ImGui::Shortcut` with a global route
-  (`PanelsManager::handleShortcuts`), Delete and F2 need the hierarchy focused and skip typing by
-  hand (`HierarchyPanel::handleKeys`), and F fires anywhere unless a text field takes input
-  (`SceneViewPanel::updateCamera`, S11-T11). No list holds them, so menus hard-code their text
-  (`MenuItem("Save", "Ctrl+S")`) and nothing catches two panels claiming one key. v1 let each
-  panel override `processKeyPressed` (`runtime/editor/src/panels/Panel.cpp` at `v1-reference`), but
-  keys needed the panel focused, carried no modifiers (S also fired on Ctrl+S), had no text-field
-  filter, and every named key was polled three times a frame. **Lean (Nov 21):** keep v1's idea,
-  each panel declaring its shortcuts as data (chord, scope, action) the way it declares style
-  vars, and have `Panel::draw` run them through `ImGui::Shortcut`. Three scopes: focused (Delete,
-  F2), hovered or focused (view keys, which needs a hover test on top of ImGui's routes), and
-  global (Ctrl+S, F). ImGui then ignores plain letter keys while a text field takes input, and one
-  list can feed menus and later remapping. It is a design row in [[Editor - Design]], then a card.
-  **Trigger:** the next card that adds a shortcut, such as the gizmo's modes.
 - #prio/low · **The scene view's focus frames by scale, not by size**: meshes carry no bounds, so
   F flies to 2.5 times the selected entity's largest world-scale axis, and never closer than
   1.5 m (`apps/editor/src/edit/camera/FlyCamera.hpp`, S11-T11, #222, Nov 20). A large model at scale 1,
@@ -601,11 +573,6 @@ groups are kept, because they show where future work will land.
   Clearing needs its own rule for the empty id (no dependency to add) and a row in
   [[Editor - Design]]. Found at S10-T8. **Trigger:** the first time a reference must be removed
   without removing its component, likely with E2's materials.
-- #prio/low · **Inspector field hints and a drawer registry**: a generic field has no range,
-  speed or display name, and `drawComponent` picks a drawer with an `if` chain on the type. Hints
-  would be an optional argument to `visit`'s `field`, which the other archives ignore, so they
-  are a [[Serialization - Design]] decision first. Found at S9-T17. **Trigger:** the first
-  component with a field that needs a range, or the third custom drawer, likely in R1.
 - #prio/low · **Frame capture tools**: capturing one frame to inspect its passes and
   resources, such as a RenderDoc integration. Sprint 12's visualizers and view modes took the
   debug-visualization half on Nov 24 ([[Renderer - Design]] § *Decided*). **Trigger:** a
@@ -626,16 +593,6 @@ groups are kept, because they show where future work will land.
 - #prio/low · **ImGui multi-viewport**: panels dragged out into their own OS windows. Not a
   Must, but wanted later. ADR-027 §1 keeps it off in E1 and leaves the threaded window glue to
   build. Found at S9-D2 on Oct 25, 2026.
-- #prio/medium · **The editor scales with the display, in a scalable font**: the editor draws
-  ImGui's 13px ProggyClean bitmap font at a scale of 1, so on a Windows display at 150% every
-  panel is two thirds of its intended size, and the bitmap font is what makes it look like a
-  debug tool. ImGui 1.93 embeds a scalable version of that font (`AddFontDefaultVector()`, no
-  file to load), and its GLFW backend reports the window's content scale, which
-  `style.ScaleAllSizes()` and `style.FontScaleDpi` take. The scale needs the open window, so it
-  runs after `startClient()`, not where S9-T20 applies the theme. A real typeface (Roboto ships
-  in imgui's `misc/fonts`) would change the look more, but where its file lives, compiled in or
-  read through `FileAccess`, is a decision first. Split from S9-T20 at its `/card-start` on
-  Oct 31, 2026. **Trigger:** the first recording of the editor for a showcase.
 - #prio/low · **A folder picker for File → Export**: E1's export always writes to the editor's
   executable folder, because no file-dialog dependency exists ([[Resources - Design]] § *The
   export command*). A picker needs a new dependency or per-OS dialog code in `platform`, and the
@@ -662,11 +619,10 @@ groups are kept, because they show where future work will land.
   assimp's `ProgressHandler` can stop a read. Found at S10-T15 (#194) on Nov 9, 2026.
   **Trigger:** the asset browser's import, or the first close that waits long enough to notice.
   **Fired Nov 21:** S11-D3 left it out of the browser's first cut.
-- #prio/medium · **Sponza ships in `projects/dev` with no licence file**: S10-T16 (#196) added
+- #prio/medium · **A showcase that shows Sponza must credit it**: S10-T16 (#196) added
   `Sponza.gltf`, `Sponza.bin` and its import to `projects/dev/assets/client`, about 14.5 MB, by
-  Miguel's choice. The Khronos sample carries its own licence and credits, and nothing in the
-  repo states them. Copy the sample's LICENSE beside the source and credit it wherever a
-  showcase uses it. Found at S10-T16's close on Nov 10, 2026. **Trigger:** before the first
+  Miguel's choice. Since S11-T1 (#220) the sample's `LICENSE.md` and `README.md` sit beside it in
+  `projects/dev/assets/client/glTF/`; what is left is crediting it wherever a showcase uses it. Found at S10-T16's close on Nov 10, 2026. **Trigger:** before the first
   showcase or public release that shows Sponza.
 - #prio/low · **Placement loads its meshes in one blocking step**: `PlaceModelCommand` runs the
   cache's loading phase on the simulation thread and waits, as `SetAssetFieldCommand` does. The
@@ -785,23 +741,7 @@ groups are kept, because they show where future work will land.
   ([[2026-11-23 14-11 Auto Run]]). The fix is to install the pinned version in the environment's
   setup script beside the `docs` link. **Trigger:** the next edit to the lane's setup script, or
   a second format-only CI failure from the lane.
-- #prio/low · **[[Content Pipeline - Design]] names three symbols that no longer exist**. Found by
-  the freshness check on Nov 26 ([[2026-11-26 09-09 Auto Run]]), against `97799bc`.
-  - § *The import* (line 164) says the import job submits `RegisterImportedAssetsCommand`. #225
-    added `RefreshAssetsCommand` and #230 (S11-T21) removed the last use of the old one, as
-    § *What the browser lists as built* (line 573) already says.
-  - § *The merged mesh as built* (line 322) cites `uniqueSlotName`. #228 (S11-T13) renamed it to
-    `ModelImporter::uniqueName`, which takes a span and a name field.
-  - § *The sky image as built* (line 524) says the sky is imported through
-    `PanelsManager::drawImportImagePopup` "until the asset browser lands". #230 (S11-T21) removed
-    that menu entry, as line 531 already says.
-  **Trigger:** the Nov 28-29 `/sprint-plan`'s drift check.
 
-- #prio/medium · **`logs/` is not git-ignored**: the logger writes `logs/techengine.log` relative
-  to the working directory (`engine/base/src/diagnostics/Log.cpp:28`), and `.gitignore` has no
-  `logs` line, so any run from the repo root leaves a file that `git add .` picks up. #222
-  (S11-T11, `a4c65ce`, Nov 21) merged one line of it onto `master`. The fix is a `logs/` line in
-  `.gitignore` and a commit that deletes the tracked file. **Trigger:** the next engine PR.
 - #prio/low · **`CONVENTIONS.md` § *Headers* cites a deleted file**: its example of "the module's
   own header stays at the root" is `base/Base.hpp`, which S11-T14 (#212) deleted. Pick another
   example or drop the clause; `platform/Platform.hpp` would serve only if the *platform* rename
@@ -914,14 +854,7 @@ groups are kept, because they show where future work will land.
   kept every name, commas included: `engine/client/tests/render/RenderThreadTests.cpp:92` and
   `engine/app/tests/AppTests.cpp:243`, `:721` and `:1026` at `e59d77c`. At `a4c65ce` the same two
   files hold six comma names: `RenderThreadTests.cpp:96`, `:186` and `AppTests.cpp:243`, `:726`,
-  `:1035`, `:1300`.
-- #prio/low · **Two design-note lines lag the code since the Nov 21 check**: found by the lane's
-  prep brief on Nov 23 ([[2026-11-23 09-08 Auto Run]]). [[Content Pipeline - Design]] § *Open questions* still asks
-  which way a texture is sampled, which S11-T8 decided ([[Renderer - Design]] § *Decided*, *Which
-  way V runs*). [[Renderer - Design]] § *The scene view's fly camera as built* describes the lock
-  as `GLFW_CURSOR_DISABLED` alone, but #226 (`5f0f8e6`) also turns on raw mouse motion and sets
-  ImGui's `NoMouse` while locked (`apps/editor/src/EditorApp.cpp:365-375`). **Trigger:** the next
-  drift check, at the Sprint 11 boundary's `/sprint-plan`.
+  `:1035`, `:1292` (`:1292` at `f89e866`).
 ## Ideas (unsorted)
 
 - _drop raw ideas here; untagged until triage gives them a `#prio/…` and, when useful, a `Trigger:`_

@@ -64,8 +64,11 @@ building against is the reflex this stops.
 **Read [[Backlog]] last when gathering candidates.** Validate each fired trigger
 and mark every still-relevant entry for a sprint task. Rank the other entries by
 priority. After setting the sprint goal, turn the fired entries into tasks and review
-the rest with Miguel; choose one to three for the sprint, remove rejected or obsolete
-entries, and keep useful ones with an updated priority. If the artifact gate finds
+the rest with Miguel; **every sprint takes at least one entry, ideally two or three**
+(Miguel, 2026-11-27), so the file does not fill with entries that go stale unread. Remove
+rejected or obsolete entries, and keep useful ones with an updated priority. A pulled entry
+that turns out no longer valid may be dropped mid-sprint; the drop is said out loud and
+recorded in the sprint note. If the artifact gate finds
 an open decision, the first task is Design and the implementation remains unsized.
 A missing or unfired trigger does not block a discretionary pick. The backlog holds
 wants and observations, not settled decisions or a build specification. Check its
@@ -224,11 +227,17 @@ stays a dev day.
 
 | Half | When | Does |
 |---|---|---|
-| `/sprint-prep` | Week 2 of the closing sprint, Tuesday to Friday, as the standing `Prepare Sprint <n+1>` Design card | Proposes the goal, settles the light decisions, names the heavy ones, drafts the cards with the 🤖 Auto and 🤖 Claude passes |
-| `/sprint-plan` | The boundary weekend | Retro, drift check, fits the draft to capacity, assigns IDs, resets the board |
+| `/sprint-prep` | Week 2 of the closing sprint, Tuesday to Thursday, as the standing `Prepare Sprint <n+1>` Design card | Proposes the goal, settles the light decisions, names the heavy ones, drafts the cards with the 🤖 Auto and 🤖 Claude passes |
+| 🤖 Auto **prep check** | The first lane fire after the prep card is in Done | Reads the draft cut against the design notes, the code, the [[Backlog]] and [[Known Issues]], and lists what the cut missed. It decides nothing. |
+| `/sprint-plan` | The boundary weekend | Retro, drift check, adjusts the draft for the check's findings, fits it to capacity, assigns IDs, resets the board |
 
-A 🤖 Auto **prep brief** card runs from the Monday of week 2 and gives the prep its reading
-list. Both standing cards are planted by `/sprint-plan` on day 1 of every sprint.
+**The prep sets the theme first, and the lane checks it after** (Miguel, 2026-11-27). Until
+Sprint 11 a 🤖 Auto prep brief ran from the Monday of week 2 and gave the prep a reading list.
+The order flipped so that the theme is chosen with Miguel, and the lane then looks for what the
+prep missed: a *Decided* row the goal consumes with no card, a fired [[Backlog]] entry neither
+taken nor declined, a `done:` clause with no referent. The prep runs Tuesday to Thursday so a
+weekday fire follows it. Both standing cards are planted by `/sprint-plan` on day 1 of every
+sprint.
 
 **A heavy decision the prep finds** gets `/adr` before the boundary when the sprint has a slot
 left. Otherwise it becomes a **day-1 Design card** of the next sprint, ordered before every card
@@ -421,7 +430,7 @@ matters beyond the card goes into the design note.
 
 1. **Pick the goal** from the [[Roadmap]] and check its systems' briefs, then **source the
    work** from a design note's *Decided* rows against the code (see *Where plans come from*). Read [[Backlog]] last: task valid fired entries, then refine the rest by
-   priority and choose one to three with Miguel.
+   priority and choose at least one, ideally two or three, with Miguel.
 2. **One decision artifact**, where one is owed. An ADR *or* a design note, rarely both, per
    the gate above. Often neither. A light one is drafted in planning. A heavy one becomes a
    **Design** task, and the breakdown stops there.
@@ -441,8 +450,7 @@ The other commands are **triggered out of them**. They are not run in sequence a
 
 ```mermaid
 flowchart TD
-    BR["🤖 Prep brief · lane, from Mon of week 2"] --> A
-    A["/sprint-prep · week 2, Tue to Fri"] --> B["Gather: roadmap · quarter · sprint ·<br/>design notes' Decided rows vs the code"]
+    A["/sprint-prep · week 2, Tue to Thu"] --> B["Gather: roadmap · quarter · sprint ·<br/>design notes' Decided rows vs the code"]
     B --> B2["Backlog last: validate fired entries;<br/>rank the rest by priority"]
     B2 --> E["Propose ONE headline goal"]
     E --> E2{"System in play<br/>has a design note?"}
@@ -456,7 +464,8 @@ flowchart TD
     H --> K["Draft cut in the closing sprint note ·<br/>kind · priority · weight · lane passes"]
     I --> K
     J --> K
-    K --> SP["/sprint-plan · boundary weekend"]
+    K --> CK["🤖 Prep check · lane, the fire after the prep"]
+    CK --> SP["/sprint-plan · boundary weekend"]
     SP --> D["Retro · drift check"]
     D --> FIT["Fit to capacity · assign IDs ·<br/>plant the two standing cards"]
     FIT --> L["Write sprint note · board · roadmap · dashboard"]

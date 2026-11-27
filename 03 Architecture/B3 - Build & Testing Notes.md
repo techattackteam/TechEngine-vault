@@ -778,12 +778,12 @@ is the work that overlaps best.
 ### The interim, and how `[gpu]` shrinks
 
 `[gpu]` is meant to hold only the cases that draw or load GL. At the merge it holds all 62 cases
-that open a window, because nothing lets the client start without one. Two [[Backlog]] entries
-shrink it:
+that open a window, because nothing lets the client start without one. Two pieces of work shrink it: the null render
+device (S12-D4 designs it, [[2026-11 Sprint 12 - Renderer Groundwork]]) and a [[Backlog]] entry:
 
 | Group | Cases | Leaves `[gpu]` through |
 |---|---|---|
-| App lifecycle: `EditorAppTests.cpp` (37) and `RuntimeAppTests.cpp` (2) | 39 | A null render device (*client*) |
+| App lifecycle: `EditorAppTests.cpp` (37) and `RuntimeAppTests.cpp` (2) | 39 | A null render device (S12-D4) |
 | Render thread lifecycle and ImGui hook order: `RenderThreadTests.cpp:64`, `:78`, `:92`, `:120`, `:141` | 5 | The same null device |
 | Client lifecycle: `ClientTests.cpp:42`, `:58`, `:82` | 3 | The same null device |
 | Window only, no GL: `WindowTests.cpp:36`, `:51`, `:162`, `:236`, `:291`, `:328`, `:357`, `:398` | 8 | The window asking for the renderer's GL version (*platform*) |

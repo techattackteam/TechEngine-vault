@@ -635,9 +635,11 @@ ImGui. `SceneViewPanel::updateCamera` fills that record on main, and `describeCa
 pose through the view slot. The numbers are the lane's calls; the controls are Miguel's.
 
 - **Drags.** A right or middle press on the view starts a drag that lasts until the button is
-  released, even off the panel. While either lasts, `EditorApp` locks the cursor with
-  `GLFW_CURSOR_DISABLED`, which hides it, keeps reporting motion past the screen's edge, and puts
-  it back where the drag began. `ImGui::TeleportMousePos` was tried first and cannot work: ImGui
+  released, even off the panel. While either lasts, `EditorApp::setCursorLocked` locks the cursor
+  with `GLFW_CURSOR_DISABLED`, which hides it, keeps reporting motion past the screen's edge, and
+  puts it back where the drag began. It also turns on raw mouse motion where GLFW supports it, and
+  sets ImGui's `NoMouse`, because ImGui's mouse position follows the unbounded virtual cursor and
+  would hover every panel it crosses (#226). Raw motion is never turned off again. `ImGui::TeleportMousePos` was tried first and cannot work: ImGui
   drops every mouse position event in the frame after a teleport, so the drag read no motion.
 - **Distance.** Zoom and pan scale with the distance to the selected entity, clamped to 1 to
   2000 m, or 5 m with no selection. A wheel step zooms a fifth of it, measured from where a zoom

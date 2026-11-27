@@ -519,8 +519,25 @@ out of S11-T6 on Nov 17, at its `/card-start`.
 
 ## Sprint review (end)
 
-<!-- Keep this section while the sprint is active. Fill it at the end. -->
+33 of 33 cards merged; the goal was met on Nov 20 (S11-T9). Demo: Miguel's windowed check of the
+exported runtime showing Sponza, shared as a screenshot in the session, not stored in the vault.
 
-- Link what shipped and the demo or artifact that proves it.
+- **Story A:** S11-D1 (vault `8446176`, Nov 14), only zink over lavapipe on Linux meets the GL
+  floor. S11-D5 (#205, Nov 14), test tiers by environment, `[gpu]` on Linux only, parallel `ctest`.
+  S11-T1 (#220, Nov 20), Sponza with its images and licence; BC7's encode time was never stated.
+- **Story B:** S11-T2 (#206, Nov 14), GL 4.6 and bindless at startup. S11-T3 (#207, Nov 16), the
+  device. S11-T4 (#210, Nov 16), frame packets and one main camera. S11-T5 (#208, Nov 16), the
+  camera. S11-T6 (#213, Nov 17), ordered uploads and render's fence. S11-T7 (#217, Nov 19),
+  geometry buffers. S11-T8 (#219, Nov 20), the material buffer and bindless textures. S11-T9
+  (#220, Nov 20), the first frame. S11-T16 (#236, Nov 24), render drops its GPU copies.
+- **Story C:** S11-T10 (#221, Nov 20), the views are render targets. S11-T11 (#222, Nov 21), the
+  fly camera.
+- **Story D:** S11-D3 (vault `f6706cd`, Nov 21), the asset browser's design. S11-D2 (vault
+  `49f805f`, Nov 27), E2 gains T9, camera paths.
+- **Story E (lane):** S11-P1 (#209), S11-T12 (#211), S11-T14 (#212), S11-P2 (#214), S11-T15
+  (#215), S11-T13 (#228).
+- **Story F:** S11-P3 (Nov 23, report-only), S11-D4 (vault `509c1db`, Nov 24), Sprint 12's cut.
+- **Story G:** S11-T17 (#224), S11-T18 (#229), S11-T19 (#225), S11-T20 (#227), S11-T21 (#230),
+  S11-T22 (#234, #235), S11-T23 (#231), S11-T24 (#239), S11-T25 (#233), Nov 21 to Nov 27.
 
-Retrospective: [[07 Journal]]
+Retrospective: [[2026-11-27 Sprint 11 Retrospective]]
