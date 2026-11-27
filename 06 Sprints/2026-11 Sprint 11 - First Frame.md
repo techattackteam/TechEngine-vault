@@ -213,7 +213,7 @@ and *How the scene view's camera is driven*.
 
 ### Story D: Design and product
 
-- [ ] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h ·
+- [x] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h ·
   done: `/triage` weighs what the engine must provide to record a cinematic showcase, such as
   camera paths and capture at a fixed frame rate, and the [[Capability Map]] records the result
   with the date. Was S10-D5. Due before E2's showcase. **Retagged 🟡 Light on Nov 17** from

@@ -23,7 +23,6 @@ kanban-plugin: board
 
 ## Story D: Design and product
 
-- [ ] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h: `/triage` of camera paths, fixed-rate capture and the rest, recorded in the [[Capability Map]]. Was S10-D5. Retagged from 🤖 Claude on Nov 17, because the lane runs no Design card.
 
 
 ## Story E: The lane's small cards
@@ -36,11 +35,11 @@ kanban-plugin: board
 
 ## Story G: The asset browser (carries freely)
 
-- [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: a warning that lists what uses it, then one command. After S11-T21 and S11-T23.
 
 
 ## 🔨 In Progress
 
+- [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: a warning that lists what uses it, then one command. After S11-T21 and S11-T23.
 
 
 ## 👀 Review / Demo
@@ -49,12 +48,15 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h: vault `49f805f`, **Nov 27**. E2 gains rung T9, camera paths: a keyed path the runtime plays, set in a timeline panel and drawn as a line in the scene view ([[Capability Map]] § *Cinematics*). Story D is complete, and `/showcase E2` and T9's cards can now be planned.
+	- **Half of the `done:` clause became a Won't:** the engine never captures at a fixed frame rate or writes video, because Miguel records with OBS while the runtime plays in real time. Claude had proposed it as *Later* with a trigger; `/card-start` had found it would need ADR-019 §2 amended, since nothing makes simulation wait for render.
+	- **Miguel's calls in the session:** the timeline's Play flies the path's camera in the game view, never the scene view's camera, and cut-scenes are the *Later* row. How playback starts, and his idea of keys as child entities, stay *Open* for T9's design card.
+
 - [x] **S11-D4** · Prepare Sprint 12 · P1 · 🟠 Moderate · 2-3h: vault `509c1db`, **Nov 24**. Sprint 12's cut has 17 drafts for renderer groundwork: engine shader files, light components, visualizers, view modes, ImGuizmo and editor refinements ([[2026-11 Sprint 11 - First Frame]] § *Sprint 12's cut*). Its calls are rows in [[Renderer - Design]] and [[Editor - Design]] § *Decided*. Story F is complete.
 	- **The first proposed goal was declined:** Claude proposed lighting Sponza. Miguel declined it, because the forward shader is still a C++ string and the renderer cannot show what it is doing. The lit pass moves to Sprint 13, and E2 now runs about four sprints. Miguel accepted that stretch for this reason.
 	- **Reversed in the session:** Claude's own gizmo became ImGuizmo, as v1 used. A per-panel style card was cut and then dropped, because `Panel::addStyleVar` already ports v1's system.
 	- **Grooming:** 15 entries were reviewed. 13 were kept (8 of them moved down a level), the frame capture entry was re-worded, and the `wait()` test entry was dropped. The finished glad2 entry was deleted together with its stale sentence in [[Window - Design]].
 	- *Retro:* Claude said the vault never decided where engine assets live. In fact [[Project - Design]] put them in the editor's `engine` alias on Oct 10, but nothing fills or indexes that folder, and that gap is Sprint 12's card 2. S11-P3's brief was a day stale (S11-T16, S11-T22 and S11-T23 had merged since), and it called the Sponza licence entry finished, although crediting Sponza in a showcase is still owed.
-
 - [x] **S11-T16** · Render drops its GPU copies · P2 · 🟠 Moderate · 2-3h: #236 (`092a297`), **Nov 24**. A released copy retires once neither packet in the history nor a reachable copy names it, a reload's old copy retires at once, and a retired copy is dropped when the device's frame fence shows the GPU finished its stamped frame ([[Renderer - Design]] § *Uploads: dropping a copy*). [[Known Issues]] D14 is closed. Story B is complete, and no card waited on this one.
 	- **Fork 1 was Claude's call:** a frame number on the device, not fence handles. Miguel answered only fork 2 (both packets), so the frame number stands as taken, and the note records why.
 	- **Caught by the scaffold's tests before the PR:** `dropFinished` erased retired copies without dropping them, so nothing was ever freed; `signalFrame` compared with the last completed frame instead of the newest fence, and inserted the fence even after its check fired; `getCompletedFrame` took one fence per call.
