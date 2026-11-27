@@ -98,7 +98,7 @@ placed in a scene is a copy of the model's entities, with no link back to the mo
 | Two panes, breadcrumbs, a grid with a box | A folder tree and the open folder's tiles, each with a drawn badge for its kind. Ctrl, Shift and box selection on the grid. The open folder is remembered in the layout, and a folder that is gone opens its closest listed ancestor. | Miguel, 2026-11-21 (S11-D3); the badge and the open folder 2026-11-21 (S11-T20); § *The browser panel* |
 | Each create kind is a creator | One `AssetCreator` class per kind, listed by the panel, behind one shared dialog with a typed name. Model, mesh and sky names are typed too. | Miguel, 2026-11-23 (S11-T21); § *Creators* |
 | The browser drags to three targets | The scene view and the hierarchy place a model or mesh; an inspector asset field takes an asset of its type. | Miguel, 2026-11-21 (S11-D3); § *Dragging from the browser* |
-| Delete is permanent, after a warning | The warning lists every file that names the asset. A reference to an asset no file holds loads as absent, with a warning. | Miguel, 2026-11-21 (S11-D3); § *Deleting an asset*; [[Resources - Design]] § *Decided* |
+| Delete is permanent, after a warning | The warning lists every file that names the asset. A reference to an asset no file holds loads as absent, with a warning. | Miguel, 2026-11-21 (S11-D3); built by S11-T24 (#239), § *Deleting an asset as built*; [[Resources - Design]] § *Decided* |
 | The texture file | A `.tetexture` holds one 2D image in its GPU format, with every mip, its wrap and its filter. No ADR: a wrong format costs a version bump and a re-import. | S10-D11, 2026-11-10; § *The texture file* |
 | A file per image, purpose and sampler | An image shared by many materials for one purpose is written once. Used for two purposes or with two samplers, it is written twice. | S10-D11, 2026-11-10; § *Texture import* |
 | A format per purpose | Base color and emissive are BC7 sRGB, the packed ORM is BC7 linear, a normal map is BC5, and the sky is uncompressed `RGB9E5`. | S10-D11, 2026-11-10; § *Texture import* |
@@ -548,8 +548,8 @@ re-import, which this design drops (§ *Creating from a source*).
   (S11-T19): one walk, not a second one beside the index.
 - **It is listed again after every change the editor makes** (a create finishes, a delete
   applies) and on *Refresh*. There is no file watcher, so a file copied in from outside shows
-  after *Refresh*. The asset index is rebuilt with it. A refresh replaces the whole index, so
-  delete's `AssetIndex::remove` (§ *Deleting an asset*) may have no job left: S11-T24 decides.
+  after *Refresh*. The asset index is rebuilt with it. A refresh replaces the whole index, so a
+  delete ends with a refresh and the index has no `remove` (§ *Deleting an asset as built*).
 - **Only an engine file warns.** A file that cannot be read as an asset is logged only when its
   extension is an engine one (`.tescene`, `.temesh`, `.temodel`, `.tetexture`, `.tematerial`).
   Every other file is skipped quietly, but is still read by its magic, so a renamed asset is still
@@ -646,7 +646,7 @@ implementation took these calls:
 | One model source | *Create model...*, *Create mesh...* |
 | One `.hdr` | *Create sky...* |
 | Any `.temodel` or `.temesh` tiles | *Place in scene*, one copy of each |
-| Any files or folders | *Delete...*, shown disabled until S11-T24 builds it, so no menu is empty |
+| Any files or folders | *Delete...* |
 | Empty space in the grid | *Create folder...*, *Create material...* (client and common only), *Refresh* |
 
 *Create mesh* is today's `ImportMode::MergedMesh`, and *Create model* is `ImportMode::Model`.
@@ -770,17 +770,18 @@ Built by S11-T22 (#234, #235). The implementation took these calls:
 
 Miguel's behaviour from Oct 26, with his answers of Nov 21.
 
-- **The warning** lists every indexed scene, material and model that names a selected file,
+- **The warning** lists every indexed scene, model, mesh and material that names a selected file,
   scenes first, and says the delete cannot be undone. The simulation thread finds them when the
   dialog opens, by reading each indexed file's references. A folder is deleted with everything
   in it, and its warning gives a count of what it holds.
 - **The delete is permanent**, through `FileAccess::remove`. The project is in git, so a mistake
   is restored from there. Undo is T8's.
-- **It is one command on the simulation thread.** It removes the files and their index records
-  (`AssetIndex` gains `remove`), makes every reference to a deleted id in the open scene absent,
-  and raises the edit revision, so the scene shows as unsaved. The deleted entries stay held
+- **It is one command on the simulation thread.** It removes the files, rebuilds the index with
+  a refresh, makes every reference to a deleted id in the open scene absent, and raises the edit
+  revision, so the scene shows as unsaved. The deleted entries stay held
   until the scene is released, as everything an editor edit swaps away from does (ADR-026 §4).
-- **Refused:** the open scene's own file, and a folder a create is still writing into.
+- **Refused:** the open scene's own file, a folder that holds it, and any delete while a create
+  job runs.
 - **Deleting a source** deletes that file only. The folders created from it stay.
 - **Every later load** treats a reference to an id no file holds as absent, with a warning
   ([[Resources - Design]] § *Decided*), built by S11-T23 (#231) as a `Missing` entry
@@ -788,6 +789,28 @@ Miguel's behaviour from Oct 26, with his answers of Nov 21.
   model's meshes (§ *Decided*). Render already draws the default material when a material has no
   copy, and skips a mesh with none (`engine/client/src/render/FrameRenderer.cpp:253-272`), so no
   default asset files are needed.
+
+### Deleting an asset as built
+
+Built by S11-T24 (#239). Miguel took the first four calls at its `/card-start` on Nov 27, and
+Claude took the rest while building it.
+
+- **The index has no `remove`.** `DeleteAssetsCommand` ends with `RefreshAssetsCommand`, which
+  rebuilds the index and the listing from disk, as every other change does. A file watcher
+  that reports moves and removes is Miguel's later plan ([[Backlog]], *File watching*).
+- **A deleted reference in the open scene is emptied**: a null id and an empty handle, through
+  `AssetReferenceClearer` over `SceneAsset::visitReferences`. `ReferenceVisitor::visitAsset` takes
+  the id by reference for this. A cleared mesh keeps its material slots.
+- **Any create job refuses the delete**, through `JobSystem::isDone` over the editor's import
+  batches, because nothing records which folder a create is writing into.
+- **The warning is a request, then an answer in the snapshot.** `PreviewDeleteCommand` builds
+  it on the simulation thread and publishes it under the dialog's sequence number, as the
+  selection does, and the *Delete* button waits for it.
+- **Meshes are holders too**, because a slot's default material names one.
+- **The open scene is read live as well as from its file**, so a reference added since the last
+  save is listed. `/card-review` caught that the first version read only the file.
+- **A path that is already gone counts as deleted.** A path that fails to delete is logged, and
+  the other paths still go. The scene is marked unsaved only when a reference was emptied.
 
 ### Future features
 

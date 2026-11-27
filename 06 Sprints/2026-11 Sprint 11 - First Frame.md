@@ -441,7 +441,7 @@ S11-T22 follows S11-T20. S11-T23 is independent, and S11-T24 also follows it.
   with a warning, and a file that exists and fails still fails ([[Resources - Design]]
   § *Decided*). One test per holder. Independent of the browser. **Retagged 🤖 Claude on Nov 23**
   from 🟠 Moderate, at Miguel's call, so the lane builds it.
-- [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h ·
+- [x] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h ·
   done: *Delete...* opens a warning that lists every scene, material and model naming the
   selection, then one command removes the files and their index records (`AssetIndex::remove`),
   makes the open scene's references absent and marks it unsaved. The open scene's file and a

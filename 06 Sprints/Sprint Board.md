@@ -39,7 +39,6 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: a warning that lists what uses it, then one command. After S11-T21 and S11-T23.
 
 
 ## 👀 Review / Demo
@@ -48,6 +47,10 @@ kanban-plugin: board
 
 ## ✅ Done: Sprint 11
 
+- [x] **S11-T24** · Delete an asset · P2 · 🟢 Deep · 4-6h: #239 (`f89e866`), **Nov 27**. *Delete...* opens a warning that lists the scenes, models, meshes and materials that name the selection, then one command removes the files, empties the open scene's references to them and marks it unsaved ([[Content Pipeline - Design]] § *Deleting an asset as built*). Story G is complete, and no card waited on this one.
+	- **Two clauses had no referent, and Miguel settled both at `/card-start`.** `AssetIndex::remove` has no job, because the refresh that ends every change rebuilds the index. Nothing records which folder a create is writing into, so a delete is refused while any create job runs. Meshes joined the warning's list, because a slot's default material names one.
+	- **Caught by `/card-review` before the PR:** the warning read the open scene from its file, so a reference added since the last save was not listed, although the delete still emptied it. The preview now also reads the live scene.
+	- *Retro:* Claude wrote the whole card, a 🟢 Deep one, at Miguel's request, because the trip and the sprint prep left him no time. Claude also built and tested it on Windows. The first attempt ran outside a VS environment and wiped the cache in `build/windows`, and VS 18's MSVC 14.52 fails Jolt with C4865, so the build used VS 2022's 14.44 ([[Backlog]] § *etc: cross-cutting*). The dialog was not checked in a running editor before the merge. #239 has no review conversation, so this entry comes from the session. Every CI check on #239 was green.
 - [x] **S11-D2** · Triage what a cinematic showcase needs · P2 · 🟡 Light · 1-2h: vault `49f805f`, **Nov 27**. E2 gains rung T9, camera paths: a keyed path the runtime plays, set in a timeline panel and drawn as a line in the scene view ([[Capability Map]] § *Cinematics*). Story D is complete, and `/showcase E2` and T9's cards can now be planned.
 	- **Half of the `done:` clause became a Won't:** the engine never captures at a fixed frame rate or writes video, because Miguel records with OBS while the runtime plays in real time. Claude had proposed it as *Later* with a trigger; `/card-start` had found it would need ADR-019 §2 amended, since nothing makes simulation wait for render.
 	- **Miguel's calls in the session:** the timeline's Play flies the path's camera in the game view, never the scene view's camera, and cut-scenes are the *Later* row. How playback starts, and his idea of keys as child entities, stay *Open* for T9's design card.

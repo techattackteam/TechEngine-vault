@@ -460,15 +460,17 @@ with S9-T6, and the bake's walk with S9-T7.
   it has a scene entry and its triangle's handle is filled on the first launch.
 - **The reference walk as built** (S9-T2, #157, 2026-10-24): `AssetRef<T>` in
   `core/resources/AssetRef.hpp`, and `ReferenceVisitor` in `core/serialization/`, an abstract
-  class with `visitEntity` and `visitAsset` hooks. Its `field` recurses into a type with its own
+  class with `visitEntity` and `visitAsset` hooks. Since S11-T24 (#239) `visitAsset` takes the id
+  and the handle by reference, so a visitor can empty the field. Its `field` recurses into a type with its own
   `visit`, skips empty fields, and ignores every other type at compile time. Registration fills
   a third record adapter, `visitReferences`. `Writer` writes an `Entity`'s index only, and
   `Reader` reads a row back as `Entity{row, 0}`, a form that lives only between the two passes.
   `write` copies each component into a scratch storage per type and lets `SceneAssetRowWriter`
   rewrite the copy. `read` runs `SceneAssetRowReader` over the live components after the last
   row, because a row may name a later one. Since the core sweep (#184 `ccf1e51`) it runs it
-  through the private `visitReferences` tree walk, the same walk that the acquire set and the
-  handle filler use, instead of its own loop. Both visitors and `SceneAssetEntity` sit in their own
+  through the `visitReferences` tree walk, the same walk that the acquire set and the handle
+  filler use, instead of its own loop. S11-T24 (#239) made the walk public, so the editor's
+  delete empties references through it. Both visitors and `SceneAssetEntity` sit in their own
   private files under `src/scene/` (Miguel, one class per file).
 - **The editor.** An inspector edit runs as a loading phase: it acquires the new asset and fills
   the field. The asset it replaced stays held until the scene reloads (T1).

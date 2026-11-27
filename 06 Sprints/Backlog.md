@@ -109,7 +109,9 @@ groups are kept, because they show where future work will land.
 
 - #prio/medium · **File watching**: v1's `IFileWatcher`, for editor hot-reload; its
   callback-subscription shape needs re-reading against
-  [[ADR-014 - Events (buffered streams) & StringId]]. **Trigger:** hot-reload being wanted (M6+). **Kept 2026-11-24.**
+  [[ADR-014 - Events (buffered streams) & StringId]]. Miguel, Nov 27 (S11-T24): the editor
+  should also learn of a file moved or removed outside it, as v1 did; until then *Refresh*
+  re-lists. **Trigger:** hot-reload being wanted (M6+). **Kept 2026-11-24.**
 
 - #prio/xlow · **`executablePath()` aborts on a Windows path longer than `MAX_PATH`**:
   `resolveExecutablePath` calls `GetModuleFileNameW` into a fixed `wchar_t[MAX_PATH]` and
@@ -498,7 +500,8 @@ groups are kept, because they show where future work will land.
   returns `UnknownReference` when a reached asset names an unindexed id, so the project no longer
   exports. Whether the bake should skip such a reference with a warning, or keep refusing so a
   shipped build never lacks content, is Miguel's call. Found by [[2026-11-24 09-08 Auto Run]].
-  **Trigger:** #231 merges, or S11-T24's delete lands.
+  **Trigger:** #231 merges, or S11-T24's delete lands. **Fired by S11-T24 (#239, Nov 27):** a
+  delete from the browser now leaves a project that does not export.
 - #prio/med · **A create shows its progress**: a model or mesh create runs as a job and shows
   nothing until its files appear. Miguel wants a window with a progress bar and a line saying what
   is being read or written (Nov 23, during S11-T21). Nothing reports progress today: the importer
@@ -521,7 +524,8 @@ groups are kept, because they show where future work will land.
   does. A box drag that starts in empty space reports its clear from `BeginMultiSelect` on the
   next frame instead, so a box that selects nothing leaves the outline on the last tile clicked,
   and that tile still looks selected (`AssetBrowserPanel.cpp:261-267`). Found while fixing D15,
-  not seen in a window. **Trigger:** the next card that touches the browser's grid (S11-T24).
+  not seen in a window. **Trigger:** the next card that changes the grid's selection. S11-T24
+  (#239) touched only the tile menu and a dialog, so it did not fix this.
 - #prio/low · **The asset browser redoes its layout work every frame**: since S11-T20 (#227, Nov
   21), each visible tile wraps its name by measuring the text again and again
   (`AssetBrowserPanel::wrapLabel`), and each drawn tree node scans the whole listing for its
@@ -771,6 +775,10 @@ groups are kept, because they show where future work will land.
 
 ## etc: cross-cutting
 
+- #prio/low · **VS 18's MSVC 14.52 does not build Jolt**: a Windows SDK header raises C4865
+  inside Jolt, which treats warnings as errors. Found on Nov 27 while building S11-T24 locally;
+  VS 2022's 14.44 (`vcvars64.bat -vcvars_ver=14.44`) builds it, and CI's Windows legs are
+  green. **Trigger:** Miguel moves to VS 18, or CI's Windows image does.
 - #prio/low · **The lane's sandbox has the wrong clang-format**: it ships 18, CI pins 19.1.5, and
   the two format member pointers differently, so S11-T13's first push (#228, Nov 23) failed
   `clang-format` and cost a second CI run. The fire installed 19.1.5 for that session only
